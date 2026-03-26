@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rowcraft.app/schemas/workout.json",
+  "title": "RowCraft Workout",
+  "type": "object",
+  "required": ["title", "workout_type", "segments"],
+  "properties": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "description": { "type": "string", "maxLength": 2000 },
+    "workout_type": {
+      "enum": ["single_distance", "single_time", "intervals", "variable_intervals"]
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "maxItems": 10
+    },
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["type", "duration_type", "duration_value"],
+        "properties": {
+          "type": { "enum": ["work", "rest", "warmup", "cooldown"] },
+          "duration_type": { "enum": ["time", "distance", "calories"] },
+          "duration_value": { "type": "number", "exclusiveMinimum": 0 },
+          "target_split": {
+            "type": ["object", "null"],
+            "properties": {
+              "min": { "type": "number", "description": "Pace in tenths of seconds per 500m" },
+              "max": { "type": "number", "description": "Pace in tenths of seconds per 500m" }
+            },
+            "required": ["min", "max"]
+          },
+          "target_stroke_rate": {
+            "type": ["object", "null"],
+            "properties": {
+              "min": { "type": "integer", "minimum": 10, "maximum": 50 },
+              "max": { "type": "integer", "minimum": 10, "maximum": 50 }
+            },
+            "required": ["min", "max"]
+          },
+          "target_hr_zone": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 },
+          "repeat": { "type": "integer", "minimum": 1, "maximum": 99, "default": 1 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

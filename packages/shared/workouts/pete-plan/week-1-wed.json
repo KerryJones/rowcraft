@@ -1,0 +1,26 @@
+{
+  "title": "Pete Plan — Week 1 Wednesday",
+  "description": "Pete Plan Week 1: 8 x 500m with 3:30 rest. Build speed with generous recovery.",
+  "workout_type": "intervals",
+  "tags": ["pete-plan", "intervals", "speed", "week-1"],
+  "segments": [
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4,
+      "repeat": 8
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null,
+      "repeat": 8
+    }
+  ]
+}

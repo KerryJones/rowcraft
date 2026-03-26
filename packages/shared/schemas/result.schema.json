@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rowcraft.app/schemas/result.json",
+  "title": "RowCraft Workout Result",
+  "type": "object",
+  "required": ["started_at"],
+  "properties": {
+    "workout_id": { "type": ["string", "null"], "format": "uuid" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": ["string", "null"], "format": "date-time" },
+    "total_distance": { "type": ["integer", "null"], "minimum": 0, "description": "meters" },
+    "total_time": { "type": ["integer", "null"], "minimum": 0, "description": "tenths of seconds" },
+    "avg_split": { "type": ["integer", "null"], "minimum": 0, "description": "pace per 500m in tenths of seconds" },
+    "avg_stroke_rate": { "type": ["integer", "null"], "minimum": 0 },
+    "avg_heart_rate": { "type": ["integer", "null"], "minimum": 0 },
+    "avg_watts": { "type": ["integer", "null"], "minimum": 0 },
+    "calories": { "type": ["integer", "null"], "minimum": 0 },
+    "splits": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "segment_index": { "type": "integer" },
+          "distance": { "type": "integer" },
+          "time": { "type": "integer" },
+          "avg_split": { "type": "integer" },
+          "avg_stroke_rate": { "type": "integer" },
+          "avg_heart_rate": { "type": ["integer", "null"] },
+          "avg_watts": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

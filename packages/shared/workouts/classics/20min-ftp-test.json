@@ -1,0 +1,16 @@
+{
+  "title": "20-Minute FTP Test",
+  "description": "Row 20 minutes at maximum sustainable effort. Multiply your average watts by 0.95 to estimate your FTP, or use your average pace directly as a close approximation of threshold pace.",
+  "workout_type": "single_time",
+  "tags": ["ftp", "test", "benchmark", "threshold"],
+  "segments": [
+    {
+      "type": "work",
+      "duration_type": "time",
+      "duration_value": 1200,
+      "target_split": null,
+      "target_stroke_rate": { "min": 24, "max": 30 },
+      "target_hr_zone": null
+    }
+  ]
+}
