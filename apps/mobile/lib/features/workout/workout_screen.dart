@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
+import '../ble/ble_provider.dart';
+import '../ble/hr_service.dart';
+import '../ble/pm5_service.dart';
+import 'ftp_result_dialog.dart';
 import 'metrics_display.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
@@ -17,6 +21,8 @@ class WorkoutScreen extends ConsumerStatefulWidget {
 }
 
 class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
+  bool _ftpDialogShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -27,9 +33,39 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final session = ref.watch(workoutSessionProvider);
     final engineState = session.engineState;
+
+    // Reset dialog guard when flag is cleared
+    if (!session.showFtpDialog) {
+      _ftpDialogShown = false;
+    }
+
+    // Show FTP dialog once when workout completes with FTP data
+    if (session.showFtpDialog &&
+        session.calculatedFtp != null &&
+        !_ftpDialogShown) {
+      _ftpDialogShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => FtpResultDialog(
+            calculatedFtp: session.calculatedFtp!,
+            calculationBasis: session.ftpCalculationBasis ?? '',
+            onSave: (watts) {
+              ref.read(workoutSessionProvider.notifier).saveFtp(watts);
+              Navigator.of(context).pop();
+            },
+            onSkip: () {
+              ref.read(workoutSessionProvider.notifier).dismissFtpDialog();
+              Navigator.of(context).pop();
+            },
+          ),
+        );
+      });
+    }
 
     return Scaffold(
       backgroundColor: RowCraftTheme.surfaceDark,
@@ -43,6 +79,14 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // BLE connection status bar
+            const _BleStatusBar(),
+
+            // Auto-pause banner
+            if (engineState.phase == WorkoutPhase.paused &&
+                engineState.isAutoPaused)
+              const _AutoPauseBanner(),
+
             // Pace fail warning (top, impossible to miss)
             if (engineState.secondsOutOfRange > 0)
               _PaceFailWarning(
@@ -57,12 +101,13 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
             // Compact interval strip + progress
             if (engineState.phase == WorkoutPhase.rowing ||
-                engineState.phase == WorkoutPhase.resting) ...[
+                engineState.phase == WorkoutPhase.resting ||
+                engineState.phase == WorkoutPhase.paused) ...[
               _IntervalProgress(engineState: engineState),
               _CompactIntervalStrip(session: session),
             ],
 
-            // Controls (subdued during rowing)
+            // Controls
             _WorkoutControls(
               phase: engineState.phase,
               onStart: () =>
@@ -76,6 +121,69 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Thin connection status bar showing PM5 + HR status during workout.
+class _BleStatusBar extends ConsumerWidget {
+  const _BleStatusBar();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bleState = ref.watch(bleProvider);
+    final session = ref.watch(workoutSessionProvider);
+    final pm5Connected =
+        bleState.pm5ConnectionState == PM5ConnectionState.connected;
+    final hrConnected =
+        bleState.hrConnectionState == HrConnectionState.connected;
+    final hrBpm = session.pm5Data.heartRate;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      color: RowCraftTheme.surfaceContainer,
+      child: Row(
+        children: [
+          // PM5 status
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: pm5Connected
+                  ? RowCraftTheme.successGreen
+                  : RowCraftTheme.subtleGrey,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            pm5Connected ? 'PM5' : 'PM5 --',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: pm5Connected
+                      ? RowCraftTheme.metricWhite
+                      : RowCraftTheme.subtleGrey,
+                ),
+          ),
+          const Spacer(),
+          // HR status
+          Icon(
+            Icons.favorite,
+            size: 14,
+            color: hrConnected
+                ? RowCraftTheme.errorRose
+                : RowCraftTheme.subtleGrey,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            hrBpm != null ? '$hrBpm bpm' : '--',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: hrConnected
+                      ? RowCraftTheme.metricWhite
+                      : RowCraftTheme.subtleGrey,
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -213,6 +321,7 @@ class _IntervalProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = engineState.segmentProgress;
     final isResting = engineState.phase == WorkoutPhase.resting;
+    final isPaused = engineState.phase == WorkoutPhase.paused;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -222,11 +331,17 @@ class _IntervalProgress extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isResting ? 'REST' : 'WORK',
+                isPaused
+                    ? 'PAUSED'
+                    : isResting
+                        ? 'REST'
+                        : 'WORK',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: isResting
+                      color: isPaused
                           ? RowCraftTheme.warningAmber
-                          : RowCraftTheme.primaryBlue,
+                          : isResting
+                              ? RowCraftTheme.warningAmber
+                              : RowCraftTheme.primaryBlue,
                     ),
               ),
               Text(
@@ -243,7 +358,7 @@ class _IntervalProgress extends StatelessWidget {
               minHeight: 6,
               backgroundColor: RowCraftTheme.surfaceContainerHigh,
               valueColor: AlwaysStoppedAnimation(
-                isResting
+                isPaused || isResting
                     ? RowCraftTheme.warningAmber
                     : RowCraftTheme.primaryBlue,
               ),
@@ -407,6 +522,23 @@ class _WorkoutControls extends StatelessWidget {
                 label: 'STARTING...',
                 color: RowCraftTheme.warningAmber,
                 onPressed: null,
+                isLarge: true,
+              ),
+            ],
+          WorkoutPhase.paused => [
+              _ControlButton(
+                icon: Icons.stop,
+                label: 'STOP',
+                color: RowCraftTheme.errorRose,
+                onPressed: onStop,
+                isLarge: false,
+              ),
+              const SizedBox(width: 32),
+              _ControlButton(
+                icon: Icons.play_arrow,
+                label: 'RESUME',
+                color: RowCraftTheme.successGreen,
+                onPressed: onResume,
                 isLarge: true,
               ),
             ],
@@ -822,6 +954,39 @@ class _PaceFailWarning extends StatelessWidget {
   }
 }
 
+class _AutoPauseBanner extends StatelessWidget {
+  const _AutoPauseBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: RowCraftTheme.warningAmber.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: RowCraftTheme.warningAmber, width: 1),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.pause_circle_outline,
+              color: RowCraftTheme.warningAmber, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Paused — start rowing to resume',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: RowCraftTheme.warningAmber,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PhaseIndicator extends StatelessWidget {
   final WorkoutPhase phase;
 
@@ -834,6 +999,7 @@ class _PhaseIndicator extends StatelessWidget {
       WorkoutPhase.ready => ('READY', RowCraftTheme.warningAmber),
       WorkoutPhase.countingDown => ('3...2...1', RowCraftTheme.warningAmber),
       WorkoutPhase.rowing => ('ROWING', RowCraftTheme.successGreen),
+      WorkoutPhase.paused => ('PAUSED', RowCraftTheme.warningAmber),
       WorkoutPhase.resting => ('REST', RowCraftTheme.warningAmber),
       WorkoutPhase.finished => ('DONE', RowCraftTheme.primaryBlue),
     };

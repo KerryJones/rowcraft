@@ -40,9 +40,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final password = _passwordController.text;
 
       if (_isSignUp) {
-        await ref.read(signUpProvider(email: email, password: password).future);
+        await ref.read(signUpProvider((email: email, password: password)).future);
       } else {
-        await ref.read(signInProvider(email: email, password: password).future);
+        await ref.read(signInProvider((email: email, password: password)).future);
       }
 
       if (mounted) {
@@ -68,14 +68,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     });
 
     try {
+      // Invalidate first so Riverpod doesn't return the cached result
+      // from a previous attempt. signInWithOAuth opens the browser and
+      // returns immediately — the router's auth redirect handles navigation
+      // when the session arrives via onAuthStateChange.
+      ref.invalidate(googleSignInProvider);
       await ref.read(googleSignInProvider.future);
-      if (mounted) {
-        context.go('/');
-      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {

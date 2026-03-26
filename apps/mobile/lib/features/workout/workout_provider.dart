@@ -3,12 +3,17 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/pm5_data.dart';
-import '../../models/workout.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
+import '../ble/ble_provider.dart';
+import '../ble/hr_service.dart';
+import 'ftp_calculator.dart';
 import 'workout_engine.dart';
+
+/// Sentinel to distinguish "not passed" from "explicitly null" in copyWith.
+const Object _sentinel = Object();
 
 /// Combined state for the workout session UI.
 class WorkoutSessionState {
@@ -16,33 +21,53 @@ class WorkoutSessionState {
   final WorkoutEngineState engineState;
   final PM5Data pm5Data;
   final List<WorkoutSegment> expandedSegments;
+  final List<String> workoutTags;
   final bool isLoading;
-  final String? error;
+  final String? _error;
+
+  /// FTP dialog state
+  final bool showFtpDialog;
+  final int? calculatedFtp;
+  final String? ftpCalculationBasis;
+
+  String? get error => _error;
 
   const WorkoutSessionState({
     this.workoutTitle = '',
     this.engineState = const WorkoutEngineState(),
     this.pm5Data = const PM5Data.zero(),
     this.expandedSegments = const [],
+    this.workoutTags = const [],
     this.isLoading = false,
-    this.error,
-  });
+    String? error,
+    this.showFtpDialog = false,
+    this.calculatedFtp,
+    this.ftpCalculationBasis,
+  }) : _error = error;
 
   WorkoutSessionState copyWith({
     String? workoutTitle,
     WorkoutEngineState? engineState,
     PM5Data? pm5Data,
     List<WorkoutSegment>? expandedSegments,
+    List<String>? workoutTags,
     bool? isLoading,
-    String? error,
+    Object? error = _sentinel,
+    bool? showFtpDialog,
+    int? calculatedFtp,
+    String? ftpCalculationBasis,
   }) {
     return WorkoutSessionState(
       workoutTitle: workoutTitle ?? this.workoutTitle,
       engineState: engineState ?? this.engineState,
       pm5Data: pm5Data ?? this.pm5Data,
       expandedSegments: expandedSegments ?? this.expandedSegments,
+      workoutTags: workoutTags ?? this.workoutTags,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
+      error: error == _sentinel ? _error : error as String?,
+      showFtpDialog: showFtpDialog ?? this.showFtpDialog,
+      calculatedFtp: calculatedFtp ?? this.calculatedFtp,
+      ftpCalculationBasis: ftpCalculationBasis ?? this.ftpCalculationBasis,
     );
   }
 }
@@ -50,18 +75,65 @@ class WorkoutSessionState {
 class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   final SupabaseService _supabaseService;
   final SyncService _syncService;
+  final Ref _ref;
 
   WorkoutEngine? _engine;
   StreamSubscription<WorkoutEngineState>? _engineSub;
+  StreamSubscription<PM5Data>? _pm5BleSubscription;
+  StreamSubscription<int>? _hrBleSubscription;
+  StreamSubscription<HrConnectionState>? _hrConnectionSub;
 
-  /// BLE data stream controller — in production, this comes from the BLE service.
-  /// For now, we expose it so the BLE layer can push data in.
+  /// The latest standalone HR value for merging with PM5 data.
+  int? _lastStandaloneHr;
+
+  /// Recorded when start() is called — used for accurate startedAt.
+  DateTime? _startedAt;
+
+  /// BLE data stream controller — feeds into the workout engine.
   final _pm5Controller = StreamController<PM5Data>.broadcast();
 
-  WorkoutSessionNotifier(this._supabaseService, this._syncService)
-      : super(const WorkoutSessionState());
+  WorkoutSessionNotifier(this._supabaseService, this._syncService, this._ref)
+      : super(const WorkoutSessionState()) {
+    _subscribeToBle();
+  }
 
-  /// Push PM5 data from BLE layer.
+  /// Subscribe to BLE PM5 data, standalone HR, and HR connection state.
+  void _subscribeToBle() {
+    // Listen to PM5 BLE data
+    final pm5Stream = _ref.read(pm5ServiceProvider).pm5DataStream;
+    _pm5BleSubscription = pm5Stream.listen((pm5Data) {
+      // Merge standalone HR — prefer chest strap (more accurate)
+      PM5Data merged = pm5Data;
+      if (_lastStandaloneHr != null) {
+        merged = pm5Data.copyWith(heartRate: _lastStandaloneHr);
+      }
+
+      _pm5Controller.add(merged);
+      state = state.copyWith(pm5Data: merged);
+    });
+
+    // Listen to standalone HR data
+    final hrStream = _ref.read(hrServiceProvider).heartRateStream;
+    _hrBleSubscription = hrStream.listen((hr) {
+      _lastStandaloneHr = hr;
+
+      // If no PM5 data is flowing, still update the HR display
+      if (state.pm5Data.heartRate != hr) {
+        final updated = state.pm5Data.copyWith(heartRate: hr);
+        state = state.copyWith(pm5Data: updated);
+      }
+    });
+
+    // Clear stale HR when the HR monitor disconnects
+    final hrService = _ref.read(hrServiceProvider);
+    _hrConnectionSub = hrService.connectionState.listen((connState) {
+      if (connState == HrConnectionState.disconnected) {
+        _lastStandaloneHr = null;
+      }
+    });
+  }
+
+  /// Push PM5 data from BLE layer (kept for backward compatibility).
   void onPM5Data(PM5Data data) {
     _pm5Controller.add(data);
     state = state.copyWith(pm5Data: data);
@@ -85,6 +157,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       state = state.copyWith(
         workoutTitle: workout.title,
         expandedSegments: _engine!.expandedSegments,
+        workoutTags: workout.tags,
         isLoading: false,
       );
     } catch (e) {
@@ -97,6 +170,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   /// Start the workout.
   void start() {
+    _startedAt = DateTime.now();
     _engine?.start();
   }
 
@@ -110,7 +184,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _engine?.resume();
   }
 
-  /// Stop the workout, save results.
+  /// Stop the workout, save results, detect FTP test.
   Future<void> stop() async {
     if (_engine == null) return;
 
@@ -124,27 +198,37 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     final data = state.pm5Data;
     final splits = _engine!.completedSplits;
 
-    // Compute weighted average split from completed splits (not instantaneous)
+    // Don't save empty results (e.g. stopped during countdown or before rowing)
+    if (splits.isEmpty && data.distance == 0) return;
+
+    // Use recorded start time (not back-computed from BLE frame)
+    final startedAt = _startedAt ?? now.subtract(data.elapsedTime);
+
+    // Compute duration-weighted averages from completed splits
     int avgSplit = data.pace; // fallback to instantaneous
     int avgSR = data.strokeRate;
     int avgW = data.watts;
     if (splits.isNotEmpty) {
-      int paceSum = 0, srSum = 0, wattsSum = 0;
+      double paceDW = 0, srDW = 0, wattsDW = 0, totalMs = 0;
       for (final s in splits) {
-        paceSum += s.avgPace;
-        srSum += s.avgStrokeRate;
-        wattsSum += s.avgWatts;
+        final ms = s.time.inMilliseconds.toDouble();
+        paceDW += s.avgPace * ms;
+        srDW += s.avgStrokeRate * ms;
+        wattsDW += s.avgWatts * ms;
+        totalMs += ms;
       }
-      avgSplit = paceSum ~/ splits.length;
-      avgSR = srSum ~/ splits.length;
-      avgW = wattsSum ~/ splits.length;
+      if (totalMs > 0) {
+        avgSplit = (paceDW / totalMs).round();
+        avgSR = (srDW / totalMs).round();
+        avgW = (wattsDW / totalMs).round();
+      }
     }
 
     final result = WorkoutResult(
       id: '', // Let Supabase generate
       userId: userId,
       workoutId: _engine!.workout.id,
-      startedAt: now.subtract(data.elapsedTime),
+      startedAt: startedAt,
       finishedAt: now,
       totalDistance: data.distance,
       totalTime: data.elapsedTime,
@@ -158,6 +242,76 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     // Queue for sync (offline-first)
     await _syncService.queueResult(result);
+
+    // Detect FTP test
+    final tags = state.workoutTags;
+    if (tags.contains('ftp') && splits.isNotEmpty) {
+      final isRamp = tags.contains('ramp');
+      int ftp;
+      String basis;
+
+      if (isRamp) {
+        ftp = FtpCalculator.calculateRampFtp(
+          splits,
+          _engine!.expandedSegments,
+        );
+        // Find peak watts for display
+        int peak = 0;
+        for (final s in splits) {
+          if (s.avgWatts > peak) peak = s.avgWatts;
+        }
+        basis = '65% of peak ${peak}W';
+      } else {
+        ftp = FtpCalculator.calculate20MinFtp(splits);
+        // Compute duration-weighted avg for display
+        double wSum = 0, dSum = 0;
+        for (final s in splits) {
+          final d = s.time.inMilliseconds.toDouble();
+          wSum += s.avgWatts * d;
+          dSum += d;
+        }
+        final displayAvg = dSum > 0 ? (wSum / dSum).round() : 0;
+        basis = '95% of avg ${displayAvg}W';
+      }
+
+      if (ftp > 0) {
+        state = state.copyWith(
+          showFtpDialog: true,
+          calculatedFtp: ftp,
+          ftpCalculationBasis: basis,
+        );
+      }
+    }
+  }
+
+  /// Save FTP result to Supabase.
+  Future<void> saveFtp(int watts) async {
+    if (watts <= 0) return;
+
+    final userId = _supabaseService.currentUserId;
+    if (userId == null) return;
+
+    final record = FtpRecord(
+      id: '',
+      userId: userId,
+      testedAt: DateTime.now(),
+      ftpWatts: watts,
+      testType: state.workoutTags.contains('ramp') ? 'ramp' : '20min',
+      // TODO: Link to workout result once sync service returns persisted IDs.
+      // Currently null because queueResult is offline-first and doesn't
+      // return the Supabase-generated UUID synchronously.
+      sourceResultId: null,
+    );
+
+    await _supabaseService.saveFtpRecord(record);
+    await _supabaseService.updateProfileFtp(watts);
+
+    state = state.copyWith(showFtpDialog: false);
+  }
+
+  /// Dismiss FTP dialog without saving.
+  void dismissFtpDialog() {
+    state = state.copyWith(showFtpDialog: false);
   }
 
   @override
@@ -165,6 +319,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _engineSub?.cancel();
     _engine?.dispose();
     _pm5Controller.close();
+    _pm5BleSubscription?.cancel();
+    _hrBleSubscription?.cancel();
+    _hrConnectionSub?.cancel();
     super.dispose();
   }
 }
@@ -174,5 +331,6 @@ final workoutSessionProvider =
   return WorkoutSessionNotifier(
     ref.watch(supabaseServiceProvider),
     ref.watch(syncServiceProvider),
+    ref,
   );
 });

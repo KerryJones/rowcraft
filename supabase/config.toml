@@ -1,7 +1,5 @@
-[project]
-id = "rowcraft"
-
 [api]
+enabled = true
 port = 54321
 
 [db]

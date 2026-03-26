@@ -11,6 +11,7 @@ enum WorkoutPhase {
   ready,
   countingDown,
   rowing,
+  paused,
   resting,
   finished,
 }
@@ -32,6 +33,9 @@ class WorkoutEngineState {
   final Duration segmentElapsedTime;
   final int countdownSeconds;
   final PM5Data latestData;
+  final bool isAutoPaused;
+  final Duration pausedDuration;
+  final int segmentElapsedCalories;
 
   /// How many consecutive seconds the rower has been outside the target
   /// pace window. Resets to 0 when back in range. Used by the UI to
@@ -54,6 +58,9 @@ class WorkoutEngineState {
     this.segmentElapsedTime = Duration.zero,
     this.countdownSeconds = 0,
     this.latestData = const PM5Data.zero(),
+    this.isAutoPaused = false,
+    this.pausedDuration = Duration.zero,
+    this.segmentElapsedCalories = 0,
     this.secondsOutOfRange = 0,
     this.paceFailThreshold = 10,
     this.finishReason,
@@ -68,6 +75,9 @@ class WorkoutEngineState {
     Duration? segmentElapsedTime,
     int? countdownSeconds,
     PM5Data? latestData,
+    bool? isAutoPaused,
+    Duration? pausedDuration,
+    int? segmentElapsedCalories,
     int? secondsOutOfRange,
     int? paceFailThreshold,
     FinishReason? finishReason,
@@ -82,6 +92,10 @@ class WorkoutEngineState {
       segmentElapsedTime: segmentElapsedTime ?? this.segmentElapsedTime,
       countdownSeconds: countdownSeconds ?? this.countdownSeconds,
       latestData: latestData ?? this.latestData,
+      isAutoPaused: isAutoPaused ?? this.isAutoPaused,
+      pausedDuration: pausedDuration ?? this.pausedDuration,
+      segmentElapsedCalories:
+          segmentElapsedCalories ?? this.segmentElapsedCalories,
       secondsOutOfRange: secondsOutOfRange ?? this.secondsOutOfRange,
       paceFailThreshold: paceFailThreshold ?? this.paceFailThreshold,
       finishReason: finishReason ?? this.finishReason,
@@ -128,6 +142,14 @@ class WorkoutEngine {
 
   // Pace fail tracking
   DateTime? _outOfRangeSince;
+
+  // Auto-pause tracking
+  DateTime? _zeroStrokeRateSince;
+  DateTime? _pausedAt;
+  Duration _totalPausedDuration = Duration.zero;
+  WorkoutPhase? _prePausePhase;
+  int _segmentStartCalories = 0;
+  static const _autoPauseDelaySeconds = 3;
 
   final List<SplitData> _completedSplits = [];
 
@@ -184,22 +206,95 @@ class WorkoutEngine {
     });
   }
 
-  /// Pause the workout.
+  /// Pause the workout (manual).
   void pause() {
-    _pm5Subscription?.pause();
+    if (_state.phase != WorkoutPhase.rowing &&
+        _state.phase != WorkoutPhase.resting) {
+      return;
+    }
+    _prePausePhase = _state.phase;
+    _pausedAt = DateTime.now();
+    // Cancel rest timer so it doesn't fire while paused
+    _restTimer?.cancel();
+    _state = _state.copyWith(
+      phase: WorkoutPhase.paused,
+      isAutoPaused: false,
+    );
+    _emit();
   }
 
   /// Resume after pause.
   void resume() {
-    _pm5Subscription?.resume();
+    if (_state.phase != WorkoutPhase.paused) return;
+    _accumulatePausedDuration();
+    final restoredPhase = _prePausePhase ?? WorkoutPhase.rowing;
+    _state = _state.copyWith(
+      phase: restoredPhase,
+      isAutoPaused: false,
+      pausedDuration: _totalPausedDuration,
+    );
+    _prePausePhase = null;
+    _emit();
+    // Restart rest timer if resuming into a rest segment
+    if (restoredPhase == WorkoutPhase.resting) {
+      final segment = _state.currentSegment;
+      if (segment != null && segment.durationType == DurationType.time) {
+        final elapsedRest =
+            (_state.latestData.elapsedTime - _segmentStartTime) -
+                _totalPausedDuration;
+        final remainingSeconds =
+            segment.durationValue.toInt() - elapsedRest.inSeconds;
+        if (remainingSeconds > 0) {
+          _restTimer = Timer(
+            Duration(seconds: remainingSeconds),
+            () => _advanceToNextSegment(),
+          );
+        } else {
+          _advanceToNextSegment();
+        }
+      }
+    }
+  }
+
+  void _autoPause() {
+    if (_state.phase != WorkoutPhase.rowing) return;
+    _prePausePhase = _state.phase;
+    _pausedAt = DateTime.now();
+    _state = _state.copyWith(
+      phase: WorkoutPhase.paused,
+      isAutoPaused: true,
+    );
+    _emit();
+  }
+
+  void _autoResume() {
+    if (_state.phase != WorkoutPhase.paused) return;
+    _accumulatePausedDuration();
+    _zeroStrokeRateSince = null;
+    _state = _state.copyWith(
+      phase: _prePausePhase ?? WorkoutPhase.rowing,
+      isAutoPaused: false,
+      pausedDuration: _totalPausedDuration,
+    );
+    _prePausePhase = null;
+    _emit();
+  }
+
+  void _accumulatePausedDuration() {
+    if (_pausedAt != null) {
+      _totalPausedDuration += DateTime.now().difference(_pausedAt!);
+      _pausedAt = null;
+    }
   }
 
   /// Stop the workout and finalize results.
   void stop() {
+    _accumulatePausedDuration();
     _finishCurrentSegment();
     _state = _state.copyWith(
       phase: WorkoutPhase.finished,
       finishReason: FinishReason.userStopped,
+      pausedDuration: _totalPausedDuration,
     );
     _emit();
     _cleanup();
@@ -223,6 +318,7 @@ class WorkoutEngine {
     // Reset accumulators
     _segmentStartDistance = _state.latestData.distance;
     _segmentStartTime = _state.latestData.elapsedTime;
+    _segmentStartCalories = _state.latestData.calories;
     _paceSum = 0;
     _strokeRateSum = 0;
     _wattsSum = 0;
@@ -230,6 +326,10 @@ class WorkoutEngine {
     _hrCount = 0;
     _sampleCount = 0;
     _outOfRangeSince = null;
+    _zeroStrokeRateSince = null;
+    _pausedAt = null;
+    _totalPausedDuration = Duration.zero;
+    _prePausePhase = null;
 
     _state = _state.copyWith(
       phase: isRest ? WorkoutPhase.resting : WorkoutPhase.rowing,
@@ -238,7 +338,10 @@ class WorkoutEngine {
       segmentProgress: 0,
       segmentElapsedDistance: 0,
       segmentElapsedTime: Duration.zero,
+      segmentElapsedCalories: 0,
       secondsOutOfRange: 0,
+      isAutoPaused: false,
+      pausedDuration: Duration.zero,
     );
     _emit();
 
@@ -257,6 +360,41 @@ class WorkoutEngine {
   }
 
   void _onPM5Data(PM5Data data) {
+    final segment = _state.currentSegment;
+    if (segment == null) return;
+
+    // ── Branch 1: Paused — update latestData, check for auto-resume ──
+    if (_state.phase == WorkoutPhase.paused) {
+      _state = _state.copyWith(latestData: data);
+      if (data.strokeRate > 0 && _state.isAutoPaused) {
+        _autoResume();
+      } else {
+        _emit();
+      }
+      return;
+    }
+
+    // ── Branch 2: Rowing with zero stroke rate — auto-pause logic ──
+    if (_state.phase == WorkoutPhase.rowing && data.strokeRate == 0) {
+      _zeroStrokeRateSince ??= DateTime.now();
+      final zeroSeconds =
+          DateTime.now().difference(_zeroStrokeRateSince!).inSeconds;
+      if (zeroSeconds >= _autoPauseDelaySeconds) {
+        // Update latestData before pausing
+        _state = _state.copyWith(latestData: data);
+        _autoPause();
+        return;
+      }
+      // Update latestData but skip accumulator updates (prevents zero
+      // samples from corrupting averages)
+      _state = _state.copyWith(latestData: data);
+      _emit();
+      return;
+    }
+
+    // ── Branch 3: Normal rowing (SR > 0) or resting ──
+    _zeroStrokeRateSince = null;
+
     // Update latest data
     _state = _state.copyWith(latestData: data);
 
@@ -271,11 +409,9 @@ class WorkoutEngine {
     }
 
     // Calculate segment progress
-    final segment = _state.currentSegment;
-    if (segment == null) return;
-
     final elapsedDistance = data.distance - _segmentStartDistance;
     final elapsedTime = data.elapsedTime - _segmentStartTime;
+    final elapsedCalories = data.calories - _segmentStartCalories;
 
     double progress = 0;
     switch (segment.durationType) {
@@ -283,11 +419,13 @@ class WorkoutEngine {
         progress = elapsedDistance / segment.durationValue;
         break;
       case DurationType.time:
+        // Subtract paused time so clock doesn't advance while paused
+        final adjustedElapsed = elapsedTime - _totalPausedDuration;
         progress =
-            elapsedTime.inSeconds / segment.durationValue;
+            adjustedElapsed.inSeconds / segment.durationValue;
         break;
       case DurationType.calories:
-        progress = 0; // Simplified
+        progress = elapsedCalories / segment.durationValue;
         break;
     }
     progress = progress.clamp(0.0, 1.0);
@@ -296,6 +434,7 @@ class WorkoutEngine {
       segmentProgress: progress,
       segmentElapsedDistance: elapsedDistance,
       segmentElapsedTime: elapsedTime,
+      segmentElapsedCalories: elapsedCalories,
     );
 
     // ── Pace fail detection ────────────────────────────────────────────
@@ -368,7 +507,7 @@ class WorkoutEngine {
       avgStrokeRate: _strokeRateSum ~/ _sampleCount,
       avgWatts: _wattsSum ~/ _sampleCount,
       avgHeartRate: _hrCount > 0 ? _hrSum ~/ _hrCount : null,
-      calories: _state.latestData.calories,
+      calories: _state.latestData.calories - _segmentStartCalories,
     );
     _completedSplits.add(split);
   }

@@ -10,30 +10,29 @@ SUPABASE_URL := http://$(LOCAL_IP):54321
 
 setup: setup-supabase setup-mobile setup-web
 	@echo ""
-	@echo "✅ Setup complete. Run 'make dev' to start developing."
+	@echo "Setup complete. Run 'make dev' to start developing."
 	@echo "   Your local IP: $(LOCAL_IP)"
 	@echo ""
 
 setup-supabase:
-	@echo "→ Starting Supabase..."
+	@echo "Starting Supabase..."
 	supabase start
 	supabase db reset
-	@echo "→ Supabase ready. Anon key:"
-	@supabase status -o env | grep ANON_KEY
+	@echo "Supabase ready."
 
 setup-mobile:
-	@echo "→ Setting up Flutter app..."
+	@echo "Setting up Flutter app..."
 	cd apps/mobile && flutter create . --org com.rowcraft --platforms android,ios
 	cd apps/mobile && flutter pub get
 	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
-	@echo "→ Flutter app ready."
+	@echo "Flutter app ready."
 
 setup-web:
-	@echo "→ Setting up web app..."
+	@echo "Setting up web app..."
 	cd apps/web && npm install
-	@echo "→ Creating .env from .env.example..."
+	@echo "Creating .env from .env.example..."
 	@if [ ! -f apps/web/.env ]; then cp apps/web/.env.example apps/web/.env; fi
-	@echo "→ Web app ready. Edit apps/web/.env with your Supabase credentials."
+	@echo "Web app ready. Edit apps/web/.env with your Supabase credentials."
 
 # ─── Development ─────────────────────────────────────────────────────────────
 
@@ -49,12 +48,16 @@ dev-supabase:
 	@supabase status > /dev/null 2>&1 || supabase start
 
 dev-mobile:
-	@echo "→ Starting Flutter app (local IP: $(LOCAL_IP))..."
-	@echo "→ Fetching anon key from Supabase..."
-	$(eval ANON_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
+	@echo "Starting Flutter app (local IP: $(LOCAL_IP))..."
+	$(eval PUB_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
 	cd apps/mobile && flutter run \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
-		--dart-define=SUPABASE_ANON_KEY=$(ANON_KEY)
+		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY)
+
+dev-mobile-cloud:
+	cd apps/mobile && flutter run \
+		--dart-define=SUPABASE_URL=https://qzzqqgnegvuqmlkfqhus.supabase.co \
+		--dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_-J6qboxKtmCfn_aIBHKX-g_tCFwUWdV
 
 dev-web:
 	cd apps/web && npm run dev
@@ -62,7 +65,7 @@ dev-web:
 # ─── Testing ─────────────────────────────────────────────────────────────────
 
 test: test-mobile test-web
-	@echo "✅ All tests passed."
+	@echo "All tests passed."
 
 test-mobile:
 	cd apps/mobile && flutter test
@@ -88,8 +91,8 @@ studio:
 	@open http://localhost:54323
 
 build-apk:
-	$(eval ANON_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
+	$(eval PUB_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
 	cd apps/mobile && flutter build apk --release \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
-		--dart-define=SUPABASE_ANON_KEY=$(ANON_KEY)
-	@echo "→ APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"
+		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY)
+	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"

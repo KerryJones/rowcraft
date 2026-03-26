@@ -13,6 +13,12 @@ final profileProvider = FutureProvider<Profile>((ref) async {
   return service.getProfile();
 });
 
+/// Provider for FTP history.
+final ftpHistoryProvider = FutureProvider<List<FtpRecord>>((ref) async {
+  final service = ref.watch(supabaseServiceProvider);
+  return service.getFtpHistory();
+});
+
 /// Provider for C2 Logbook link status.
 final c2LinkedProvider = FutureProvider<bool>((ref) async {
   final service = ref.watch(c2LogbookServiceProvider);
@@ -136,6 +142,10 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
+          // FTP card
+          _FtpCard(),
+          const SizedBox(height: 16),
+
           // Settings section
           Card(
             child: Column(
@@ -203,51 +213,257 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditNameDialog(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
-
+  static void _showManualFtpDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Edit Display Name'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: 'Enter your display name',
+      builder: (dialogContext) => _ManualFtpDialog(ref: ref),
+    );
+  }
+
+  void _showEditNameDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _EditNameDialog(ref: ref),
+    );
+  }
+}
+
+class _FtpCard extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final profileAsync = ref.watch(profileProvider);
+    final ftpHistoryAsync = ref.watch(ftpHistoryProvider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('FTP', style: theme.textTheme.titleMedium),
+                TextButton(
+                  onPressed: () {
+                    ProfileScreen._showManualFtpDialog(context, ref);
+                  },
+                  child: const Text('Set Manually'),
+                ),
+              ],
             ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+            const SizedBox(height: 8),
+
+            // Current FTP
+            profileAsync.when(
+              data: (profile) => Text(
+                profile.currentFtpWatts != null
+                    ? '${profile.currentFtpWatts}W'
+                    : 'Not tested',
+                style: theme.textTheme.displaySmall?.copyWith(
+                  color: profile.currentFtpWatts != null
+                      ? RowCraftTheme.successGreen
+                      : RowCraftTheme.subtleGrey,
+                ),
+              ),
+              loading: () => const SizedBox(
+                height: 32,
+                width: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              error: (_, __) => Text(
+                'Error',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: RowCraftTheme.errorRose,
+                ),
+              ),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = controller.text.trim();
-                if (name.isNotEmpty) {
-                  final service = ref.read(supabaseServiceProvider);
-                  final profile = await service.getProfile();
-                  await service.updateProfile(
-                    profile.copyWith(displayName: name),
+            const SizedBox(height: 16),
+
+            // FTP history
+            ftpHistoryAsync.when(
+              data: (records) {
+                if (records.isEmpty) {
+                  return Text(
+                    'Complete an FTP test to see history',
+                    style: theme.textTheme.bodySmall,
                   );
-                  ref.invalidate(profileProvider);
-                  if (dialogContext.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Display name updated')),
-                    );
-                  }
                 }
-                if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
-                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('History', style: theme.textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    ...records.take(5).map((r) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${r.ftpWatts}W',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                r.testType,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: RowCraftTheme.subtleGrey,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                _formatDate(r.testedAt),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        )),
+                  ],
+                );
               },
-              child: const Text('Save'),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
             ),
           ],
-        );
-      },
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime dt) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+}
+
+/// Stateful dialog for manual FTP entry — properly disposes its controller.
+class _ManualFtpDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _ManualFtpDialog({required this.ref});
+
+  @override
+  State<_ManualFtpDialog> createState() => _ManualFtpDialogState();
+}
+
+class _ManualFtpDialogState extends State<_ManualFtpDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Set FTP Manually'),
+      content: TextField(
+        controller: _controller,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          hintText: 'Enter FTP in watts',
+          suffixText: 'W',
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final watts = int.tryParse(_controller.text.trim());
+            if (watts != null && watts > 0) {
+              final service = widget.ref.read(supabaseServiceProvider);
+              final userId = service.currentUserId;
+              if (userId != null) {
+                await service.saveFtpRecord(FtpRecord(
+                  id: '',
+                  userId: userId,
+                  testedAt: DateTime.now(),
+                  ftpWatts: watts,
+                  testType: 'manual',
+                ));
+                await service.updateProfileFtp(watts);
+                widget.ref.invalidate(profileProvider);
+                widget.ref.invalidate(ftpHistoryProvider);
+              }
+            }
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Stateful dialog for editing display name — properly disposes its controller.
+class _EditNameDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _EditNameDialog({required this.ref});
+
+  @override
+  State<_EditNameDialog> createState() => _EditNameDialogState();
+}
+
+class _EditNameDialogState extends State<_EditNameDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Display Name'),
+      content: TextField(
+        controller: _controller,
+        decoration: const InputDecoration(
+          hintText: 'Enter your display name',
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final name = _controller.text.trim();
+            if (name.isNotEmpty) {
+              final service = widget.ref.read(supabaseServiceProvider);
+              final profile = await service.getProfile();
+              await service.updateProfile(
+                profile.copyWith(displayName: name),
+              );
+              widget.ref.invalidate(profileProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Display name updated')),
+                );
+              }
+            }
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }

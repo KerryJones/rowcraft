@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -31,6 +30,18 @@ class PendingResults extends Table {
       boolean().withDefault(const Constant(false))();
 }
 
+/// Saved BLE devices for auto-reconnect.
+class SavedDevices extends Table {
+  TextColumn get deviceId => text()();
+  TextColumn get deviceName => text().withDefault(const Constant(''))();
+  TextColumn get deviceType => text()(); // 'pm5' or 'hr'
+  DateTimeColumn get lastConnectedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {deviceId};
+}
+
 /// Locally cached workouts for offline access.
 class CachedWorkouts extends Table {
   TextColumn get workoutId => text()();
@@ -41,12 +52,22 @@ class CachedWorkouts extends Table {
   Set<Column> get primaryKey => {workoutId};
 }
 
-@DriftDatabase(tables: [PendingResults, CachedWorkouts])
+@DriftDatabase(tables: [PendingResults, CachedWorkouts, SavedDevices])
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(savedDevices);
+          }
+        },
+      );
 
   // ── Pending Results ─────────────────────────────────────────────────
 
@@ -110,6 +131,37 @@ class LocalDatabase extends _$LocalDatabase {
           ..where((r) =>
               r.syncedToSupabase.equals(true) &
               r.syncedToC2.equals(true)))
+        .go();
+  }
+
+  // ── Saved Devices ──────────────────────────────────────────────────
+
+  /// Save or update a BLE device for auto-reconnect.
+  Future<void> saveDevice({
+    required String deviceId,
+    required String deviceName,
+    required String deviceType,
+  }) {
+    return into(savedDevices).insertOnConflictUpdate(
+      SavedDevicesCompanion.insert(
+        deviceId: deviceId,
+        deviceName: Value(deviceName),
+        deviceType: deviceType,
+        lastConnectedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  /// Get all saved devices, ordered by most recently connected.
+  Future<List<SavedDevice>> getSavedDevices() {
+    return (select(savedDevices)
+          ..orderBy([(d) => OrderingTerm.desc(d.lastConnectedAt)]))
+        .get();
+  }
+
+  /// Remove a saved device.
+  Future<void> removeSavedDevice(String deviceId) {
+    return (delete(savedDevices)..where((d) => d.deviceId.equals(deviceId)))
         .go();
   }
 

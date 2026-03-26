@@ -45,9 +45,11 @@ final signUpProvider =
 );
 
 /// Sign in with Google OAuth.
+/// Uses a custom deep link to redirect back to the app after auth.
 final googleSignInProvider = FutureProvider<bool>((ref) async {
   final success = await Supabase.instance.client.auth.signInWithOAuth(
     OAuthProvider.google,
+    redirectTo: 'com.rowcraft.app://login-callback',
   );
   return success;
 });

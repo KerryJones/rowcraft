@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout.dart';
+import '../ble/ble_provider.dart';
+import '../ble/pm5_service.dart';
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -27,16 +29,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final workoutsAsync = ref.watch(filteredWorkoutsProvider(
+    final workoutsAsync = ref.watch(filteredWorkoutsProvider((
       search: _searchController.text,
       type: _selectedType,
       tag: _selectedTag,
-    ));
+    )));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Workouts'),
         actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final bleState = ref.watch(bleProvider);
+              final isConnected = bleState.pm5ConnectionState ==
+                  PM5ConnectionState.connected;
+              return IconButton(
+                icon: Icon(
+                  Icons.bluetooth,
+                  color: isConnected
+                      ? RowCraftTheme.primaryBlue
+                      : RowCraftTheme.subtleGrey,
+                ),
+                onPressed: () => context.push('/devices'),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () => context.push('/history'),

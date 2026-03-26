@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/auth/auth_screen.dart';
+import '../features/ble/connect_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/builder/builder_screen.dart';
 import '../features/workout/workout_screen.dart';
@@ -11,12 +14,34 @@ import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
 import '../models/workout_result.dart';
-import '../services/supabase_service.dart';
 import '../app/theme.dart';
 
+/// Notifier that triggers go_router refresh on auth state changes.
+/// This ensures the redirect fires when the user returns from
+/// OAuth (Google sign-in) or when the session expires.
+class _AuthNotifier extends ChangeNotifier {
+  StreamSubscription<AuthState>? _sub;
+
+  _AuthNotifier() {
+    _sub = Supabase.instance.client.auth.onAuthStateChange.listen((_) {
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
+  final authNotifier = _AuthNotifier();
+  ref.onDispose(() => authNotifier.dispose());
+
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: authNotifier,
     redirect: (BuildContext context, GoRouterState state) {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
@@ -69,6 +94,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AuthScreen(),
       ),
       GoRoute(
+        path: '/devices',
+        builder: (context, state) => const ConnectScreen(),
+      ),
+      GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
       ),
@@ -94,7 +123,9 @@ class HistoryDetailScreen extends ConsumerWidget {
           child: Text('Error loading result: $e',
               style: const TextStyle(color: RowCraftTheme.errorRose)),
         ),
-        data: (result) => _ResultDetailContent(result: result),
+        data: (result) => result != null
+            ? _ResultDetailContent(result: result)
+            : const Center(child: Text('Result not found')),
       ),
     );
   }

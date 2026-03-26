@@ -116,7 +116,7 @@ class RowCraftTheme {
           color: metricWhite,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surfaceContainer,
         elevation: 0,
         shape: RoundedRectangleBorder(

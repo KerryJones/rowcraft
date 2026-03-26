@@ -85,7 +85,7 @@ class Workout {
   factory Workout.fromJson(Map<String, dynamic> json) {
     return Workout(
       id: json['id'] as String,
-      authorId: json['author_id'] as String,
+      authorId: (json['author_id'] as String?) ?? '',
       title: json['title'] as String,
       description: (json['description'] as String?) ?? '',
       workoutType: WorkoutType.fromJson(json['workout_type'] as String),

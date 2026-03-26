@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,12 +16,14 @@ class Profile {
   final String? displayName;
   final String? avatarUrl;
   final bool c2Linked;
+  final int? currentFtpWatts;
 
   const Profile({
     required this.id,
     this.displayName,
     this.avatarUrl,
     this.c2Linked = false,
+    this.currentFtpWatts,
   });
 
   Profile copyWith({
@@ -27,12 +31,14 @@ class Profile {
     String? displayName,
     String? avatarUrl,
     bool? c2Linked,
+    int? currentFtpWatts,
   }) {
     return Profile(
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       c2Linked: c2Linked ?? this.c2Linked,
+      currentFtpWatts: currentFtpWatts ?? this.currentFtpWatts,
     );
   }
 
@@ -42,6 +48,7 @@ class Profile {
       displayName: json['display_name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       c2Linked: (json['c2_linked'] as bool?) ?? false,
+      currentFtpWatts: json['current_ftp_watts'] as int?,
     );
   }
 
@@ -51,6 +58,48 @@ class Profile {
       'display_name': displayName,
       'avatar_url': avatarUrl,
       'c2_linked': c2Linked,
+      if (currentFtpWatts != null) 'current_ftp_watts': currentFtpWatts,
+    };
+  }
+}
+
+/// A single FTP test record.
+class FtpRecord {
+  final String id;
+  final String userId;
+  final DateTime testedAt;
+  final int ftpWatts;
+  final String testType; // 'ramp', '20min', 'manual'
+  final String? sourceResultId;
+
+  const FtpRecord({
+    required this.id,
+    required this.userId,
+    required this.testedAt,
+    required this.ftpWatts,
+    required this.testType,
+    this.sourceResultId,
+  });
+
+  factory FtpRecord.fromJson(Map<String, dynamic> json) {
+    return FtpRecord(
+      id: json['id'] as String,
+      userId: json['user_id'] as String,
+      testedAt: DateTime.parse(json['tested_at'] as String),
+      ftpWatts: json['ftp_watts'] as int,
+      testType: json['test_type'] as String,
+      sourceResultId: json['source_result_id'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id.isNotEmpty) 'id': id,
+      'user_id': userId,
+      'tested_at': testedAt.toIso8601String(),
+      'ftp_watts': ftpWatts,
+      'test_type': testType,
+      if (sourceResultId != null) 'source_result_id': sourceResultId,
     };
   }
 }
@@ -62,109 +111,208 @@ class SupabaseService {
 
   String? get currentUserId => _client.auth.currentUser?.id;
 
+  void _log(String method, Object error, [StackTrace? stack]) {
+    dev.log('SupabaseService.$method failed: $error',
+        name: 'rowcraft', error: error, stackTrace: stack);
+  }
+
   // ── Workouts ──────────────────────────────────────────────────────────
 
   Future<List<Workout>> getWorkouts({
     bool? isPublic,
     String? authorId,
   }) async {
-    var query = _client.from('workouts').select();
+    try {
+      var query = _client.from('workouts').select();
 
-    if (isPublic != null) {
-      query = query.eq('is_public', isPublic);
-    }
-    if (authorId != null) {
-      query = query.eq('author_id', authorId);
-    }
+      if (isPublic != null) {
+        query = query.eq('is_public', isPublic);
+      }
+      if (authorId != null) {
+        query = query.eq('author_id', authorId);
+      }
 
-    final response = await query.order('created_at', ascending: false);
-    return (response as List<dynamic>)
-        .map((e) => Workout.fromJson(e as Map<String, dynamic>))
-        .toList();
+      final response = await query.order('created_at', ascending: false);
+      return (response as List<dynamic>)
+          .map((e) => Workout.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getWorkouts', e, stack);
+      rethrow;
+    }
   }
 
   Future<Workout> getWorkout(String id) async {
-    final response =
-        await _client.from('workouts').select().eq('id', id).single();
-    return Workout.fromJson(response);
+    try {
+      final response =
+          await _client.from('workouts').select().eq('id', id).single();
+      return Workout.fromJson(response);
+    } catch (e, stack) {
+      _log('getWorkout($id)', e, stack);
+      rethrow;
+    }
   }
 
   Future<Workout> saveWorkout(Workout workout) async {
-    final data = workout.toJson();
-    final response = await _client
-        .from('workouts')
-        .upsert(data)
-        .select()
-        .single();
-    return Workout.fromJson(response);
+    try {
+      final data = workout.toJson();
+      final response = await _client
+          .from('workouts')
+          .upsert(data)
+          .select()
+          .single();
+      return Workout.fromJson(response);
+    } catch (e, stack) {
+      _log('saveWorkout', e, stack);
+      rethrow;
+    }
   }
 
   Future<void> deleteWorkout(String id) async {
-    await _client.from('workouts').delete().eq('id', id);
+    try {
+      await _client.from('workouts').delete().eq('id', id);
+    } catch (e, stack) {
+      _log('deleteWorkout($id)', e, stack);
+      rethrow;
+    }
   }
 
   Future<Workout> forkWorkout(String id) async {
-    final original = await getWorkout(id);
-    final userId = currentUserId;
-    if (userId == null) throw StateError('Not authenticated');
+    try {
+      final original = await getWorkout(id);
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
 
-    final now = DateTime.now();
-    final forked = original.copyWith(
-      id: '', // Let Supabase generate the ID
-      authorId: userId,
-      title: '${original.title} (fork)',
-      isPublic: false,
-      forkCount: 0,
-      createdAt: now,
-      updatedAt: now,
-    );
+      final now = DateTime.now();
+      final forked = original.copyWith(
+        id: '',
+        authorId: userId,
+        title: '${original.title} (fork)',
+        isPublic: false,
+        forkCount: 0,
+        createdAt: now,
+        updatedAt: now,
+      );
 
-    // Increment fork count on original
-    await _client.rpc('increment_fork_count', params: {'workout_id': id});
+      await _client.rpc('increment_fork_count', params: {'workout_id': id});
 
-    final response = await _client
-        .from('workouts')
-        .insert(forked.toJson()..remove('id'))
-        .select()
-        .single();
-    return Workout.fromJson(response);
+      final response = await _client
+          .from('workouts')
+          .insert(forked.toJson()..remove('id'))
+          .select()
+          .single();
+      return Workout.fromJson(response);
+    } catch (e, stack) {
+      _log('forkWorkout($id)', e, stack);
+      rethrow;
+    }
   }
 
   // ── Results ───────────────────────────────────────────────────────────
 
   Future<List<WorkoutResult>> getResults(String userId) async {
-    final response = await _client
-        .from('workout_results')
-        .select()
-        .eq('user_id', userId)
-        .order('started_at', ascending: false);
-    return (response as List<dynamic>)
-        .map((e) => WorkoutResult.fromJson(e as Map<String, dynamic>))
-        .toList();
+    try {
+      final response = await _client
+          .from('workout_results')
+          .select()
+          .eq('user_id', userId)
+          .order('started_at', ascending: false);
+      return (response as List<dynamic>)
+          .map((e) => WorkoutResult.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getResults($userId)', e, stack);
+      rethrow;
+    }
   }
 
   Future<WorkoutResult> saveResult(WorkoutResult result) async {
-    final data = result.toJson();
-    final response = await _client
-        .from('workout_results')
-        .upsert(data)
-        .select()
-        .single();
-    return WorkoutResult.fromJson(response);
+    try {
+      final data = result.toJson();
+      final response = await _client
+          .from('workout_results')
+          .upsert(data)
+          .select()
+          .single();
+      return WorkoutResult.fromJson(response);
+    } catch (e, stack) {
+      _log('saveResult', e, stack);
+      rethrow;
+    }
   }
 
   // ── Profile ───────────────────────────────────────────────────────────
 
   Future<Profile> getProfile() async {
-    final userId = currentUserId;
-    if (userId == null) throw StateError('Not authenticated');
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
 
-    final response =
-        await _client.from('profiles').select().eq('id', userId).single();
-    return Profile.fromJson(response);
+      final response =
+          await _client.from('profiles').select().eq('id', userId).single();
+      return Profile.fromJson(response);
+    } catch (e, stack) {
+      _log('getProfile', e, stack);
+      rethrow;
+    }
   }
 
   Future<void> updateProfile(Profile profile) async {
-    await _client.from('profiles').upsert(profile.toJson());
+    try {
+      await _client.from('profiles').upsert(profile.toJson());
+    } catch (e, stack) {
+      _log('updateProfile', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Update just the current FTP on the profile.
+  Future<void> updateProfileFtp(int ftpWatts) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+      await _client
+          .from('profiles')
+          .update({'current_ftp_watts': ftpWatts}).eq('id', userId);
+    } catch (e, stack) {
+      _log('updateProfileFtp', e, stack);
+      rethrow;
+    }
+  }
+
+  // ── FTP History ─────────────────────────────────────────────────────
+
+  Future<List<FtpRecord>> getFtpHistory() async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final response = await _client
+          .from('ftp_history')
+          .select()
+          .eq('user_id', userId)
+          .order('tested_at', ascending: false);
+      return (response as List<dynamic>)
+          .map((e) => FtpRecord.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getFtpHistory', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<FtpRecord> saveFtpRecord(FtpRecord record) async {
+    try {
+      final data = record.toJson();
+      final response = await _client
+          .from('ftp_history')
+          .insert(data)
+          .select()
+          .single();
+      return FtpRecord.fromJson(response);
+    } catch (e, stack) {
+      _log('saveFtpRecord', e, stack);
+      rethrow;
+    }
   }
 }
