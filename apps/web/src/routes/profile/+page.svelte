@@ -20,6 +20,50 @@
 		}
 	});
 
+	// Handle C2 OAuth callback — C2 redirects here with ?code=...
+	$effect(() => {
+		const url = new URL(window.location.href);
+		const code = url.searchParams.get('code');
+		if (code && data.session?.user) {
+			// Clean the URL immediately so a refresh doesn't re-trigger
+			url.searchParams.delete('code');
+			url.searchParams.delete('state');
+			window.history.replaceState({}, '', url.pathname);
+			exchangeC2Code(code);
+		}
+	});
+
+	async function exchangeC2Code(code: string) {
+		connecting = true;
+		try {
+			const session = data.session;
+			const response = await fetch(
+				`${data.supabase.supabaseUrl}/functions/v1/c2-logbook-sync/callback`,
+				{
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${session.access_token}`,
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ code })
+				}
+			);
+
+			if (response.ok) {
+				const result = await response.json();
+				if (result.success) {
+					c2UserId = result.c2_user_id;
+				}
+			} else {
+				console.error('C2 token exchange failed:', await response.text());
+			}
+		} catch (err) {
+			console.error('C2 callback error:', err);
+		} finally {
+			connecting = false;
+		}
+	}
+
 	async function loadProfile() {
 		const { data: profile } = await data.supabase
 			.from('profiles')
