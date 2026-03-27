@@ -5,6 +5,15 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/stati
 export const load: LayoutLoad = async ({ data, depends, fetch }) => {
 	depends('supabase:auth');
 
+	// On the server, just pass through the session from +layout.server.ts.
+	// createBrowserClient uses document.cookie which doesn't exist during SSR.
+	if (!isBrowser()) {
+		return {
+			supabase: null,
+			session: data.session
+		};
+	}
+
 	const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
 		global: { fetch },
 		cookies: {
@@ -17,7 +26,7 @@ export const load: LayoutLoad = async ({ data, depends, fetch }) => {
 				});
 			}
 		},
-		isBrowser: isBrowser()
+		isBrowser: true
 	});
 
 	const {
