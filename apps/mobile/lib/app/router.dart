@@ -9,12 +9,14 @@ import '../features/auth/auth_screen.dart';
 import '../features/ble/connect_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
+import '../features/plans/plans_catalog.dart';
 import '../features/workout/workout_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
 import '../models/workout_result.dart';
 import '../app/theme.dart';
+import 'shell_screen.dart';
 
 /// Notifier that triggers go_router refresh on auth state changes.
 /// This ensures the redirect fires when the user returns from
@@ -35,11 +37,14 @@ class _AuthNotifier extends ChangeNotifier {
   }
 }
 
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authNotifier = _AuthNotifier();
   ref.onDispose(() => authNotifier.dispose());
 
   return GoRouter(
+    navigatorKey: _rootNavigatorKey,
     initialLocation: '/',
     refreshListenable: authNotifier,
     redirect: (BuildContext context, GoRouterState state) {
@@ -56,12 +61,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      // Auth — outside shell, no bottom nav
       GoRoute(
-        path: '/',
-        builder: (context, state) => const LibraryScreen(),
+        path: '/auth',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AuthScreen(),
       ),
+
+      // Workout execution — full-screen, no bottom nav
       GoRoute(
         path: '/workout/:id',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           final planId = state.uri.queryParameters['plan'];
@@ -77,35 +87,70 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      GoRoute(
-        path: '/history',
-        builder: (context, state) => const HistoryScreen(),
-      ),
-      GoRoute(
-        path: '/history/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return HistoryDetailScreen(resultId: id);
-        },
-      ),
-      GoRoute(
-        path: '/plans/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return PlanDetailScreen(planId: id);
-        },
-      ),
-      GoRoute(
-        path: '/auth',
-        builder: (context, state) => const AuthScreen(),
-      ),
-      GoRoute(
-        path: '/devices',
-        builder: (context, state) => const ConnectScreen(),
-      ),
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfileScreen(),
+
+      // Bottom nav shell with 5 tabs
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            ShellScreen(navigationShell: navigationShell),
+        branches: [
+          // Tab 0: Workouts
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/',
+              builder: (context, state) => const LibraryScreen(),
+            ),
+          ]),
+
+          // Tab 1: Plans
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/plans',
+              builder: (context, state) => const PlansCatalog(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return PlanDetailScreen(planId: id);
+                  },
+                ),
+              ],
+            ),
+          ]),
+
+          // Tab 2: History
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/history',
+              builder: (context, state) => const HistoryScreen(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return HistoryDetailScreen(resultId: id);
+                  },
+                ),
+              ],
+            ),
+          ]),
+
+          // Tab 3: Devices
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/devices',
+              builder: (context, state) => const ConnectScreen(),
+            ),
+          ]),
+
+          // Tab 4: Profile
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/profile',
+              builder: (context, state) => const ProfileScreen(),
+            ),
+          ]),
+        ],
       ),
     ],
   );
