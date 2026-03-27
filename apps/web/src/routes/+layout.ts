@@ -10,6 +10,11 @@ export const load: LayoutLoad = async ({ data, depends, fetch }) => {
 		cookies: {
 			getAll() {
 				return parse(document.cookie);
+			},
+			setAll(cookiesToSet) {
+				cookiesToSet.forEach(({ name, value, options }) => {
+					document.cookie = `${name}=${value}; path=${options?.path ?? '/'}; max-age=${options?.maxAge ?? 31536000}; SameSite=Lax`;
+				});
 			}
 		},
 		isBrowser: isBrowser()
