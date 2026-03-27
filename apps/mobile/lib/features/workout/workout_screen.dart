@@ -13,8 +13,17 @@ import 'workout_provider.dart';
 
 class WorkoutScreen extends ConsumerStatefulWidget {
   final String workoutId;
+  final String? planId;
+  final int? planWeek;
+  final int? planSession;
 
-  const WorkoutScreen({super.key, required this.workoutId});
+  const WorkoutScreen({
+    super.key,
+    required this.workoutId,
+    this.planId,
+    this.planWeek,
+    this.planSession,
+  });
 
   @override
   ConsumerState<WorkoutScreen> createState() => _WorkoutScreenState();
@@ -27,7 +36,12 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(workoutSessionProvider.notifier).loadWorkout(widget.workoutId);
+      ref.read(workoutSessionProvider.notifier).loadWorkout(
+        widget.workoutId,
+        planId: widget.planId,
+        planWeek: widget.planWeek,
+        planSession: widget.planSession,
+      );
     });
   }
 

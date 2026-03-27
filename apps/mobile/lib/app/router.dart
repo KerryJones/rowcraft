@@ -9,6 +9,7 @@ import '../features/auth/auth_screen.dart';
 import '../features/ble/connect_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/builder/builder_screen.dart';
+import '../features/plans/plan_detail_screen.dart';
 import '../features/workout/workout_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
@@ -64,7 +65,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/workout/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
-          return WorkoutScreen(workoutId: id);
+          final planId = state.uri.queryParameters['plan'];
+          final week = int.tryParse(
+              state.uri.queryParameters['week'] ?? '');
+          final session = int.tryParse(
+              state.uri.queryParameters['session'] ?? '');
+          return WorkoutScreen(
+            workoutId: id,
+            planId: planId,
+            planWeek: week,
+            planSession: session,
+          );
         },
       ),
       GoRoute(
@@ -87,6 +98,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return HistoryDetailScreen(resultId: id);
+        },
+      ),
+      GoRoute(
+        path: '/plans/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return PlanDetailScreen(planId: id);
         },
       ),
       GoRoute(

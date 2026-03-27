@@ -3,6 +3,8 @@ import 'dart:developer' as dev;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/plan_progress.dart';
+import '../models/training_plan.dart';
 import '../models/workout.dart';
 import '../models/workout_result.dart';
 
@@ -149,6 +151,21 @@ class SupabaseService {
       return Workout.fromJson(response);
     } catch (e, stack) {
       _log('getWorkout($id)', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<List<Workout>> getWorkoutsByIds(List<String> ids) async {
+    try {
+      final response = await _client
+          .from('workouts')
+          .select()
+          .inFilter('id', ids);
+      return (response as List<dynamic>)
+          .map((e) => Workout.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getWorkoutsByIds', e, stack);
       rethrow;
     }
   }
@@ -312,6 +329,156 @@ class SupabaseService {
       return FtpRecord.fromJson(response);
     } catch (e, stack) {
       _log('saveFtpRecord', e, stack);
+      rethrow;
+    }
+  }
+
+  // ── Training Plans ─────────────────────────────────────────────────
+
+  Future<List<TrainingPlan>> getTrainingPlans() async {
+    try {
+      final response = await _client
+          .from('training_plans')
+          .select()
+          .order('created_at', ascending: true);
+      return response
+          .map((e) => TrainingPlan.fromJson(e))
+          .toList();
+    } catch (e, stack) {
+      _log('getTrainingPlans', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<TrainingPlan> getTrainingPlan(String id) async {
+    try {
+      final response = await _client
+          .from('training_plans')
+          .select()
+          .eq('id', id)
+          .single();
+      return TrainingPlan.fromJson(response);
+    } catch (e, stack) {
+      _log('getTrainingPlan($id)', e, stack);
+      rethrow;
+    }
+  }
+
+  // ── Plan Progress ──────────────────────────────────────────────────
+
+  Future<List<PlanProgress>> getUserPlanProgress() async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final response = await _client
+          .from('user_plan_progress')
+          .select()
+          .eq('user_id', userId)
+          .order('last_viewed_at', ascending: false);
+      return response
+          .map((e) => PlanProgress.fromJson(e))
+          .toList();
+    } catch (e, stack) {
+      _log('getUserPlanProgress', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<PlanProgress?> getPlanProgress(String planId) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final response = await _client
+          .from('user_plan_progress')
+          .select()
+          .eq('user_id', userId)
+          .eq('plan_id', planId)
+          .maybeSingle();
+      if (response == null) return null;
+      return PlanProgress.fromJson(response);
+    } catch (e, stack) {
+      _log('getPlanProgress($planId)', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Mark a plan session as completed.
+  ///
+  /// NOTE: This uses a read-modify-write pattern on the JSONB array.
+  /// A concurrent write from another device could lose data. For v1 this
+  /// is acceptable — a future improvement would use a Postgres RPC with
+  /// atomic `jsonb || jsonb` append.
+  Future<void> completePlanSession(
+    String planId,
+    int week,
+    int session,
+    String? resultId,
+  ) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final now = DateTime.now().toIso8601String();
+      final newEntry = CompletedSession(
+        week: week,
+        session: session,
+        resultId: resultId,
+        completedAt: DateTime.now(),
+      ).toJson();
+
+      // Try to get existing progress
+      final existing = await getPlanProgress(planId);
+
+      if (existing != null) {
+        // Check if already completed to avoid duplicates
+        if (existing.isCompleted(week, session)) return;
+
+        final updated = [
+          ...existing.completedSessions.map((cs) => cs.toJson()),
+          newEntry,
+        ];
+        await _client
+            .from('user_plan_progress')
+            .update({
+              'completed_sessions': updated,
+              'last_viewed_at': now,
+            })
+            .eq('id', existing.id);
+      } else {
+        // Create new progress row
+        await _client.from('user_plan_progress').insert({
+          'user_id': userId,
+          'plan_id': planId,
+          'completed_sessions': [newEntry],
+          'last_viewed_at': now,
+        });
+      }
+    } catch (e, stack) {
+      _log('completePlanSession', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<void> touchPlanLastViewed(String planId) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final now = DateTime.now().toIso8601String();
+
+      // Upsert: create progress row if it doesn't exist, otherwise update last_viewed_at
+      await _client.from('user_plan_progress').upsert(
+        {
+          'user_id': userId,
+          'plan_id': planId,
+          'last_viewed_at': now,
+        },
+        onConflict: 'user_id,plan_id',
+      );
+    } catch (e, stack) {
+      _log('touchPlanLastViewed($planId)', e, stack);
       rethrow;
     }
   }

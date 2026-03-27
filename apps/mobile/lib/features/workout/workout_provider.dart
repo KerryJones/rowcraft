@@ -30,6 +30,11 @@ class WorkoutSessionState {
   final int? calculatedFtp;
   final String? ftpCalculationBasis;
 
+  /// Plan context (set when launched from a training plan)
+  final String? planId;
+  final int? planWeek;
+  final int? planSession;
+
   String? get error => _error;
 
   const WorkoutSessionState({
@@ -43,6 +48,9 @@ class WorkoutSessionState {
     this.showFtpDialog = false,
     this.calculatedFtp,
     this.ftpCalculationBasis,
+    this.planId,
+    this.planWeek,
+    this.planSession,
   }) : _error = error;
 
   WorkoutSessionState copyWith({
@@ -56,6 +64,9 @@ class WorkoutSessionState {
     bool? showFtpDialog,
     int? calculatedFtp,
     String? ftpCalculationBasis,
+    Object? planId = _sentinel,
+    Object? planWeek = _sentinel,
+    Object? planSession = _sentinel,
   }) {
     return WorkoutSessionState(
       workoutTitle: workoutTitle ?? this.workoutTitle,
@@ -68,6 +79,10 @@ class WorkoutSessionState {
       showFtpDialog: showFtpDialog ?? this.showFtpDialog,
       calculatedFtp: calculatedFtp ?? this.calculatedFtp,
       ftpCalculationBasis: ftpCalculationBasis ?? this.ftpCalculationBasis,
+      planId: planId == _sentinel ? this.planId : planId as String?,
+      planWeek: planWeek == _sentinel ? this.planWeek : planWeek as int?,
+      planSession:
+          planSession == _sentinel ? this.planSession : planSession as int?,
     );
   }
 }
@@ -140,8 +155,19 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   /// Load a workout definition and prepare the engine.
-  Future<void> loadWorkout(String workoutId) async {
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> loadWorkout(
+    String workoutId, {
+    String? planId,
+    int? planWeek,
+    int? planSession,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      planId: planId,
+      planWeek: planWeek,
+      planSession: planSession,
+    );
 
     try {
       final workout = await _supabaseService.getWorkout(workoutId);
@@ -242,6 +268,24 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     // Queue for sync (offline-first)
     await _syncService.queueResult(result);
+
+    // Record plan progress if launched from a training plan
+    if (state.planId != null &&
+        state.planWeek != null &&
+        state.planSession != null) {
+      try {
+        await _supabaseService.completePlanSession(
+          state.planId!,
+          state.planWeek!,
+          state.planSession!,
+          // Result ID not yet available — sync is offline-first.
+          // TODO: reconcile resultId after sync completes.
+          null,
+        );
+      } catch (_) {
+        // Non-critical — don't block workout completion
+      }
+    }
 
     // Detect FTP test
     final tags = state.workoutTags;

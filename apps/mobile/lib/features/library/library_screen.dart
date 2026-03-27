@@ -6,7 +6,10 @@ import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
+import '../plans/plans_catalog.dart';
 import 'library_provider.dart';
+
+enum _LibraryTab { workouts, plans }
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -19,6 +22,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final _searchController = TextEditingController();
   WorkoutType? _selectedType;
   String? _selectedTag;
+  _LibraryTab _tab = _LibraryTab.workouts;
 
   @override
   void dispose() {
@@ -28,16 +32,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final workoutsAsync = ref.watch(filteredWorkoutsProvider((
-      search: _searchController.text,
-      type: _selectedType,
-      tag: _selectedTag,
-    )));
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workouts'),
+        title: const Text('RowCraft'),
         actions: [
           Consumer(
             builder: (context, ref, _) {
@@ -67,134 +64,204 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       ),
       body: Column(
         children: [
-          // Search bar
+          // Segmented control
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search workouts...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                        },
-                      )
-                    : null,
-              ),
-              onChanged: (_) => setState(() {}),
-            ),
-          ),
-
-          // Filter chips
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildTypeChip(null, 'All'),
-                _buildTypeChip(WorkoutType.singleDistance, 'Distance'),
-                _buildTypeChip(WorkoutType.singleTime, 'Time'),
-                _buildTypeChip(WorkoutType.intervals, 'Intervals'),
-                _buildTypeChip(WorkoutType.variableIntervals, 'Variable'),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Workout list
-          Expanded(
-            child: workoutsAsync.when(
-              data: (workouts) {
-                if (workouts.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.rowing,
-                          size: 64,
-                          color: RowCraftTheme.subtleGrey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No workouts found',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: RowCraftTheme.subtleGrey,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create your first workout to get started',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(workoutLibraryProvider);
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: workouts.length,
-                    itemBuilder: (context, index) {
-                      return _WorkoutCard(workout: workouts[index]);
-                    },
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<_LibraryTab>(
+                segments: const [
+                  ButtonSegment(
+                    value: _LibraryTab.workouts,
+                    label: Text('Workouts'),
+                    icon: Icon(Icons.fitness_center, size: 18),
                   ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: RowCraftTheme.errorRose,
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Failed to load workouts',
-                        style: theme.textTheme.bodyLarge),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => ref.invalidate(workoutLibraryProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
+                  ButtonSegment(
+                    value: _LibraryTab.plans,
+                    label: Text('Plans'),
+                    icon: Icon(Icons.calendar_month, size: 18),
+                  ),
+                ],
+                selected: {_tab},
+                onSelectionChanged: (selection) {
+                  setState(() => _tab = selection.first);
+                },
               ),
             ),
+          ),
+
+          // Tab content
+          Expanded(
+            child: _tab == _LibraryTab.workouts
+                ? _WorkoutsTab(
+                    searchController: _searchController,
+                    selectedType: _selectedType,
+                    selectedTag: _selectedTag,
+                    onTypeChanged: (type) =>
+                        setState(() => _selectedType = type),
+                    onSearchChanged: () => setState(() {}),
+                  )
+                : const PlansCatalog(),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/builder'),
-        icon: const Icon(Icons.add),
-        label: const Text('New Workout'),
-      ),
+      floatingActionButton: _tab == _LibraryTab.workouts
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push('/builder'),
+              icon: const Icon(Icons.add),
+              label: const Text('New Workout'),
+            )
+          : null,
+    );
+  }
+}
+
+class _WorkoutsTab extends ConsumerWidget {
+  final TextEditingController searchController;
+  final WorkoutType? selectedType;
+  final String? selectedTag;
+  final ValueChanged<WorkoutType?> onTypeChanged;
+  final VoidCallback onSearchChanged;
+
+  const _WorkoutsTab({
+    required this.searchController,
+    required this.selectedType,
+    required this.selectedTag,
+    required this.onTypeChanged,
+    required this.onSearchChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final workoutsAsync = ref.watch(filteredWorkoutsProvider((
+      search: searchController.text,
+      type: selectedType,
+      tag: selectedTag,
+    )));
+
+    return Column(
+      children: [
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: TextField(
+            controller: searchController,
+            decoration: InputDecoration(
+              hintText: 'Search workouts...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        searchController.clear();
+                        onSearchChanged();
+                      },
+                    )
+                  : null,
+            ),
+            onChanged: (_) => onSearchChanged(),
+          ),
+        ),
+
+        // Filter chips
+        SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _buildTypeChip(null, 'All'),
+              _buildTypeChip(WorkoutType.singleDistance, 'Distance'),
+              _buildTypeChip(WorkoutType.singleTime, 'Time'),
+              _buildTypeChip(WorkoutType.intervals, 'Intervals'),
+              _buildTypeChip(WorkoutType.variableIntervals, 'Variable'),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Workout list
+        Expanded(
+          child: workoutsAsync.when(
+            data: (workouts) {
+              if (workouts.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.rowing,
+                        size: 64,
+                        color: RowCraftTheme.subtleGrey,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No workouts found',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Create your first workout to get started',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(workoutLibraryProvider);
+                },
+                child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 80),
+                  itemCount: workouts.length,
+                  itemBuilder: (context, index) {
+                    return _WorkoutCard(workout: workouts[index]);
+                  },
+                ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: RowCraftTheme.errorRose,
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Failed to load workouts',
+                      style: theme.textTheme.bodyLarge),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => ref.invalidate(workoutLibraryProvider),
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildTypeChip(WorkoutType? type, String label) {
-    final isSelected = _selectedType == type;
+    final isSelected = selectedType == type;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: FilterChip(
         label: Text(label),
         selected: isSelected,
         onSelected: (_) {
-          setState(() {
-            _selectedType = isSelected ? null : type;
-          });
+          onTypeChanged(isSelected ? null : type);
         },
       ),
     );
