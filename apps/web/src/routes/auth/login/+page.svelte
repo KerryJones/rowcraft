@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
 
 	let { data } = $props();
 
@@ -7,7 +9,7 @@
 	let password = $state('');
 	let isSignUp = $state(false);
 	let loading = $state(false);
-	let error = $state('');
+	let error = $state($page.url.searchParams.get('error') === 'oauth_failed' ? 'Google sign-in failed. Please try again.' : '');
 	let successMessage = $state('');
 
 	async function handleSubmit(e: Event) {
@@ -47,13 +49,30 @@
 		error = '';
 
 		try {
-			const { error: oauthError } = await data.supabase.auth.signInWithOAuth({
-				provider: 'google',
-				options: {
-					redirectTo: `${window.location.origin}/auth/callback`
-				}
+			const state = crypto.randomUUID();
+			const rawNonce = crypto.randomUUID();
+
+			// Store raw nonce in cookie — Supabase will hash it to verify against the JWT claim
+			document.cookie = `google_oauth_state=${state}; path=/; SameSite=Lax; Secure; max-age=600`;
+			document.cookie = `google_oauth_nonce=${rawNonce}; path=/; SameSite=Lax; Secure; max-age=600`;
+
+			// Google stores SHA-256(nonce) in the id_token per OpenID Connect spec
+			const encoded = new TextEncoder().encode(rawNonce);
+			const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
+			const hashedNonce = Array.from(new Uint8Array(hashBuffer))
+				.map((b) => b.toString(16).padStart(2, '0'))
+				.join('');
+
+			const params = new URLSearchParams({
+				client_id: PUBLIC_GOOGLE_CLIENT_ID,
+				redirect_uri: `${window.location.origin}/auth/callback`,
+				response_type: 'code',
+				scope: 'openid email profile',
+				state,
+				nonce: hashedNonce
 			});
-			if (oauthError) throw oauthError;
+
+			window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 		} catch (err: any) {
 			error = err.message ?? 'An error occurred';
 			loading = false;

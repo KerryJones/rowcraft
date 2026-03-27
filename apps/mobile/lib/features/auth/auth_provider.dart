@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Watches the Supabase auth state stream.
@@ -44,14 +45,29 @@ final signUpProvider =
   },
 );
 
-/// Sign in with Google OAuth.
-/// Uses a custom deep link to redirect back to the app after auth.
-final googleSignInProvider = FutureProvider<bool>((ref) async {
-  final success = await Supabase.instance.client.auth.signInWithOAuth(
-    OAuthProvider.google,
-    redirectTo: 'com.rowcraft.app://login-callback',
+/// Sign in with Google using native SDK + Supabase signInWithIdToken.
+final googleSignInProvider = FutureProvider<AuthResponse>((ref) async {
+  const clientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+  if (clientId.isEmpty) {
+    throw StateError(
+      'GOOGLE_WEB_CLIENT_ID is not set. '
+      'Pass --dart-define=GOOGLE_WEB_CLIENT_ID=... to flutter run/build.',
+    );
+  }
+
+  final googleSignIn = GoogleSignIn(serverClientId: clientId);
+  final googleUser = await googleSignIn.signIn();
+  if (googleUser == null) throw Exception('Sign-in cancelled');
+
+  final googleAuth = await googleUser.authentication;
+  final idToken = googleAuth.idToken;
+  if (idToken == null) throw Exception('No ID token');
+
+  return Supabase.instance.client.auth.signInWithIdToken(
+    provider: OAuthProvider.google,
+    idToken: idToken,
+    accessToken: googleAuth.accessToken,
   );
-  return success;
 });
 
 /// Sign out the current user.
