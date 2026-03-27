@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
+import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
 
 /// Provider for the user's profile data.
@@ -255,17 +256,29 @@ class _FtpCard extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            // Current FTP
+            // Current FTP as pace
             profileAsync.when(
-              data: (profile) => Text(
-                profile.currentFtpWatts != null
-                    ? '${profile.currentFtpWatts}W'
-                    : 'Not tested',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: profile.currentFtpWatts != null
-                      ? RowCraftTheme.successGreen
-                      : RowCraftTheme.subtleGrey,
-                ),
+              data: (profile) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.currentFtpWatts != null
+                        ? wattsToPaceString(profile.currentFtpWatts!)
+                        : 'Not tested',
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: profile.currentFtpWatts != null
+                          ? RowCraftTheme.successGreen
+                          : RowCraftTheme.subtleGrey,
+                    ),
+                  ),
+                  if (profile.currentFtpWatts != null)
+                    Text(
+                      '${profile.currentFtpWatts}W',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: RowCraftTheme.subtleGrey,
+                      ),
+                    ),
+                ],
               ),
               loading: () => const SizedBox(
                 height: 32,
@@ -300,12 +313,19 @@ class _FtpCard extends ConsumerWidget {
                           child: Row(
                             children: [
                               Text(
-                                '${r.ftpWatts}W',
+                                wattsToPaceString(r.ftpWatts),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${r.ftpWatts}W',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: RowCraftTheme.subtleGrey,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Text(
                                 r.testType,
                                 style: theme.textTheme.bodySmall?.copyWith(
@@ -352,25 +372,56 @@ class _ManualFtpDialog extends StatefulWidget {
 
 class _ManualFtpDialogState extends State<_ManualFtpDialog> {
   final _controller = TextEditingController();
+  String _pacePreview = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_updatePacePreview);
+  }
 
   @override
   void dispose() {
+    _controller.removeListener(_updatePacePreview);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _updatePacePreview() {
+    final watts = int.tryParse(_controller.text.trim());
+    setState(() {
+      _pacePreview = watts != null && watts > 0
+          ? wattsToPaceString(watts)
+          : '';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Set FTP Manually'),
-      content: TextField(
-        controller: _controller,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          hintText: 'Enter FTP in watts',
-          suffixText: 'W',
-        ),
-        autofocus: true,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: 'Enter FTP in watts',
+              suffixText: 'W',
+            ),
+            autofocus: true,
+          ),
+          if (_pacePreview.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              _pacePreview,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: RowCraftTheme.successGreen,
+              ),
+            ),
+          ],
+        ],
       ),
       actions: [
         TextButton(

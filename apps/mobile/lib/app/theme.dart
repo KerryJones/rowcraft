@@ -197,6 +197,31 @@ class RowCraftTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surfaceContainer,
+        indicatorColor: primaryBlue.withValues(alpha: 0.2),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: primaryBlue);
+          }
+          return const IconThemeData(color: subtleGrey);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: primaryBlue,
+            );
+          }
+          return GoogleFonts.inter(
+            fontSize: 12,
+            color: subtleGrey,
+          );
+        }),
+        elevation: 8,
+        surfaceTintColor: Colors.transparent,
+      ),
     );
   }
 }

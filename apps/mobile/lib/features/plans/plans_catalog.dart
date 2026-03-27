@@ -24,92 +24,96 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
     final plansAsync = ref.watch(filteredPlansProvider(_selectedDifficulty));
     final continueAsync = ref.watch(lastViewedPlanProvider);
 
-    return Column(
-      children: [
-        // Difficulty filter chips
-        SizedBox(
-          height: 48,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildFilterChip(null, 'All'),
-              _buildFilterChip('beginner', 'Beginner'),
-              _buildFilterChip('intermediate', 'Intermediate'),
-              _buildFilterChip('advanced', 'Advanced'),
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Plans'),
+      ),
+      body: Column(
+        children: [
+          // Difficulty filter chips
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _buildFilterChip(null, 'All'),
+                _buildFilterChip('beginner', 'Beginner'),
+                _buildFilterChip('intermediate', 'Intermediate'),
+                _buildFilterChip('advanced', 'Advanced'),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 8),
 
-        // Content
-        Expanded(
-          child: plansAsync.when(
-            data: (plans) {
-              if (plans.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.calendar_month, size: 64,
-                          color: RowCraftTheme.subtleGrey),
-                      const SizedBox(height: 16),
-                      Text('No plans found',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                              color: RowCraftTheme.subtleGrey)),
-                    ],
+          // Content
+          Expanded(
+            child: plansAsync.when(
+              data: (plans) {
+                if (plans.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.calendar_month,
+                            size: 64, color: RowCraftTheme.subtleGrey),
+                        const SizedBox(height: 16),
+                        Text('No plans found',
+                            style: theme.textTheme.bodyLarge
+                                ?.copyWith(color: RowCraftTheme.subtleGrey)),
+                      ],
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(trainingPlansProvider);
+                    ref.invalidate(userPlanProgressProvider);
+                  },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 80),
+                    itemCount: plans.length +
+                        (continueAsync.valueOrNull != null ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      // Continue banner at top
+                      if (continueAsync.valueOrNull != null && index == 0) {
+                        final data = continueAsync.value!;
+                        return _ContinueBanner(
+                          plan: data.plan,
+                          progress: data.progress,
+                        );
+                      }
+
+                      final planIndex =
+                          continueAsync.valueOrNull != null ? index - 1 : index;
+                      return _PlanCard(plan: plans[planIndex]);
+                    },
                   ),
                 );
-              }
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(trainingPlansProvider);
-                  ref.invalidate(userPlanProgressProvider);
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 80),
-                  itemCount: plans.length +
-                      (continueAsync.valueOrNull != null ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    // Continue banner at top
-                    if (continueAsync.valueOrNull != null && index == 0) {
-                      final data = continueAsync.value!;
-                      return _ContinueBanner(
-                        plan: data.plan,
-                        progress: data.progress,
-                      );
-                    }
-
-                    final planIndex = continueAsync.valueOrNull != null
-                        ? index - 1
-                        : index;
-                    return _PlanCard(plan: plans[planIndex]);
-                  },
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline,
+                        size: 48, color: RowCraftTheme.errorRose),
+                    const SizedBox(height: 16),
+                    Text('Failed to load plans',
+                        style: theme.textTheme.bodyLarge),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ref.invalidate(trainingPlansProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 48,
-                      color: RowCraftTheme.errorRose),
-                  const SizedBox(height: 16),
-                  Text('Failed to load plans',
-                      style: theme.textTheme.bodyLarge),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: () => ref.invalidate(trainingPlansProvider),
-                    child: const Text('Retry'),
-                  ),
-                ],
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -261,4 +265,3 @@ class _PlanCard extends StatelessWidget {
     );
   }
 }
-
