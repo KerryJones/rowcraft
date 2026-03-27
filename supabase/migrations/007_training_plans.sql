@@ -62,8 +62,8 @@ create policy "Users can delete own plan progress"
 -- Reuse the updated_at trigger from migration 005
 create trigger set_updated_at_training_plans
   before update on public.training_plans
-  for each row execute function public.set_updated_at();
+  for each row execute function public.update_updated_at();
 
 create trigger set_updated_at_user_plan_progress
   before update on public.user_plan_progress
-  for each row execute function public.set_updated_at();
+  for each row execute function public.update_updated_at();

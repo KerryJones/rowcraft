@@ -4,7 +4,7 @@
 LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $$1}')
 SUPABASE_URL := http://$(LOCAL_IP):54321
 
-.PHONY: setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web clean
+.PHONY: setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web clean db-reset db-push db-seed
 
 # ─── First-Time Setup ────────────────────────────────────────────────────────
 
@@ -84,7 +84,18 @@ ip:
 	@echo "$(LOCAL_IP)"
 
 db-reset:
-	supabase db reset
+	@echo ""
+	@echo "⚠  WARNING: This will DELETE all workouts, plans, results, and FTP history!"
+	@echo ""
+	@read -p "Type 'reset' to confirm: " confirm && [ "$$confirm" = "reset" ] || (echo "Aborted." && exit 1)
+	supabase db query --linked "truncate public.user_plan_progress, public.training_plans, public.workout_results, public.ftp_history, public.workouts cascade"
+	@echo "Reset complete. Run 'make db-seed' to re-seed."
+
+db-push:
+	supabase db push
+
+db-seed:
+	supabase db query --linked --file supabase/seed.sql
 
 studio:
 	@echo "Supabase Studio: http://localhost:54323"

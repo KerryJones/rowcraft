@@ -72,3 +72,32 @@ export interface Profile {
 	created_at: string;
 	updated_at: string;
 }
+
+export interface PlanSession {
+	day_label: string;
+	workout_id: string;
+	notes: string | null;
+}
+
+export interface PlanWeek {
+	week_number: number;
+	title: string;
+	sessions: PlanSession[];
+}
+
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export interface TrainingPlan {
+	id: string;
+	slug: string;
+	title: string;
+	description: string;
+	difficulty: Difficulty;
+	duration_weeks: number;
+	sessions_per_week: number;
+	tags: string[];
+	weeks: PlanWeek[];
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+}

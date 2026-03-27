@@ -77,6 +77,18 @@ export function formatSegmentType(type: string): string {
 }
 
 /**
+ * Format a difficulty level as a human-readable label
+ */
+export function formatDifficulty(difficulty: string): string {
+	const labels: Record<string, string> = {
+		beginner: 'Beginner',
+		intermediate: 'Intermediate',
+		advanced: 'Advanced'
+	};
+	return labels[difficulty] ?? difficulty;
+}
+
+/**
  * Parse a pace string (mm:ss.t) to tenths of a second
  * Returns null if the string is invalid
  */

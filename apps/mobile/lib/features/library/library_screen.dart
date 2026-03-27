@@ -105,13 +105,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ),
         ],
       ),
-      floatingActionButton: _tab == _LibraryTab.workouts
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push('/builder'),
-              icon: const Icon(Icons.add),
-              label: const Text('New Workout'),
-            )
-          : null,
     );
   }
 }
@@ -331,13 +324,6 @@ class _WorkoutCard extends StatelessWidget {
                     ),
                   ],
                   const Spacer(),
-                  // Edit button
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 20),
-                    onPressed: () =>
-                        context.push('/builder/${workout.id}'),
-                    visualDensity: VisualDensity.compact,
-                  ),
                 ],
               ),
               // Tags

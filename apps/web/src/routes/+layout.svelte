@@ -14,12 +14,14 @@
 		isLoggedIn
 			? [
 					{ href: '/workouts', label: 'Workouts' },
+					{ href: '/plans', label: 'Plans' },
 					{ href: '/builder', label: 'Builder' },
 					{ href: '/history', label: 'History' },
 					{ href: '/profile', label: 'Profile' }
 				]
 			: [
 					{ href: '/workouts', label: 'Workouts' },
+					{ href: '/plans', label: 'Plans' },
 					{ href: '/auth/login', label: 'Login' }
 				]
 	);

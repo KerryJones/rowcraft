@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/ble/connect_screen.dart';
 import '../features/library/library_screen.dart';
-import '../features/builder/builder_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
 import '../features/workout/workout_screen.dart';
 import '../features/history/history_screen.dart';
@@ -76,17 +75,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             planWeek: week,
             planSession: session,
           );
-        },
-      ),
-      GoRoute(
-        path: '/builder',
-        builder: (context, state) => const BuilderScreen(),
-      ),
-      GoRoute(
-        path: '/builder/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return BuilderScreen(workoutId: id);
         },
       ),
       GoRoute(
