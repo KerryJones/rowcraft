@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+	import { formatPace, parsePace } from '$lib/utils/format';
+	import { wattsToPaceTenths, paceTenthsToWatts, formatWatts, HR_ZONES, getHrZoneBpm } from '$lib/utils/ftp';
 
 	let { data } = $props();
 
@@ -16,6 +19,29 @@
 	// Check C2 link status from the profiles table
 	let c2UserId = $state<string | null>(null);
 	let profileLoaded = $state(false);
+
+	// FTP and Max HR
+	let ftpPaceInput = $state('');
+	let ftpWatts = $state<number | null>(null);
+	let maxHeartRate = $state<number | null>(null);
+
+	const ftpWattsDisplay = $derived(ftpWatts ? formatWatts(ftpWatts) : null);
+	const hrZonesDisplay = $derived.by(() => {
+		if (!maxHeartRate) return [];
+		return HR_ZONES.map((zone) => {
+			const bpm = getHrZoneBpm(maxHeartRate!, zone.name);
+			return { ...zone, bpmMin: bpm.min, bpmMax: bpm.max };
+		});
+	});
+
+	function handleFtpPaceChange(e: Event) {
+		const val = (e.target as HTMLInputElement).value;
+		ftpPaceInput = val;
+		const tenths = parsePace(val);
+		if (tenths !== null) {
+			ftpWatts = paceTenthsToWatts(tenths);
+		}
+	}
 
 	$effect(() => {
 		if (data.session?.user && !profileLoaded) {
@@ -41,7 +67,7 @@
 		if (!data.supabase || !data.session) return;
 		const { data: profile } = await data.supabase
 			.from('profiles')
-			.select('c2_user_id, display_name')
+			.select('c2_user_id, display_name, current_ftp_watts, max_heart_rate')
 			.eq('id', data.session.user.id)
 			.single();
 
@@ -49,6 +75,13 @@
 			c2UserId = profile.c2_user_id;
 			if (profile.display_name && !displayName) {
 				displayName = profile.display_name;
+			}
+			if (profile.current_ftp_watts) {
+				ftpWatts = profile.current_ftp_watts;
+				ftpPaceInput = formatPace(wattsToPaceTenths(profile.current_ftp_watts));
+			}
+			if (profile.max_heart_rate) {
+				maxHeartRate = profile.max_heart_rate;
 			}
 		}
 		profileLoaded = true;
@@ -68,7 +101,11 @@
 
 			const { error: profileError } = await data.supabase
 				.from('profiles')
-				.update({ display_name: displayName })
+				.update({
+					display_name: displayName,
+					current_ftp_watts: ftpWatts,
+					max_heart_rate: maxHeartRate,
+				})
 				.eq('id', data.session.user.id);
 			if (profileError) throw profileError;
 
@@ -154,6 +191,58 @@
 						disabled
 						class="w-full rounded-lg border border-gray-700 bg-gray-800/50 px-4 py-2.5 text-sm text-gray-400"
 					/>
+				</div>
+
+				<!-- FTP -->
+				<div>
+					<label for="ftp-pace" class="mb-1.5 block text-sm font-medium text-gray-300">
+						FTP Pace
+					</label>
+					<div class="flex items-center gap-3">
+						<input
+							id="ftp-pace"
+							type="text"
+							value={ftpPaceInput}
+							onchange={handleFtpPaceChange}
+							placeholder="2:14"
+							class="w-28 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+						/>
+						<span class="text-sm text-gray-500">/500m</span>
+						{#if ftpWattsDisplay}
+							<span class="text-sm text-gray-500">{ftpWattsDisplay}</span>
+						{/if}
+					</div>
+					<p class="mt-1 text-xs text-gray-600">Your sustainable 60-minute pace</p>
+				</div>
+
+				<!-- Max Heart Rate -->
+				<div>
+					<label for="max-hr" class="mb-1.5 block text-sm font-medium text-gray-300">
+						Max Heart Rate
+					</label>
+					<div class="flex items-center gap-3">
+						<input
+							id="max-hr"
+							type="number"
+							bind:value={maxHeartRate}
+							placeholder="185"
+							min="100"
+							max="250"
+							class="w-28 rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+						/>
+						<span class="text-sm text-gray-500">bpm</span>
+					</div>
+					<p class="mt-1 text-xs text-gray-600">Usually 220 minus your age, or from a max effort test</p>
+					{#if maxHeartRate && hrZonesDisplay.length > 0}
+						<div class="mt-3 space-y-1">
+							{#each hrZonesDisplay as zone}
+								<div class="flex items-center gap-2 text-xs">
+									<span class="w-24 font-medium text-gray-400">{zone.label}</span>
+									<span class="font-mono text-gray-500">{zone.bpmMin}–{zone.bpmMax} bpm</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
 				</div>
 
 				<div class="flex items-center justify-between">

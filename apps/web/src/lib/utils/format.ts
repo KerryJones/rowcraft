@@ -1,13 +1,15 @@
+import type { WorkoutSegment } from '$lib/types';
+
 /**
- * Format a pace value (in tenths of a second per 500m) as mm:ss.t
- * Example: 1200 -> "2:00.0"
+ * Format a pace value (in tenths of a second per 500m) as m:ss
+ * Displays whole seconds only — tenths are dropped for simplicity.
+ * Example: 1340 -> "2:14", 1200 -> "2:00"
  */
 export function formatPace(tenths: number): string {
 	const totalSeconds = Math.floor(tenths / 10);
 	const minutes = Math.floor(totalSeconds / 60);
 	const seconds = totalSeconds % 60;
-	const remainder = tenths % 10;
-	return `${minutes}:${seconds.toString().padStart(2, '0')}.${remainder}`;
+	return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 /**
@@ -89,14 +91,32 @@ export function formatDifficulty(difficulty: string): string {
 }
 
 /**
- * Parse a pace string (mm:ss.t) to tenths of a second
- * Returns null if the string is invalid
+ * Format a segment's duration as a human-readable string.
+ * Consolidates the duplicated switch logic used in WorkoutGraph and detail page.
+ */
+export function formatSegmentDuration(seg: WorkoutSegment): string {
+	switch (seg.duration_type) {
+		case 'time':
+			return formatDuration(seg.duration_value);
+		case 'distance':
+			return formatDistance(seg.duration_value);
+		case 'calories':
+			return `${seg.duration_value}cal`;
+		default:
+			return String(seg.duration_value);
+	}
+}
+
+/**
+ * Parse a pace string (m:ss) to tenths of a second per 500m.
+ * Returns null if the string is invalid.
+ * Example: "2:14" -> 1340
  */
 export function parsePace(value: string): number | null {
-	const match = value.match(/^(\d+):(\d{1,2})(?:\.(\d))?$/);
+	const match = value.match(/^(\d+):(\d{1,2})$/);
 	if (!match) return null;
-	const [, mins, secs, tenths] = match;
+	const [, mins, secs] = match;
 	const s = parseInt(secs);
 	if (s >= 60) return null;
-	return parseInt(mins) * 600 + s * 10 + (tenths ? parseInt(tenths) : 0);
+	return parseInt(mins) * 600 + s * 10;
 }

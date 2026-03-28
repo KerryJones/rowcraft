@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { createSupabaseServerClient } from '$lib/server/supabase';
+import { normalizeWorkoutSegments } from '$lib/types';
 
 export const load: PageServerLoad = async ({ cookies, url }) => {
 	const supabase = createSupabaseServerClient(cookies);
@@ -30,8 +31,14 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 
 	const { data: workouts } = await query;
 
+	// Normalize legacy segment formats (old {min,max} → {pace})
+	const normalized = (workouts ?? []).map((w: any) => ({
+		...w,
+		segments: normalizeWorkoutSegments(w.segments ?? []),
+	}));
+
 	return {
-		workouts: workouts ?? [],
+		workouts: normalized,
 		tab,
 		userId: session?.user?.id ?? null
 	};

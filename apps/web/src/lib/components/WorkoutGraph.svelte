@@ -20,10 +20,10 @@
 
 	// Calculate bar heights based on intensity (target split pace)
 	// Lower pace = higher intensity = taller bar
-	const bars = $derived(() => {
+	const bars = $derived.by(() => {
 		const paces = segments
 			.filter((s) => s.target_split)
-			.map((s) => s.target_split!.min);
+			.map((s) => s.target_split!.pace);
 
 		const minPace = paces.length > 0 ? Math.min(...paces) : 1200;
 		const maxPace = paces.length > 0 ? Math.max(...paces) : 1800;
@@ -33,7 +33,7 @@
 			let height: number;
 			if (seg.target_split) {
 				// Faster pace (lower number) = taller bar
-				const normalizedIntensity = 1 - (seg.target_split.min - minPace) / paceRange;
+				const normalizedIntensity = 1 - (seg.target_split.pace - minPace) / paceRange;
 				height = minHeight + normalizedIntensity * (maxHeight - minHeight);
 			} else if (seg.type === 'rest') {
 				height = minHeight;
@@ -56,7 +56,7 @@
 		});
 	});
 
-	const totalWeight = $derived(bars().reduce((sum, b) => sum + b.widthWeight, 0) || 1);
+	const totalWeight = $derived(bars.reduce((sum, b) => sum + b.widthWeight, 0) || 1);
 
 	function durationLabel(seg: WorkoutSegment): string {
 		switch (seg.duration_type) {
@@ -73,7 +73,7 @@
 </script>
 
 <div class="flex items-end gap-1" style="height: {maxHeight + 40}px;">
-	{#each bars() as bar}
+	{#each bars as bar}
 		<div
 			class="group relative flex flex-col items-center justify-end"
 			style="flex: {bar.widthWeight / totalWeight}; min-width: 24px;"
@@ -83,7 +83,7 @@
 				<p class="font-medium">{formatSegmentType(bar.segment.type)}</p>
 				<p>{durationLabel(bar.segment)}</p>
 				{#if bar.segment.target_split}
-					<p>{formatPace(bar.segment.target_split.min)}/500m</p>
+					<p>{formatPace(bar.segment.target_split.pace)}/500m</p>
 				{/if}
 				{#if bar.segment.repeat > 1}
 					<p>x{bar.segment.repeat}</p>
