@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
@@ -7,7 +9,7 @@ import '../ble/ble_provider.dart';
 import '../ble/hr_service.dart';
 import '../ble/pm5_service.dart';
 import 'ftp_result_dialog.dart';
-import 'metrics_display.dart';
+import 'rowing_animation.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
 
@@ -108,12 +110,15 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 threshold: engineState.paceFailThreshold,
               ),
 
-            // Main metrics area (scrollable if needed)
+            // Main metrics area
             Expanded(
               child: _MainMetrics(session: session),
             ),
 
-            // Compact interval strip + progress
+            // Compact tertiary metrics strip
+            _TertiaryStrip(session: session),
+
+            // Interval progress + strip
             if (engineState.phase == WorkoutPhase.rowing ||
                 engineState.phase == WorkoutPhase.resting ||
                 engineState.phase == WorkoutPhase.paused) ...[
@@ -180,7 +185,7 @@ class _BleStatusBar extends ConsumerWidget {
                 ),
           ),
           const Spacer(),
-          // HR status
+          // HR status (now the primary HR display — removed from main metrics)
           Icon(
             Icons.favorite,
             size: 14,
@@ -203,6 +208,10 @@ class _BleStatusBar extends ConsumerWidget {
   }
 }
 
+/// Redesigned main metrics with 3-tier visual hierarchy:
+/// 1. Hero split (96px) — THE number
+/// 2. Pace guide bar (44px, only when target exists)
+/// 3. Animated rower + stroke rate (48px)
 class _MainMetrics extends StatelessWidget {
   final WorkoutSessionState session;
 
@@ -212,25 +221,65 @@ class _MainMetrics extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = session.pm5Data;
     final segment = session.engineState.currentSegment;
+    final isActive = session.engineState.phase == WorkoutPhase.rowing ||
+        session.engineState.phase == WorkoutPhase.resting;
+
+    // Determine split color based on target
+    Color splitColor = RowCraftTheme.metricWhite;
+    if (segment?.targetSplit != null && data.pace > 0) {
+      final pace = data.pace.toDouble();
+      if (pace >= segment!.targetSplit!.min &&
+          pace <= segment.targetSplit!.max) {
+        splitColor = RowCraftTheme.successGreen;
+      } else if (pace > segment.targetSplit!.max) {
+        splitColor = RowCraftTheme.warningAmber;
+      } else {
+        splitColor = RowCraftTheme.accentTeal;
+      }
+    }
+
+    // Determine stroke rate color based on target
+    Color srColor = RowCraftTheme.metricWhite;
+    if (segment?.targetStrokeRate != null && data.strokeRate > 0) {
+      final sr = data.strokeRate;
+      if (sr >= segment!.targetStrokeRate!.min &&
+          sr <= segment.targetStrokeRate!.max) {
+        srColor = RowCraftTheme.successGreen;
+      } else if (sr > segment.targetStrokeRate!.max) {
+        srColor = RowCraftTheme.warningAmber;
+      } else {
+        srColor = RowCraftTheme.accentTeal;
+      }
+    }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Primary metric: Split time (huge)
-          MetricsDisplay(
-            value: data.paceFormatted,
-            label: '/500M',
-            size: MetricSize.hero,
-            targetMin: segment?.targetSplit?.min,
-            targetMax: segment?.targetSplit?.max,
-            currentValue: data.pace.toDouble(),
+          // Tier 1: Hero Split — THE number (96px)
+          Text(
+            data.paceFormatted,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 96,
+              fontWeight: FontWeight.w700,
+              color: splitColor,
+              letterSpacing: -2,
+              height: 1.0,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '/500m',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: RowCraftTheme.subtleGrey,
+                ),
           ),
 
-          // Pace guide bar — large, prominent target window
+          // Tier 2: Pace guide bar (only when target exists)
           if (segment?.targetSplit != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             _PaceGuideBar(
               targetMin: segment!.targetSplit!.min,
               targetMax: segment.targetSplit!.max,
@@ -240,82 +289,34 @@ class _MainMetrics extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Target callout — shows target ranges as text
-          if (segment?.targetSplit != null ||
-              segment?.targetStrokeRate != null)
-            _TargetCallout(segment: segment!),
-
-          if (segment?.targetSplit != null ||
-              segment?.targetStrokeRate != null)
-            const SizedBox(height: 12),
-
-          // Secondary metrics: SPM with zone bar, distance, time
+          // Tier 3: Animated rower + stroke rate
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Column(
-                  children: [
-                    MetricsDisplay(
-                      value: data.strokeRate.toString(),
-                      label: 'S/M',
-                      size: MetricSize.large,
-                      targetMin: segment?.targetStrokeRate?.min.toDouble(),
-                      targetMax: segment?.targetStrokeRate?.max.toDouble(),
-                      currentValue: data.strokeRate.toDouble(),
-                    ),
-                    // Compact stroke rate zone bar
-                    if (segment?.targetStrokeRate != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: _MiniZoneBar(
-                          min: segment!.targetStrokeRate!.min.toDouble(),
-                          max: segment.targetStrokeRate!.max.toDouble(),
-                          current: data.strokeRate.toDouble(),
-                        ),
+              RowingAnimation(
+                strokeRate: data.strokeRate,
+                isActive: isActive,
+                height: 48,
+              ),
+              const SizedBox(width: 16),
+              Text(
+                '${data.strokeRate}',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w600,
+                  color: srColor,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  's/m',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: RowCraftTheme.subtleGrey,
                       ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: MetricsDisplay(
-                  value: data.distanceFormatted,
-                  label: 'DISTANCE',
-                  size: MetricSize.large,
-                ),
-              ),
-              Expanded(
-                child: MetricsDisplay(
-                  value: data.elapsedFormatted,
-                  label: 'TIME',
-                  size: MetricSize.large,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Tertiary metrics row
-          Row(
-            children: [
-              Expanded(
-                child: MetricsDisplay(
-                  value: data.watts.toString(),
-                  label: 'WATTS',
-                  size: MetricSize.medium,
-                ),
-              ),
-              Expanded(
-                child: MetricsDisplay(
-                  value: data.calories.toString(),
-                  label: 'CALORIES',
-                  size: MetricSize.medium,
-                ),
-              ),
-              Expanded(
-                child: MetricsDisplay(
-                  value: data.heartRate?.toString() ?? '--',
-                  label: 'HR',
-                  size: MetricSize.medium,
                 ),
               ),
             ],
@@ -326,16 +327,124 @@ class _MainMetrics extends StatelessWidget {
   }
 }
 
+/// Compact horizontal strip showing tertiary metrics.
+/// Replaces the two rows of 3 large metrics with a single dense strip.
+class _TertiaryStrip extends StatelessWidget {
+  final WorkoutSessionState session;
+
+  const _TertiaryStrip({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = session.pm5Data;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: RowCraftTheme.surfaceContainer,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _TertiaryItem(label: 'DISTANCE', value: data.distanceFormatted),
+          _TertiaryItem(label: 'TIME', value: data.elapsedFormatted),
+          _TertiaryItem(label: 'WATTS', value: '${data.watts}'),
+          _TertiaryItem(label: 'CAL', value: '${data.calories}'),
+        ],
+      ),
+    );
+  }
+}
+
+class _TertiaryItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _TertiaryItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: RowCraftTheme.subtleGrey,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: RowCraftTheme.metricWhite,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Interval progress with segment-type colors and remaining time/distance.
 class _IntervalProgress extends StatelessWidget {
   final WorkoutEngineState engineState;
 
   const _IntervalProgress({required this.engineState});
 
+  Color _segmentColor(SegmentType? type, WorkoutPhase phase) {
+    if (phase == WorkoutPhase.paused) return RowCraftTheme.warningAmber;
+
+    return switch (type) {
+      SegmentType.work => RowCraftTheme.segmentWork,
+      SegmentType.rest => RowCraftTheme.segmentRest,
+      SegmentType.warmup => RowCraftTheme.segmentWarmup,
+      SegmentType.cooldown => RowCraftTheme.segmentCooldown,
+      null => RowCraftTheme.primaryBlue,
+    };
+  }
+
+  String _remainingLabel(WorkoutEngineState state) {
+    final segment = state.currentSegment;
+    if (segment == null) return '';
+
+    switch (segment.durationType) {
+      case DurationType.time:
+        final totalSec = segment.durationValue.toInt();
+        final elapsedSec = state.segmentElapsedTime.inSeconds;
+        final remaining = (totalSec - elapsedSec).clamp(0, totalSec);
+        final min = remaining ~/ 60;
+        final sec = remaining % 60;
+        return '$min:${sec.toString().padLeft(2, '0')} left';
+      case DurationType.distance:
+        final totalM = segment.durationValue;
+        final remaining = (totalM - state.segmentElapsedDistance)
+            .clamp(0.0, totalM)
+            .toInt();
+        return '${remaining}m left';
+      case DurationType.calories:
+        final totalCal = segment.durationValue;
+        final remaining = (totalCal - state.segmentElapsedCalories)
+            .clamp(0.0, totalCal)
+            .round();
+        return '${remaining}cal left';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final progress = engineState.segmentProgress;
-    final isResting = engineState.phase == WorkoutPhase.resting;
+    final segColor = _segmentColor(
+      engineState.currentSegment?.type,
+      engineState.phase,
+    );
     final isPaused = engineState.phase == WorkoutPhase.paused;
+
+    final phaseLabel = isPaused
+        ? 'PAUSED'
+        : engineState.currentSegment?.type.name.toUpperCase() ?? 'WORK';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -345,22 +454,18 @@ class _IntervalProgress extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isPaused
-                    ? 'PAUSED'
-                    : isResting
-                        ? 'REST'
-                        : 'WORK',
+                phaseLabel,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: isPaused
-                          ? RowCraftTheme.warningAmber
-                          : isResting
-                              ? RowCraftTheme.warningAmber
-                              : RowCraftTheme.primaryBlue,
+                      color: segColor,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
               Text(
-                '${(progress * 100).toInt()}%',
-                style: Theme.of(context).textTheme.labelMedium,
+                _remainingLabel(engineState),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: RowCraftTheme.metricWhite,
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
             ],
           ),
@@ -371,11 +476,7 @@ class _IntervalProgress extends StatelessWidget {
               value: progress,
               minHeight: 6,
               backgroundColor: RowCraftTheme.surfaceContainerHigh,
-              valueColor: AlwaysStoppedAnimation(
-                isPaused || isResting
-                    ? RowCraftTheme.warningAmber
-                    : RowCraftTheme.primaryBlue,
-              ),
+              valueColor: AlwaysStoppedAnimation(segColor),
             ),
           ),
         ],
@@ -385,8 +486,7 @@ class _IntervalProgress extends StatelessWidget {
 }
 
 /// Compact horizontal interval strip — shows previous, current, and next
-/// segments in a single row. Replaces the full scrollable list to reclaim
-/// vertical space for the metrics and pace guide.
+/// segments in a single row.
 class _CompactIntervalStrip extends StatelessWidget {
   final WorkoutSessionState session;
 
@@ -433,9 +533,9 @@ class _CompactIntervalStrip extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // Counter
+          // Counter (clamped to valid range at segment boundaries)
           Text(
-            '${currentIndex + 1}/${segments.length}',
+            '${(currentIndex + 1).clamp(1, segments.length)}/${segments.length}',
             style: theme.textTheme.labelMedium?.copyWith(
               color: RowCraftTheme.subtleGrey,
             ),
@@ -454,12 +554,23 @@ class _StripSegment extends StatelessWidget {
 
   const _StripSegment({required this.segment, required this.state});
 
+  Color _segTypeColor(SegmentType type) {
+    return switch (type) {
+      SegmentType.work => RowCraftTheme.segmentWork,
+      SegmentType.rest => RowCraftTheme.segmentRest,
+      SegmentType.warmup => RowCraftTheme.segmentWarmup,
+      SegmentType.cooldown => RowCraftTheme.segmentCooldown,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final segColor = _segTypeColor(segment.type);
+
     final (icon, color) = switch (state) {
       _SegState.completed => (Icons.check, RowCraftTheme.successGreen),
-      _SegState.current => (Icons.play_arrow, RowCraftTheme.primaryBlue),
+      _SegState.current => (Icons.play_arrow, segColor),
       _SegState.upcoming => (Icons.circle_outlined, RowCraftTheme.subtleGrey),
     };
 
@@ -467,11 +578,11 @@ class _StripSegment extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: state == _SegState.current
-            ? RowCraftTheme.primaryBlue.withValues(alpha: 0.15)
+            ? segColor.withValues(alpha: 0.15)
             : RowCraftTheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(8),
         border: state == _SegState.current
-            ? Border.all(color: RowCraftTheme.primaryBlue, width: 1)
+            ? Border.all(color: segColor, width: 1)
             : null,
       ),
       child: Row(
@@ -495,7 +606,8 @@ class _StripSegment extends StatelessWidget {
   }
 }
 
-class _WorkoutControls extends StatelessWidget {
+/// Workout controls with PM5 connection guard on START button.
+class _WorkoutControls extends ConsumerWidget {
   final WorkoutPhase phase;
   final VoidCallback onStart;
   final VoidCallback onPause;
@@ -511,78 +623,100 @@ class _WorkoutControls extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pm5Connected = ref.watch(bleProvider).pm5ConnectionState ==
+        PM5ConnectionState.connected;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: RowCraftTheme.surfaceContainer,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: switch (phase) {
-          WorkoutPhase.idle || WorkoutPhase.ready => [
-              _ControlButton(
-                icon: Icons.play_arrow,
-                label: 'START',
-                color: RowCraftTheme.successGreen,
-                onPressed: onStart,
-                isLarge: true,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // PM5 guard hint
+          if ((phase == WorkoutPhase.idle || phase == WorkoutPhase.ready) &&
+              !pm5Connected)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Connect PM5 to start',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: RowCraftTheme.subtleGrey,
+                    ),
               ),
-            ],
-          WorkoutPhase.countingDown => [
-              _ControlButton(
-                icon: Icons.hourglass_top,
-                label: 'STARTING...',
-                color: RowCraftTheme.warningAmber,
-                onPressed: null,
-                isLarge: true,
-              ),
-            ],
-          WorkoutPhase.paused => [
-              _ControlButton(
-                icon: Icons.stop,
-                label: 'STOP',
-                color: RowCraftTheme.errorRose,
-                onPressed: onStop,
-                isLarge: false,
-              ),
-              const SizedBox(width: 32),
-              _ControlButton(
-                icon: Icons.play_arrow,
-                label: 'RESUME',
-                color: RowCraftTheme.successGreen,
-                onPressed: onResume,
-                isLarge: true,
-              ),
-            ],
-          WorkoutPhase.rowing || WorkoutPhase.resting => [
-              _ControlButton(
-                icon: Icons.stop,
-                label: 'STOP',
-                color: RowCraftTheme.errorRose,
-                onPressed: onStop,
-                isLarge: false,
-              ),
-              const SizedBox(width: 32),
-              _ControlButton(
-                icon: Icons.pause,
-                label: 'PAUSE',
-                color: RowCraftTheme.warningAmber,
-                onPressed: onPause,
-                isLarge: true,
-              ),
-            ],
-          WorkoutPhase.finished => [
-              _ControlButton(
-                icon: Icons.check,
-                label: 'SAVE',
-                color: RowCraftTheme.successGreen,
-                onPressed: () => Navigator.of(context).pop(),
-                isLarge: true,
-              ),
-            ],
-        },
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: switch (phase) {
+              WorkoutPhase.idle || WorkoutPhase.ready => [
+                  _ControlButton(
+                    icon: Icons.play_arrow,
+                    label: 'START',
+                    color: pm5Connected
+                        ? RowCraftTheme.successGreen
+                        : RowCraftTheme.subtleGrey,
+                    onPressed: pm5Connected ? onStart : null,
+                    isLarge: true,
+                  ),
+                ],
+              WorkoutPhase.countingDown => [
+                  _ControlButton(
+                    icon: Icons.hourglass_top,
+                    label: 'STARTING...',
+                    color: RowCraftTheme.warningAmber,
+                    onPressed: null,
+                    isLarge: true,
+                  ),
+                ],
+              WorkoutPhase.paused => [
+                  _ControlButton(
+                    icon: Icons.stop,
+                    label: 'STOP',
+                    color: RowCraftTheme.errorRose,
+                    onPressed: onStop,
+                    isLarge: false,
+                  ),
+                  const SizedBox(width: 32),
+                  _ControlButton(
+                    icon: Icons.play_arrow,
+                    label: 'RESUME',
+                    color: RowCraftTheme.successGreen,
+                    onPressed: onResume,
+                    isLarge: true,
+                  ),
+                ],
+              WorkoutPhase.rowing || WorkoutPhase.resting => [
+                  _ControlButton(
+                    icon: Icons.stop,
+                    label: 'STOP',
+                    color: RowCraftTheme.errorRose,
+                    onPressed: onStop,
+                    isLarge: false,
+                  ),
+                  const SizedBox(width: 32),
+                  _ControlButton(
+                    icon: Icons.pause,
+                    label: 'PAUSE',
+                    color: RowCraftTheme.warningAmber,
+                    onPressed: onPause,
+                    isLarge: true,
+                  ),
+                ],
+              WorkoutPhase.finished => [
+                  _ControlButton(
+                    icon: Icons.check,
+                    label: 'SAVE',
+                    color: RowCraftTheme.successGreen,
+                    onPressed: () => context.go('/'),
+                    isLarge: true,
+                  ),
+                ],
+            },
+          ),
+        ],
       ),
     );
   }
@@ -637,7 +771,7 @@ class _ControlButton extends StatelessWidget {
 /// Large horizontal pace guide bar — the primary visual pacing instrument.
 ///
 /// Designed for glanceable reading at arm's length on a bouncing erg:
-/// - 56px tall, full width — visible in peripheral vision
+/// - 44px tall, full width — visible in peripheral vision
 /// - Green zone shows the target window
 /// - Thick indicator slides left (faster) / right (slower)
 /// - Background color shifts from green to amber/red when out of range
@@ -676,7 +810,7 @@ class _PaceGuideBar extends StatelessWidget {
         ? RowCraftTheme.successGreen
         : isTooSlow
             ? RowCraftTheme.errorRose
-            : RowCraftTheme.segmentWarmup;
+            : RowCraftTheme.accentTeal;
 
     // Bar background shifts color when out of range (peripheral vision cue)
     final barBgColor = isInRange
@@ -685,14 +819,16 @@ class _PaceGuideBar extends StatelessWidget {
             ? RowCraftTheme.errorRose.withValues(alpha: 0.08)
             : RowCraftTheme.surfaceContainerHigh;
 
-    final zoneLeft = ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0);
-    final zoneRight = ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0);
+    final zoneLeft =
+        ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0);
+    final zoneRight =
+        ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Labels
+          // Labels — integrated target range (replaces separate _TargetCallout)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -712,9 +848,9 @@ class _PaceGuideBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          // The guide bar — 56px tall for glanceability
+          // The guide bar — 44px tall
           SizedBox(
-            height: 56,
+            height: 44,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
@@ -724,10 +860,10 @@ class _PaceGuideBar extends StatelessWidget {
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       width: width,
-                      height: 56,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: barBgColor,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: RowCraftTheme.surfaceContainerHigh,
                           width: 1,
@@ -742,20 +878,25 @@ class _PaceGuideBar extends StatelessWidget {
                       bottom: 0,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: RowCraftTheme.successGreen.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
+                          color: RowCraftTheme.successGreen
+                              .withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: RowCraftTheme.successGreen.withValues(alpha: 0.4),
+                            color: RowCraftTheme.successGreen
+                                .withValues(alpha: 0.4),
                             width: 2,
                           ),
                         ),
                       ),
                     ),
-                    // Current pace indicator — thick bar, not a dot
+                    // Current pace indicator — thick bar
                     if (currentPace > 0)
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 150),
-                        left: (pacePosition * width - 4).clamp(0.0, (width - 8).clamp(0.0, double.infinity)),
+                        left: (pacePosition * width - 4).clamp(
+                            0.0,
+                            (width - 8)
+                                .clamp(0.0, double.infinity)),
                         top: 4,
                         bottom: 4,
                         child: Container(
@@ -788,143 +929,6 @@ class _PaceGuideBar extends StatelessWidget {
     final m = total ~/ 600;
     final r = total % 600;
     return '$m:${(r ~/ 10).toString().padLeft(2, '0')}.${r % 10}';
-  }
-}
-
-/// Shows the current target pace and stroke rate ranges as prominent text
-/// between the main split display and the secondary metrics.
-class _TargetCallout extends StatelessWidget {
-  final WorkoutSegment segment;
-
-  const _TargetCallout({required this.segment});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: RowCraftTheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (segment.targetSplit != null) ...[
-            Icon(Icons.speed, size: 16, color: RowCraftTheme.successGreen),
-            const SizedBox(width: 6),
-            Text(
-              'Target: ${_formatSplit(segment.targetSplit!.min)} – ${_formatSplit(segment.targetSplit!.max)}/500m',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: RowCraftTheme.successGreen,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-          if (segment.targetSplit != null && segment.targetStrokeRate != null)
-            const SizedBox(width: 20),
-          if (segment.targetStrokeRate != null) ...[
-            Icon(Icons.rowing, size: 16, color: RowCraftTheme.primaryBlue),
-            const SizedBox(width: 6),
-            Text(
-              '${segment.targetStrokeRate!.min}–${segment.targetStrokeRate!.max} s/m',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: RowCraftTheme.primaryBlue,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _formatSplit(double tenths) {
-    final total = tenths.toInt();
-    final minutes = total ~/ 600;
-    final remaining = total % 600;
-    final seconds = remaining ~/ 10;
-    final t = remaining % 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}.$t';
-  }
-}
-
-/// Compact zone bar for stroke rate — shows target range with current
-/// position indicator. 32px tall, fits under the SPM number.
-class _MiniZoneBar extends StatelessWidget {
-  final double min;
-  final double max;
-  final double current;
-
-  const _MiniZoneBar({
-    required this.min,
-    required this.max,
-    required this.current,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final range = max - min;
-    if (range <= 0) return const SizedBox.shrink();
-
-    final displayMin = min - range;
-    final displayMax = max + range;
-    final displayRange = displayMax - displayMin;
-
-    final pos = ((current - displayMin) / displayRange).clamp(0.0, 1.0);
-    final zoneLeft = ((min - displayMin) / displayRange).clamp(0.0, 1.0);
-    final zoneRight = ((max - displayMin) / displayRange).clamp(0.0, 1.0);
-    final isInRange = current >= min && current <= max;
-
-    return SizedBox(
-      height: 12,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          return Stack(
-            children: [
-              // Track
-              Container(
-                height: 12,
-                decoration: BoxDecoration(
-                  color: RowCraftTheme.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              // Green zone
-              Positioned(
-                left: zoneLeft * w,
-                width: (zoneRight - zoneLeft) * w,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: RowCraftTheme.successGreen.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-              ),
-              // Indicator
-              Positioned(
-                left: (pos * w - 3).clamp(0, w - 6),
-                top: 1,
-                bottom: 1,
-                child: Container(
-                  width: 6,
-                  decoration: BoxDecoration(
-                    color: isInRange
-                        ? RowCraftTheme.successGreen
-                        : RowCraftTheme.warningAmber,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
   }
 }
 

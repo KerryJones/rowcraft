@@ -18,7 +18,8 @@ export const load: LayoutLoad = async ({ data, depends, fetch }) => {
 		global: { fetch },
 		cookies: {
 			getAll() {
-				return parse(document.cookie);
+				const parsed = parse(document.cookie);
+				return Object.entries(parsed).map(([name, value]) => ({ name, value }));
 			},
 			setAll(cookiesToSet) {
 				cookiesToSet.forEach(({ name, value, options }) => {

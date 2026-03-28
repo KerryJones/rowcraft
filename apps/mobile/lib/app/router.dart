@@ -10,7 +10,9 @@ import '../features/ble/connect_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
 import '../features/plans/plans_catalog.dart';
+import '../features/workout/pre_workout_screen.dart';
 import '../features/workout/workout_screen.dart';
+
 import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
@@ -72,6 +74,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/workout/:id',
         parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final planId = state.uri.queryParameters['plan'];
+          final week = int.tryParse(
+              state.uri.queryParameters['week'] ?? '');
+          final session = int.tryParse(
+              state.uri.queryParameters['session'] ?? '');
+          return PreWorkoutScreen(
+            workoutId: id,
+            planId: planId,
+            planWeek: week,
+            planSession: session,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/workout/:id/active',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           final planId = state.uri.queryParameters['plan'];
