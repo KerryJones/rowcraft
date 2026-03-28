@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
+	import WodCard from '$lib/components/WodCard.svelte';
 	import { formatWorkoutType } from '$lib/utils/format';
 	import type { Workout } from '$lib/types';
 
@@ -11,13 +12,13 @@
 	let activeTab = $state<'all' | 'mine' | 'community'>(data.tab as 'all' | 'mine' | 'community');
 	let selectedTags = $state<string[]>([]);
 
-	const allTags = $derived(() => {
+	const allTags = $derived.by(() => {
 		const tagSet = new Set<string>();
 		data.workouts.forEach((w: Workout) => w.tags?.forEach((t: string) => tagSet.add(t)));
 		return Array.from(tagSet).sort();
 	});
 
-	const filteredWorkouts = $derived(() => {
+	const filteredWorkouts = $derived.by(() => {
 		let result = data.workouts as Workout[];
 
 		if (searchQuery) {
@@ -36,6 +37,25 @@
 
 		return result;
 	});
+
+	// WOD — deterministic daily pick from public workouts, with shuffle override
+	function dateHash(): number {
+		const d = new Date();
+		return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+	}
+
+	function pickWod(seed: number): Workout | null {
+		const publicWorkouts = (data.workouts as Workout[]).filter((w) => w.is_public && w.segments?.length > 0);
+		if (publicWorkouts.length === 0) return null;
+		return publicWorkouts[seed % publicWorkouts.length];
+	}
+
+	let wodSeed = $state(dateHash());
+	const wodWorkout = $derived(pickWod(wodSeed));
+
+	function shuffleWod() {
+		wodSeed = Math.floor(Math.random() * 1000000);
+	}
 
 	function switchTab(tab: 'all' | 'mine' | 'community') {
 		activeTab = tab;
@@ -68,6 +88,17 @@
 		{/if}
 	</div>
 
+	<!-- WOD -->
+	{#if wodWorkout}
+		<div class="mb-8">
+			<WodCard
+				workout={wodWorkout}
+				onShuffle={shuffleWod}
+				onView={() => goto(`/workouts/${wodWorkout.id}`)}
+			/>
+		</div>
+	{/if}
+
 	<!-- Search -->
 	<div class="mb-6">
 		<input
@@ -97,9 +128,9 @@
 	</div>
 
 	<!-- Tag chips -->
-	{#if allTags().length > 0}
+	{#if allTags.length > 0}
 		<div class="mb-6 flex flex-wrap gap-2">
-			{#each allTags() as tag}
+			{#each allTags as tag}
 				<button
 					onclick={() => toggleTag(tag)}
 					class="rounded-full px-3 py-1 text-xs font-medium transition-colors {selectedTags.includes(tag)
@@ -113,7 +144,7 @@
 	{/if}
 
 	<!-- Workout grid -->
-	{#if filteredWorkouts().length === 0}
+	{#if filteredWorkouts.length === 0}
 		<div class="py-20 text-center">
 			<p class="text-gray-500">No workouts found.</p>
 			{#if searchQuery || selectedTags.length > 0}
@@ -127,7 +158,7 @@
 		</div>
 	{:else}
 		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-			{#each filteredWorkouts() as workout}
+			{#each filteredWorkouts as workout}
 				<WorkoutCard
 					{workout}
 					onclick={() => goto(`/workouts/${workout.id}`)}

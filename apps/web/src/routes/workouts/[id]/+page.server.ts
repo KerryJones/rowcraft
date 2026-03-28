@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { createSupabaseServerClient } from '$lib/server/supabase';
 import { error } from '@sveltejs/kit';
+import { normalizeWorkoutSegments } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, cookies }) => {
 	const supabase = createSupabaseServerClient(cookies);
@@ -23,9 +24,11 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 		error(403, 'You do not have access to this workout');
 	}
 
+	// Normalize legacy segment formats
+	workout.segments = normalizeWorkoutSegments(workout.segments ?? []);
+
 	return {
 		workout,
-		userId: session?.user?.id ?? null,
-		supabase
+		userId: session?.user?.id ?? null
 	};
 };

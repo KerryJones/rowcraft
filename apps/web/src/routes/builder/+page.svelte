@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import IntervalBlock from '$lib/components/IntervalBlock.svelte';
-	import WorkoutGraph from '$lib/components/WorkoutGraph.svelte';
+	import BuilderHeader from '$lib/components/BuilderHeader.svelte';
+	import WorkoutGraphHero from '$lib/components/WorkoutGraphHero.svelte';
+	import SegmentTimeline from '$lib/components/SegmentTimeline.svelte';
+	import SegmentEditor from '$lib/components/SegmentEditor.svelte';
 	import type { WorkoutSegment, WorkoutType, SegmentType } from '$lib/types';
+	import { formatDuration, formatDistance } from '$lib/utils/format';
+	import { wattsToPaceTenths } from '$lib/utils/ftp';
+	import { computeTotalTime, computeTotalDistance, computeSegmentCount } from '$lib/utils/workout';
 
 	let { data } = $props();
 
@@ -10,28 +15,82 @@
 	let description = $state('');
 	let workoutType = $state<WorkoutType>('intervals');
 	let isPublic = $state(false);
+	let tags = $state<string[]>([]);
 	let segments = $state<WorkoutSegment[]>([]);
+	let selectedIndex = $state<number | null>(null);
 	let saving = $state(false);
 	let errors = $state<Record<string, string>>({});
 
-	const workoutTypes: { value: WorkoutType; label: string }[] = [
-		{ value: 'intervals', label: 'Intervals' },
-		{ value: 'single_distance', label: 'Distance' },
-		{ value: 'single_time', label: 'Time' },
-		{ value: 'variable_intervals', label: 'Variable' }
-	];
+	// User's FTP and Max HR — loaded from profile
+	let ftpWatts = $state<number | null>(null);
+	let maxHeartRate = $state<number | null>(null);
+
+	// Load profile data on mount (once)
+	let profileLoaded = false;
+	$effect(() => {
+		if (data.supabase && data.session?.user && !profileLoaded) {
+			profileLoaded = true;
+			data.supabase
+				.from('profiles')
+				.select('current_ftp_watts, max_heart_rate')
+				.eq('id', data.session.user.id)
+				.single()
+				.then(({ data: profile }: { data: any }) => {
+					if (profile) {
+						ftpWatts = profile.current_ftp_watts ?? null;
+						maxHeartRate = profile.max_heart_rate ?? null;
+					}
+				});
+		}
+	});
+
+	// Computed summaries
+	const totalTime = $derived(computeTotalTime(segments));
+	const totalDistance = $derived(computeTotalDistance(segments));
+	const segmentCount = $derived(computeSegmentCount(segments));
+	const selectedSegment = $derived(
+		selectedIndex !== null && selectedIndex < segments.length
+			? segments[selectedIndex]
+			: null
+	);
+
+	function defaultPaceForType(type: SegmentType): number | null {
+		// Find the last work segment's pace to copy
+		if (type === 'work') {
+			for (let i = segments.length - 1; i >= 0; i--) {
+				if (segments[i].type === 'work' && segments[i].target_split) {
+					return segments[i].target_split!.pace;
+				}
+			}
+			// No previous work — use FTP or 2:00
+			if (ftpWatts) return wattsToPaceTenths(ftpWatts);
+			return 1200; // 2:00
+		}
+		if (type === 'warmup') {
+			if (ftpWatts) return wattsToPaceTenths(ftpWatts * 0.6); // ~60% FTP
+			return 1350; // 2:15
+		}
+		if (type === 'cooldown') {
+			if (ftpWatts) return wattsToPaceTenths(ftpWatts * 0.5); // ~50% FTP
+			return 1400; // 2:20
+		}
+		return null; // rest
+	}
 
 	function addSegment(type: SegmentType) {
+		const defaultPace = defaultPaceForType(type);
 		const newSegment: WorkoutSegment = {
 			type,
 			duration_type: 'time',
-			duration_value: type === 'rest' ? 60 : 300,
-			target_split: null,
+			duration_value: type === 'rest' ? 60 : type === 'work' ? 300 : 180,
+			target_split: defaultPace ? { pace: defaultPace } : null,
 			target_stroke_rate: null,
 			target_hr_zone: null,
-			repeat: 1
+			repeat: 1,
+			messages: null
 		};
 		segments = [...segments, newSegment];
+		selectedIndex = segments.length - 1;
 	}
 
 	function updateSegment(index: number, updated: WorkoutSegment) {
@@ -40,6 +99,11 @@
 
 	function deleteSegment(index: number) {
 		segments = segments.filter((_, i) => i !== index);
+		if (selectedIndex === index) {
+			selectedIndex = segments.length > 0 ? Math.min(index, segments.length - 1) : null;
+		} else if (selectedIndex !== null && selectedIndex > index) {
+			selectedIndex--;
+		}
 	}
 
 	function moveSegment(index: number, direction: 'up' | 'down') {
@@ -48,23 +112,24 @@
 		const newSegments = [...segments];
 		[newSegments[index], newSegments[newIndex]] = [newSegments[newIndex], newSegments[index]];
 		segments = newSegments;
+		selectedIndex = newIndex;
+	}
+
+	function duplicateSegment(index: number) {
+		const copy = { ...segments[index] };
+		segments = [...segments.slice(0, index + 1), copy, ...segments.slice(index + 1)];
+		selectedIndex = index + 1;
 	}
 
 	function validate(): boolean {
 		const newErrors: Record<string, string> = {};
-
-		if (!title.trim()) {
-			newErrors.title = 'Title is required';
-		}
-		if (segments.length === 0) {
-			newErrors.segments = 'Add at least one segment';
-		}
+		if (!title.trim()) newErrors.title = 'Title is required';
+		if (segments.length === 0) newErrors.segments = 'Add at least one segment';
 		segments.forEach((seg, i) => {
 			if (seg.duration_value <= 0) {
 				newErrors[`segment_${i}`] = 'Duration must be greater than 0';
 			}
 		});
-
 		errors = newErrors;
 		return Object.keys(newErrors).length === 0;
 	}
@@ -86,7 +151,7 @@
 				description: description.trim(),
 				workout_type: workoutType,
 				segments,
-				tags: [],
+				tags,
 				is_public: isPublic
 			}).select().single();
 
@@ -104,146 +169,90 @@
 	<title>Workout Builder - RowCraft</title>
 </svelte:head>
 
-<div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-	<h1 class="mb-8 text-2xl font-bold text-white">Workout Builder</h1>
+<div class="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8 space-y-4">
+	<!-- Header (collapsible metadata) -->
+	<BuilderHeader
+		{title}
+		{description}
+		{workoutType}
+		{tags}
+		{isPublic}
+		onTitleChange={(v) => (title = v)}
+		onDescriptionChange={(v) => (description = v)}
+		onWorkoutTypeChange={(v) => (workoutType = v)}
+		onTagsChange={(v) => (tags = v)}
+		onPublicChange={(v) => (isPublic = v)}
+	/>
 
-	<div class="grid gap-8 lg:grid-cols-[1fr,380px]">
-		<!-- Builder form -->
-		<div class="space-y-6">
-			<!-- Title -->
+	{#if errors.title}
+		<p class="text-sm text-red-400">{errors.title}</p>
+	{/if}
+
+	<!-- Hero graph -->
+	<WorkoutGraphHero
+		{segments}
+		{selectedIndex}
+		onSelectSegment={(i) => (selectedIndex = i)}
+	/>
+
+	<!-- Segment timeline -->
+	<SegmentTimeline
+		{segments}
+		{selectedIndex}
+		onSelect={(i) => (selectedIndex = i)}
+		onMove={moveSegment}
+		onDelete={deleteSegment}
+		onDuplicate={duplicateSegment}
+		onAdd={addSegment}
+	/>
+
+	{#if errors.segments}
+		<p class="text-sm text-red-400">{errors.segments}</p>
+	{/if}
+
+	<!-- Segment editor (inline, shown when a segment is selected) -->
+	{#if selectedSegment && selectedIndex !== null}
+		{#key selectedIndex}
+			<SegmentEditor
+				segment={selectedSegment}
+				{ftpWatts}
+				{maxHeartRate}
+				onUpdate={(updated) => updateSegment(selectedIndex!, updated)}
+			/>
+		{/key}
+	{/if}
+
+	<!-- Summary + Save -->
+	<div class="flex items-center justify-between rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
+		<div class="flex items-center gap-6 text-sm">
+			{#if totalTime}
+				<div>
+					<span class="text-xs text-gray-500">TIME</span>
+					<p class="font-mono text-white">{formatDuration(totalTime)}</p>
+				</div>
+			{/if}
+			{#if totalDistance}
+				<div>
+					<span class="text-xs text-gray-500">DISTANCE</span>
+					<p class="font-mono text-white">{formatDistance(totalDistance)}</p>
+				</div>
+			{/if}
 			<div>
-				<label for="title" class="mb-1.5 block text-sm font-medium text-gray-300">Title</label>
-				<input
-					id="title"
-					type="text"
-					bind:value={title}
-					placeholder="e.g., 8x500m Intervals"
-					class="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-				/>
-				{#if errors.title}
-					<p class="mt-1 text-sm text-red-400">{errors.title}</p>
-				{/if}
-			</div>
-
-			<!-- Description -->
-			<div>
-				<label for="description" class="mb-1.5 block text-sm font-medium text-gray-300">Description</label>
-				<textarea
-					id="description"
-					bind:value={description}
-					rows="3"
-					placeholder="Describe the workout..."
-					class="w-full rounded-lg border border-gray-700 bg-gray-900 px-4 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-				></textarea>
-			</div>
-
-			<!-- Workout type -->
-			<div>
-				<span class="mb-1.5 block text-sm font-medium text-gray-300">Workout Type</span>
-				<div class="flex flex-wrap gap-2">
-					{#each workoutTypes as wt}
-						<button
-							onclick={() => (workoutType = wt.value)}
-							class="rounded-lg px-3 py-2 text-sm font-medium transition-colors {workoutType === wt.value
-								? 'bg-blue-600 text-white'
-								: 'border border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600 hover:text-white'}"
-						>
-							{wt.label}
-						</button>
-					{/each}
-				</div>
-			</div>
-
-			<!-- Segments -->
-			<div>
-				<div class="mb-3 flex items-center justify-between">
-					<span class="text-sm font-medium text-gray-300">Segments</span>
-					{#if errors.segments}
-						<p class="text-sm text-red-400">{errors.segments}</p>
-					{/if}
-				</div>
-
-				<div class="space-y-3">
-					{#each segments as segment, i}
-						<IntervalBlock
-							{segment}
-							index={i}
-							total={segments.length}
-							onUpdate={(updated) => updateSegment(i, updated)}
-							onDelete={() => deleteSegment(i)}
-							onMoveUp={() => moveSegment(i, 'up')}
-							onMoveDown={() => moveSegment(i, 'down')}
-							error={errors[`segment_${i}`] ?? null}
-						/>
-					{/each}
-				</div>
-
-				<!-- Add segment buttons -->
-				<div class="mt-4 flex flex-wrap gap-2">
-					<button
-						onclick={() => addSegment('work')}
-						class="rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/20"
-					>
-						+ Work
-					</button>
-					<button
-						onclick={() => addSegment('rest')}
-						class="rounded-lg border border-gray-600/30 bg-gray-600/10 px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-600/20"
-					>
-						+ Rest
-					</button>
-					<button
-						onclick={() => addSegment('warmup')}
-						class="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
-					>
-						+ Warm Up
-					</button>
-					<button
-						onclick={() => addSegment('cooldown')}
-						class="rounded-lg border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm font-medium text-yellow-400 transition-colors hover:bg-yellow-500/20"
-					>
-						+ Cool Down
-					</button>
-				</div>
-			</div>
-
-			<!-- Save -->
-			<div class="flex items-center justify-between border-t border-gray-800 pt-6">
-				<label class="flex items-center gap-2 text-sm text-gray-400">
-					<input
-						type="checkbox"
-						bind:checked={isPublic}
-						class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-blue-600"
-					/>
-					Make public
-				</label>
-				<div class="flex gap-3">
-					{#if errors.save}
-						<p class="self-center text-sm text-red-400">{errors.save}</p>
-					{/if}
-					<button
-						onclick={saveWorkout}
-						disabled={saving}
-						class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
-					>
-						{saving ? 'Saving...' : 'Save Workout'}
-					</button>
-				</div>
+				<span class="text-xs text-gray-500">SEGMENTS</span>
+				<p class="font-mono text-white">{segmentCount}</p>
 			</div>
 		</div>
-
-		<!-- Live preview -->
-		<div class="lg:sticky lg:top-24">
-			<div class="rounded-xl border border-gray-800 bg-gray-900 p-6">
-				<h2 class="mb-4 text-sm font-medium text-gray-400">Preview</h2>
-				{#if segments.length > 0}
-					<WorkoutGraph {segments} />
-				{:else}
-					<div class="flex h-48 items-center justify-center text-sm text-gray-600">
-						Add segments to see preview
-					</div>
-				{/if}
-			</div>
+		<div class="flex items-center gap-3">
+			{#if errors.save}
+				<p class="text-sm text-red-400">{errors.save}</p>
+			{/if}
+			<button
+				onclick={saveWorkout}
+				disabled={saving}
+				class="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
+			>
+				{saving ? 'Saving...' : 'Save Workout'}
+			</button>
 		</div>
 	</div>
 </div>
