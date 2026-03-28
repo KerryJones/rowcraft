@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
-	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+	import { page } from '$app/stores';
 
 	let { data } = $props();
 
@@ -9,6 +9,7 @@
 	let saving = $state(false);
 	let saveMessage = $state('');
 	let connecting = $state(false);
+	let c2Error = $state('');
 
 	const email = $derived(data.session?.user?.email ?? '');
 
@@ -22,50 +23,19 @@
 		}
 	});
 
-	// Handle C2 OAuth callback — C2 redirects here with ?code=...
+	// Handle C2 OAuth error from server-side callback (once per page load)
+	let errorHandled = false;
 	$effect(() => {
-		const url = new URL(window.location.href);
-		const code = url.searchParams.get('code');
-		if (code && data.session?.user) {
-			// Clean the URL immediately so a refresh doesn't re-trigger
-			url.searchParams.delete('code');
-			url.searchParams.delete('state');
-			window.history.replaceState({}, '', url.pathname);
-			exchangeC2Code(code);
+		const error = $page.url.searchParams.get('error');
+		if (error === 'c2_oauth_failed' && !errorHandled) {
+			errorHandled = true;
+			c2Error = 'Failed to connect Concept2 Logbook. Please try again.';
+			// Clean the URL using SvelteKit's goto to keep $page store consistent
+			const cleanUrl = new URL($page.url);
+			cleanUrl.searchParams.delete('error');
+			goto(cleanUrl.pathname + cleanUrl.search, { replaceState: true, noScroll: true });
 		}
 	});
-
-	async function exchangeC2Code(code: string) {
-		connecting = true;
-		try {
-			const session = data.session;
-			if (!session) return;
-			const response = await fetch(
-				`${PUBLIC_SUPABASE_URL}/functions/v1/c2-logbook-sync/callback`,
-				{
-					method: 'POST',
-					headers: {
-						'Authorization': `Bearer ${session.access_token}`,
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({ code })
-				}
-			);
-
-			if (response.ok) {
-				const result = await response.json();
-				if (result.success) {
-					c2UserId = result.c2_user_id;
-				}
-			} else {
-				console.error('C2 token exchange failed:', await response.text());
-			}
-		} catch (err) {
-			console.error('C2 callback error:', err);
-		} finally {
-			connecting = false;
-		}
-	}
 
 	async function loadProfile() {
 		if (!data.supabase || !data.session) return;
@@ -118,25 +88,16 @@
 		goto('/');
 	}
 
-	async function connectC2Logbook() {
+	function connectC2Logbook() {
 		if (!data.session) return;
 		connecting = true;
-		try {
-			// Generate a random state nonce — never use the access token as state
-			const stateNonce = crypto.randomUUID();
-
-			// Redirect to the C2 Logbook OAuth edge function
-			const authUrl = `${PUBLIC_SUPABASE_URL}/functions/v1/c2-logbook-sync/auth?state=${stateNonce}`;
-			window.location.href = authUrl;
-		} catch (err) {
-			console.error('Failed to start C2 OAuth:', err);
-		} finally {
-			connecting = false;
-		}
+		c2Error = '';
+		window.location.href = '/c2/auth';
 	}
 
 	async function disconnectC2Logbook() {
 		if (!data.supabase || !data.session) return;
+		c2Error = '';
 		try {
 			const { error } = await data.supabase
 				.from('profiles')
@@ -147,11 +108,14 @@
 				})
 				.eq('id', data.session.user.id);
 
-			if (!error) {
+			if (error) {
+				c2Error = 'Failed to disconnect Concept2 Logbook. Please try again.';
+			} else {
 				c2UserId = null;
 			}
 		} catch (err) {
 			console.error('Failed to disconnect C2 Logbook:', err);
+			c2Error = 'Failed to disconnect Concept2 Logbook. Please try again.';
 		}
 	}
 </script>
@@ -217,6 +181,10 @@
 			<p class="mb-4 text-sm text-gray-400">
 				Connect your Concept2 Logbook to automatically sync workout results.
 			</p>
+
+			{#if c2Error}
+				<p class="mb-4 text-sm text-red-400">{c2Error}</p>
+			{/if}
 
 			{#if c2UserId}
 				<div class="flex items-center justify-between">
