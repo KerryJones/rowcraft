@@ -19,6 +19,7 @@
 
 		try {
 			if (isSignUp) {
+				if (!data.supabase) return;
 				const { error: signUpError } = await data.supabase.auth.signUp({
 					email,
 					password
@@ -29,6 +30,7 @@
 				isSignUp = false;
 				successMessage = 'Account created! Check your email for a confirmation link.';
 			} else {
+				if (!data.supabase) return;
 				const { error: signInError } = await data.supabase.auth.signInWithPassword({
 					email,
 					password

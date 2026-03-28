@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
+	import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 
 	let { data } = $props();
 
+	// svelte-ignore state_referenced_locally
 	let displayName = $state(data.session?.user?.user_metadata?.display_name ?? '');
 	let saving = $state(false);
 	let saveMessage = $state('');
@@ -37,8 +39,9 @@
 		connecting = true;
 		try {
 			const session = data.session;
+			if (!session) return;
 			const response = await fetch(
-				`${data.supabase.supabaseUrl}/functions/v1/c2-logbook-sync/callback`,
+				`${PUBLIC_SUPABASE_URL}/functions/v1/c2-logbook-sync/callback`,
 				{
 					method: 'POST',
 					headers: {
@@ -65,6 +68,7 @@
 	}
 
 	async function loadProfile() {
+		if (!data.supabase || !data.session) return;
 		const { data: profile } = await data.supabase
 			.from('profiles')
 			.select('c2_user_id, display_name')
@@ -81,6 +85,7 @@
 	}
 
 	async function updateProfile() {
+		if (!data.supabase || !data.session) return;
 		saving = true;
 		saveMessage = '';
 
@@ -107,20 +112,21 @@
 	}
 
 	async function signOut() {
+		if (!data.supabase) return;
 		await data.supabase.auth.signOut();
 		await invalidate('supabase:auth');
 		goto('/');
 	}
 
 	async function connectC2Logbook() {
+		if (!data.session) return;
 		connecting = true;
 		try {
 			// Generate a random state nonce — never use the access token as state
 			const stateNonce = crypto.randomUUID();
-			const supabaseUrl = data.supabase.supabaseUrl;
 
 			// Redirect to the C2 Logbook OAuth edge function
-			const authUrl = `${supabaseUrl}/functions/v1/c2-logbook-sync/auth?state=${stateNonce}`;
+			const authUrl = `${PUBLIC_SUPABASE_URL}/functions/v1/c2-logbook-sync/auth?state=${stateNonce}`;
 			window.location.href = authUrl;
 		} catch (err) {
 			console.error('Failed to start C2 OAuth:', err);
@@ -130,6 +136,7 @@
 	}
 
 	async function disconnectC2Logbook() {
+		if (!data.supabase || !data.session) return;
 		try {
 			const { error } = await data.supabase
 				.from('profiles')

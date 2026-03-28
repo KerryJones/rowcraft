@@ -34,12 +34,18 @@
 		{ value: 'calories', label: 'Calories' }
 	];
 
-	// Split target local state
+	// Split target local state — intentionally captures initial segment values for editing
+	// svelte-ignore state_referenced_locally
 	let hasSplitTarget = $state(!!segment.target_split);
+	// svelte-ignore state_referenced_locally
 	let splitMin = $state(segment.target_split?.min ?? 1200);
+	// svelte-ignore state_referenced_locally
 	let splitMax = $state(segment.target_split?.max ?? 1200);
+	// svelte-ignore state_referenced_locally
 	let hasStrokeTarget = $state(!!segment.target_stroke_rate);
+	// svelte-ignore state_referenced_locally
 	let spmMin = $state(segment.target_stroke_rate?.min ?? 24);
+	// svelte-ignore state_referenced_locally
 	let spmMax = $state(segment.target_stroke_rate?.max ?? 28);
 
 	function updateField(field: string, value: any) {
@@ -171,7 +177,7 @@
 				class="w-24 rounded border border-gray-700 bg-gray-800 px-3 py-1.5 text-sm text-white"
 			/>
 			<div class="flex items-center gap-2">
-				<label class="text-xs text-gray-500">Repeat</label>
+				<span class="text-xs text-gray-500">Repeat</span>
 				<input
 					type="number"
 					value={segment.repeat}

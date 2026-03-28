@@ -6,12 +6,17 @@
 
 	let { data } = $props();
 
-	// Form state — pre-populate if editing
+	// Form state — pre-populate if editing (intentionally captures initial data for form editing)
+	// svelte-ignore state_referenced_locally
 	let title = $state(data.plan?.title ?? '');
+	// svelte-ignore state_referenced_locally
 	let description = $state(data.plan?.description ?? '');
+	// svelte-ignore state_referenced_locally
 	let difficulty = $state<Difficulty>(data.plan?.difficulty ?? 'beginner');
+	// svelte-ignore state_referenced_locally
 	let tags = $state<string[]>(data.plan?.tags ?? []);
 	let tagInput = $state('');
+	// svelte-ignore state_referenced_locally
 	let weeks = $state<PlanWeek[]>(data.plan?.weeks ?? [
 		{ week_number: 1, title: '', sessions: [{ day_label: 'Day 1', workout_id: '', notes: null }] }
 	]);
@@ -123,7 +128,7 @@
 
 		try {
 			const { supabase, session } = data;
-			if (!session?.user) {
+			if (!supabase || !session?.user) {
 				goto('/auth/login');
 				return;
 			}
@@ -223,7 +228,7 @@
 
 			<!-- Difficulty -->
 			<div>
-				<label class="mb-1.5 block text-sm font-medium text-gray-300">Difficulty</label>
+				<span class="mb-1.5 block text-sm font-medium text-gray-300">Difficulty</span>
 				<div class="flex flex-wrap gap-2">
 					{#each ['beginner', 'intermediate', 'advanced'] as d}
 						<button
@@ -241,7 +246,7 @@
 
 			<!-- Tags -->
 			<div>
-				<label class="mb-1.5 block text-sm font-medium text-gray-300">Tags</label>
+				<span class="mb-1.5 block text-sm font-medium text-gray-300">Tags</span>
 				<div class="flex gap-2">
 					<input
 						type="text"
@@ -273,7 +278,7 @@
 			<!-- Weeks -->
 			<div>
 				<div class="mb-3 flex items-center justify-between">
-					<label class="text-sm font-medium text-gray-300">Weeks</label>
+					<span class="text-sm font-medium text-gray-300">Weeks</span>
 					{#if errors.weeks}
 						<p class="text-sm text-red-400">{errors.weeks}</p>
 					{/if}

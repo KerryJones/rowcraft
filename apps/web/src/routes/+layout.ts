@@ -1,5 +1,6 @@
 import type { LayoutLoad } from './$types';
-import { createBrowserClient, isBrowser, parse } from '@supabase/ssr';
+import type { CookieOptions } from '@supabase/ssr';
+import { createBrowserClient, isBrowser, parse, serialize } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 
 export const load: LayoutLoad = async ({ data, depends, fetch }) => {
@@ -21,9 +22,9 @@ export const load: LayoutLoad = async ({ data, depends, fetch }) => {
 				const parsed = parse(document.cookie);
 				return Object.entries(parsed).map(([name, value]) => ({ name, value }));
 			},
-			setAll(cookiesToSet) {
+			setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
 				cookiesToSet.forEach(({ name, value, options }) => {
-					document.cookie = `${name}=${value}; path=${options?.path ?? '/'}; max-age=${options?.maxAge ?? 31536000}; SameSite=Lax`;
+					document.cookie = serialize(name, value, options);
 				});
 			}
 		},

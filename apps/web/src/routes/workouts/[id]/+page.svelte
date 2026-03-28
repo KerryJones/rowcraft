@@ -6,7 +6,7 @@
 
 	let { data } = $props();
 
-	const workout: Workout = data.workout;
+	const workout: Workout = $derived(data.workout);
 	const isOwner = $derived(data.userId === workout.author_id);
 	let forking = $state(false);
 	let shareMessage = $state('');
@@ -29,6 +29,7 @@
 		forking = true;
 		try {
 			const { supabase } = data;
+			if (!supabase) return;
 			const { data: forkedWorkout, error: insertError } = await supabase
 				.from('workouts')
 				.insert({

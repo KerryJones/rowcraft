@@ -75,7 +75,7 @@
 
 		try {
 			const { supabase, session } = data;
-			if (!session?.user) {
+			if (!supabase || !session?.user) {
 				goto('/auth/login');
 				return;
 			}
@@ -139,7 +139,7 @@
 
 			<!-- Workout type -->
 			<div>
-				<label class="mb-1.5 block text-sm font-medium text-gray-300">Workout Type</label>
+				<span class="mb-1.5 block text-sm font-medium text-gray-300">Workout Type</span>
 				<div class="flex flex-wrap gap-2">
 					{#each workoutTypes as wt}
 						<button
@@ -157,7 +157,7 @@
 			<!-- Segments -->
 			<div>
 				<div class="mb-3 flex items-center justify-between">
-					<label class="text-sm font-medium text-gray-300">Segments</label>
+					<span class="text-sm font-medium text-gray-300">Segments</span>
 					{#if errors.segments}
 						<p class="text-sm text-red-400">{errors.segments}</p>
 					{/if}

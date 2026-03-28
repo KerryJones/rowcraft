@@ -7,6 +7,6 @@ declare namespace App {
 
   interface PageData {
     session: import('@supabase/supabase-js').Session | null;
-    supabase: import('@supabase/supabase-js').SupabaseClient;
+    supabase?: import('@supabase/supabase-js').SupabaseClient | null;
   }
 }

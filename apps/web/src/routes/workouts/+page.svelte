@@ -7,6 +7,7 @@
 	let { data } = $props();
 
 	let searchQuery = $state('');
+	// svelte-ignore state_referenced_locally
 	let activeTab = $state<'all' | 'mine' | 'community'>(data.tab as 'all' | 'mine' | 'community');
 	let selectedTags = $state<string[]>([]);
 

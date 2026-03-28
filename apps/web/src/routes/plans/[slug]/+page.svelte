@@ -4,8 +4,8 @@
 
 	let { data } = $props();
 
-	const plan: TrainingPlan = data.plan;
-	const workoutMap: Record<string, string> = data.workoutMap;
+	const plan: TrainingPlan = $derived(data.plan);
+	const workoutMap: Record<string, string> = $derived(data.workoutMap);
 
 	let expandedWeek = $state<number>(0);
 

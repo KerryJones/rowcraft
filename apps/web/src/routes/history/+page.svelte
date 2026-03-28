@@ -6,7 +6,7 @@
 
 	let selectedResultId = $state<string | null>(null);
 
-	const results = data.results;
+	const results = $derived(data.results);
 
 	function toggleResult(id: string) {
 		selectedResultId = selectedResultId === id ? null : id;

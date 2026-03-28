@@ -41,6 +41,7 @@
 		</button>
 	{:else}
 		<div class="rounded-lg border border-blue-500 bg-gray-900">
+			<!-- svelte-ignore a11y_autofocus -->
 			<input
 				type="text"
 				bind:value={search}

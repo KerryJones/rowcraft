@@ -51,7 +51,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const { error } = await supabase.auth.signInWithIdToken({
 		provider: 'google',
 		token: idToken,
-		accessToken,
+		access_token: accessToken,
 		nonce: savedNonce
 	});
 
