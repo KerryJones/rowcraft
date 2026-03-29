@@ -4,25 +4,30 @@ import { computeTotalTime, computeTotalDistance, computeSegmentCount } from '@/l
 
 interface StatsBarProps {
   segments: WorkoutSegment[];
+  forkCount?: number;
 }
 
-export function StatsBar({ segments }: StatsBarProps) {
+export function StatsBar({ segments, forkCount }: StatsBarProps) {
   const totalTime = computeTotalTime(segments);
   const totalDistance = computeTotalDistance(segments);
   const segmentCount = computeSegmentCount(segments);
 
   const stats = [
-    ...(totalTime !== null ? [{ label: 'Time', value: formatDuration(totalTime) }] : []),
-    ...(totalDistance !== null ? [{ label: 'Distance', value: formatDistance(totalDistance) }] : []),
-    { label: 'Segments', value: String(segmentCount) },
+    ...(totalTime !== null ? [{ label: 'TIME', value: formatDuration(totalTime) }] : []),
+    ...(totalDistance !== null ? [{ label: 'DISTANCE', value: formatDistance(totalDistance) }] : []),
+    { label: 'SEGMENTS', value: String(segmentCount) },
+    ...(forkCount !== undefined ? [{ label: 'FORKS', value: String(forkCount) }] : []),
   ];
 
   return (
-    <div className="flex flex-wrap gap-4 rounded-lg border border-gray-800 bg-gray-900/50 p-3">
+    <div className="flex flex-wrap gap-3">
       {stats.map((stat) => (
-        <div key={stat.label} className="flex flex-col">
-          <span className="text-xs text-gray-500">{stat.label}</span>
-          <span className="text-sm font-semibold text-white">{stat.value}</span>
+        <div
+          key={stat.label}
+          className="min-w-[100px] rounded-lg border border-gray-800 bg-gray-900 p-4"
+        >
+          <span className="text-xs uppercase tracking-wider text-gray-500">{stat.label}</span>
+          <div className="mt-1 font-mono text-2xl font-bold text-white">{stat.value}</div>
         </div>
       ))}
     </div>

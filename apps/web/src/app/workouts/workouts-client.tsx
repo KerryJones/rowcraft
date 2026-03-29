@@ -9,21 +9,34 @@ import { WodCard } from '@/components/ui/wod-card';
 import { Search, Plus } from 'lucide-react';
 
 type Tab = 'all' | 'mine' | 'community';
+type SortKey = 'newest' | 'most_forked' | 'duration';
 
-function getDeterministicWod(workouts: Workout[]): Workout | null {
+function djb2(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+function getDeterministicWod(workouts: Workout[], seed: number): Workout | null {
   if (workouts.length === 0) return null;
-  // Deterministic daily pick: use date as seed
-  const today = new Date();
-  const dayOfYear = Math.floor(
-    (today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000
-  );
-  // Simple shuffle with seed
   const shuffled = [...workouts].sort((a, b) => {
-    const hashA = (dayOfYear * 2654435761 + a.id.charCodeAt(0)) >>> 0;
-    const hashB = (dayOfYear * 2654435761 + b.id.charCodeAt(0)) >>> 0;
+    const hashA = (seed * 2654435761 + djb2(a.id)) >>> 0;
+    const hashB = (seed * 2654435761 + djb2(b.id)) >>> 0;
     return hashA - hashB;
   });
   return shuffled[0];
+}
+
+function getDayOfYear(): number {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth();
+  const day = now.getUTCDate();
+  const start = Date.UTC(year, 0, 0);
+  const current = Date.UTC(year, month, day);
+  return Math.floor((current - start) / 86400000);
 }
 
 interface WorkoutsClientProps {
@@ -36,6 +49,8 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>('newest');
+  const [wodSeed, setWodSeed] = useState(getDayOfYear);
 
   // Collect all tags
   const allTags = useMemo(() => {
@@ -44,14 +59,16 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
     return Array.from(tagSet).sort();
   }, [workouts]);
 
+  const publicWorkouts = workouts.filter((w) => w.is_public);
+  const wod = getDeterministicWod(publicWorkouts, wodSeed);
+
   // Filter workouts
   const filtered = useMemo(() => {
-    return workouts.filter((w) => {
-      // Tab filter
+    const result = workouts.filter((w) => {
+      // Exclude WOD from the main list to avoid duplication
+      if (wod && w.id === wod.id) return false;
       if (tab === 'mine' && w.author_id !== userId) return false;
       if (tab === 'community' && w.author_id === userId) return false;
-
-      // Search filter
       if (search) {
         const q = search.toLowerCase();
         const matchesTitle = w.title.toLowerCase().includes(q);
@@ -59,16 +76,28 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
         const matchesTags = w.tags.some((t) => t.toLowerCase().includes(q));
         if (!matchesTitle && !matchesDesc && !matchesTags) return false;
       }
-
-      // Tag filter
       if (selectedTag && !w.tags.includes(selectedTag)) return false;
-
       return true;
     });
-  }, [workouts, tab, search, selectedTag, userId]);
 
-  const publicWorkouts = workouts.filter((w) => w.is_public);
-  const wod = getDeterministicWod(publicWorkouts);
+    // Sort
+    if (sortKey === 'newest') {
+      result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortKey === 'most_forked') {
+      result.sort((a, b) => b.fork_count - a.fork_count);
+    } else if (sortKey === 'duration') {
+      const getTime = (w: Workout) => {
+        let t = 0;
+        for (const s of w.segments) {
+          if (s.duration_type === 'time') t += s.duration_value * (s.repeat || 1);
+        }
+        return t;
+      };
+      result.sort((a, b) => getTime(b) - getTime(a));
+    }
+
+    return result;
+  }, [workouts, tab, search, selectedTag, userId, sortKey, wod]);
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -76,8 +105,14 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
     { key: 'community', label: 'Community' },
   ];
 
+  const sortOptions: { key: SortKey; label: string }[] = [
+    { key: 'newest', label: 'Newest' },
+    { key: 'most_forked', label: 'Most Forked' },
+    { key: 'duration', label: 'Duration' },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[900px] px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">Workouts</h1>
@@ -95,12 +130,16 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
       {/* WOD */}
       {wod && (
         <div className="mb-8">
-          <WodCard workout={wod} onClick={() => router.push(`/workouts/${wod.id}`)} />
+          <WodCard
+            workout={wod}
+            onShuffle={() => setWodSeed((s) => s + 1)}
+            onView={() => router.push(`/workouts/${wod.id}`)}
+          />
         </div>
       )}
 
       {/* Search + Tabs */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
           <input
@@ -127,6 +166,24 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Sort options */}
+      <div className="mb-4 flex items-center gap-2">
+        <span className="text-xs text-gray-500">Sort:</span>
+        {sortOptions.map((opt) => (
+          <button
+            key={opt.key}
+            onClick={() => setSortKey(opt.key)}
+            className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              sortKey === opt.key
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white'
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {/* Tag filter chips */}
@@ -158,13 +215,13 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
         </div>
       )}
 
-      {/* Workout grid */}
+      {/* Workout list — single column */}
       {filtered.length === 0 ? (
         <div className="py-16 text-center text-gray-500">
           No workouts found. Try adjusting your search or filters.
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           {filtered.map((workout) => (
             <WorkoutCard
               key={workout.id}

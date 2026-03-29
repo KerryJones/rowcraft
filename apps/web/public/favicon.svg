@@ -1,11 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#1565C0"/>
-  <g stroke="white" stroke-width="2" stroke-linecap="round">
-    <!-- Water/waves -->
-    <path d="M6 22c2-2 4-2 6 0s4 2 6 0 4-2 6 0" opacity="0.5"/>
-    <!-- Oar -->
-    <line x1="8" y1="20" x2="24" y2="8" stroke-width="2.5"/>
-    <!-- Blade -->
-    <path d="M24 8l-3-2 2-1z" fill="white" stroke="none"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E88E5"/>
+      <stop offset="100%" stop-color="#0D47A1"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- Stylized "RC" monogram with rowing oar diagonal -->
+  <g fill="white">
+    <!-- Bold diagonal oar stroke — the dominant mark -->
+    <rect x="130" y="100" width="36" height="340" rx="18" transform="rotate(-30, 256, 256)"/>
+    <!-- Oar blade at bottom-left -->
+    <ellipse cx="138" cy="378" rx="32" ry="18" transform="rotate(-30, 138, 378)"/>
+    <!-- Two horizontal bars suggesting water/lanes -->
+    <rect x="180" y="220" width="240" height="20" rx="10" opacity="0.7"/>
+    <rect x="200" y="270" width="200" height="20" rx="10" opacity="0.5"/>
+    <!-- Small dot — oar handle grip -->
+    <circle cx="374" cy="134" r="18"/>
   </g>
 </svg>

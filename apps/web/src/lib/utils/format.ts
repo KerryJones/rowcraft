@@ -120,3 +120,30 @@ export function parsePace(value: string): number | null {
 	if (s >= 60) return null;
 	return parseInt(mins) * 600 + s * 10;
 }
+
+/**
+ * Get Tailwind CSS classes for a workout type badge.
+ */
+const WORKOUT_TYPE_BADGE_COLORS: Record<string, string> = {
+	intervals: 'bg-purple-500/20 text-purple-400',
+	single_time: 'bg-emerald-500/20 text-emerald-400',
+	single_distance: 'bg-amber-500/20 text-amber-400',
+	variable_intervals: 'bg-rose-500/20 text-rose-400',
+};
+
+/**
+ * Format a date string as "Jan 18, 2026" using UTC to avoid timezone off-by-one.
+ */
+export function formatDate(dateStr: string): string {
+	const d = new Date(dateStr);
+	return d.toLocaleDateString('en-US', {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+		timeZone: 'UTC',
+	});
+}
+
+export function getWorkoutTypeBadgeColor(workoutType: string): string {
+	return WORKOUT_TYPE_BADGE_COLORS[workoutType] ?? 'bg-blue-500/20 text-blue-400';
+}

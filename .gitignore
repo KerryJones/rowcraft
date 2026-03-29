@@ -6,6 +6,7 @@ node_modules/
 # Build outputs
 build/
 .svelte-kit/
+.next/
 .vercel/
 
 # Flutter
@@ -40,6 +41,16 @@ supabase/.branches/
 *.g.dart
 *.freezed.dart
 *.mocks.dart
+
+# Playwright MCP
+.playwright-mcp/
+
+# Screenshots (dev artifacts)
+*.png
+
+# Dev scripts
+apps/web/dev-verify.py
+apps/web/verify.sh
 
 # Test coverage
 coverage/
