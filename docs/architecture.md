@@ -9,9 +9,9 @@ RowCraft is a full-stack platform for structured Concept2 rowing workouts. The w
 | Layer | Technology |
 |-------|-----------|
 | Mobile | Flutter 3.x, Riverpod, flutter_reactive_ble, Drift (SQLite) |
-| Web | SvelteKit 2, Svelte 5, Tailwind CSS 4 |
-| Backend | Supabase (Postgres + Auth + Edge Functions) |
-| Hosting | Vercel (web), App Store + Google Play (mobile) |
+| Web | Next.js 15 (App Router), React 19, Tailwind CSS 4 |
+| Backend | Supabase (Postgres + Auth) |
+| Hosting | Any Node.js host via Docker (standalone output), App Store + Google Play (mobile) |
 
 ## Project Structure
 
@@ -23,10 +23,11 @@ rowcraft/
 │   │   ├── models/      # Dart data classes
 │   │   └── services/    # Supabase, local DB, sync, C2 logbook
 │   └── web/src/
-│       ├── routes/      # auth, builder, workouts, plans, history, profile
-│       └── lib/         # components, utils, types
+│       ├── app/         # Next.js App Router pages + API routes
+│       ├── components/  # shared UI components
+│       └── lib/         # supabase clients (server/client), utils, types
 ├── packages/shared/     # JSON schemas, pre-built workouts
-└── supabase/migrations/ # 8 SQL migrations
+└── supabase/migrations/ # 9 SQL migrations
 ```
 
 ## Data Flows

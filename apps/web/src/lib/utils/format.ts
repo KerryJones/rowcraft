@@ -1,4 +1,4 @@
-import type { WorkoutSegment } from '$lib/types';
+import type { WorkoutSegment } from '@/lib/types';
 
 /**
  * Format a pace value (in tenths of a second per 500m) as m:ss

@@ -7,25 +7,28 @@
 | `packages/shared/schemas/result.schema.json` | JSON Schema for result validation |
 | `packages/shared/workouts/` | 11 pre-built workout JSONs (classics, Pete Plan, etc.) |
 
-## Web (`apps/web/src/`)
+## Web (`apps/web/src/`) — Next.js App Router
 | Path | Purpose |
 |------|---------|
 | `lib/types.ts` | All TypeScript interfaces (master type definitions) |
 | `lib/utils/format.ts` | Display formatting (pace, duration, distance) |
 | `lib/utils/ftp.ts` | Power/HR zone calculations, C2 formula |
 | `lib/utils/workout.ts` | Workout summary computations |
-| `lib/components/WorkoutGraphHero.svelte` | Interactive workout visualization (200px) |
-| `lib/components/SegmentEditor.svelte` | Segment editor (pace, HR zones, cues) |
-| `lib/components/SegmentTimeline.svelte` | Horizontal segment block strip |
-| `lib/components/BuilderHeader.svelte` | Collapsible workout metadata header |
-| `lib/components/WorkoutCard.svelte` | Workout card with MiniGraph |
-| `lib/components/SegmentCard.svelte` | Read-only segment display |
-| `lib/components/StatsBar.svelte` | Summary stats (time, distance, segments) |
-| `lib/components/WodCard.svelte` | Workout of the Day card |
-| `routes/builder/+page.svelte` | Graph-first workout builder |
-| `routes/workouts/+page.svelte` | Workout list with WOD, search, filters |
-| `routes/workouts/[id]/+page.svelte` | Workout detail with hero graph |
-| `routes/plans/builder/+page.svelte` | Training plan builder |
+| `lib/supabase/server.ts` | Server-side Supabase client (cookie auth) |
+| `lib/supabase/client.ts` | Browser-side Supabase client |
+| `middleware.ts` | Auth token refresh on every request |
+| `components/workout-graph.tsx` | Interactive workout visualization |
+| `components/ui/segment-editor.tsx` | Segment editor (pace, HR zones, cues) |
+| `components/ui/workout-card.tsx` | Workout card with MiniGraph |
+| `components/ui/segment-card.tsx` | Read-only segment display |
+| `components/ui/stats-bar.tsx` | Summary stats (time, distance, segments) |
+| `components/ui/wod-card.tsx` | Workout of the Day card |
+| `app/builder/` | Graph-first workout builder |
+| `app/workouts/page.tsx` | Workout list with WOD, search, filters |
+| `app/workouts/[id]/page.tsx` | Workout detail with hero graph + OG meta |
+| `app/plans/builder/` | Training plan builder |
+| `app/auth/callback/page.tsx` | Google OAuth callback (server-side token exchange) |
+| `app/api/c2/` | C2 Logbook OAuth + sync (server-side) |
 
 ## Mobile (`apps/mobile/lib/`)
 | Path | Purpose |

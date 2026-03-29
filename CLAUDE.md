@@ -1,6 +1,6 @@
 # RowCraft
 
-Monorepo: Flutter mobile + SvelteKit web + Supabase backend for structured rowing workouts on Concept2 PM5.
+Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing workouts on Concept2 PM5.
 
 ## Rules
 
@@ -18,7 +18,7 @@ Monorepo: Flutter mobile + SvelteKit web + Supabase backend for structured rowin
 
 ### Code Style
 - **Dart**: Dart 3.3+, type hints, immutable models with `copyWith`, Riverpod for state
-- **TypeScript**: Strict mode, Svelte 5 runes (`$state`, `$derived`, `$effect`, `$props`)
+- **TypeScript**: Strict mode, Next.js App Router (Server Components default, `'use client'` for interactive)
 - **SQL**: Lowercase keywords, snake_case columns, always add indexes on foreign keys
 
 ### Design Rules

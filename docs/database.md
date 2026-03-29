@@ -49,6 +49,7 @@ Test types: `ramp`, `20min`, `manual`.
 ### training_plans
 | Column | Type | Notes |
 |--------|------|-------|
+| author_id | UUID FK | → profiles (nullable, added in migration 009) |
 | slug | text unique | URL-friendly identifier |
 | difficulty | text | beginner, intermediate, advanced |
 | weeks | JSONB | Array of {week_number, title, sessions[]} |
@@ -63,7 +64,7 @@ Tracks per-user plan completion. Unique on (user_id, plan_id).
 - **Workouts**: own + public (read), own only (write/delete)
 - **Results**: own only
 - **FTP History**: own only
-- **Plans**: all authenticated users (read)
+- **Plans**: all authenticated users (read), authors can create/update/delete own plans
 - **Plan Progress**: own only
 
 ## Migrations
@@ -76,3 +77,4 @@ Tracks per-user plan completion. Unique on (user_id, plan_id).
 6. `006_ftp.sql` — FTP watts + ftp_history table
 7. `007_training_plans.sql` — training_plans + user_plan_progress
 8. `008_max_heart_rate.sql` — max_heart_rate column
+9. `009_plan_author.sql` — author_id on training_plans + RLS for plan ownership

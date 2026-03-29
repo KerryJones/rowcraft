@@ -1,4 +1,4 @@
-import type { WorkoutSegment } from '$lib/types';
+import type { WorkoutSegment } from '@/lib/types';
 
 /**
  * Compute total time in seconds for all time-based segments (accounting for repeats).

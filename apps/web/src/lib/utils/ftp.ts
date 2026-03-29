@@ -1,4 +1,4 @@
-import type { HrZone, HrZoneName } from '$lib/types';
+import type { HrZone, HrZoneName } from '@/lib/types';
 
 /**
  * Convert watts to pace in tenths of a second per 500m.

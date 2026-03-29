@@ -133,6 +133,7 @@ export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 export interface TrainingPlan {
 	id: string;
 	slug: string;
+	author_id: string | null;
 	title: string;
 	description: string;
 	difficulty: Difficulty;

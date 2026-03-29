@@ -4,7 +4,41 @@
 LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $$1}')
 SUPABASE_URL := http://$(LOCAL_IP):54321
 
-.PHONY: setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web clean db-reset db-push db-seed
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed
+
+# ─── Help ────────────────────────────────────────────────────────────────────
+
+list:
+	@echo "Setup:"
+	@echo "  make setup            First-time setup (supabase + mobile + web)"
+	@echo "  make setup-supabase   Start Supabase and reset DB"
+	@echo "  make setup-mobile     Flutter create + pub get + build_runner"
+	@echo "  make setup-web        npm install + create .env"
+	@echo ""
+	@echo "Development:"
+	@echo "  make dev              Start Supabase, show instructions"
+	@echo "  make dev-web          Start Next.js dev server (http://localhost:3000)"
+	@echo "  make dev-mobile       Start Flutter app with local Supabase"
+	@echo "  make dev-mobile-cloud Start Flutter app with cloud Supabase"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test             Run all tests (mobile + web)"
+	@echo "  make test-mobile      Flutter tests"
+	@echo "  make test-web         Vitest tests"
+	@echo "  make check            TypeScript type check (web)"
+	@echo ""
+	@echo "Database:"
+	@echo "  make db-reset         Truncate all data (with confirmation)"
+	@echo "  make db-push          Push migrations to linked project"
+	@echo "  make db-seed          Run seed.sql on linked project"
+	@echo "  make studio           Open Supabase Studio"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build-apk        Build Android APK"
+	@echo ""
+	@echo "Utilities:"
+	@echo "  make clean            Clean all build artifacts"
+	@echo "  make ip               Show local IP address"
 
 # ─── First-Time Setup ────────────────────────────────────────────────────────
 
@@ -41,7 +75,7 @@ dev: dev-supabase
 	@echo "Supabase running at $(SUPABASE_URL)"
 	@echo "Run in separate terminals:"
 	@echo "  make dev-mobile    # Flutter on phone/emulator"
-	@echo "  make dev-web       # SvelteKit at http://localhost:5173"
+	@echo "  make dev-web       # Next.js at http://localhost:3000"
 	@echo ""
 
 dev-supabase:
@@ -77,9 +111,12 @@ test-web:
 
 # ─── Utilities ───────────────────────────────────────────────────────────────
 
+check:
+	cd apps/web && npm run check
+
 clean:
 	cd apps/mobile && flutter clean
-	cd apps/web && rm -rf node_modules .svelte-kit
+	cd apps/web && rm -rf node_modules .next
 	supabase stop
 
 ip:
