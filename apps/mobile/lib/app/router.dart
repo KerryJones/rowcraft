@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/auth/auth_screen.dart';
 import '../features/ble/connect_screen.dart';
+import '../features/ble/connection_gate_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
 import '../features/plans/plans_catalog.dart';
@@ -47,7 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/',
+    initialLocation: '/connect',
     refreshListenable: authNotifier,
     redirect: (BuildContext context, GoRouterState state) {
       final session = Supabase.instance.client.auth.currentSession;
@@ -58,7 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/auth';
       }
       if (isLoggedIn && isAuthRoute) {
-        return '/';
+        return '/connect';
       }
       return null;
     },
@@ -68,6 +69,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AuthScreen(),
+      ),
+
+      // Connection gate — first screen after auth
+      GoRoute(
+        path: '/connect',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ConnectionGateScreen(),
       ),
 
       // Workout execution — full-screen, no bottom nav

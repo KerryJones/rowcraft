@@ -103,6 +103,7 @@ class BleNotifier extends Notifier<BleState> {
   StreamSubscription<PM5ConnectionState>? _pm5ConnectionSubscription;
   StreamSubscription<HrConnectionState>? _hrConnectionSubscription;
   Timer? _scanTimer;
+  String? _pendingPm5Name;
 
   @override
   BleState build() {
@@ -117,9 +118,12 @@ class BleNotifier extends Notifier<BleState> {
           pm5Service.connectedDeviceId != null) {
         _saveDevice(
           pm5Service.connectedDeviceId!,
-          'PM5',
+          _pendingPm5Name ?? 'PM5',
           'pm5',
         );
+        _pendingPm5Name = null;
+      } else if (s == PM5ConnectionState.error) {
+        _pendingPm5Name = null;
       }
     });
 
@@ -263,6 +267,7 @@ class BleNotifier extends Notifier<BleState> {
 
   /// Connect to a PM5 device. Device is saved to DB only on confirmed connection.
   Future<void> connectToPm5(String deviceId, {String? deviceName}) async {
+    _pendingPm5Name = deviceName;
     stopScan();
     state = state.copyWith(
       pm5ConnectionState: PM5ConnectionState.connecting,
@@ -273,6 +278,7 @@ class BleNotifier extends Notifier<BleState> {
       await ref.read(pm5ServiceProvider).connect(deviceId);
       // Device saving happens in the connection state listener above
     } catch (e) {
+      _pendingPm5Name = null;
       state = state.copyWith(
         pm5ConnectionState: PM5ConnectionState.error,
         error: 'PM5 connection failed: $e',

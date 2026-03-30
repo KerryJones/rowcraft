@@ -14,6 +14,13 @@ enum WorkoutType {
         WorkoutType.variableIntervals => 'variable_intervals',
       };
 
+  String get displayName => switch (this) {
+        WorkoutType.singleDistance => 'Distance',
+        WorkoutType.singleTime => 'Timed',
+        WorkoutType.intervals => 'Intervals',
+        WorkoutType.variableIntervals => 'Variable Intervals',
+      };
+
   static WorkoutType fromJson(String json) => switch (json) {
         'single_distance' => WorkoutType.singleDistance,
         'single_time' => WorkoutType.singleTime,

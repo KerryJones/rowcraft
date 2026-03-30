@@ -141,6 +141,15 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
 
     final workout = _workout!;
 
+    final savedPm5Ids = bleState.savedDevices
+        .where((d) => d.deviceType == 'pm5')
+        .map((d) => d.deviceId)
+        .toSet();
+    final savedHrIds = bleState.savedDevices
+        .where((d) => d.deviceType == 'hr')
+        .map((d) => d.deviceId)
+        .toSet();
+
     return Scaffold(
       backgroundColor: RowCraftTheme.surfaceDark,
       appBar: AppBar(title: const Text('Prepare')),
@@ -168,7 +177,7 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
                     savedDevices: bleState.savedDevices
                         .where((d) => d.deviceType == 'pm5')
                         .toList(),
-                    discoveredDevices: bleState.discoveredPm5Devices,
+                    discoveredDevices: bleState.discoveredPm5Devices.where((d) => !savedPm5Ids.contains(d.id)).toList(),
                     onConnect: (deviceId, deviceName) {
                       ref.read(bleProvider.notifier).connectToPm5(
                             deviceId,
@@ -194,7 +203,7 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
                     savedDevices: bleState.savedDevices
                         .where((d) => d.deviceType == 'hr')
                         .toList(),
-                    discoveredDevices: bleState.discoveredHrDevices,
+                    discoveredDevices: bleState.discoveredHrDevices.where((d) => !savedHrIds.contains(d.id)).toList(),
                     onConnect: (deviceId, deviceName) {
                       ref.read(bleProvider.notifier).connectToHrDevice(
                             deviceId,
@@ -336,12 +345,12 @@ class _WorkoutSummaryCard extends StatelessWidget {
               children: [
                 _SummaryChip(
                   icon: Icons.segment,
-                  label: '$totalSegments intervals',
+                  label: '$totalSegments ${totalSegments == 1 ? 'segment' : 'segments'}',
                 ),
                 const SizedBox(width: 12),
                 _SummaryChip(
                   icon: Icons.category_outlined,
-                  label: workout.workoutType.name,
+                  label: workout.workoutType.displayName,
                 ),
               ],
             ),
@@ -441,7 +450,9 @@ class _DeviceSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(title, style: theme.textTheme.titleSmall),
+                          Flexible(
+                            child: Text(title, style: theme.textTheme.titleSmall, overflow: TextOverflow.ellipsis),
+                          ),
                           if (isRequired) ...[
                             const SizedBox(width: 6),
                             Container(

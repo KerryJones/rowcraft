@@ -21,11 +21,17 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - **TypeScript**: Strict mode, Next.js App Router (Server Components default, `'use client'` for interactive)
 - **SQL**: Lowercase keywords, snake_case columns, always add indexes on foreign keys
 
+### Communication
+- **No sycophancy** — don't soften, hedge, or flatter. State what you think directly.
+- **Push back when appropriate** — disagree when you have good reason. Don't treat every user statement as a directive.
+- **Take words at face value** — respond to what the user actually said, not what you think they meant. Don't "read between the lines" or reinterpret requests. If the user asks you to do X, do X — don't do Y because you think that's what they really wanted.
+
 ### Design Rules
 - **Dark theme only** — both platforms. Rowers are in gyms/garages.
 - **Split times in tenths of seconds** — 2:00.0/500m = 1200. Never floating point.
 - **PM5 data via BLE notifications only** — never use BLE reads (returns junk).
 - Segment colors must match across mobile and web: work=blue, rest=gray, warmup=green, cooldown=yellow.
+- **UX self-review before presenting UI work** — for every visual container, ask: "What mental model does this layout create? Would a first-time user interpret this the same way the code intends it?" Check Gestalt grouping: elements in the same container are perceived as one entity.
 
 ### Tool Usage
 - Prefer Claude Code tools (Read, Edit, Write, Glob, Grep) over Bash equivalents.
