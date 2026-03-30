@@ -55,7 +55,7 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.calendar_month,
+                        const Icon(Icons.calendar_month,
                             size: 64, color: RowCraftTheme.subtleGrey),
                         const SizedBox(height: 16),
                         Text('No plans found',
@@ -97,7 +97,7 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline,
+                    const Icon(Icons.error_outline,
                         size: 48, color: RowCraftTheme.errorRose),
                     const SizedBox(height: 16),
                     Text('Failed to load plans',
@@ -205,7 +205,7 @@ class _ContinueBanner extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios,
+              const Icon(Icons.arrow_forward_ios,
                   size: 16, color: RowCraftTheme.primaryBlue),
             ],
           ),

@@ -95,7 +95,7 @@ class ConnectScreen extends ConsumerWidget {
               bleState.discoveredHrDevices.isEmpty &&
               bleState.savedDevices.isEmpty) ...[
             const SizedBox(height: 48),
-            Icon(Icons.bluetooth_disabled,
+            const Icon(Icons.bluetooth_disabled,
                 size: 64, color: RowCraftTheme.subtleGrey),
             const SizedBox(height: 16),
             Center(

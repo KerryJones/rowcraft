@@ -225,7 +225,7 @@ class _WeekSection extends ConsumerWidget {
                     const Icon(Icons.check_circle,
                         size: 20, color: RowCraftTheme.successGreen)
                   else
-                    Icon(Icons.circle_outlined,
+                    const Icon(Icons.circle_outlined,
                         size: 20, color: RowCraftTheme.subtleGrey),
                   const SizedBox(width: 12),
                   Expanded(
@@ -352,7 +352,7 @@ class _SessionRow extends StatelessWidget {
               const Icon(Icons.play_circle_filled,
                   size: 20, color: RowCraftTheme.primaryBlue)
             else
-              Icon(Icons.circle_outlined,
+              const Icon(Icons.circle_outlined,
                   size: 20, color: RowCraftTheme.subtleGrey),
             const SizedBox(width: 12),
             // Session info
@@ -378,7 +378,7 @@ class _SessionRow extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, size: 20,
+            const Icon(Icons.chevron_right, size: 20,
                 color: RowCraftTheme.subtleGrey),
           ],
         ),

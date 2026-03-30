@@ -87,7 +87,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.rowing,
                           size: 64,
                           color: RowCraftTheme.subtleGrey,
@@ -127,7 +127,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.error_outline,
                       size: 48,
                       color: RowCraftTheme.errorRose,
@@ -209,7 +209,7 @@ class _WorkoutCard extends StatelessWidget {
               Row(
                 children: [
                   // Segment count
-                  Icon(Icons.format_list_numbered,
+                  const Icon(Icons.format_list_numbered,
                       size: 16, color: RowCraftTheme.subtleGrey),
                   const SizedBox(width: 4),
                   Text(
@@ -219,7 +219,7 @@ class _WorkoutCard extends StatelessWidget {
                   const SizedBox(width: 16),
                   // Fork count
                   if (workout.forkCount > 0) ...[
-                    Icon(Icons.fork_right,
+                    const Icon(Icons.fork_right,
                         size: 16, color: RowCraftTheme.subtleGrey),
                     const SizedBox(width: 4),
                     Text(

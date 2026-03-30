@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workout_result.dart';
@@ -101,7 +102,7 @@ class SyncService {
       }
     } catch (e) {
       // Failed — increment attempt counter, will retry next time
-      assert(() { print('Sync failed for row ${row.id}: $e'); return true; }());
+      assert(() { debugPrint('Sync failed for row ${row.id}: $e'); return true; }());
       await db.incrementAttempts(row.id);
     }
   }

@@ -44,7 +44,9 @@
       "mcp__playwright__browser_press_key",
       "mcp__playwright__browser_fill_form",
       "mcp__playwright__browser_type",
-      "mcp__playwright__browser_snapshot"
+      "mcp__playwright__browser_snapshot",
+      "Bash(flutter pub:*)",
+      "Bash(curl -s https://www.google.com/search?q=garmin+hrm+dual+BLE+advertisement+device+name+bluetooth)"
     ]
   }
 }

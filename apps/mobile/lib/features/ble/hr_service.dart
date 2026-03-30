@@ -64,11 +64,28 @@ class HrService {
     _scanResultController?.close();
     _scanResultController = StreamController<DiscoveredDevice>.broadcast();
 
+    // Scan unfiltered, then filter client-side. Most HR monitors advertise
+    // 0x180D but some cheap/older devices only expose it after connection.
+    // Name fallback covers common brands: Polar, Garmin HRM straps, Wahoo
+    // TICKR, CooSpo, Magene, Scosche.
     _scanSubscription = _ble
         .scanForDevices(
-          withServices: [HrUuids.heartRateService],
+          withServices: [],
           scanMode: ScanMode.lowLatency,
         )
+        .where((device) {
+          if (device.serviceUuids.contains(HrUuids.heartRateService)) {
+            return true;
+          }
+          final name = device.name.toUpperCase();
+          return name.startsWith('POLAR ') ||
+              name.startsWith('HRM-') ||
+              name.startsWith('TICKR') ||
+              name.startsWith('COOSPO') ||
+              name.startsWith('MAGENE') ||
+              name.startsWith('RHYTHM') ||
+              name.startsWith('SCOSCHE');
+        })
         .listen(
           (device) => _scanResultController?.add(device),
           onError: (error) {

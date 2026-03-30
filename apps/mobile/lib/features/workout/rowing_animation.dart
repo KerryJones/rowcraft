@@ -121,7 +121,6 @@ class _RowerPainter extends CustomPainter {
     // Coordinate system: origin at center, normalized to size
     final h = size.height;
     final w = size.width;
-    final centerY = h * 0.45; // Slightly above center for head room
 
     // Rail (seat track) — thin horizontal line at bottom
     final railY = h * 0.82;

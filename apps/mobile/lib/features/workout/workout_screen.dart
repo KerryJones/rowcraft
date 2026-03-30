@@ -663,7 +663,7 @@ class _WorkoutControls extends ConsumerWidget {
                   ),
                 ],
               WorkoutPhase.countingDown => [
-                  _ControlButton(
+                  const _ControlButton(
                     icon: Icons.hourglass_top,
                     label: 'STARTING...',
                     color: RowCraftTheme.warningAmber,

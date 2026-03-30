@@ -8,6 +8,9 @@ import 'pm5_parser.dart';
 
 /// PM5 BLE Service UUIDs.
 class PM5Uuids {
+  /// Discovery service — advertised in scan response packets.
+  static final Uuid discoveryService =
+      Uuid.parse('CE060000-43E5-11E4-916C-0800200C9A66');
   static final Uuid rowingService =
       Uuid.parse('CE060030-43E5-11E4-916C-0800200C9A66');
   static final Uuid generalStatusChar =
@@ -80,11 +83,17 @@ class PM5Service {
 
     final controller = StreamController<DiscoveredDevice>.broadcast();
 
+    // Scan unfiltered: PM5 advertises CE060000 in the scan response packet,
+    // which some Android BLE stacks don't match against scan filters.
+    // Filter client-side by advertised service UUID or device name pattern.
     _scanSubscription = _ble
         .scanForDevices(
-          withServices: [PM5Uuids.rowingService],
+          withServices: [],
           scanMode: ScanMode.lowLatency,
         )
+        .where((device) =>
+            device.serviceUuids.contains(PM5Uuids.discoveryService) ||
+            RegExp(r'^PM\d\s').hasMatch(device.name))
         .listen(
           (device) => controller.add(device),
           onError: (error) {

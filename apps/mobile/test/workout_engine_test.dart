@@ -35,7 +35,7 @@ void main() {
     test('initial state is idle', () {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
@@ -50,7 +50,7 @@ void main() {
     test('start begins countdown', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
@@ -72,7 +72,7 @@ void main() {
     test('transitions from countdown to rowing after 3s', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
@@ -91,7 +91,7 @@ void main() {
     });
 
     test('expands repeated segments', () {
-      final segment = WorkoutSegment(
+      const segment = WorkoutSegment(
         type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 500,
@@ -109,7 +109,7 @@ void main() {
     test('completes segment when distance reached', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 100,
@@ -143,7 +143,7 @@ void main() {
     test('stop finalizes and moves to finished', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -162,17 +162,17 @@ void main() {
     test('transitions between work and rest segments', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 1,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
@@ -210,7 +210,7 @@ void main() {
     test('collects split data for completed segments', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
@@ -282,7 +282,7 @@ void main() {
     test('auto-pause triggers after 3s of zero stroke rate', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -349,7 +349,7 @@ void main() {
     test('auto-resume when stroke rate returns > 0', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -421,12 +421,12 @@ void main() {
     test('no auto-pause during rest segments', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 30,
@@ -486,7 +486,7 @@ void main() {
         () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -527,7 +527,7 @@ void main() {
     test('zero-SR samples excluded from averages', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -620,7 +620,7 @@ void main() {
     test('calorie segment progress advances correctly', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.calories,
             durationValue: 100,
@@ -652,7 +652,7 @@ void main() {
     test('calorie segment auto-completes at target', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.calories,
             durationValue: 100,
@@ -686,12 +686,12 @@ void main() {
     test('per-segment calories are deltas not cumulative', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
@@ -739,7 +739,7 @@ void main() {
     test('paused time excluded from time-based segment progress', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.time,
             durationValue: 60,
@@ -827,7 +827,7 @@ void main() {
     test('manual pause does NOT auto-resume on stroke rate > 0', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -878,7 +878,7 @@ void main() {
     test('double pause does not corrupt prePausePhase', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -918,7 +918,7 @@ void main() {
     test('stop while paused produces finished state', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -959,17 +959,17 @@ void main() {
     test('pause during rest, rest timer does not fire', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 2,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
@@ -1021,12 +1021,12 @@ void main() {
     test('calorie segment with non-zero start calories tracks delta', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.calories,
             durationValue: 20,
@@ -1090,17 +1090,17 @@ void main() {
     test('zero-duration rest segment advances to next work segment', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 0,
           ),
-          WorkoutSegment(
+          const WorkoutSegment(
             type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,

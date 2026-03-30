@@ -500,7 +500,7 @@ class _DeviceSection extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.bookmark_outline,
+                      const Icon(Icons.bookmark_outline,
                           size: 14, color: RowCraftTheme.subtleGrey),
                       const SizedBox(width: 8),
                       Expanded(
@@ -535,7 +535,7 @@ class _DeviceSection extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [
-                      Icon(Icons.bluetooth,
+                      const Icon(Icons.bluetooth,
                           size: 14, color: RowCraftTheme.subtleGrey),
                       const SizedBox(width: 8),
                       Expanded(

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/pm5_data.dart';
 import '../../services/local_db.dart';
+import 'ble_permissions.dart';
 import 'hr_service.dart';
 import 'pm5_service.dart';
 
@@ -164,7 +165,16 @@ class BleNotifier extends Notifier<BleState> {
   }
 
   /// Start scanning for both PM5 and HR devices simultaneously.
-  void startScan() {
+  Future<void> startScan() async {
+    final granted = await requestBlePermissions();
+    if (!granted) {
+      state = state.copyWith(
+        error: 'Bluetooth permissions are required to scan for devices. '
+            'Please grant permissions in Settings.',
+      );
+      return;
+    }
+
     final pm5Service = ref.read(pm5ServiceProvider);
     final hrService = ref.read(hrServiceProvider);
     final pm5Devices = <DiscoveredDevice>[];
@@ -317,6 +327,9 @@ class BleNotifier extends Notifier<BleState> {
 
   /// Attempt to auto-reconnect to previously saved devices.
   Future<void> autoReconnect() async {
+    final granted = await requestBlePermissions();
+    if (!granted) return;
+
     final db = ref.read(localDatabaseProvider);
     final devices = await db.getSavedDevices();
 

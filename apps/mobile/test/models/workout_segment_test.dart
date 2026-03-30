@@ -59,7 +59,7 @@ void main() {
     });
 
     test('copyWith', () {
-      final target = const SplitTarget(min: 95.0, max: 100.0);
+      const target = SplitTarget(min: 95.0, max: 100.0);
       final copied = target.copyWith(min: 88.0);
       expect(copied.min, 88.0);
       expect(copied.max, 100.0);
@@ -76,7 +76,7 @@ void main() {
     });
 
     test('copyWith', () {
-      final target = const StrokeRateTarget(min: 26, max: 30);
+      const target = StrokeRateTarget(min: 26, max: 30);
       final copied = target.copyWith(max: 34);
       expect(copied.min, 26);
       expect(copied.max, 34);

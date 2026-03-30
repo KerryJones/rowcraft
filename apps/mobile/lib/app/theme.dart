@@ -23,7 +23,7 @@ class RowCraftTheme {
   static const Color segmentCooldown = Color(0xFFEAB308); // yellow-500
 
   static ThemeData get dark {
-    final colorScheme = ColorScheme.dark(
+    const colorScheme = ColorScheme.dark(
       primary: primaryBlue,
       onPrimary: Colors.white,
       primaryContainer: deepNavy,
@@ -190,7 +190,7 @@ class RowCraftTheme {
         color: surfaceContainerHigh,
         thickness: 1,
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: surfaceContainer,
         selectedItemColor: primaryBlue,
         unselectedItemColor: subtleGrey,

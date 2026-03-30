@@ -84,7 +84,7 @@ class _FtpResultDialogState extends State<FtpResultDialog> {
       actions: [
         TextButton(
           onPressed: widget.onSkip,
-          child: Text(
+          child: const Text(
             'Skip',
             style: TextStyle(color: RowCraftTheme.subtleGrey),
           ),

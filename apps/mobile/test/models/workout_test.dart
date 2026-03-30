@@ -6,7 +6,7 @@ void main() {
   final now = DateTime.utc(2025, 6, 15, 10, 30, 0);
   final later = DateTime.utc(2025, 6, 15, 11, 0, 0);
 
-  Map<String, dynamic> _realisticJson() => {
+  Map<String, dynamic> realisticJson() => {
         'id': 'wk-abc-123',
         'author_id': 'user-xyz-789',
         'title': '5x1000m Intervals',
@@ -47,7 +47,7 @@ void main() {
         'updated_at': later.toIso8601String(),
       };
 
-  Workout _makeWorkout({
+  Workout makeWorkout({
     String id = 'wk-abc-123',
     String authorId = 'user-xyz-789',
     String title = '5x1000m Intervals',
@@ -74,32 +74,38 @@ void main() {
   }
 
   group('WorkoutType enum', () {
-    test('toJson returns the enum name', () {
-      expect(WorkoutType.singleDistance.toJson(), 'singleDistance');
-      expect(WorkoutType.singleTime.toJson(), 'singleTime');
+    test('toJson returns snake_case matching DB convention', () {
+      expect(WorkoutType.singleDistance.toJson(), 'single_distance');
+      expect(WorkoutType.singleTime.toJson(), 'single_time');
       expect(WorkoutType.intervals.toJson(), 'intervals');
-      expect(WorkoutType.variableIntervals.toJson(), 'variableIntervals');
+      expect(WorkoutType.variableIntervals.toJson(), 'variable_intervals');
     });
 
-    test('fromJson parses the enum name', () {
+    test('fromJson parses snake_case values', () {
+      expect(WorkoutType.fromJson('single_distance'),
+          WorkoutType.singleDistance);
+      expect(
+          WorkoutType.fromJson('single_time'), WorkoutType.singleTime);
+      expect(WorkoutType.fromJson('intervals'), WorkoutType.intervals);
+      expect(WorkoutType.fromJson('variable_intervals'),
+          WorkoutType.variableIntervals);
+    });
+
+    test('fromJson falls back to camelCase for legacy data', () {
       expect(WorkoutType.fromJson('singleDistance'),
           WorkoutType.singleDistance);
       expect(
           WorkoutType.fromJson('singleTime'), WorkoutType.singleTime);
-      expect(WorkoutType.fromJson('intervals'), WorkoutType.intervals);
-      expect(WorkoutType.fromJson('variableIntervals'),
-          WorkoutType.variableIntervals);
     });
 
-    test('fromJson throws on unknown value', () {
-      expect(
-          () => WorkoutType.fromJson('unknown'), throwsA(isA<StateError>()));
+    test('fromJson falls back to intervals for unknown value', () {
+      expect(WorkoutType.fromJson('unknown'), WorkoutType.intervals);
     });
   });
 
   group('Workout.fromJson', () {
     test('deserializes all fields from a realistic JSON object', () {
-      final json = _realisticJson();
+      final json = realisticJson();
       final workout = Workout.fromJson(json);
 
       expect(workout.id, 'wk-abc-123');
@@ -123,21 +129,21 @@ void main() {
     });
 
     test('handles empty segments list', () {
-      final json = _realisticJson();
+      final json = realisticJson();
       json['segments'] = <dynamic>[];
       final workout = Workout.fromJson(json);
       expect(workout.segments, isEmpty);
     });
 
     test('handles null segments list', () {
-      final json = _realisticJson();
+      final json = realisticJson();
       json.remove('segments');
       final workout = Workout.fromJson(json);
       expect(workout.segments, isEmpty);
     });
 
     test('handles missing optional fields with defaults', () {
-      final json = _realisticJson();
+      final json = realisticJson();
       json.remove('description');
       json.remove('tags');
       json.remove('is_public');
@@ -155,7 +161,7 @@ void main() {
 
   group('Workout.toJson', () {
     test('serializes all fields', () {
-      final workout = _makeWorkout();
+      final workout = makeWorkout();
       final json = workout.toJson();
 
       expect(json['id'], 'wk-abc-123');
@@ -172,7 +178,7 @@ void main() {
     });
 
     test('serializes empty segments list', () {
-      final workout = _makeWorkout(segments: []);
+      final workout = makeWorkout(segments: []);
       final json = workout.toJson();
       expect(json['segments'], isEmpty);
     });
@@ -180,7 +186,7 @@ void main() {
 
   group('fromJson/toJson roundtrip', () {
     test('realistic workout survives roundtrip', () {
-      final original = _realisticJson();
+      final original = realisticJson();
       final workout = Workout.fromJson(original);
       final roundtripped = Workout.fromJson(workout.toJson());
 
@@ -198,7 +204,7 @@ void main() {
     });
 
     test('empty segments roundtrip', () {
-      final json = _realisticJson();
+      final json = realisticJson();
       json['segments'] = <dynamic>[];
       final workout = Workout.fromJson(json);
       final roundtripped = Workout.fromJson(workout.toJson());
@@ -208,7 +214,7 @@ void main() {
 
   group('Workout.copyWith', () {
     test('preserves unchanged fields', () {
-      final workout = _makeWorkout();
+      final workout = makeWorkout();
       final copied = workout.copyWith(title: 'New Title');
 
       expect(copied.id, workout.id);
@@ -224,7 +230,7 @@ void main() {
     });
 
     test('can change multiple fields at once', () {
-      final workout = _makeWorkout();
+      final workout = makeWorkout();
       final copied = workout.copyWith(
         title: 'Changed',
         isPublic: false,
@@ -242,7 +248,7 @@ void main() {
     });
 
     test('copyWith with no arguments returns equivalent workout', () {
-      final workout = _makeWorkout();
+      final workout = makeWorkout();
       final copied = workout.copyWith();
 
       expect(copied.id, workout.id);
@@ -253,21 +259,21 @@ void main() {
 
   group('Workout equality', () {
     test('workouts with same id are equal', () {
-      final a = _makeWorkout(id: 'same-id');
-      final b = _makeWorkout(id: 'same-id', title: 'Different Title');
+      final a = makeWorkout(id: 'same-id');
+      final b = makeWorkout(id: 'same-id', title: 'Different Title');
       expect(a, equals(b));
       expect(a.hashCode, b.hashCode);
     });
 
     test('workouts with different ids are not equal', () {
-      final a = _makeWorkout(id: 'id-1');
-      final b = _makeWorkout(id: 'id-2');
+      final a = makeWorkout(id: 'id-1');
+      final b = makeWorkout(id: 'id-2');
       expect(a, isNot(equals(b)));
     });
   });
 
   test('toString includes id, title, and type', () {
-    final workout = _makeWorkout();
+    final workout = makeWorkout();
     final str = workout.toString();
     expect(str, contains('wk-abc-123'));
     expect(str, contains('5x1000m Intervals'));

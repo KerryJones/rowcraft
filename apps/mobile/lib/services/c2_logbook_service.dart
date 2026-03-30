@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -96,7 +97,7 @@ class C2LogbookService {
       return false;
     } catch (e) {
       // Log but don't crash — caller handles false return
-      assert(() { print('C2 callback error: $e'); return true; }());
+      assert(() { debugPrint('C2 callback error: $e'); return true; }());
       return false;
     }
   }
@@ -124,7 +125,7 @@ class C2LogbookService {
       }
       return false;
     } catch (e) {
-      assert(() { print('C2 sync error: $e'); return true; }());
+      assert(() { debugPrint('C2 sync error: $e'); return true; }());
       return false;
     }
   }

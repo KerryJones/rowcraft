@@ -105,7 +105,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Logo / Title
-                  Icon(
+                  const Icon(
                     Icons.rowing,
                     size: 64,
                     color: RowCraftTheme.primaryBlue,

@@ -5,7 +5,7 @@ void main() {
   final startedAt = DateTime.utc(2025, 6, 15, 10, 0, 0);
   final finishedAt = DateTime.utc(2025, 6, 15, 10, 30, 0);
 
-  Map<String, dynamic> _splitJson({
+  Map<String, dynamic> splitJson({
     int segmentIndex = 0,
     double distance = 500.0,
     int timeMs = 105000,
@@ -26,7 +26,7 @@ void main() {
         'calories': calories,
       };
 
-  Map<String, dynamic> _resultJson({
+  Map<String, dynamic> resultJson({
     String id = 'result-001',
     String userId = 'user-xyz',
     String? workoutId = 'wk-abc',
@@ -53,14 +53,14 @@ void main() {
         if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
         'avg_watts': avgWatts,
         'calories': calories,
-        'splits': splits ?? [_splitJson(segmentIndex: 0), _splitJson(segmentIndex: 1)],
+        'splits': splits ?? [splitJson(segmentIndex: 0), splitJson(segmentIndex: 1)],
         'synced_to_c2': syncedToC2,
       };
 
   group('SplitData', () {
     group('fromJson', () {
       test('deserializes all fields using segment_index key', () {
-        final json = _splitJson(segmentIndex: 2);
+        final json = splitJson(segmentIndex: 2);
         final split = SplitData.fromJson(json);
 
         expect(split.intervalIndex, 2);
@@ -74,7 +74,7 @@ void main() {
       });
 
       test('handles null avgHeartRate', () {
-        final json = _splitJson(avgHeartRate: null);
+        final json = splitJson(avgHeartRate: null);
         final split = SplitData.fromJson(json);
         expect(split.avgHeartRate, isNull);
       });
@@ -82,7 +82,7 @@ void main() {
 
     group('toJson', () {
       test('serializes using segment_index key (not interval_index)', () {
-        final json = _splitJson(segmentIndex: 3);
+        final json = splitJson(segmentIndex: 3);
         final split = SplitData.fromJson(json);
         final output = split.toJson();
 
@@ -92,7 +92,7 @@ void main() {
       });
 
       test('omits avg_heart_rate when null', () {
-        final json = _splitJson(avgHeartRate: null);
+        final json = splitJson(avgHeartRate: null);
         final split = SplitData.fromJson(json);
         final output = split.toJson();
 
@@ -100,7 +100,7 @@ void main() {
       });
 
       test('includes avg_heart_rate when present', () {
-        final json = _splitJson(avgHeartRate: 160);
+        final json = splitJson(avgHeartRate: 160);
         final split = SplitData.fromJson(json);
         final output = split.toJson();
 
@@ -110,7 +110,7 @@ void main() {
 
     group('fromJson/toJson roundtrip', () {
       test('full split data survives roundtrip', () {
-        final original = _splitJson(segmentIndex: 4, avgHeartRate: 162);
+        final original = splitJson(segmentIndex: 4, avgHeartRate: 162);
         final split = SplitData.fromJson(original);
         final json = split.toJson();
         final roundtripped = SplitData.fromJson(json);
@@ -126,7 +126,7 @@ void main() {
       });
 
       test('split without heart rate survives roundtrip', () {
-        final original = _splitJson(avgHeartRate: null);
+        final original = splitJson(avgHeartRate: null);
         final split = SplitData.fromJson(original);
         final json = split.toJson();
         final roundtripped = SplitData.fromJson(json);
@@ -138,31 +138,31 @@ void main() {
     group('paceFormatted', () {
       test('formats 1:45.0 correctly', () {
         // 1:45.0 = 1*600 + 45*10 + 0 = 1050
-        final split = SplitData.fromJson(_splitJson(avgPace: 1050));
+        final split = SplitData.fromJson(splitJson(avgPace: 1050));
         expect(split.paceFormatted, '1:45.0');
       });
 
       test('formats 2:00.0 correctly', () {
         // 2:00.0 = 2*600 = 1200
-        final split = SplitData.fromJson(_splitJson(avgPace: 1200));
+        final split = SplitData.fromJson(splitJson(avgPace: 1200));
         expect(split.paceFormatted, '2:00.0');
       });
 
       test('formats 1:30.5 correctly', () {
         // 1:30.5 = 1*600 + 30*10 + 5 = 905
-        final split = SplitData.fromJson(_splitJson(avgPace: 905));
+        final split = SplitData.fromJson(splitJson(avgPace: 905));
         expect(split.paceFormatted, '1:30.5');
       });
 
       test('formats 2:05.3 correctly', () {
         // 2:05.3 = 2*600 + 5*10 + 3 = 1253
-        final split = SplitData.fromJson(_splitJson(avgPace: 1253));
+        final split = SplitData.fromJson(splitJson(avgPace: 1253));
         expect(split.paceFormatted, '2:05.3');
       });
 
       test('formats sub-minute pace correctly', () {
         // 0:55.0 = 0*600 + 55*10 + 0 = 550
-        final split = SplitData.fromJson(_splitJson(avgPace: 550));
+        final split = SplitData.fromJson(splitJson(avgPace: 550));
         expect(split.paceFormatted, '0:55.0');
       });
     });
@@ -171,7 +171,7 @@ void main() {
   group('WorkoutResult', () {
     group('fromJson', () {
       test('deserializes all fields from realistic JSON', () {
-        final json = _resultJson();
+        final json = resultJson();
         final result = WorkoutResult.fromJson(json);
 
         expect(result.id, 'result-001');
@@ -191,26 +191,26 @@ void main() {
       });
 
       test('handles null workoutId', () {
-        final json = _resultJson(workoutId: null);
+        final json = resultJson(workoutId: null);
         final result = WorkoutResult.fromJson(json);
         expect(result.workoutId, isNull);
       });
 
       test('handles null avgHeartRate', () {
-        final json = _resultJson(avgHeartRate: null);
+        final json = resultJson(avgHeartRate: null);
         final result = WorkoutResult.fromJson(json);
         expect(result.avgHeartRate, isNull);
       });
 
       test('handles missing splits', () {
-        final json = _resultJson();
+        final json = resultJson();
         json.remove('splits');
         final result = WorkoutResult.fromJson(json);
         expect(result.splits, isEmpty);
       });
 
       test('handles missing synced_to_c2 defaults to false', () {
-        final json = _resultJson();
+        final json = resultJson();
         json.remove('synced_to_c2');
         final result = WorkoutResult.fromJson(json);
         expect(result.syncedToC2, false);
@@ -219,7 +219,7 @@ void main() {
 
     group('toJson', () {
       test('serializes all fields', () {
-        final json = _resultJson();
+        final json = resultJson();
         final result = WorkoutResult.fromJson(json);
         final output = result.toJson();
 
@@ -227,7 +227,7 @@ void main() {
         expect(output['user_id'], 'user-xyz');
         expect(output['workout_id'], 'wk-abc');
         expect(output['total_distance'], 6000.0);
-        expect(output['total_time_ms'], 1800000);
+        expect(output['total_time'], 18000); // tenths of seconds (DB format)
         expect(output['avg_split'], 1050);
         expect(output['avg_stroke_rate'], 28);
         expect(output['avg_heart_rate'], 150);
@@ -238,14 +238,14 @@ void main() {
       });
 
       test('omits workout_id when null', () {
-        final json = _resultJson(workoutId: null);
+        final json = resultJson(workoutId: null);
         final result = WorkoutResult.fromJson(json);
         final output = result.toJson();
         expect(output.containsKey('workout_id'), isFalse);
       });
 
       test('omits avg_heart_rate when null', () {
-        final json = _resultJson(avgHeartRate: null);
+        final json = resultJson(avgHeartRate: null);
         final result = WorkoutResult.fromJson(json);
         final output = result.toJson();
         expect(output.containsKey('avg_heart_rate'), isFalse);
@@ -254,7 +254,7 @@ void main() {
 
     group('fromJson/toJson roundtrip', () {
       test('full result survives roundtrip', () {
-        final original = _resultJson();
+        final original = resultJson();
         final result = WorkoutResult.fromJson(original);
         final json = result.toJson();
         final roundtripped = WorkoutResult.fromJson(json);
@@ -276,7 +276,7 @@ void main() {
       });
 
       test('result without optional fields survives roundtrip', () {
-        final original = _resultJson(workoutId: null, avgHeartRate: null);
+        final original = resultJson(workoutId: null, avgHeartRate: null);
         final result = WorkoutResult.fromJson(original);
         final json = result.toJson();
         final roundtripped = WorkoutResult.fromJson(json);
@@ -288,18 +288,18 @@ void main() {
 
     group('avgSplitFormatted', () {
       test('formats 1:45.0 correctly (avgSplit=1050)', () {
-        final result = WorkoutResult.fromJson(_resultJson(avgSplit: 1050));
+        final result = WorkoutResult.fromJson(resultJson(avgSplit: 1050));
         expect(result.avgSplitFormatted, '1:45.0');
       });
 
       test('formats 2:00.0 correctly (avgSplit=1200)', () {
-        final result = WorkoutResult.fromJson(_resultJson(avgSplit: 1200));
+        final result = WorkoutResult.fromJson(resultJson(avgSplit: 1200));
         expect(result.avgSplitFormatted, '2:00.0');
       });
 
       test('formats 1:58.7 correctly (avgSplit=1187)', () {
         // 1*600 + 58*10 + 7 = 1187
-        final result = WorkoutResult.fromJson(_resultJson(avgSplit: 1187));
+        final result = WorkoutResult.fromJson(resultJson(avgSplit: 1187));
         expect(result.avgSplitFormatted, '1:58.7');
       });
     });
@@ -308,41 +308,41 @@ void main() {
       test('formats 30 minutes as 30:00', () {
         // 30 min = 1800000 ms
         final result = WorkoutResult.fromJson(
-            _resultJson(totalTimeMs: 1800000));
+            resultJson(totalTimeMs: 1800000));
         expect(result.totalTimeFormatted, '30:00');
       });
 
       test('formats 1 hour 5 minutes 30 seconds as 1:05:30', () {
         // 1h 5m 30s = 3930000 ms
         final result = WorkoutResult.fromJson(
-            _resultJson(totalTimeMs: 3930000));
+            resultJson(totalTimeMs: 3930000));
         expect(result.totalTimeFormatted, '1:05:30');
       });
 
       test('formats 5 minutes 9 seconds as 5:09', () {
         // 5m 9s = 309000 ms
         final result = WorkoutResult.fromJson(
-            _resultJson(totalTimeMs: 309000));
+            resultJson(totalTimeMs: 309000));
         expect(result.totalTimeFormatted, '5:09');
       });
 
       test('formats exactly 1 hour as 1:00:00', () {
         final result = WorkoutResult.fromJson(
-            _resultJson(totalTimeMs: 3600000));
+            resultJson(totalTimeMs: 3600000));
         expect(result.totalTimeFormatted, '1:00:00');
       });
 
       test('formats sub-minute as 0:SS', () {
         // 45 seconds = 45000 ms
         final result = WorkoutResult.fromJson(
-            _resultJson(totalTimeMs: 45000));
+            resultJson(totalTimeMs: 45000));
         expect(result.totalTimeFormatted, '0:45');
       });
     });
 
     group('copyWith', () {
       test('preserves unchanged fields', () {
-        final result = WorkoutResult.fromJson(_resultJson());
+        final result = WorkoutResult.fromJson(resultJson());
         final copied = result.copyWith(avgSplit: 1200);
 
         expect(copied.id, result.id);
@@ -355,7 +355,7 @@ void main() {
       });
 
       test('can set syncedToC2 to true', () {
-        final result = WorkoutResult.fromJson(_resultJson(syncedToC2: false));
+        final result = WorkoutResult.fromJson(resultJson(syncedToC2: false));
         final copied = result.copyWith(syncedToC2: true);
         expect(copied.syncedToC2, true);
       });
@@ -363,16 +363,16 @@ void main() {
 
     group('equality', () {
       test('results with same id are equal', () {
-        final a = WorkoutResult.fromJson(_resultJson(id: 'same'));
+        final a = WorkoutResult.fromJson(resultJson(id: 'same'));
         final b = WorkoutResult.fromJson(
-            _resultJson(id: 'same', avgSplit: 9999));
+            resultJson(id: 'same', avgSplit: 9999));
         expect(a, equals(b));
         expect(a.hashCode, b.hashCode);
       });
 
       test('results with different ids are not equal', () {
-        final a = WorkoutResult.fromJson(_resultJson(id: 'id-1'));
-        final b = WorkoutResult.fromJson(_resultJson(id: 'id-2'));
+        final a = WorkoutResult.fromJson(resultJson(id: 'id-1'));
+        final b = WorkoutResult.fromJson(resultJson(id: 'id-2'));
         expect(a, isNot(equals(b)));
       });
     });

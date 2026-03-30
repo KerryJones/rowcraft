@@ -68,13 +68,13 @@ void main() {
 
       test('ignores payloads shorter than 19 bytes', () {
         final data = Uint8List(10);
-        final current = const PM5Data.zero();
+        const current = PM5Data.zero();
         final result = PM5Parser.parseGeneralStatus(data, current);
         expect(identical(result, current), isTrue);
       });
 
       test('preserves existing data not in this characteristic', () {
-        final current = const PM5Data(
+        const current = PM5Data(
           elapsedTime: Duration.zero,
           distance: 0,
           pace: 0,
@@ -108,7 +108,7 @@ void main() {
 
       test('ignores short payloads', () {
         final data = Uint8List(10);
-        final current = const PM5Data.zero();
+        const current = PM5Data.zero();
         final result = PM5Parser.parseStrokeData(data, current);
         expect(identical(result, current), isTrue);
       });
@@ -116,7 +116,7 @@ void main() {
 
     group('parseAdditionalStatus', () {
       test('picks up heart rate when missing from general status', () {
-        final current = const PM5Data.zero(); // heartRate is null
+        const current = PM5Data.zero(); // heartRate is null
 
         final data = Uint8List(12);
         data[5] = 152; // heart rate
@@ -128,7 +128,7 @@ void main() {
       });
 
       test('does not overwrite existing heart rate', () {
-        final current = const PM5Data(
+        const current = PM5Data(
           elapsedTime: Duration.zero,
           distance: 0,
           pace: 0,

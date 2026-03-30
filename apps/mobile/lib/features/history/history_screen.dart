@@ -26,7 +26,7 @@ class HistoryScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.history,
                     size: 64,
                     color: RowCraftTheme.subtleGrey,
@@ -73,7 +73,7 @@ class HistoryScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: RowCraftTheme.errorRose),
+              const Icon(Icons.error_outline, size: 48, color: RowCraftTheme.errorRose),
               const SizedBox(height: 16),
               Text('Failed to load history', style: theme.textTheme.bodyLarge),
               const SizedBox(height: 8),
@@ -163,7 +163,7 @@ class _ResultCard extends StatelessWidget {
                         color: RowCraftTheme.successGreen.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(
+                      child: const Text(
                         'C2 Synced',
                         style: TextStyle(
                           color: RowCraftTheme.successGreen,

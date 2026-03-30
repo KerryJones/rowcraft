@@ -185,7 +185,7 @@ class ProfileScreen extends ConsumerWidget {
               }
             },
             icon: const Icon(Icons.logout, color: RowCraftTheme.errorRose),
-            label: Text(
+            label: const Text(
               'Sign Out',
               style: TextStyle(color: RowCraftTheme.errorRose),
             ),

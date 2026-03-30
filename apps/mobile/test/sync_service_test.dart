@@ -133,7 +133,6 @@ void main() {
     });
 
     test('null avgHeartRate excluded from JSON', () {
-      final result = _makeResult();
       // _makeResult has avgHeartRate: 150, so copyWith to remove it
       // Note: copyWith can't set to null due to Dart limitation,
       // so we construct without it

@@ -306,7 +306,7 @@ class _ResultDetailContent extends StatelessWidget {
                   4: FlexColumnWidth(),
                 },
                 children: [
-                  TableRow(
+                  const TableRow(
                     children: [
                       _TableHeader('#'),
                       _TableHeader('Dist'),
