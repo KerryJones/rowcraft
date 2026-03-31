@@ -41,7 +41,7 @@ export default async function LandingPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Hero */}
       <section className="flex flex-col items-center py-24 text-center">
-        <Waves className="mb-6 h-16 w-16 text-blue-500" />
+        <Waves className="mb-6 h-16 w-16 text-amber-500" />
         <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl">
           RowCraft
         </h1>

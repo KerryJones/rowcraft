@@ -283,9 +283,31 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-/// Deterministically select a WOD index from a list of workouts.
-int getWodIndex(int workoutCount, {int? shuffleOffset}) {
-  final daysSinceEpoch = DateTime.now().difference(DateTime(2025)).inDays;
-  final seed = daysSinceEpoch + (shuffleOffset ?? 0);
-  return seed % workoutCount;
+/// DJB2 hash — matches the web implementation for consistent cross-platform WOD selection.
+int _djb2(String str) {
+  var hash = 5381;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.codeUnitAt(i)) & 0xFFFFFFFF;
+  }
+  return hash;
+}
+
+/// Deterministically select a WOD index using hashed ordering.
+/// Each day (+ optional shuffle offset) produces a pseudo-random permutation
+/// of the workout list, returning the index of the top-ranked workout.
+int getWodIndex(List<String> workoutIds, {int shuffleOffset = 0}) {
+  if (workoutIds.isEmpty) return 0;
+  final daysSinceEpoch = DateTime.now().toUtc().difference(DateTime.utc(2025)).inDays;
+  final seed = daysSinceEpoch + shuffleOffset;
+
+  var bestIndex = 0;
+  var bestHash = (seed * 2654435761 + _djb2(workoutIds[0])) & 0xFFFFFFFF;
+  for (var i = 1; i < workoutIds.length; i++) {
+    final h = (seed * 2654435761 + _djb2(workoutIds[i])) & 0xFFFFFFFF;
+    if (h < bestHash) {
+      bestHash = h;
+      bestIndex = i;
+    }
+  }
+  return bestIndex;
 }

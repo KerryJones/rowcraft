@@ -29,14 +29,11 @@ function getDeterministicWod(workouts: Workout[], seed: number): Workout | null 
   return shuffled[0];
 }
 
-function getDayOfYear(): number {
+function getDaysSinceEpoch(): number {
   const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth();
-  const day = now.getUTCDate();
-  const start = Date.UTC(year, 0, 0);
-  const current = Date.UTC(year, month, day);
-  return Math.floor((current - start) / 86400000);
+  const epoch = Date.UTC(2025, 0, 1);
+  const current = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.floor((current - epoch) / 86400000);
 }
 
 interface WorkoutsClientProps {
@@ -50,7 +47,7 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
   const [tab, setTab] = useState<Tab>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('newest');
-  const [wodSeed, setWodSeed] = useState(getDayOfYear);
+  const [wodSeed, setWodSeed] = useState(getDaysSinceEpoch);
 
   // Collect all tags
   const allTags = useMemo(() => {

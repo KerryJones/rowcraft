@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../widgets/wod_card.dart';
 import '../../widgets/workout_graph.dart';
+import '../plans/plans_provider.dart';
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -117,11 +118,29 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     _selectedType != null;
                 final allWorkouts =
                     ref.watch(workoutLibraryProvider).valueOrNull ?? [];
+
+                // Build WOD pool: exclude tests and plan workouts
+                const wodExcludeTags = {'ftp', 'ramp', 'test'};
+                final plans =
+                    ref.watch(trainingPlansProvider).valueOrNull ?? [];
+                final planWorkoutIds = <String>{
+                  for (final plan in plans)
+                    for (final week in plan.weeks)
+                      for (final session in week.sessions)
+                        session.workoutId,
+                };
+                final wodPool = allWorkouts
+                    .where((w) =>
+                        !w.tags.any(wodExcludeTags.contains) &&
+                        !planWorkoutIds.contains(w.id))
+                    .toList();
+
                 Workout? wodWorkout;
-                if (!hasFilters && allWorkouts.isNotEmpty) {
-                  final wodIdx = getWodIndex(allWorkouts.length,
+                if (!hasFilters && wodPool.isNotEmpty) {
+                  final wodIdx = getWodIndex(
+                      wodPool.map((w) => w.id).toList(),
                       shuffleOffset: _wodShuffleOffset);
-                  wodWorkout = allWorkouts[wodIdx];
+                  wodWorkout = wodPool[wodIdx];
                 }
 
                 // Exclude WOD from filtered list (keep if only 1 workout)
@@ -146,7 +165,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: WodCard(
                             workout: wod,
-                            canShuffle: allWorkouts.length > 1,
+                            canShuffle: wodPool.length > 1,
                             onTap: () =>
                                 context.push('/workout/${wod.id}'),
                             onShuffle: () {

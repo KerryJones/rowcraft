@@ -47,7 +47,7 @@ void main() {
       expect(engine.currentState.phase, WorkoutPhase.idle);
     });
 
-    test('start begins countdown', () async {
+    test('start immediately begins rowing', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
@@ -65,11 +65,10 @@ void main() {
       engine.start();
       await Future.delayed(const Duration(milliseconds: 50));
 
-      expect(states.first, WorkoutPhase.countingDown);
-      expect(engine.currentState.countdownSeconds, 3);
+      expect(states.first, WorkoutPhase.rowing);
     });
 
-    test('transitions from countdown to rowing after 3s', () async {
+    test('ready phase transitions to rowing on first stroke', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
@@ -84,10 +83,59 @@ void main() {
       final phases = <WorkoutPhase>[];
       engine.stateStream.listen((s) => phases.add(s.phase));
 
-      engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      engine.ready();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.ready);
+
+      // Simulate first stroke
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 2,
+        pace: 1200,
+        strokeRate: 24,
+        watts: 180,
+        calories: 0,
+        strokeCount: 1,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       expect(phases, contains(WorkoutPhase.rowing));
+    });
+
+    test('ready phase updates latestData while waiting', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 500,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.ready();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Send data with zero stroke rate (not rowing yet)
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 0,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 0,
+        strokeCount: 0,
+        intervalCount: 0,
+        heartRate: 72,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Should still be in ready phase but have updated data
+      expect(engine.currentState.phase, WorkoutPhase.ready);
+      expect(engine.currentState.latestData.heartRate, 72);
     });
 
     test('expands repeated segments', () {
@@ -122,7 +170,7 @@ void main() {
       engine.stateStream.listen((s) => phases.add(s.phase));
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Simulate PM5 data showing 100m completed
       pm5Controller.add(const PM5Data(
@@ -153,7 +201,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       engine.stop();
       expect(engine.currentState.phase, WorkoutPhase.finished);
@@ -185,7 +233,7 @@ void main() {
       engine.stateStream.listen((s) => phases.add(s.phase));
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Complete first work segment
       pm5Controller.add(const PM5Data(
@@ -220,7 +268,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Send some data then complete
       pm5Controller.add(const PM5Data(
@@ -295,7 +343,7 @@ void main() {
       engine.stateStream.listen((s) => states.add(s));
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Send normal rowing data first
       pm5Controller.add(const PM5Data(
@@ -359,7 +407,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Normal rowing
       pm5Controller.add(const PM5Data(
@@ -436,7 +484,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Complete work segment to enter rest
       pm5Controller.add(const PM5Data(
@@ -496,7 +544,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Send some data to be in rowing state
       pm5Controller.add(const PM5Data(
@@ -537,7 +585,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Send normal rowing data
       pm5Controller.add(const PM5Data(
@@ -630,7 +678,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // 50 of 100 calories
       pm5Controller.add(const PM5Data(
@@ -665,7 +713,7 @@ void main() {
       engine.stateStream.listen((s) => phases.add(s.phase));
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Hit 100 calories target
       pm5Controller.add(const PM5Data(
@@ -701,7 +749,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Complete first segment with 10 cumulative calories
       pm5Controller.add(const PM5Data(
@@ -749,7 +797,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Row for 30s of a 60s segment
       pm5Controller.add(const PM5Data(
@@ -837,7 +885,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Row normally
       pm5Controller.add(const PM5Data(
@@ -888,7 +936,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       pm5Controller.add(const PM5Data(
         elapsedTime: Duration(seconds: 10),
@@ -928,7 +976,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       pm5Controller.add(const PM5Data(
         elapsedTime: Duration(seconds: 10),
@@ -982,7 +1030,7 @@ void main() {
       engine.stateStream.listen((s) => phases.add(s.phase));
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Complete work to enter rest
       pm5Controller.add(const PM5Data(
@@ -1036,7 +1084,7 @@ void main() {
       );
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Complete first segment with 30 cumulative calories
       pm5Controller.add(const PM5Data(
@@ -1113,7 +1161,7 @@ void main() {
       engine.stateStream.listen((s) => phases.add(s.phase));
 
       engine.start();
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // Complete first work segment
       pm5Controller.add(const PM5Data(
@@ -1132,6 +1180,115 @@ void main() {
       // Should have passed through resting and into rowing for segment 2
       expect(engine.currentState.phase, WorkoutPhase.rowing);
       expect(engine.currentState.currentSegmentIndex, 2);
+    });
+  });
+
+  group('Pace fail threshold', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    Workout makeWorkout(List<WorkoutSegment> segments) {
+      return Workout(
+        id: 'test-workout',
+        authorId: 'test-user',
+        title: 'Test Workout',
+        workoutType: WorkoutType.intervals,
+        segments: segments,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    test('pace fail disabled when threshold is 0', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 2000,
+            targetSplit: SplitTarget(min: 1000, max: 1200),
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Send pace well above max (too slow) for 15+ seconds
+      for (var i = 0; i < 5; i++) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: 10 + i * 4),
+          distance: 50.0 + i * 20,
+          pace: 1500, // Way above max of 1200
+          strokeRate: 20,
+          watts: 100,
+          calories: 5 + i,
+          strokeCount: 20 + i * 4,
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(seconds: 4));
+      }
+
+      // Should still be rowing (not finished due to pace fail)
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+      expect(engine.currentState.secondsOutOfRange, 0);
+    });
+
+    test('pace fail triggers when threshold > 0 and pace exceeds max', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 2000,
+            targetSplit: SplitTarget(min: 1000, max: 1200),
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 5,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Send pace above max for 6+ seconds
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 10),
+        distance: 50,
+        pace: 1500,
+        strokeRate: 20,
+        watts: 100,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(seconds: 6));
+
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 17),
+        distance: 80,
+        pace: 1500,
+        strokeRate: 20,
+        watts: 100,
+        calories: 8,
+        strokeCount: 28,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.finished);
+      expect(engine.currentState.finishReason, FinishReason.paceFailed);
     });
   });
 }
