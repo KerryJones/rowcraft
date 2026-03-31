@@ -21,7 +21,7 @@ class PM5Parser {
   /// [3-5]  Distance (0.1m) — 3 bytes LE uint
   /// [6]    Workout type
   /// [7]    Interval type
-  /// [8-9]  Pace (0.01s/500m) — 2 bytes LE uint  (we convert to tenths)
+  /// [8-9]  Pace (0.1s/500m) — 2 bytes LE uint (tenths, used directly)
   /// [10]   Stroke rate
   /// [11-12] Heart rate — 1 byte (some FW sends 2)
   /// [13-14] Watts — 2 bytes LE uint
@@ -42,9 +42,8 @@ class PM5Parser {
         data[3] | (data[4] << 8) | (data[5] << 16);
     final distance = distanceTenths / 10.0;
 
-    // Pace: 2 bytes, units of 0.01s per 500m → convert to tenths
-    final paceCentiseconds = data[8] | (data[9] << 8);
-    final pace = paceCentiseconds ~/ 10; // centiseconds → tenths
+    // Pace: 2 bytes LE, tenths of seconds per 500m (e.g. 1200 = 2:00.0/500m)
+    final pace = data[8] | (data[9] << 8);
 
     // Stroke rate
     final strokeRate = data[10];

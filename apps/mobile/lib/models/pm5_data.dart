@@ -61,13 +61,16 @@ class PM5Data {
   }
 
   /// Format pace as M:SS.t (e.g. 1:45.0)
-  String get paceFormatted {
-    if (pace == 0) return '--:--.--';
-    final minutes = pace ~/ 600;
-    final remaining = pace % 600;
+  String get paceFormatted => formatPaceTenths(pace);
+
+  /// Format a pace value in tenths of seconds per 500m.
+  static String formatPaceTenths(int tenths) {
+    if (tenths == 0) return '--:--.--';
+    final minutes = tenths ~/ 600;
+    final remaining = tenths % 600;
     final seconds = remaining ~/ 10;
-    final tenths = remaining % 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}.$tenths';
+    final t = remaining % 10;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}.$t';
   }
 
   /// Format elapsed time as H:MM:SS or MM:SS

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
+import '../../models/pm5_data.dart';
 import '../../models/workout_segment.dart';
 import '../ble/ble_provider.dart';
 import '../ble/hr_service.dart';
@@ -195,7 +196,7 @@ class _BleStatusBar extends ConsumerWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            hrBpm != null ? '$hrBpm bpm' : '--',
+            hrConnected && hrBpm != null ? '$hrBpm bpm' : '--',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: hrConnected
                       ? RowCraftTheme.metricWhite
@@ -289,36 +290,69 @@ class _MainMetrics extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Tier 3: Animated rower + stroke rate
+          // Tier 3: Stroke rate + Heart rate
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              RowingAnimation(
-                strokeRate: data.strokeRate,
-                isActive: isActive,
-                height: 48,
+              // Stroke rate
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  RowingAnimation(
+                    strokeRate: data.strokeRate,
+                    isActive: isActive,
+                    height: 40,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${data.strokeRate}',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w600,
+                      color: srColor,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    's/m',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 16),
-              Text(
-                '${data.strokeRate}',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w600,
-                  color: srColor,
-                  height: 1.0,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Text(
-                  's/m',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: RowCraftTheme.subtleGrey,
+              // Heart rate — uses pm5Data.heartRate which retains
+              // last known value from the provider's merge logic
+              if (data.heartRate != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    const Icon(Icons.favorite,
+                        size: 20, color: RowCraftTheme.errorRose),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${data.heartRate}',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w600,
+                        color: RowCraftTheme.errorRose,
+                        height: 1.0,
                       ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'bpm',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: RowCraftTheme.subtleGrey,
+                          ),
+                    ),
+                  ],
                 ),
-              ),
             ],
           ),
         ],
@@ -337,6 +371,7 @@ class _TertiaryStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = session.pm5Data;
+    final eng = session.engineState;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -344,8 +379,11 @@ class _TertiaryStrip extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _TertiaryItem(label: 'DISTANCE', value: data.distanceFormatted),
           _TertiaryItem(label: 'TIME', value: data.elapsedFormatted),
+          _TertiaryItem(label: 'DISTANCE', value: data.distanceFormatted),
+          _TertiaryItem(
+              label: 'AVG PACE',
+              value: PM5Data.formatPaceTenths(eng.avgPace)),
           _TertiaryItem(label: 'WATTS', value: '${data.watts}'),
           _TertiaryItem(label: 'CAL', value: '${data.calories}'),
         ],

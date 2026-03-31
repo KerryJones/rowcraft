@@ -13,7 +13,7 @@ void main() {
         // [3-5] distance: 5000 tenths = 500m (0x88, 0x13, 0x00)
         // [6]   workout type: 0
         // [7]   interval type: 0
-        // [8-9] pace: 12000 centiseconds = 2:00.0/500m (0xE0, 0x2E)
+        // [8-9] pace: 1200 tenths = 2:00.0/500m (0xB0, 0x04)
         // [10]  stroke rate: 24
         // [11]  heart rate: 145
         // [12]  reserved: 0
@@ -26,7 +26,7 @@ void main() {
           0x88, 0x13, 0x00, // distance: 5000 tenths of meters
           0x00, // workout type
           0x00, // interval type
-          0xE0, 0x2E, // pace: 12000 centiseconds per 500m
+          0xB0, 0x04, // pace: 1200 tenths per 500m (2:00.0)
           24, // stroke rate
           145, // heart rate
           0x00, // reserved
@@ -45,7 +45,7 @@ void main() {
         // Distance: 5000 tenths = 500.0m
         expect(result.distance, 500.0);
 
-        // Pace: 12000 centiseconds / 10 = 1200 tenths
+        // Pace: 1200 tenths = 2:00.0/500m
         expect(result.pace, 1200);
 
         expect(result.strokeRate, 24);

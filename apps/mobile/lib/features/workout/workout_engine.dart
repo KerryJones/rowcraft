@@ -49,6 +49,10 @@ class WorkoutEngineState {
   /// If the workout finished, why.
   final FinishReason? finishReason;
 
+  /// Running averages across the workout.
+  final int avgPace;
+  final int? avgHeartRate;
+
   const WorkoutEngineState({
     this.phase = WorkoutPhase.idle,
     this.currentSegmentIndex = 0,
@@ -64,6 +68,8 @@ class WorkoutEngineState {
     this.secondsOutOfRange = 0,
     this.paceFailThreshold = 10,
     this.finishReason,
+    this.avgPace = 0,
+    this.avgHeartRate,
   });
 
   WorkoutEngineState copyWith({
@@ -81,6 +87,8 @@ class WorkoutEngineState {
     int? secondsOutOfRange,
     int? paceFailThreshold,
     FinishReason? finishReason,
+    int? avgPace,
+    int? avgHeartRate,
   }) {
     return WorkoutEngineState(
       phase: phase ?? this.phase,
@@ -99,6 +107,8 @@ class WorkoutEngineState {
       secondsOutOfRange: secondsOutOfRange ?? this.secondsOutOfRange,
       paceFailThreshold: paceFailThreshold ?? this.paceFailThreshold,
       finishReason: finishReason ?? this.finishReason,
+      avgPace: avgPace ?? this.avgPace,
+      avgHeartRate: avgHeartRate ?? this.avgHeartRate,
     );
   }
 }
@@ -139,6 +149,12 @@ class WorkoutEngine {
   int _hrSum = 0;
   int _hrCount = 0;
   int _sampleCount = 0;
+
+  // Overall accumulators (across all segments)
+  int _totalPaceSum = 0;
+  int _totalSampleCount = 0;
+  int _totalHrSum = 0;
+  int _totalHrCount = 0;
 
   // Pace fail tracking
   DateTime? _outOfRangeSince;
@@ -398,7 +414,7 @@ class WorkoutEngine {
     // Update latest data
     _state = _state.copyWith(latestData: data);
 
-    // Accumulate for averages
+    // Accumulate for per-segment averages
     _sampleCount++;
     _paceSum += data.pace;
     _strokeRateSum += data.strokeRate;
@@ -406,6 +422,14 @@ class WorkoutEngine {
     if (data.heartRate != null) {
       _hrSum += data.heartRate!;
       _hrCount++;
+    }
+
+    // Accumulate for overall averages
+    _totalSampleCount++;
+    _totalPaceSum += data.pace;
+    if (data.heartRate != null) {
+      _totalHrSum += data.heartRate!;
+      _totalHrCount++;
     }
 
     // Calculate segment progress
@@ -513,6 +537,11 @@ class WorkoutEngine {
   }
 
   void _emit() {
+    _state = _state.copyWith(
+      avgPace: _totalSampleCount > 0 ? _totalPaceSum ~/ _totalSampleCount : 0,
+      avgHeartRate:
+          _totalHrCount > 0 ? _totalHrSum ~/ _totalHrCount : null,
+    );
     _stateController.add(_state);
   }
 
