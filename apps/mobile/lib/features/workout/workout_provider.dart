@@ -171,12 +171,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     try {
       final workout = await _supabaseService.getWorkout(workoutId);
+      final isFtpTest = workout.tags.contains('ftp') ||
+          workout.tags.contains('test');
       _engine = WorkoutEngine(
         workout: workout,
         pm5Stream: _pm5Controller.stream,
+        paceFailThreshold: isFtpTest ? 10 : 0,
       );
 
       _engineSub = _engine!.stateStream.listen((engineState) {
+        // Record start time on first transition out of ready/idle
+        if (_startedAt == null &&
+            engineState.phase == WorkoutPhase.rowing) {
+          _startedAt = DateTime.now();
+        }
         state = state.copyWith(engineState: engineState);
       });
 
@@ -186,6 +194,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         workoutTags: workout.tags,
         isLoading: false,
       );
+
+      // Enter ready phase — workout starts when rower takes first stroke
+      _engine!.ready();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

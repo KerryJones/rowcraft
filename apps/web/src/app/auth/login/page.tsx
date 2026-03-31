@@ -85,7 +85,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
-            <Waves className="h-8 w-8 text-blue-500" />
+            <Waves className="h-8 w-8 text-amber-500" />
             RowCraft
           </Link>
           <p className="mt-2 text-sm text-gray-400">

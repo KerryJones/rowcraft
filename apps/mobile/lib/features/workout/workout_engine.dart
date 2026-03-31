@@ -197,29 +197,29 @@ class WorkoutEngine {
   List<SplitData> get completedSplits =>
       List.unmodifiable(_completedSplits);
 
-  /// Start the workout with a countdown.
-  void start() {
+  /// Enter the ready phase — listens for PM5 data and starts the workout
+  /// automatically when the rower takes the first stroke.
+  void ready() {
     if (_expandedSegments.isEmpty) return;
 
     _state = _state.copyWith(
-      phase: WorkoutPhase.countingDown,
-      countdownSeconds: 3,
+      phase: WorkoutPhase.ready,
       currentSegmentIndex: 0,
       currentSegment: _expandedSegments[0],
       paceFailThreshold: paceFailThreshold,
     );
     _emit();
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final remaining = _state.countdownSeconds - 1;
-      if (remaining <= 0) {
-        timer.cancel();
-        _beginSegment(0);
-      } else {
-        _state = _state.copyWith(countdownSeconds: remaining);
-        _emit();
-      }
-    });
+    // Subscribe to PM5 data so we can detect the first stroke
+    _pm5Subscription?.cancel();
+    _pm5Subscription = pm5Stream.listen(_onPM5Data);
+  }
+
+  /// Start the workout immediately (manual fallback).
+  void start() {
+    if (_expandedSegments.isEmpty) return;
+    _pm5Subscription?.cancel();
+    _beginSegment(0);
   }
 
   /// Pause the workout (manual).
@@ -376,6 +376,18 @@ class WorkoutEngine {
   }
 
   void _onPM5Data(PM5Data data) {
+    // ── Ready phase: wait for first stroke to start ──
+    if (_state.phase == WorkoutPhase.ready) {
+      _state = _state.copyWith(latestData: data);
+      if (data.strokeRate > 0) {
+        _pm5Subscription?.cancel();
+        _beginSegment(0);
+      } else {
+        _emit();
+      }
+      return;
+    }
+
     final segment = _state.currentSegment;
     if (segment == null) return;
 

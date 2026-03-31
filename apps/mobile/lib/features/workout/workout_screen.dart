@@ -1209,14 +1209,18 @@ class _WorkoutControls extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if ((phase == WorkoutPhase.idle || phase == WorkoutPhase.ready) &&
-              !pm5Connected)
+          // Status hint
+          if (phase == WorkoutPhase.idle || phase == WorkoutPhase.ready)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Text(
-                'Connect PM5 to start',
+                pm5Connected
+                    ? 'Start rowing to begin'
+                    : 'Connect PM5 to start',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: RowCraftTheme.subtleGrey,
+                      color: pm5Connected
+                          ? RowCraftTheme.warningAmber
+                          : RowCraftTheme.subtleGrey,
                     ),
               ),
             ),

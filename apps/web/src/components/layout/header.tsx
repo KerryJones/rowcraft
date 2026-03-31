@@ -54,7 +54,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
-          <Waves className="h-7 w-7 text-blue-500" />
+          <Waves className="h-7 w-7 text-amber-500" />
           RowCraft
         </Link>
 
