@@ -38,6 +38,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - Allowlisted Bash: `make`, `git`, `flutter`, `npm`, `dart`, `npx`, `supabase`.
 - **No compound Bash commands** (pipes, `cd && ...`, chained commands) — they always prompt. Use `-C` flags (`git -C path`), `--prefix` (`npm --prefix path`), or separate Bash calls instead.
 - **No git commits/pushes without explicit user permission.** Read-only git (`diff`, `status`, `log`) is fine.
+- **No Claude attribution in commit messages.** Never add `Co-Authored-By` or similar AI credit lines.
 
 ### Memory Discipline
 - Do NOT save architecture, file paths, code patterns, or project structure to MEMORY.md.

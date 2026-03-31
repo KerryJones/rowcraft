@@ -1,0 +1,56 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git push *)",
+      "Bash(git -C * push *)",
+      "Bash(git reset *)",
+      "Bash(git -C * reset *)"
+    ],
+    "ask": [
+      "Bash(git commit *)",
+      "Bash(git -C * commit *)",
+      "Bash(git merge *)",
+      "Bash(git -C * merge *)",
+      "Bash(git rebase *)",
+      "Bash(git -C * rebase *)",
+      "Bash(git restore *)",
+      "Bash(git -C * restore *)",
+      "Bash(git checkout *)",
+      "Bash(git -C * checkout *)",
+      "Bash(git stash *)",
+      "Bash(git -C * stash *)",
+      "Bash(git cherry-pick *)",
+      "Bash(git -C * cherry-pick *)"
+    ],
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git status)",
+      "Bash(git -C * status *)",
+      "Bash(git -C * status)",
+      "Bash(git diff *)",
+      "Bash(git diff)",
+      "Bash(git -C * diff *)",
+      "Bash(git -C * diff)",
+      "Bash(git log *)",
+      "Bash(git -C * log *)",
+      "Bash(git branch *)",
+      "Bash(git branch)",
+      "Bash(git -C * branch *)",
+      "Bash(git -C * branch)",
+      "Bash(git show *)",
+      "Bash(git -C * show *)",
+      "Bash(git blame *)",
+      "Bash(git -C * blame *)",
+      "Bash(git remote *)",
+      "Bash(git -C * remote *)",
+      "Bash(git add *)",
+      "Bash(git -C * add *)",
+      "Bash(flutter *)",
+      "Bash(dart *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(make *)",
+      "Bash(supabase *)"
+    ]
+  }
+}
