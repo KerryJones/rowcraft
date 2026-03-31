@@ -148,7 +148,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                     label: 'Heart Rate',
                     badge: 'OPTIONAL',
                     badgeColor: RowCraftTheme.subtleGrey,
-                    connectedColor: RowCraftTheme.errorRose,
+                    connectedColor: RowCraftTheme.successGreen,
                     isConnected: bleState.hrConnectionState ==
                         HrConnectionState.connected,
                     isConnecting: bleState.hrConnectionState ==

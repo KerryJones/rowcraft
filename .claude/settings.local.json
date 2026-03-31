@@ -48,7 +48,10 @@
       "Bash(flutter pub:*)",
       "Bash(curl -s https://www.google.com/search?q=garmin+hrm+dual+BLE+advertisement+device+name+bluetooth)",
       "Bash(pip3 install:*)",
-      "Bash(sips:*)"
+      "Bash(sips:*)",
+      "Bash(flutter:*)",
+      "Bash(curl:*)",
+      "Bash(gh search:*)"
     ]
   }
 }
