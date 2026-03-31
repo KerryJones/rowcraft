@@ -46,7 +46,9 @@
       "mcp__playwright__browser_type",
       "mcp__playwright__browser_snapshot",
       "Bash(flutter pub:*)",
-      "Bash(curl -s https://www.google.com/search?q=garmin+hrm+dual+BLE+advertisement+device+name+bluetooth)"
+      "Bash(curl -s https://www.google.com/search?q=garmin+hrm+dual+BLE+advertisement+device+name+bluetooth)",
+      "Bash(pip3 install:*)",
+      "Bash(sips:*)"
     ]
   }
 }

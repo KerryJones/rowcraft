@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
@@ -70,20 +69,16 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Logo + wordmark
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SvgPicture.asset(
-                    'assets/logo.svg',
+                  Image.asset(
+                    'assets/logo_dark.png',
                     width: 48,
-                    height: 32,
-                    colorFilter: const ColorFilter.mode(
-                      RowCraftTheme.metricWhite,
-                      BlendMode.srcIn,
-                    ),
+                    height: 48,
                   ),
                   const SizedBox(width: 12),
                   Text(
@@ -94,7 +89,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
               // Headline
               Text(
@@ -113,11 +108,11 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
 
               // Device cards
-              Expanded(
-                child: Row(
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // PM5 card
                     Expanded(
@@ -162,8 +157,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
+              const Spacer(),
 
               // Error
               if (bleState.error != null)
@@ -352,9 +346,9 @@ class _DeviceCard extends StatelessWidget {
           width: 2,
         ),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Badge
           Container(
@@ -373,15 +367,15 @@ class _DeviceCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Icon
           Icon(
             isConnected ? Icons.check_circle : icon,
-            size: 48,
+            size: 40,
             color: isConnected ? connectedColor : RowCraftTheme.subtleGrey,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // Label
           Text(
@@ -398,7 +392,7 @@ class _DeviceCard extends StatelessWidget {
             deviceName: deviceName,
             connectedColor: connectedColor,
           ),
-          const Spacer(),
+          const SizedBox(height: 16),
 
           // Action button
           _ActionButton(
@@ -499,17 +493,28 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (connectionState) {
-      _CardConnectionState.idle => hasDevice
-          ? SizedBox(
-              height: 36,
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onConnect,
-                child: const Text('Connect'),
-              ),
-            )
-          : const SizedBox(height: 36),
-      _CardConnectionState.scanning => const SizedBox(height: 36),
+      _CardConnectionState.idle when hasDevice => SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: onConnect,
+            child: const Text('Connect'),
+          ),
+        ),
+      _CardConnectionState.scanning when hasDevice => SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: onConnect,
+            child: const Text('Connect'),
+          ),
+        ),
+      _CardConnectionState.idle => SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: onRetry,
+            child: const Text('Scan'),
+          ),
+        ),
+      _CardConnectionState.scanning => const SizedBox.shrink(),
       _CardConnectionState.connecting => const SizedBox(
           height: 36,
           child: Center(
@@ -520,19 +525,13 @@ class _ActionButton extends StatelessWidget {
             ),
           ),
         ),
-      _CardConnectionState.connected => SizedBox(
-          height: 36,
-          child: TextButton(
-            onPressed: onDisconnect,
-            child: const Text('Disconnect'),
-          ),
+      _CardConnectionState.connected => TextButton(
+          onPressed: onDisconnect,
+          child: const Text('Disconnect'),
         ),
-      _CardConnectionState.notFound => SizedBox(
-          height: 36,
-          child: TextButton(
-            onPressed: onRetry,
-            child: const Text('Scan again'),
-          ),
+      _CardConnectionState.notFound => TextButton(
+          onPressed: onRetry,
+          child: const Text('Scan again'),
         ),
     };
   }

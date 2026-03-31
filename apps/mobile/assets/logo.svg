@@ -4,7 +4,7 @@
         stroke="white" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   <line x1="8" y1="8" x2="8" y2="72" stroke="white" stroke-width="7" stroke-linecap="round"/>
 
-  <!-- C letterform — opens right, suggesting the catch position -->
+  <!-- C letterform -->
   <path d="M112 20c-4-8-12-12-22-12-16 0-28 14-28 32s12 32 28 32c10 0 18-4 22-12"
         stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
 </svg>

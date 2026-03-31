@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../services/local_db.dart';
 import '../../services/supabase_service.dart';
+import '../../widgets/workout_graph.dart';
 import '../ble/ble_provider.dart';
 import '../ble/hr_service.dart';
 import '../ble/pm5_service.dart';
@@ -340,7 +341,12 @@ class _WorkoutSummaryCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+
+            // Segment graph
+            WorkoutGraph(segments: workout.segments, height: 140),
+
+            const SizedBox(height: 16),
             Row(
               children: [
                 _SummaryChip(

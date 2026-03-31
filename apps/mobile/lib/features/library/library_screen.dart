@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout.dart';
+import '../../widgets/wod_card.dart';
+import '../../widgets/workout_graph.dart';
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -16,6 +18,7 @@ class LibraryScreen extends ConsumerStatefulWidget {
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final _searchController = TextEditingController();
   WorkoutType? _selectedType;
+  int _wodShuffleOffset = 0;
 
   @override
   void dispose() {
@@ -109,15 +112,53 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   );
                 }
 
+                // WOD: only show when no filters active
+                final hasFilters = _searchController.text.isNotEmpty ||
+                    _selectedType != null;
+                final allWorkouts =
+                    ref.watch(workoutLibraryProvider).valueOrNull ?? [];
+                Workout? wodWorkout;
+                if (!hasFilters && allWorkouts.isNotEmpty) {
+                  final wodIdx = getWodIndex(allWorkouts.length,
+                      shuffleOffset: _wodShuffleOffset);
+                  wodWorkout = allWorkouts[wodIdx];
+                }
+
+                // Exclude WOD from filtered list (keep if only 1 workout)
+                final wod = wodWorkout;
+                final displayWorkouts = wod != null && workouts.length > 1
+                    ? workouts
+                        .where((w) => w.id != wod.id)
+                        .toList()
+                    : workouts;
+
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(workoutLibraryProvider);
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: workouts.length,
+                    itemCount: displayWorkouts.length + (wod != null ? 1 : 0),
                     itemBuilder: (context, index) {
-                      return _WorkoutCard(workout: workouts[index]);
+                      // WOD card at position 0
+                      if (wod != null && index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: WodCard(
+                            workout: wod,
+                            canShuffle: allWorkouts.length > 1,
+                            onTap: () =>
+                                context.push('/workout/${wod.id}'),
+                            onShuffle: () {
+                              setState(() => _wodShuffleOffset++);
+                            },
+                          ),
+                        );
+                      }
+                      final workoutIndex =
+                          wod != null ? index - 1 : index;
+                      return _WorkoutCard(
+                          workout: displayWorkouts[workoutIndex]);
                     },
                   ),
                 );
@@ -205,22 +246,27 @@ class _WorkoutCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+
+              // Segment graph
+              WorkoutGraph(segments: workout.segments, height: 56),
+
+              const SizedBox(height: 10),
               Row(
                 children: [
                   // Segment count
-                  const Icon(Icons.format_list_numbered,
-                      size: 16, color: RowCraftTheme.subtleGrey),
+                  const Icon(Icons.segment,
+                      size: 14, color: RowCraftTheme.subtleGrey),
                   const SizedBox(width: 4),
                   Text(
-                    '${workout.segments.length} segments',
+                    '${workout.segments.fold(0, (sum, s) => sum + s.repeat)} segments',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(width: 16),
                   // Fork count
                   if (workout.forkCount > 0) ...[
                     const Icon(Icons.fork_right,
-                        size: 16, color: RowCraftTheme.subtleGrey),
+                        size: 14, color: RowCraftTheme.subtleGrey),
                     const SizedBox(width: 4),
                     Text(
                       '${workout.forkCount}',
