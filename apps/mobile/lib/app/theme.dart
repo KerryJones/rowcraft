@@ -22,6 +22,13 @@ class RowCraftTheme {
   static const Color segmentWarmup = Color(0xFF22C55E);   // green-500
   static const Color segmentCooldown = Color(0xFFEAB308); // yellow-500
 
+  // HR zone colors (5-zone model)
+  static const Color hrZone1 = Color(0xFF66BB6A);   // recovery — green
+  static const Color hrZone2 = Color(0xFF29B6F6);   // endurance — light blue
+  static const Color hrZone3 = Color(0xFFFFB300);   // tempo — amber
+  static const Color hrZone4 = Color(0xFFFF7043);   // threshold — deep orange
+  static const Color hrZone5 = Color(0xFFEF5350);   // VO2 max — red
+
   static ThemeData get dark {
     const colorScheme = ColorScheme.dark(
       primary: primaryBlue,
