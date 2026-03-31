@@ -181,7 +181,7 @@ class _ConnectionStatusBar extends StatelessWidget {
                   Icons.favorite,
                   size: 20,
                   color: hrConnected
-                      ? RowCraftTheme.errorRose
+                      ? RowCraftTheme.successGreen
                       : RowCraftTheme.subtleGrey,
                 ),
                 const SizedBox(width: 8),
@@ -219,7 +219,7 @@ class _SavedDeviceTile extends ConsumerWidget {
         leading: Icon(
           isPm5 ? Icons.rowing : Icons.favorite,
           color: isConnected
-              ? (isPm5 ? RowCraftTheme.successGreen : RowCraftTheme.errorRose)
+              ? RowCraftTheme.successGreen
               : RowCraftTheme.subtleGrey,
         ),
         title: Text(device.deviceName),

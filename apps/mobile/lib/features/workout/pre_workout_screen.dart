@@ -200,7 +200,7 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
                     isRequired: false,
                     isConnecting: bleState.hrConnectionState ==
                         HrConnectionState.connecting,
-                    connectedColor: RowCraftTheme.errorRose,
+                    connectedColor: RowCraftTheme.successGreen,
                     savedDevices: bleState.savedDevices
                         .where((d) => d.deviceType == 'hr')
                         .toList(),

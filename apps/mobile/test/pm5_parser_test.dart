@@ -6,128 +6,117 @@ import 'package:rowcraft/models/pm5_data.dart';
 
 void main() {
   group('PM5Parser', () {
-    group('parseGeneralStatus', () {
-      test('parses 19-byte general status payload', () {
-        // Build a 19-byte payload:
-        // [0-2] elapsed time: 6000 centiseconds = 60s (0x70, 0x17, 0x00)
-        // [3-5] distance: 5000 tenths = 500m (0x88, 0x13, 0x00)
-        // [6]   workout type: 0
-        // [7]   interval type: 0
-        // [8-9] pace: 1200 tenths = 2:00.0/500m (0xB0, 0x04)
-        // [10]  stroke rate: 24
-        // [11]  heart rate: 145
-        // [12]  reserved: 0
-        // [13-14] watts: 180 (0xB4, 0x00)
-        // [15-16] calories: 25 (0x19, 0x00)
-        // [17]  interval count: 1
-        // [18]  reserved: 0
-        final data = Uint8List.fromList([
-          0x70, 0x17, 0x00, // elapsed time: 6000 centiseconds
-          0x88, 0x13, 0x00, // distance: 5000 tenths of meters
-          0x00, // workout type
-          0x00, // interval type
-          0xB0, 0x04, // pace: 1200 tenths per 500m (2:00.0)
-          24, // stroke rate
-          145, // heart rate
-          0x00, // reserved
-          0xB4, 0x00, // watts: 180
-          0x19, 0x00, // calories: 25
-          0x01, // interval count
-          0x00, // reserved
-        ]);
+    group('parseGeneralStatus (CE060031)', () {
+      test('parses elapsed time and distance', () {
+        // [0-2] elapsed time: 6000 centiseconds = 60s
+        // [3-5] distance: 5000 tenths = 500.0m
+        // [6-18] other fields (workout state, rowing state, etc.)
+        final data = Uint8List(19);
+        data[0] = 0x70;
+        data[1] = 0x17;
+        data[2] = 0x00; // 6000 centiseconds
+        data[3] = 0x88;
+        data[4] = 0x13;
+        data[5] = 0x00; // 5000 tenths of meters
 
         final result =
             PM5Parser.parseGeneralStatus(data, const PM5Data.zero());
 
-        // Elapsed: 6000 centiseconds = 60,000 ms = 60s
         expect(result.elapsedTime.inSeconds, 60);
-
-        // Distance: 5000 tenths = 500.0m
         expect(result.distance, 500.0);
+        // Should NOT set pace, strokeRate, watts, etc.
+        expect(result.pace, 0);
+        expect(result.strokeRate, 0);
+        expect(result.watts, 0);
+      });
 
-        // Pace: 1200 tenths = 2:00.0/500m
+      test('ignores payloads shorter than 6 bytes', () {
+        final data = Uint8List(4);
+        const current = PM5Data.zero();
+        final result = PM5Parser.parseGeneralStatus(data, current);
+        expect(identical(result, current), isTrue);
+      });
+
+      test('preserves fields from other characteristics', () {
+        const current = PM5Data(
+          elapsedTime: Duration.zero,
+          distance: 0,
+          pace: 1200,
+          strokeRate: 24,
+          watts: 180,
+          calories: 25,
+          strokeCount: 42,
+          intervalCount: 3,
+        );
+
+        final data = Uint8List(19);
+        data[0] = 0x70;
+        data[1] = 0x17;
+        data[2] = 0x00;
+        data[3] = 0x88;
+        data[4] = 0x13;
+        data[5] = 0x00;
+
+        final result = PM5Parser.parseGeneralStatus(data, current);
+        // Updated fields
+        expect(result.elapsedTime.inSeconds, 60);
+        expect(result.distance, 500.0);
+        // Preserved from current
         expect(result.pace, 1200);
+        expect(result.strokeRate, 24);
+        expect(result.watts, 180);
+        expect(result.calories, 25);
+        expect(result.strokeCount, 42);
+        expect(result.intervalCount, 3);
+      });
+    });
+
+    group('parseAdditionalStatus (CE060032)', () {
+      test('parses stroke rate, heart rate, and pace', () {
+        // [0-2] elapsed time
+        // [3-4] speed
+        // [5] stroke rate: 24
+        // [6] heart rate: 145
+        // [7-8] current pace: 12000 centiseconds = 2:00.0/500m
+        // [9-10] average pace
+        final data = Uint8List(17);
+        data[5] = 24; // stroke rate
+        data[6] = 145; // heart rate
+        data[7] = 0xE0;
+        data[8] = 0x2E; // 12000 centiseconds
+
+        final result =
+            PM5Parser.parseAdditionalStatus(data, const PM5Data.zero());
 
         expect(result.strokeRate, 24);
         expect(result.heartRate, 145);
-        expect(result.watts, 180);
-        expect(result.calories, 25);
-        expect(result.intervalCount, 1);
+        // 12000 centiseconds / 10 = 1200 tenths = 2:00.0/500m
+        expect(result.pace, 1200);
       });
 
-      test('handles zero heart rate as null', () {
-        final data = Uint8List(19); // All zeros
-        data[10] = 22; // stroke rate
+      test('handles invalid heart rate (255)', () {
+        final data = Uint8List(17);
+        data[5] = 22;
+        data[6] = 255; // invalid HR
 
         final result =
-            PM5Parser.parseGeneralStatus(data, const PM5Data.zero());
+            PM5Parser.parseAdditionalStatus(data, const PM5Data.zero());
 
         expect(result.heartRate, isNull);
         expect(result.strokeRate, 22);
       });
 
-      test('ignores payloads shorter than 19 bytes', () {
-        final data = Uint8List(10);
-        const current = PM5Data.zero();
-        final result = PM5Parser.parseGeneralStatus(data, current);
-        expect(identical(result, current), isTrue);
-      });
-
-      test('preserves existing data not in this characteristic', () {
-        const current = PM5Data(
-          elapsedTime: Duration.zero,
-          distance: 0,
-          pace: 0,
-          strokeRate: 0,
-          watts: 0,
-          calories: 0,
-          strokeCount: 42,
-          intervalCount: 0,
-        );
-
-        final data = Uint8List(19);
-        final result = PM5Parser.parseGeneralStatus(data, current);
-
-        // strokeCount should be preserved from current
-        expect(result.strokeCount, 42);
-      });
-    });
-
-    group('parseStrokeData', () {
-      test('parses stroke count from stroke data payload', () {
-        final data = Uint8List(20);
-        // Stroke count at bytes [16-17]: 150 (0x96, 0x00)
-        data[16] = 0x96;
-        data[17] = 0x00;
+      test('handles zero heart rate', () {
+        final data = Uint8List(17);
+        data[6] = 0;
 
         final result =
-            PM5Parser.parseStrokeData(data, const PM5Data.zero());
+            PM5Parser.parseAdditionalStatus(data, const PM5Data.zero());
 
-        expect(result.strokeCount, 150);
+        expect(result.heartRate, isNull);
       });
 
-      test('ignores short payloads', () {
-        final data = Uint8List(10);
-        const current = PM5Data.zero();
-        final result = PM5Parser.parseStrokeData(data, current);
-        expect(identical(result, current), isTrue);
-      });
-    });
-
-    group('parseAdditionalStatus', () {
-      test('picks up heart rate when missing from general status', () {
-        const current = PM5Data.zero(); // heartRate is null
-
-        final data = Uint8List(12);
-        data[5] = 152; // heart rate
-
-        final result =
-            PM5Parser.parseAdditionalStatus(data, current);
-
-        expect(result.heartRate, 152);
-      });
-
-      test('does not overwrite existing heart rate', () {
+      test('preserves existing heart rate when new is invalid', () {
         const current = PM5Data(
           elapsedTime: Duration.zero,
           distance: 0,
@@ -140,14 +129,64 @@ void main() {
           intervalCount: 0,
         );
 
-        final data = Uint8List(12);
-        data[5] = 160;
+        final data = Uint8List(17);
+        data[6] = 255; // invalid
+
+        final result = PM5Parser.parseAdditionalStatus(data, current);
+        expect(result.heartRate, 145);
+      });
+
+      test('ignores short payloads', () {
+        final data = Uint8List(8);
+        const current = PM5Data.zero();
+        final result = PM5Parser.parseAdditionalStatus(data, current);
+        expect(identical(result, current), isTrue);
+      });
+    });
+
+    group('parseAdditionalStatus2 (CE060033)', () {
+      test('parses interval count, watts, and calories', () {
+        final data = Uint8List(9);
+        data[3] = 5; // interval count
+        data[4] = 0xB4;
+        data[5] = 0x00; // watts: 180
+        data[6] = 0x19;
+        data[7] = 0x00;
+        data[8] = 0x00; // calories: 25
 
         final result =
-            PM5Parser.parseAdditionalStatus(data, current);
+            PM5Parser.parseAdditionalStatus2(data, const PM5Data.zero());
 
-        // Should keep existing 145, not overwrite with 160
-        expect(result.heartRate, 145);
+        expect(result.intervalCount, 5);
+        expect(result.watts, 180);
+        expect(result.calories, 25);
+      });
+
+      test('ignores short payloads', () {
+        final data = Uint8List(6);
+        const current = PM5Data.zero();
+        final result = PM5Parser.parseAdditionalStatus2(data, current);
+        expect(identical(result, current), isTrue);
+      });
+    });
+
+    group('parseStrokeData (CE060035)', () {
+      test('parses stroke count from stroke data payload', () {
+        final data = Uint8List(20);
+        data[16] = 0x96;
+        data[17] = 0x00; // 150
+
+        final result =
+            PM5Parser.parseStrokeData(data, const PM5Data.zero());
+
+        expect(result.strokeCount, 150);
+      });
+
+      test('ignores short payloads', () {
+        final data = Uint8List(10);
+        const current = PM5Data.zero();
+        final result = PM5Parser.parseStrokeData(data, current);
+        expect(identical(result, current), isTrue);
       });
     });
   });

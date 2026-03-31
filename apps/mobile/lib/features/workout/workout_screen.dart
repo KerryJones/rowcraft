@@ -191,7 +191,7 @@ class _BleStatusBar extends ConsumerWidget {
             Icons.favorite,
             size: 14,
             color: hrConnected
-                ? RowCraftTheme.errorRose
+                ? RowCraftTheme.successGreen
                 : RowCraftTheme.subtleGrey,
           ),
           const SizedBox(width: 4),
@@ -333,14 +333,14 @@ class _MainMetrics extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     const Icon(Icons.favorite,
-                        size: 20, color: RowCraftTheme.errorRose),
+                        size: 20, color: RowCraftTheme.metricWhite),
                     const SizedBox(width: 6),
                     Text(
                       '${data.heartRate}',
                       style: GoogleFonts.jetBrainsMono(
                         fontSize: 36,
                         fontWeight: FontWeight.w600,
-                        color: RowCraftTheme.errorRose,
+                        color: RowCraftTheme.metricWhite,
                         height: 1.0,
                       ),
                     ),

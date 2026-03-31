@@ -156,7 +156,7 @@ class PM5Service {
 
   /// Subscribe to PM5 rowing data characteristics (notifications only).
   Future<void> _subscribeToCharacteristics(String deviceId) async {
-    // General Status (primary data: time, distance, pace, stroke rate, watts, calories, HR)
+    // General Status (CE060031): elapsed time, distance
     _subscribeToChar(deviceId, PM5Uuids.generalStatusChar, (data) {
       final parsed = PM5Parser.parseGeneralStatus(
         Uint8List.fromList(data),
@@ -166,9 +166,19 @@ class PM5Service {
       _pm5DataController.add(parsed);
     });
 
-    // Additional Status (stroke count, etc.)
+    // Additional Status 1 (CE060032): pace, stroke rate, heart rate
     _subscribeToChar(deviceId, PM5Uuids.additionalStatusChar, (data) {
       final parsed = PM5Parser.parseAdditionalStatus(
+        Uint8List.fromList(data),
+        _latestData,
+      );
+      _latestData = parsed;
+      _pm5DataController.add(parsed);
+    });
+
+    // Additional Status 2 (CE060033): watts, calories, interval count
+    _subscribeToChar(deviceId, PM5Uuids.additionalStatus2Char, (data) {
+      final parsed = PM5Parser.parseAdditionalStatus2(
         Uint8List.fromList(data),
         _latestData,
       );
