@@ -137,8 +137,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
                 Workout? wodWorkout;
                 if (!hasFilters && wodPool.isNotEmpty) {
-                  final wodIdx = getWodIndex(
-                      wodPool.map((w) => w.id).toList(),
+                  final wodIdx = getWodIndex(wodPool.length,
                       shuffleOffset: _wodShuffleOffset);
                   wodWorkout = wodPool[wodIdx];
                 }

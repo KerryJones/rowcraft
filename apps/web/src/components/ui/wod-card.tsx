@@ -10,9 +10,10 @@ interface WodCardProps {
   workout: Workout;
   onShuffle: () => void;
   onView: () => void;
+  canShuffle?: boolean;
 }
 
-export function WodCard({ workout, onShuffle, onView }: WodCardProps) {
+export function WodCard({ workout, onShuffle, onView, canShuffle = true }: WodCardProps) {
   const totalTime = computeTotalTime(workout.segments);
   const totalDistance = computeTotalDistance(workout.segments);
   const segmentCount = computeSegmentCount(workout.segments);
@@ -51,15 +52,17 @@ export function WodCard({ workout, onShuffle, onView }: WodCardProps) {
             Workout of the Day
           </span>
         </div>
-        <button
-          type="button"
-          onClick={onShuffle}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-700 px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
-          title="Shuffle WOD"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Shuffle
-        </button>
+        {canShuffle && (
+          <button
+            type="button"
+            onClick={onShuffle}
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-700 px-2.5 py-1.5 text-xs text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
+            title="Shuffle WOD"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Shuffle
+          </button>
+        )}
       </div>
 
       {/* Title */}
