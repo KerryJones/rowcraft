@@ -11,24 +11,6 @@ import { Search, Plus } from 'lucide-react';
 type Tab = 'all' | 'mine' | 'community';
 type SortKey = 'newest' | 'most_forked' | 'duration';
 
-function djb2(str: string): number {
-  let hash = 5381;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash + str.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
-function getDeterministicWod(workouts: Workout[], seed: number): Workout | null {
-  if (workouts.length === 0) return null;
-  const shuffled = [...workouts].sort((a, b) => {
-    const hashA = (seed * 2654435761 + djb2(a.id)) >>> 0;
-    const hashB = (seed * 2654435761 + djb2(b.id)) >>> 0;
-    return hashA - hashB;
-  });
-  return shuffled[0];
-}
-
 function getDaysSinceEpoch(): number {
   const now = new Date();
   const epoch = Date.UTC(2025, 0, 1);
@@ -57,7 +39,9 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
   }, [workouts]);
 
   const publicWorkouts = workouts.filter((w) => w.is_public);
-  const wod = getDeterministicWod(publicWorkouts, wodSeed);
+  const wod = publicWorkouts.length > 0
+    ? publicWorkouts[wodSeed % publicWorkouts.length]
+    : null;
 
   // Filter workouts
   const filtered = useMemo(() => {
@@ -129,6 +113,7 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
         <div className="mb-8">
           <WodCard
             workout={wod}
+            canShuffle={publicWorkouts.length > 1}
             onShuffle={() => setWodSeed((s) => s + 1)}
             onView={() => router.push(`/workouts/${wod.id}`)}
           />

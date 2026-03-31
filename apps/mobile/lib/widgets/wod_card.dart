@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
 import '../models/workout.dart';
@@ -28,24 +29,27 @@ class WodCard extends StatelessWidget {
     final segmentCount = _computeSegmentCount(workout.segments);
     final avgPace = _computeAvgPace(workout.segments);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: RowCraftTheme.warningAmber.withValues(alpha: 0.3),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: RowCraftTheme.warningAmber.withValues(alpha: 0.3),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                RowCraftTheme.warningAmber.withValues(alpha: 0.1),
+                RowCraftTheme.surfaceContainer,
+              ],
+            ),
           ),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              RowCraftTheme.warningAmber.withValues(alpha: 0.1),
-              RowCraftTheme.surfaceContainer,
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -64,28 +68,37 @@ class WodCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                if (canShuffle) GestureDetector(
-                  onTap: onShuffle,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: RowCraftTheme.subtleGrey.withValues(alpha: 0.3)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.refresh, size: 14,
-                            color: RowCraftTheme.subtleGrey),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Shuffle',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: RowCraftTheme.subtleGrey,
+                if (canShuffle) Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      onShuffle();
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                            color: RowCraftTheme.warningAmber
+                                .withValues(alpha: 0.4)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.shuffle, size: 14,
+                              color: RowCraftTheme.warningAmber),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Shuffle',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: RowCraftTheme.warningAmber,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -190,6 +203,7 @@ class WodCard extends StatelessWidget {
             ],
           ],
         ),
+        ),
       ),
     );
   }
@@ -283,31 +297,10 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-/// DJB2 hash — matches the web implementation for consistent cross-platform WOD selection.
-int _djb2(String str) {
-  var hash = 5381;
-  for (var i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash + str.codeUnitAt(i)) & 0xFFFFFFFF;
-  }
-  return hash;
-}
-
-/// Deterministically select a WOD index using hashed ordering.
-/// Each day (+ optional shuffle offset) produces a pseudo-random permutation
-/// of the workout list, returning the index of the top-ranked workout.
-int getWodIndex(List<String> workoutIds, {int shuffleOffset = 0}) {
-  if (workoutIds.isEmpty) return 0;
-  final daysSinceEpoch = DateTime.now().toUtc().difference(DateTime.utc(2025)).inDays;
-  final seed = daysSinceEpoch + shuffleOffset;
-
-  var bestIndex = 0;
-  var bestHash = (seed * 2654435761 + _djb2(workoutIds[0])) & 0xFFFFFFFF;
-  for (var i = 1; i < workoutIds.length; i++) {
-    final h = (seed * 2654435761 + _djb2(workoutIds[i])) & 0xFFFFFFFF;
-    if (h < bestHash) {
-      bestHash = h;
-      bestIndex = i;
-    }
-  }
-  return bestIndex;
+/// Pick a WOD index. Each day selects a different workout; shuffle steps
+/// through the list so every tap guarantees a new one.
+int getWodIndex(int workoutCount, {int shuffleOffset = 0}) {
+  if (workoutCount <= 0) return 0;
+  final day = DateTime.now().toUtc().difference(DateTime.utc(2025)).inDays;
+  return (day + shuffleOffset) % workoutCount;
 }
