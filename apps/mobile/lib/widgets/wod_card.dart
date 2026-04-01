@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/theme.dart';
 import '../models/workout.dart';
-import '../models/workout_segment.dart';
+import '../utils/workout_utils.dart' as wu;
 import 'workout_graph.dart';
 
 /// Amber-themed Workout of the Day card.
@@ -23,10 +23,10 @@ class WodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final totalTime = _computeTotalTime(workout.segments);
-    final totalDistance = _computeTotalDistance(workout.segments);
-    final segmentCount = _computeSegmentCount(workout.segments);
-    final avgPace = _computeAvgPace(workout.segments);
+    final totalTime = wu.computeTotalTime(workout.segments);
+    final totalDistance = wu.computeTotalDistance(workout.segments);
+    final segmentCount = wu.computeSegmentCount(workout.segments);
+    final avgPace = wu.computeAvgPace(workout.segments);
 
     return GestureDetector(
       onTap: onTap,
@@ -133,9 +133,9 @@ class WodCard extends StatelessWidget {
                 _StatItem(
                   label: totalTime != null ? 'TIME' : 'DISTANCE',
                   value: totalTime != null
-                      ? _formatDuration(totalTime)
+                      ? wu.formatDuration(totalTime)
                       : totalDistance != null
-                          ? '${totalDistance.toInt()}m'
+                          ? wu.formatDistance(totalDistance)
                           : '—',
                 ),
                 const SizedBox(width: 20),
@@ -143,7 +143,7 @@ class WodCard extends StatelessWidget {
                 const SizedBox(width: 20),
                 _StatItem(
                   label: 'AVG PACE',
-                  value: avgPace != null ? _formatPace(avgPace) : '—',
+                  value: avgPace != null ? wu.formatPace(avgPace) : '—',
                 ),
               ],
             ),
@@ -194,62 +194,6 @@ class WodCard extends StatelessWidget {
     );
   }
 
-  static int? _computeTotalTime(List<WorkoutSegment> segments) {
-    var total = 0.0;
-    var hasTime = false;
-    for (final seg in segments) {
-      if (seg.durationType == DurationType.time) {
-        total += seg.durationValue * seg.repeat;
-        hasTime = true;
-      }
-    }
-    return hasTime ? total.toInt() : null;
-  }
-
-  static double? _computeTotalDistance(List<WorkoutSegment> segments) {
-    var total = 0.0;
-    var hasDist = false;
-    for (final seg in segments) {
-      if (seg.durationType == DurationType.distance) {
-        total += seg.durationValue * seg.repeat;
-        hasDist = true;
-      }
-    }
-    return hasDist ? total : null;
-  }
-
-  static int _computeSegmentCount(List<WorkoutSegment> segments) {
-    return segments.fold(0, (sum, seg) => sum + seg.repeat);
-  }
-
-  static int? _computeAvgPace(List<WorkoutSegment> segments) {
-    final workSegs = segments
-        .where((s) => s.type == SegmentType.work && s.targetSplit != null);
-    if (workSegs.isEmpty) return null;
-    var totalWeight = 0.0;
-    var weightedSum = 0.0;
-    for (final s in workSegs) {
-      final weight = s.durationValue * s.repeat;
-      weightedSum += s.targetSplit!.min * weight;
-      totalWeight += weight;
-    }
-    return totalWeight > 0 ? (weightedSum / totalWeight).round() : null;
-  }
-
-  static String _formatDuration(int totalSeconds) {
-    final h = totalSeconds ~/ 3600;
-    final m = (totalSeconds % 3600) ~/ 60;
-    final s = totalSeconds % 60;
-    if (h > 0) return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
-
-  static String _formatPace(int tenths) {
-    final minutes = tenths ~/ 600;
-    final secs = (tenths % 600) ~/ 10;
-    final t = tenths % 10;
-    return '$minutes:${secs.toString().padLeft(2, '0')}.$t';
-  }
 }
 
 class _StatItem extends StatelessWidget {

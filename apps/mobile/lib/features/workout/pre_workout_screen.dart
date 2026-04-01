@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout.dart';
-import '../../services/local_db.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/workout_utils.dart';
+import '../../widgets/connection_required_dialog.dart';
+import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
+import '../../widgets/workout_type_badge.dart';
 import '../ble/ble_provider.dart';
-import '../ble/hr_service.dart';
 import '../ble/pm5_service.dart';
+import '../library/library_provider.dart';
 
-/// Pre-workout screen that requires PM5 connection before starting.
-///
-/// Shows workout summary, device connection status, and inline scanning.
-/// The START button is disabled until a PM5 is connected. HR is optional.
+/// Pre-workout screen showing workout details with a "Begin Workout" CTA.
+/// Hardware connection is handled via modal if PM5 is not connected.
 class PreWorkoutScreen extends ConsumerStatefulWidget {
   final String workoutId;
   final String? planId;
@@ -43,14 +43,6 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
   void initState() {
     super.initState();
     _loadWorkout();
-    // Auto-scan for devices on mount
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final bleState = ref.read(bleProvider);
-      if (bleState.pm5ConnectionState == PM5ConnectionState.disconnected &&
-          !bleState.isScanning) {
-        ref.read(bleProvider.notifier).startScan();
-      }
-    });
   }
 
   Future<void> _loadWorkout() async {
@@ -89,19 +81,24 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
     context.go(uri.toString());
   }
 
+  void _handleBeginWorkout() {
+    final bleState = ref.read(bleProvider);
+    if (bleState.pm5ConnectionState == PM5ConnectionState.connected) {
+      _startWorkout();
+    } else {
+      showConnectionRequiredSheet(
+        context: context,
+        onConnected: _startWorkout,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bleState = ref.watch(bleProvider);
-    final pm5Connected =
-        bleState.pm5ConnectionState == PM5ConnectionState.connected;
-    final hrConnected =
-        bleState.hrConnectionState == HrConnectionState.connected;
-    final theme = Theme.of(context);
-
     if (_isLoading) {
       return Scaffold(
         backgroundColor: RowCraftTheme.surfaceDark,
-        appBar: AppBar(title: const Text('Prepare')),
+        appBar: AppBar(title: const Text('Workout')),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -109,7 +106,7 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
     if (_error != null) {
       return Scaffold(
         backgroundColor: RowCraftTheme.surfaceDark,
-        appBar: AppBar(title: const Text('Prepare')),
+        appBar: AppBar(title: const Text('Workout')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -142,18 +139,9 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
 
     final workout = _workout!;
 
-    final savedPm5Ids = bleState.savedDevices
-        .where((d) => d.deviceType == 'pm5')
-        .map((d) => d.deviceId)
-        .toSet();
-    final savedHrIds = bleState.savedDevices
-        .where((d) => d.deviceType == 'hr')
-        .map((d) => d.deviceId)
-        .toSet();
-
     return Scaffold(
       backgroundColor: RowCraftTheme.surfaceDark,
-      appBar: AppBar(title: const Text('Prepare')),
+      appBar: AppBar(title: const Text('Workout')),
       body: SafeArea(
         child: Column(
           children: [
@@ -161,140 +149,41 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  // Workout summary
-                  _WorkoutSummaryCard(workout: workout),
+                  _WorkoutDetailBody(workout: workout),
                   const SizedBox(height: 24),
-
-                  // PM5 Connection (required)
-                  _DeviceSection(
-                    title: 'PM5 Ergometer',
-                    subtitle: 'Required to start',
-                    icon: Icons.rowing,
-                    isConnected: pm5Connected,
-                    isRequired: true,
-                    isConnecting: bleState.pm5ConnectionState ==
-                        PM5ConnectionState.connecting,
-                    connectedColor: RowCraftTheme.successGreen,
-                    savedDevices: bleState.savedDevices
-                        .where((d) => d.deviceType == 'pm5')
-                        .toList(),
-                    discoveredDevices: bleState.discoveredPm5Devices.where((d) => !savedPm5Ids.contains(d.id)).toList(),
-                    onConnect: (deviceId, deviceName) {
-                      ref.read(bleProvider.notifier).connectToPm5(
-                            deviceId,
-                            deviceName: deviceName,
-                          );
-                    },
-                    onDisconnect: () {
-                      ref.read(bleProvider.notifier).disconnectPm5();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // HR Monitor (optional)
-                  _DeviceSection(
-                    title: 'Heart Rate Monitor',
-                    subtitle: 'Optional — recommended for training zones',
-                    icon: Icons.favorite,
-                    isConnected: hrConnected,
-                    isRequired: false,
-                    isConnecting: bleState.hrConnectionState ==
-                        HrConnectionState.connecting,
-                    connectedColor: RowCraftTheme.successGreen,
-                    savedDevices: bleState.savedDevices
-                        .where((d) => d.deviceType == 'hr')
-                        .toList(),
-                    discoveredDevices: bleState.discoveredHrDevices.where((d) => !savedHrIds.contains(d.id)).toList(),
-                    onConnect: (deviceId, deviceName) {
-                      ref.read(bleProvider.notifier).connectToHrDevice(
-                            deviceId,
-                            deviceName: deviceName,
-                          );
-                    },
-                    onDisconnect: () {
-                      ref.read(bleProvider.notifier).disconnectHr();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Scan button
-                  if (!pm5Connected || !hrConnected)
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: bleState.isScanning
-                            ? () => ref.read(bleProvider.notifier).stopScan()
-                            : () => ref.read(bleProvider.notifier).startScan(),
-                        icon: Icon(
-                          bleState.isScanning
-                              ? Icons.stop
-                              : Icons.bluetooth_searching,
-                          size: 18,
-                        ),
-                        label: Text(
-                          bleState.isScanning ? 'Stop Scan' : 'Scan for Devices',
-                        ),
-                      ),
-                    ),
-
-                  // Error
-                  if (bleState.error != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      bleState.error!,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: RowCraftTheme.errorRose,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                  _SimilarWorkoutsSection(workout: workout),
                 ],
               ),
             ),
 
-            // START button
+            // BEGIN WORKOUT button
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: const BoxDecoration(
                 color: RowCraftTheme.surfaceContainer,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                borderRadius:
+                    BorderRadius.vertical(top: Radius.circular(16)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!pm5Connected)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'Connect PM5 to start',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: RowCraftTheme.subtleGrey,
-                        ),
-                      ),
-                    ),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: pm5Connected ? _startWorkout : null,
-                      icon: const Icon(Icons.play_arrow, size: 28),
-                      label: const Text(
-                        'START WORKOUT',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: pm5Connected
-                            ? RowCraftTheme.successGreen
-                            : RowCraftTheme.surfaceContainerHigh,
-                        foregroundColor: pm5Connected
-                            ? Colors.white
-                            : RowCraftTheme.subtleGrey,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: _handleBeginWorkout,
+                  icon: const Icon(Icons.play_arrow, size: 28),
+                  label: const Text(
+                    'BEGIN WORKOUT',
+                    style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RowCraftTheme.successGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                ],
+                ),
               ),
             ),
           ],
@@ -304,278 +193,255 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
   }
 }
 
-class _WorkoutSummaryCard extends StatelessWidget {
+class _WorkoutDetailBody extends StatelessWidget {
   final Workout workout;
 
-  const _WorkoutSummaryCard({required this.workout});
+  const _WorkoutDetailBody({required this.workout});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final segments = workout.segments;
 
-    // Compute total expanded segments and summary
-    int totalSegments = 0;
+    final totalTime = computeTotalTime(segments);
+    final totalDist = computeTotalDistance(segments);
+    final segCount = computeSegmentCount(segments);
+    final avgPace = computeAvgPace(segments);
+
+    // Collect HR zones from segments
+    final hrZones = <int>{};
     for (final seg in segments) {
-      totalSegments += seg.repeat;
+      if (seg.targetHrZone != null) hrZones.add(seg.targetHrZone!);
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title
+        Text(workout.title, style: theme.textTheme.headlineLarge),
+        const SizedBox(height: 8),
+
+        // Difficulty + type badge
+        Row(
           children: [
-            Text(
-              workout.title,
-              style: theme.textTheme.headlineMedium,
-            ),
-            if (workout.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                workout.description,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: RowCraftTheme.subtleGrey,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 16),
-
-            // Segment graph
-            WorkoutGraph(segments: workout.segments, height: 140),
-
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                _SummaryChip(
-                  icon: Icons.segment,
-                  label: '$totalSegments ${totalSegments == 1 ? 'segment' : 'segments'}',
-                ),
-                const SizedBox(width: 12),
-                _SummaryChip(
-                  icon: Icons.category_outlined,
-                  label: workout.workoutType.displayName,
-                ),
-              ],
-            ),
-            if (workout.tags.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: workout.tags.map((tag) {
-                  return Chip(
-                    label: Text(tag, style: const TextStyle(fontSize: 11)),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                  );
-                }).toList(),
-              ),
-            ],
+            DifficultyIndicator.fromSegments(segments: segments),
+            const SizedBox(width: 12),
+            WorkoutTypeBadge(type: workout.workoutType),
           ],
         ),
-      ),
+
+        // Description
+        if (workout.description.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            workout.description,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: RowCraftTheme.subtleGrey,
+            ),
+          ),
+        ],
+
+        // Segment graph
+        const SizedBox(height: 20),
+        WorkoutGraph(segments: segments, height: 140),
+
+        // Stats row
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 24,
+          runSpacing: 8,
+          children: [
+            if (totalTime != null)
+              _StatItem(label: 'DURATION', value: formatDuration(totalTime)),
+            if (totalDist != null)
+              _StatItem(
+                  label: 'DISTANCE', value: formatDistance(totalDist)),
+            _StatItem(
+              label: 'SEGMENTS',
+              value: '$segCount',
+            ),
+            if (avgPace != null)
+              _StatItem(
+                  label: 'AVG PACE', value: '${formatPace(avgPace)}/500m'),
+          ],
+        ),
+
+        // HR Zone chips
+        if (hrZones.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text('Target HR Zones',
+              style: theme.textTheme.labelLarge?.copyWith(
+                  color: RowCraftTheme.subtleGrey)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: (hrZones.toList()..sort()).map((zone) {
+              final color = _hrZoneColor(zone);
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Zone $zone',
+                  style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+
+        // Tags
+        if (workout.tags.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: workout.tags.map((tag) {
+              return Chip(
+                label: Text(tag, style: const TextStyle(fontSize: 11)),
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+              );
+            }).toList(),
+          ),
+        ],
+      ],
     );
+  }
+
+  static Color _hrZoneColor(int zone) {
+    return switch (zone) {
+      1 => RowCraftTheme.hrZone1,
+      2 => RowCraftTheme.hrZone2,
+      3 => RowCraftTheme.hrZone3,
+      4 => RowCraftTheme.hrZone4,
+      5 => RowCraftTheme.hrZone5,
+      _ => RowCraftTheme.subtleGrey,
+    };
   }
 }
 
-class _SummaryChip extends StatelessWidget {
-  final IconData icon;
+class _StatItem extends StatelessWidget {
   final String label;
+  final String value;
 
-  const _SummaryChip({required this.icon, required this.label});
+  const _StatItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: RowCraftTheme.subtleGrey),
-        const SizedBox(width: 4),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: RowCraftTheme.subtleGrey,
+            fontSize: 9,
+            letterSpacing: 1.0,
+          ),
+        ),
+        Text(
+          value,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
   }
 }
 
-/// A section for connecting a specific device type (PM5 or HR).
-class _DeviceSection extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool isConnected;
-  final bool isRequired;
-  final bool isConnecting;
-  final Color connectedColor;
-  final List<SavedDevice> savedDevices;
-  final List<DiscoveredDevice> discoveredDevices;
-  final void Function(String deviceId, String? deviceName) onConnect;
-  final VoidCallback onDisconnect;
+class _SimilarWorkoutsSection extends ConsumerWidget {
+  final Workout workout;
 
-  const _DeviceSection({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.isConnected,
-    required this.isRequired,
-    required this.isConnecting,
-    required this.connectedColor,
-    required this.savedDevices,
-    required this.discoveredDevices,
-    required this.onConnect,
-    required this.onDisconnect,
-  });
+  const _SimilarWorkoutsSection({required this.workout});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (workout.tags.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final similarAsync = ref.watch(similarWorkoutsProvider(
+      (workoutId: workout.id, tags: workout.tags),
+    ));
+
+    return similarAsync.when(
+      data: (similar) {
+        if (similar.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Similar Workouts',
+                style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: similar.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  return _SimilarWorkoutCard(workout: similar[index]);
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+}
+
+class _SimilarWorkoutCard extends StatelessWidget {
+  final Workout workout;
+
+  const _SimilarWorkoutCard({required this.workout});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return GestureDetector(
+      onTap: () => context.push('/workout/${workout.id}'),
+      child: Container(
+        width: 180,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: RowCraftTheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header row
+            Text(
+              workout.title,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const Spacer(),
+            WorkoutGraph(segments: workout.segments, height: 32),
+            const SizedBox(height: 8),
             Row(
               children: [
-                Icon(
-                  icon,
-                  size: 24,
-                  color: isConnected ? connectedColor : RowCraftTheme.subtleGrey,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(title, style: theme.textTheme.titleSmall, overflow: TextOverflow.ellipsis),
-                          ),
-                          if (isRequired) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: RowCraftTheme.errorRose.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                'REQUIRED',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: RowCraftTheme.errorRose,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isConnected ? 'Connected' : subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: isConnected
-                              ? connectedColor
-                              : RowCraftTheme.subtleGrey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isConnecting)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                else if (isConnected)
-                  TextButton(
-                    onPressed: onDisconnect,
-                    child: const Text('Disconnect'),
-                  ),
+                DifficultyIndicator.fromSegments(
+                    segments: workout.segments, size: 12),
+                const SizedBox(width: 8),
+                WorkoutTypeBadge(type: workout.workoutType),
               ],
             ),
-
-            // Saved devices (quick connect)
-            if (!isConnected && !isConnecting && savedDevices.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              for (final device in savedDevices)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.bookmark_outline,
-                          size: 14, color: RowCraftTheme.subtleGrey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          device.deviceName,
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            onConnect(device.deviceId, device.deviceName),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                        ),
-                        child: const Text('Connect'),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-
-            // Discovered devices
-            if (!isConnected && !isConnecting && discoveredDevices.isNotEmpty) ...[
-              if (savedDevices.isEmpty) ...[
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-              ],
-              const SizedBox(height: 8),
-              for (final device in discoveredDevices)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.bluetooth,
-                          size: 14, color: RowCraftTheme.subtleGrey),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          device.name.isNotEmpty ? device.name : device.id,
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => onConnect(
-                          device.id,
-                          device.name.isNotEmpty ? device.name : null,
-                        ),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                        ),
-                        child: const Text('Connect'),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
           ],
         ),
       ),
