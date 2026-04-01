@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../utils/pace_utils.dart';
 
 /// Modal dialog shown after an FTP test workout completes.
 class FtpResultDialog extends StatefulWidget {
@@ -23,12 +24,14 @@ class FtpResultDialog extends StatefulWidget {
 
 class _FtpResultDialogState extends State<FtpResultDialog> {
   late final TextEditingController _controller;
+  bool _userEdited = false;
 
   @override
   void initState() {
     super.initState();
-    _controller =
-        TextEditingController(text: widget.calculatedFtp.toString());
+    _controller = TextEditingController(
+      text: formatPaceNoTenths(wattsToPaceTenths(widget.calculatedFtp)),
+    );
   }
 
   @override
@@ -50,9 +53,9 @@ class _FtpResultDialogState extends State<FtpResultDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Big FTP number
+          // Big FTP pace
           Text(
-            '${widget.calculatedFtp}W',
+            wattsToPaceStringNoTenths(widget.calculatedFtp),
             style: theme.textTheme.displayMedium?.copyWith(
               color: RowCraftTheme.successGreen,
             ),
@@ -61,6 +64,13 @@ class _FtpResultDialogState extends State<FtpResultDialog> {
           Text(
             'Estimated FTP',
             style: theme.textTheme.labelLarge,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${widget.calculatedFtp}W',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: RowCraftTheme.subtleGrey,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -73,10 +83,11 @@ class _FtpResultDialogState extends State<FtpResultDialog> {
           // Editable override
           TextField(
             controller: _controller,
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.text,
+            onChanged: (_) => setState(() => _userEdited = true),
             decoration: const InputDecoration(
-              labelText: 'Override FTP (watts)',
-              suffixText: 'W',
+              labelText: 'Override FTP pace (m:ss)',
+              suffixText: '/500m',
             ),
           ),
         ],
@@ -91,8 +102,15 @@ class _FtpResultDialogState extends State<FtpResultDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            final watts =
-                int.tryParse(_controller.text) ?? widget.calculatedFtp;
+            int watts;
+            if (_userEdited) {
+              final tenths = parsePace(_controller.text);
+              watts = tenths != null
+                  ? paceTenthsToWatts(tenths)
+                  : widget.calculatedFtp;
+            } else {
+              watts = widget.calculatedFtp;
+            }
             if (watts > 0) {
               widget.onSave(watts);
             }

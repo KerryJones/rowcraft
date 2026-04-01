@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (isMobile) {
       return NextResponse.redirect('com.rowcraft.app://login-callback?success=true');
     }
-    return NextResponse.redirect(`${origin}/profile`);
+    return NextResponse.redirect(`${origin}/profile?c2=connected`);
   }
 
   if (!code || !state || state !== storedState) {
