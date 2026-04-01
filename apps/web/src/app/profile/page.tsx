@@ -1,20 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import type { Profile } from '@/lib/types';
 import { HR_ZONES } from '@/lib/utils/ftp';
 import { wattsToPaceTenths, paceTenthsToWatts, formatWatts } from '@/lib/utils/ftp';
 import { formatPace, parsePace } from '@/lib/utils/format';
-import { Save, Loader2, LogOut, Link as LinkIcon, Unlink } from 'lucide-react';
+import { Save, Loader2, LogOut, Link as LinkIcon, Unlink, CheckCircle2 } from 'lucide-react';
 
-export default function ProfilePage() {
+const C2_ERROR_MESSAGES: Record<string, string> = {
+  c2_oauth_failed: 'Concept2 authorization failed. Please try again.',
+  c2_token_exchange_failed: 'Failed to connect to Concept2. Please try again.',
+  c2_user_fetch_failed: 'Could not retrieve your Concept2 account. Please try again.',
+  c2_session_expired: 'Your session expired. Please sign in and try again.',
+  c2_save_failed: 'Failed to save Concept2 connection. Please try again.',
+};
+
+function ProfilePageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  // Read C2 OAuth callback params from URL and initialize state
+  const c2Param = searchParams.get('c2');
+  const errorParam = searchParams.get('error');
+  const initialC2Success = c2Param === 'connected' ? 'Concept2 Logbook connected successfully!' : null;
+  const initialC2Error = errorParam ? (C2_ERROR_MESSAGES[errorParam] ?? 'An error occurred connecting to Concept2.') : null;
+
+  const [error, setError] = useState<string | null>(initialC2Error);
+  const [successMessage, setSuccessMessage] = useState<string | null>(initialC2Success);
 
   const [email, setEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -22,6 +37,17 @@ export default function ProfilePage() {
   const [ftpWatts, setFtpWatts] = useState<number | null>(null);
   const [maxHr, setMaxHr] = useState<number | null>(null);
   const [c2UserId, setC2UserId] = useState<string | null>(null);
+
+  // Strip C2 OAuth params from URL and auto-dismiss success banner
+  useEffect(() => {
+    if (c2Param || errorParam) {
+      router.replace('/profile', { scroll: false });
+    }
+    if (initialC2Success) {
+      const timer = setTimeout(() => setSuccessMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount to strip OAuth params from URL
 
   useEffect(() => {
     const supabase = createSupabaseBrowser();
@@ -78,7 +104,7 @@ export default function ProfilePage() {
 
   async function handleSave() {
     setError(null);
-    setSuccess(false);
+    setSuccessMessage(null);
     setSaving(true);
 
     try {
@@ -101,8 +127,8 @@ export default function ProfilePage() {
     if (updateError) {
       setError(updateError.message);
     } else {
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setSuccessMessage('Profile saved successfully.');
+      setTimeout(() => setSuccessMessage(null), 3000);
     }
     } finally {
       setSaving(false);
@@ -160,9 +186,9 @@ export default function ProfilePage() {
           {error}
         </div>
       )}
-      {success && (
+      {successMessage && (
         <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
-          Profile saved successfully.
+          {successMessage}
         </div>
       )}
 
@@ -264,10 +290,13 @@ export default function ProfilePage() {
       <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900 p-6">
         <h2 className="mb-4 text-lg font-semibold text-white">Concept2 Logbook</h2>
         {c2UserId ? (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-emerald-400">
-              <LinkIcon className="h-4 w-4" />
-              Connected (ID: {c2UserId})
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" />
+              <div>
+                <p className="font-medium text-emerald-400">Connected to Concept2 Logbook</p>
+                <p className="text-sm text-gray-500">Account ID: {c2UserId}</p>
+              </div>
             </div>
             <button
               type="button"
@@ -279,13 +308,18 @@ export default function ProfilePage() {
             </button>
           </div>
         ) : (
-          <a
-            href="/api/c2/auth"
-            className="flex items-center justify-center gap-2 rounded-lg border border-gray-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
-          >
-            <LinkIcon className="h-4 w-4" />
-            Connect to C2 Logbook
-          </a>
+          <div className="space-y-3">
+            <p className="text-sm text-gray-400">
+              Connect your Concept2 Logbook to automatically sync completed workouts.
+            </p>
+            <a
+              href="/api/c2/auth"
+              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500"
+            >
+              <LinkIcon className="h-4 w-4" />
+              Connect to C2 Logbook
+            </a>
+          </div>
         )}
       </div>
 
@@ -299,5 +333,19 @@ export default function ProfilePage() {
         Sign Out
       </button>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      }
+    >
+      <ProfilePageInner />
+    </Suspense>
   );
 }

@@ -263,7 +263,7 @@ class _FtpCard extends ConsumerWidget {
                 children: [
                   Text(
                     profile.currentFtpWatts != null
-                        ? wattsToPaceString(profile.currentFtpWatts!)
+                        ? wattsToPaceStringNoTenths(profile.currentFtpWatts!)
                         : 'Not tested',
                     style: theme.textTheme.displaySmall?.copyWith(
                       color: profile.currentFtpWatts != null
@@ -313,7 +313,7 @@ class _FtpCard extends ConsumerWidget {
                           child: Row(
                             children: [
                               Text(
-                                wattsToPaceString(r.ftpWatts),
+                                wattsToPaceStringNoTenths(r.ftpWatts),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -372,27 +372,33 @@ class _ManualFtpDialog extends StatefulWidget {
 
 class _ManualFtpDialogState extends State<_ManualFtpDialog> {
   final _controller = TextEditingController();
-  String _pacePreview = '';
+  String _wattsPreview = '';
+  int? _parsedWatts;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(_updatePacePreview);
+    _controller.addListener(_updateWattsPreview);
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_updatePacePreview);
+    _controller.removeListener(_updateWattsPreview);
     _controller.dispose();
     super.dispose();
   }
 
-  void _updatePacePreview() {
-    final watts = int.tryParse(_controller.text.trim());
+  void _updateWattsPreview() {
+    final tenths = parsePace(_controller.text);
     setState(() {
-      _pacePreview = watts != null && watts > 0
-          ? wattsToPaceString(watts)
-          : '';
+      if (tenths != null) {
+        final watts = paceTenthsToWatts(tenths);
+        _wattsPreview = '${watts}W';
+        _parsedWatts = watts;
+      } else {
+        _wattsPreview = '';
+        _parsedWatts = null;
+      }
     });
   }
 
@@ -405,19 +411,19 @@ class _ManualFtpDialogState extends State<_ManualFtpDialog> {
         children: [
           TextField(
             controller: _controller,
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.text,
             decoration: const InputDecoration(
-              hintText: 'Enter FTP in watts',
-              suffixText: 'W',
+              hintText: 'Enter pace (m:ss)',
+              suffixText: '/500m',
             ),
             autofocus: true,
           ),
-          if (_pacePreview.isNotEmpty) ...[
+          if (_wattsPreview.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              _pacePreview,
+              _wattsPreview,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: RowCraftTheme.successGreen,
+                color: RowCraftTheme.subtleGrey,
               ),
             ),
           ],
@@ -430,8 +436,7 @@ class _ManualFtpDialogState extends State<_ManualFtpDialog> {
         ),
         ElevatedButton(
           onPressed: () async {
-            final watts = int.tryParse(_controller.text.trim());
-            if (watts != null && watts > 0) {
+            if (_parsedWatts != null && _parsedWatts! > 0) {
               final service = widget.ref.read(supabaseServiceProvider);
               final userId = service.currentUserId;
               if (userId != null) {
@@ -439,10 +444,10 @@ class _ManualFtpDialogState extends State<_ManualFtpDialog> {
                   id: '',
                   userId: userId,
                   testedAt: DateTime.now(),
-                  ftpWatts: watts,
+                  ftpWatts: _parsedWatts!,
                   testType: 'manual',
                 ));
-                await service.updateProfileFtp(watts);
+                await service.updateProfileFtp(_parsedWatts!);
                 widget.ref.invalidate(profileProvider);
                 widget.ref.invalidate(ftpHistoryProvider);
               }
