@@ -89,7 +89,7 @@ class SyncService {
       if (!row.syncedToC2) {
         final isLinked = await c2LogbookService.isLinked();
         if (isLinked) {
-          // The edge function handles the C2 API call and sets
+          // The web API handles the C2 API call and sets
           // synced_to_c2=true in the DB — no need for a second upsert
           final synced = await c2LogbookService.syncResult(result);
           if (synced) {

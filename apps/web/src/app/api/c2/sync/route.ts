@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseServer } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
-export async function POST(request: NextRequest) {
+async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    // Mobile: verify token directly against Supabase Auth
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id ?? null;
+  }
+  // Web: cookie-based session
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
 
-  if (!user) {
+export async function POST(request: NextRequest) {
+  const userId = await getAuthenticatedUserId(request);
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -15,12 +32,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'result_id is required' }, { status: 400 });
   }
 
+  // Use service role client for DB operations to bypass RLS
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
   // Fetch the workout result
   const { data: result, error: resultError } = await supabase
     .from('workout_results')
     .select('*')
     .eq('id', result_id)
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single();
 
   if (resultError || !result) {
@@ -31,7 +54,7 @@ export async function POST(request: NextRequest) {
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('c2_access_token, c2_refresh_token, c2_user_id')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single();
 
   if (profileError || !profile?.c2_access_token || !profile?.c2_user_id) {
@@ -40,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   // Post result to C2 Logbook
   const c2Response = await fetch(
-    `https://log.concept2.com/api/users/${profile.c2_user_id}/results`,
+    `${process.env.C2_BASE_URL}/api/users/${profile.c2_user_id}/results`,
     {
       method: 'POST',
       headers: {
