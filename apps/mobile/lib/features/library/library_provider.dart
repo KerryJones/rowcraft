@@ -57,3 +57,28 @@ final allTagsProvider = FutureProvider<List<String>>((ref) async {
   }
   return tags.toList()..sort();
 });
+
+/// Similar workouts based on tag overlap. Excludes the source workout.
+/// Returns top 4 matches sorted by overlap count, then fork count.
+final similarWorkoutsProvider = FutureProvider.family<List<Workout>,
+    ({String workoutId, List<String> tags})>((ref, params) async {
+  if (params.tags.isEmpty) return [];
+
+  final allWorkouts = await ref.watch(workoutLibraryProvider.future);
+  final tagSet = params.tags.toSet();
+
+  final scored = <(Workout, int)>[];
+  for (final w in allWorkouts) {
+    if (w.id == params.workoutId) continue;
+    final overlap = w.tags.where(tagSet.contains).length;
+    if (overlap > 0) scored.add((w, overlap));
+  }
+
+  scored.sort((a, b) {
+    final cmp = b.$2.compareTo(a.$2);
+    if (cmp != 0) return cmp;
+    return b.$1.forkCount.compareTo(a.$1.forkCount);
+  });
+
+  return scored.take(4).map((e) => e.$1).toList();
+});

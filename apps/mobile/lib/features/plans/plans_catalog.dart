@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
-import 'difficulty_badge.dart';
+import '../../widgets/difficulty_indicator.dart';
 import 'plans_provider.dart';
 
 class PlansCatalog extends ConsumerStatefulWidget {
@@ -23,6 +23,15 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
     final theme = Theme.of(context);
     final plansAsync = ref.watch(filteredPlansProvider(_selectedDifficulty));
     final continueAsync = ref.watch(lastViewedPlanProvider);
+    final progressAsync = ref.watch(userPlanProgressProvider);
+
+    // Build progress map for plan cards
+    final progressMap = <String, PlanProgress>{};
+    if (progressAsync.hasValue) {
+      for (final p in progressAsync.value!) {
+        progressMap[p.planId] = p;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -87,7 +96,11 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
 
                       final planIndex =
                           continueAsync.valueOrNull != null ? index - 1 : index;
-                      return _PlanCard(plan: plans[planIndex]);
+                      final plan = plans[planIndex];
+                      return _PlanCard(
+                        plan: plan,
+                        progress: progressMap[plan.id],
+                      );
                     },
                   ),
                 );
@@ -145,6 +158,7 @@ class _ContinueBanner extends StatelessWidget {
     final theme = Theme.of(context);
     final total = plan.totalSessions;
     final completedCount = progress.totalCompleted;
+    final progressFraction = total > 0 ? completedCount / total : 0.0;
 
     // Find current week: first week with an incomplete session
     int currentWeek = plan.weeks.lastOrNull?.weekNumber ?? 1;
@@ -187,26 +201,37 @@ class _ContinueBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Continue: ${plan.title}',
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Continue: ${plan.title}',
                         style: theme.textTheme.titleMedium?.copyWith(
                             color: RowCraftTheme.metricWhite,
                             fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Week $currentWeek · $doneInWeek of $weekSessions done · $completedCount/$total total',
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
+                  ),
+                  const Icon(Icons.arrow_forward_ios,
+                      size: 16, color: RowCraftTheme.primaryBlue),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Week $currentWeek · $doneInWeek of $weekSessions done · $completedCount/$total total',
+                style: theme.textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: progressFraction,
+                  minHeight: 6,
+                  backgroundColor: RowCraftTheme.surfaceContainerHigh,
+                  valueColor:
+                      const AlwaysStoppedAnimation(RowCraftTheme.primaryBlue),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios,
-                  size: 16, color: RowCraftTheme.primaryBlue),
             ],
           ),
         ),
@@ -217,12 +242,19 @@ class _ContinueBanner extends StatelessWidget {
 
 class _PlanCard extends StatelessWidget {
   final TrainingPlan plan;
+  final PlanProgress? progress;
 
-  const _PlanCard({required this.plan});
+  const _PlanCard({required this.plan, this.progress});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasProgress =
+        progress != null && progress!.totalCompleted > 0;
+    final total = plan.totalSessions;
+    final completed = progress?.totalCompleted ?? 0;
+    final progressFraction =
+        hasProgress && total > 0 ? completed / total : 0.0;
 
     return Card(
       child: InkWell(
@@ -241,7 +273,10 @@ class _PlanCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                   ),
-                  DifficultyBadge(difficulty: plan.difficulty),
+                  DifficultyIndicator(
+                    level: DifficultyIndicator.levelFromDifficulty(
+                        plan.difficulty),
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -257,6 +292,32 @@ class _PlanCard extends StatelessWidget {
                     style: theme.textTheme.bodySmall,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis),
+              ],
+              // Progress bar
+              if (hasProgress) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: progressFraction,
+                          minHeight: 4,
+                          backgroundColor: RowCraftTheme.surfaceContainerHigh,
+                          valueColor: const AlwaysStoppedAnimation(
+                              RowCraftTheme.primaryBlue),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '$completed/$total',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                          color: RowCraftTheme.subtleGrey),
+                    ),
+                  ],
+                ),
               ],
             ],
           ),

@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../widgets/wod_card.dart';
 import '../../widgets/workout_graph.dart';
+import '../../widgets/workout_type_badge.dart';
 import '../plans/plans_provider.dart';
 import 'library_provider.dart';
 
@@ -252,7 +253,7 @@ class _WorkoutCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  _WorkoutTypeBadge(type: workout.workoutType),
+                  WorkoutTypeBadge(type: workout.workoutType),
                 ],
               ),
               if (workout.description.isNotEmpty) ...[
@@ -317,34 +318,3 @@ class _WorkoutCard extends StatelessWidget {
   }
 }
 
-class _WorkoutTypeBadge extends StatelessWidget {
-  final WorkoutType type;
-
-  const _WorkoutTypeBadge({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (type) {
-      WorkoutType.singleDistance => ('Distance', RowCraftTheme.segmentWork),
-      WorkoutType.singleTime => ('Time', RowCraftTheme.segmentWarmup),
-      WorkoutType.intervals => ('Intervals', RowCraftTheme.warningAmber),
-      WorkoutType.variableIntervals => ('Variable', RowCraftTheme.segmentCooldown),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}

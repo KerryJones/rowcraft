@@ -5,7 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
+import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/workout_utils.dart';
+import '../../widgets/difficulty_indicator.dart';
+import '../../widgets/workout_graph.dart';
 import 'difficulty_badge.dart';
 import 'plans_provider.dart';
 
@@ -192,8 +196,8 @@ class _WeekSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final titlesAsync = ref.watch(_planWorkoutTitlesProvider(planId));
-    final titles = titlesAsync.valueOrNull ?? {};
+    final workoutsAsync = ref.watch(_planWorkoutsProvider(planId));
+    final workouts = workoutsAsync.valueOrNull ?? {};
 
     // Count completed sessions in this week
     int completedInWeek = 0;
@@ -203,6 +207,7 @@ class _WeekSection extends ConsumerWidget {
       }
     }
     final allDone = completedInWeek == week.sessions.length;
+    final weekTotal = week.sessions.length;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -221,12 +226,15 @@ class _WeekSection extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  if (allDone)
-                    const Icon(Icons.check_circle,
-                        size: 20, color: RowCraftTheme.successGreen)
-                  else
-                    const Icon(Icons.circle_outlined,
-                        size: 20, color: RowCraftTheme.subtleGrey),
+                  // Compact fraction bar instead of dots
+                  SizedBox(
+                    width: 40,
+                    child: _WeekProgressBar(
+                      completed: completedInWeek,
+                      total: weekTotal,
+                      allDone: allDone,
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -243,7 +251,7 @@ class _WeekSection extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    '$completedInWeek/${week.sessions.length}',
+                    '$completedInWeek/$weekTotal',
                     style: theme.textTheme.labelLarge?.copyWith(
                         color: RowCraftTheme.subtleGrey),
                   ),
@@ -276,8 +284,7 @@ class _WeekSection extends ConsumerWidget {
                       isCompleted:
                           progress?.isCompleted(week.weekNumber, i) == true,
                       isNextUp: _isNextUp(i),
-                      workoutTitle: titles[week.sessions[i].workoutId] ??
-                          week.sessions[i].dayLabel,
+                      workout: workouts[week.sessions[i].workoutId],
                     ),
                 ],
               ),
@@ -299,6 +306,45 @@ class _WeekSection extends ConsumerWidget {
   }
 }
 
+class _WeekProgressBar extends StatelessWidget {
+  final int completed;
+  final int total;
+  final bool allDone;
+
+  const _WeekProgressBar({
+    required this.completed,
+    required this.total,
+    required this.allDone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (allDone) {
+      return const Center(
+        child: Icon(Icons.check_circle,
+            size: 20, color: RowCraftTheme.successGreen),
+      );
+    }
+
+    return Row(
+      children: List.generate(total, (i) {
+        return Expanded(
+          child: Container(
+            height: 4,
+            margin: EdgeInsets.only(right: i < total - 1 ? 2 : 0),
+            decoration: BoxDecoration(
+              color: i < completed
+                  ? RowCraftTheme.successGreen
+                  : RowCraftTheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
 class _SessionRow extends StatelessWidget {
   final PlanSession session;
   final int weekNumber;
@@ -306,7 +352,7 @@ class _SessionRow extends StatelessWidget {
   final String planId;
   final bool isCompleted;
   final bool isNextUp;
-  final String workoutTitle;
+  final Workout? workout;
 
   const _SessionRow({
     required this.session,
@@ -315,19 +361,25 @@ class _SessionRow extends StatelessWidget {
     required this.planId,
     required this.isCompleted,
     required this.isNextUp,
-    required this.workoutTitle,
+    this.workout,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final workoutTitle = workout?.title ?? session.dayLabel;
 
     return InkWell(
       onTap: () {
-        context.push(
-          '/workout/${session.workoutId}'
-          '?plan=$planId&week=$weekNumber&session=$sessionIndex',
+        final uri = Uri(
+          path: '/workout/${session.workoutId}',
+          queryParameters: {
+            'plan': planId,
+            'week': weekNumber.toString(),
+            'session': sessionIndex.toString(),
+          },
         );
+        context.push(uri.toString());
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
@@ -342,44 +394,63 @@ class _SessionRow extends StatelessWidget {
                         RowCraftTheme.primaryBlue.withValues(alpha: 0.3)),
               )
             : null,
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status icon
-            if (isCompleted)
-              const Icon(Icons.check_circle,
-                  size: 20, color: RowCraftTheme.successGreen)
-            else if (isNextUp)
-              const Icon(Icons.play_circle_filled,
-                  size: 20, color: RowCraftTheme.primaryBlue)
-            else
-              const Icon(Icons.circle_outlined,
-                  size: 20, color: RowCraftTheme.subtleGrey),
-            const SizedBox(width: 12),
-            // Session info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${session.dayLabel}: $workoutTitle',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight:
-                          isNextUp ? FontWeight.w600 : FontWeight.w400,
-                      color: isCompleted
-                          ? RowCraftTheme.subtleGrey
-                          : RowCraftTheme.metricWhite,
-                    ),
+            Row(
+              children: [
+                // Status icon
+                if (isCompleted)
+                  const Icon(Icons.check_circle,
+                      size: 20, color: RowCraftTheme.successGreen)
+                else if (isNextUp)
+                  const Icon(Icons.play_circle_filled,
+                      size: 20, color: RowCraftTheme.primaryBlue)
+                else
+                  const Icon(Icons.circle_outlined,
+                      size: 20, color: RowCraftTheme.subtleGrey),
+                const SizedBox(width: 12),
+                // Session info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${session.dayLabel}: $workoutTitle',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight:
+                              isNextUp ? FontWeight.w600 : FontWeight.w400,
+                          color: isCompleted
+                              ? RowCraftTheme.subtleGrey
+                              : RowCraftTheme.metricWhite,
+                        ),
+                      ),
+                      if (session.notes != null)
+                        Text(session.notes!,
+                            style: theme.textTheme.bodySmall,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                    ],
                   ),
-                  if (session.notes != null)
-                    Text(session.notes!,
-                        style: theme.textTheme.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                ),
+                // Duration + difficulty
+                if (workout != null) ...[
+                  _WorkoutMeta(workout: workout!),
                 ],
-              ),
+                const SizedBox(width: 4),
+                const Icon(Icons.chevron_right, size: 20,
+                    color: RowCraftTheme.subtleGrey),
+              ],
             ),
-            const Icon(Icons.chevron_right, size: 20,
-                color: RowCraftTheme.subtleGrey),
+            // Mini segment graph
+            if (workout != null) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 32),
+                child: WorkoutGraph(
+                    segments: workout!.segments, height: 24),
+              ),
+            ],
           ],
         ),
       ),
@@ -387,15 +458,50 @@ class _SessionRow extends StatelessWidget {
   }
 }
 
-/// Batch-fetch all workout titles for a plan's sessions (avoids N+1 queries).
-/// Uses the already-cached plan from trainingPlansProvider to collect IDs,
-/// then fetches only those workouts via an `in_` filter.
-final _planWorkoutTitlesProvider =
-    FutureProvider.family<Map<String, String>, String>(
+class _WorkoutMeta extends StatelessWidget {
+  final Workout workout;
+
+  const _WorkoutMeta({required this.workout});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final totalTime = computeTotalTime(workout.segments);
+    final totalDist = computeTotalDistance(workout.segments);
+
+    String durationLabel;
+    if (totalTime != null) {
+      durationLabel = formatDuration(totalTime);
+    } else if (totalDist != null) {
+      durationLabel = formatDistance(totalDist);
+    } else {
+      durationLabel = '';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        DifficultyIndicator.fromSegments(
+            segments: workout.segments, size: 12),
+        if (durationLabel.isNotEmpty)
+          Text(
+            durationLabel,
+            style: theme.textTheme.labelSmall?.copyWith(
+                color: RowCraftTheme.subtleGrey),
+          ),
+      ],
+    );
+  }
+}
+
+/// Batch-fetch all workouts for a plan's sessions (avoids N+1 queries).
+/// Returns full Workout objects for mini-graph rendering and metadata.
+final _planWorkoutsProvider =
+    FutureProvider.family<Map<String, Workout>, String>(
         (ref, planId) async {
   // Capture refs before any await to avoid post-dispose StateError.
-  final plansFuture = ref.watch(trainingPlansProvider.future);
-  final service = ref.watch(supabaseServiceProvider);
+  final plansFuture = ref.read(trainingPlansProvider.future);
+  final service = ref.read(supabaseServiceProvider);
 
   final plans = await plansFuture;
   final plan = plans.where((p) => p.id == planId).firstOrNull;
@@ -410,6 +516,5 @@ final _planWorkoutTitlesProvider =
   if (workoutIds.isEmpty) return {};
 
   final workouts = await service.getWorkoutsByIds(workoutIds.toList());
-  return {for (final w in workouts) w.id: w.title};
+  return {for (final w in workouts) w.id: w};
 });
-
