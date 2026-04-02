@@ -54,20 +54,20 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
-          <svg viewBox="0 0 120 80" fill="none" className="h-7 w-auto" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="rc-gold" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#FFD700"/>
-                <stop offset="50%" stopColor="#FFC107"/>
-                <stop offset="100%" stopColor="#B8860B"/>
-              </linearGradient>
-            </defs>
-            <path d="M8 8h28c11 0 20 9 20 20s-9 20-20 20H28l24 24"
-                  stroke="url(#rc-gold)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <line x1="8" y1="8" x2="8" y2="72" stroke="url(#rc-gold)" strokeWidth="7" strokeLinecap="round"/>
-            <path d="M112 20c-4-8-12-12-22-12-16 0-28 14-28 32s12 32 28 32c10 0 18-4 22-12"
-                  stroke="url(#rc-gold)" strokeWidth="7" strokeLinecap="round" fill="none"/>
-          </svg>
+          <div
+            className="h-7 w-7"
+            style={{
+              background: 'linear-gradient(135deg, #FFD700, #FFC107, #B8860B)',
+              maskImage: 'url(/logo.png)',
+              WebkitMaskImage: 'url(/logo.png)',
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskPosition: 'center',
+            }}
+          />
           RowCraft
         </Link>
 

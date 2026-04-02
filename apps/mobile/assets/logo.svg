@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
   <defs>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#FFD700"/>
@@ -7,12 +7,30 @@
     </linearGradient>
   </defs>
 
-  <!-- R letterform -->
-  <path d="M8 8h28c11 0 20 9 20 20s-9 20-20 20H28l24 24"
-        stroke="url(#gold)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <line x1="8" y1="8" x2="8" y2="72" stroke="url(#gold)" stroke-width="7" stroke-linecap="round"/>
+  <!-- C letterform (behind R) -->
+  <path fill="url(#gold)" d="M98 14 C92 4 82 0 70 0 C50 0 36 18 36 40 C36 62 50 80 70 80 C82 80 92 76 98 66 L88 58 C84 65 77 69 70 69 C56 69 47 56 47 40 C47 24 56 11 70 11 C77 11 84 15 88 22Z"/>
 
-  <!-- C letterform -->
-  <path d="M112 20c-4-8-12-12-22-12-16 0-28 14-28 32s12 32 28 32c10 0 18-4 22-12"
-        stroke="url(#gold)" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <!-- R: left vertical bar -->
+  <path fill="url(#gold)" d="M3 2 L18 2 L18 78 L3 78Z"/>
+
+  <!-- R: angular top with bowl (italic/dynamic peak) -->
+  <path fill="url(#gold)" d="M18 2 L56 0 L62 4 C66 8 68 14 66 20 C64 28 58 34 48 34 L18 34Z"/>
+
+  <!-- R: leg -->
+  <path fill="url(#gold)" d="M32 36 L46 36 L64 78 L48 78Z"/>
+
+  <!-- Oar shaft (diagonal) -->
+  <path fill="url(#gold)" d="M24 10 L26 8 L80 48 L78 51Z"/>
+
+  <!-- Oar blade -->
+  <path fill="url(#gold)" d="M78 48 L88 55 L84 60 L74 53Z"/>
+
+  <!-- Rower detail lines (thin gaps define the figure within R) -->
+  <g fill="none" stroke="rgba(0,0,0,0.6)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="40" cy="12" r="4.5"/>
+    <path d="M39 17 C41 22 45 28 49 33"/>
+    <path d="M36 15 L28 9"/>
+    <path d="M42 16 L49 23"/>
+    <path d="M35 14 L43 14"/>
+  </g>
 </svg>
