@@ -111,7 +111,7 @@ describe('getHrZoneBpm', () => {
 describe('getHrZoneLabel', () => {
 	it('returns human-readable labels', () => {
 		expect(getHrZoneLabel('recovery')).toBe('Recovery');
-		expect(getHrZoneLabel('aerobic')).toBe('Z2 Aerobic');
+		expect(getHrZoneLabel('aerobic')).toBe('Aerobic');
 		expect(getHrZoneLabel('threshold')).toBe('Threshold');
 	});
 });

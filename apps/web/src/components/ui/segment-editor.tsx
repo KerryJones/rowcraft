@@ -2,7 +2,7 @@
 
 import type { WorkoutSegment, SegmentType, DurationType } from '@/lib/types';
 import { formatPace, parsePace } from '@/lib/utils/format';
-import { paceTenthsToWatts, formatWatts } from '@/lib/utils/ftp';
+import { paceTenthsToWatts, formatWatts, HR_ZONES } from '@/lib/utils/ftp';
 import { useState, useEffect } from 'react';
 
 const SEGMENT_TYPES: { value: SegmentType; label: string }[] = [
@@ -173,11 +173,9 @@ export function SegmentEditor({ segment, onChange, onRemove }: SegmentEditorProp
             className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
           >
             <option value="">None</option>
-            <option value="1">Z1 Recovery</option>
-            <option value="2">Z2 Aerobic</option>
-            <option value="3">Z3 Tempo</option>
-            <option value="4">Z4 Threshold</option>
-            <option value="5">Z5 Max</option>
+            {HR_ZONES.map((zone, i) => (
+              <option key={zone.name} value={i + 1}>Z{i + 1} {zone.label}</option>
+            ))}
           </select>
         </div>
       </div>

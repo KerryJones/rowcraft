@@ -34,7 +34,7 @@ export function formatWatts(watts: number): string {
  */
 export const HR_ZONES: HrZone[] = [
 	{ name: 'recovery', label: 'Recovery', minPct: 0, maxPct: 60 },
-	{ name: 'aerobic', label: 'Z2 Aerobic', minPct: 60, maxPct: 75 },
+	{ name: 'aerobic', label: 'Aerobic', minPct: 60, maxPct: 75 },
 	{ name: 'tempo', label: 'Tempo', minPct: 75, maxPct: 85 },
 	{ name: 'threshold', label: 'Threshold', minPct: 85, maxPct: 92 },
 	{ name: 'max', label: 'Max', minPct: 92, maxPct: 100 },
@@ -56,7 +56,7 @@ export function getHrZoneBpm(
 }
 
 /**
- * Get a human-readable label for a HR zone, e.g., "Z2 Aerobic"
+ * Get a human-readable label for a HR zone, e.g., "Aerobic"
  */
 export function getHrZoneLabel(zoneName: HrZoneName): string {
 	const zone = HR_ZONES.find((z) => z.name === zoneName);

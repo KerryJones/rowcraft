@@ -89,7 +89,8 @@ export async function GET(request: NextRequest) {
     appUserId = user.id;
   }
 
-  // Store tokens using service role to bypass RLS
+  // Service role client to store tokens — mobile has no cookie session,
+  // so we need elevated access to update the profile row
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
