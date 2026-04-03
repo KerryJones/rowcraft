@@ -24,7 +24,7 @@ export function WodCard({ workout, onShuffle, onView, canShuffle = true }: WodCa
     let totalWeight = 0;
     let weightedSum = 0;
     for (const s of workSegs) {
-      const weight = s.duration_value * (s.repeat || 1);
+      const weight = s.duration_value;
       weightedSum += s.target_split!.pace * weight;
       totalWeight += weight;
     }

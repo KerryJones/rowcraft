@@ -8,7 +8,7 @@ const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: 'RowCraft',
-  description: 'Structured rowing workouts for Concept2 PM5',
+  description: 'Structured rowing workouts for Concept2 rowers',
   icons: { icon: '/favicon.svg' },
 };
 

@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 const features = [
   {
     icon: Bluetooth,
-    title: 'PM5 Connection',
-    description: 'Connect directly to your Concept2 PM5 via Bluetooth for real-time pace, stroke rate, and heart rate.',
+    title: 'Rower Connection',
+    description: 'Connect directly to your Concept2 rower via Bluetooth for real-time pace, stroke rate, and heart rate.',
   },
   {
     icon: Wrench,
@@ -46,7 +46,7 @@ export default async function LandingPage() {
           RowCraft
         </h1>
         <p className="mt-4 max-w-xl text-lg text-gray-400">
-          Structured rowing workouts for the Concept2 PM5. Build intervals, follow training plans,
+          Structured rowing workouts for the Concept2 rower. Build intervals, follow training plans,
           and track every meter.
         </p>
         <div className="mt-8 flex gap-4">

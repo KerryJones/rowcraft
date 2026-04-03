@@ -136,34 +136,34 @@ void main() {
     });
 
     group('paceFormatted', () {
-      test('formats 1:45.0 correctly', () {
-        // 1:45.0 = 1*600 + 45*10 + 0 = 1050
+      test('formats 1:45 correctly', () {
+        // 1:45 = 1*600 + 45*10 = 1050
         final split = SplitData.fromJson(splitJson(avgPace: 1050));
-        expect(split.paceFormatted, '1:45.0');
+        expect(split.paceFormatted, '1:45');
       });
 
-      test('formats 2:00.0 correctly', () {
-        // 2:00.0 = 2*600 = 1200
+      test('formats 2:00 correctly', () {
+        // 2:00 = 2*600 = 1200
         final split = SplitData.fromJson(splitJson(avgPace: 1200));
-        expect(split.paceFormatted, '2:00.0');
+        expect(split.paceFormatted, '2:00');
       });
 
-      test('formats 1:30.5 correctly', () {
-        // 1:30.5 = 1*600 + 30*10 + 5 = 905
+      test('formats 1:30 correctly', () {
+        // 1:30 = 1*600 + 30*10 + 5 = 905
         final split = SplitData.fromJson(splitJson(avgPace: 905));
-        expect(split.paceFormatted, '1:30.5');
+        expect(split.paceFormatted, '1:30');
       });
 
-      test('formats 2:05.3 correctly', () {
-        // 2:05.3 = 2*600 + 5*10 + 3 = 1253
+      test('formats 2:05 correctly', () {
+        // 2:05 = 2*600 + 5*10 + 3 = 1253
         final split = SplitData.fromJson(splitJson(avgPace: 1253));
-        expect(split.paceFormatted, '2:05.3');
+        expect(split.paceFormatted, '2:05');
       });
 
       test('formats sub-minute pace correctly', () {
-        // 0:55.0 = 0*600 + 55*10 + 0 = 550
+        // 0:55 = 0*600 + 55*10 = 550
         final split = SplitData.fromJson(splitJson(avgPace: 550));
-        expect(split.paceFormatted, '0:55.0');
+        expect(split.paceFormatted, '0:55');
       });
     });
   });
@@ -287,20 +287,20 @@ void main() {
     });
 
     group('avgSplitFormatted', () {
-      test('formats 1:45.0 correctly (avgSplit=1050)', () {
+      test('formats 1:45 correctly (avgSplit=1050)', () {
         final result = WorkoutResult.fromJson(resultJson(avgSplit: 1050));
-        expect(result.avgSplitFormatted, '1:45.0');
+        expect(result.avgSplitFormatted, '1:45');
       });
 
-      test('formats 2:00.0 correctly (avgSplit=1200)', () {
+      test('formats 2:00 correctly (avgSplit=1200)', () {
         final result = WorkoutResult.fromJson(resultJson(avgSplit: 1200));
-        expect(result.avgSplitFormatted, '2:00.0');
+        expect(result.avgSplitFormatted, '2:00');
       });
 
-      test('formats 1:58.7 correctly (avgSplit=1187)', () {
+      test('formats 1:58 correctly (avgSplit=1187)', () {
         // 1*600 + 58*10 + 7 = 1187
         final result = WorkoutResult.fromJson(resultJson(avgSplit: 1187));
-        expect(result.avgSplitFormatted, '1:58.7');
+        expect(result.avgSplitFormatted, '1:58');
       });
     });
 

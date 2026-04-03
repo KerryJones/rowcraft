@@ -92,11 +92,10 @@ class HistorySummary {
   }
 
   String get bestSplitFormatted {
-    if (bestSplit == null) return '--:--.--';
+    if (bestSplit == null) return '--:--';
     final minutes = bestSplit! ~/ 600;
     final remaining = bestSplit! % 600;
     final seconds = remaining ~/ 10;
-    final tenths = remaining % 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}.$tenths';
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }

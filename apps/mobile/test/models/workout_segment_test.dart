@@ -92,7 +92,6 @@ void main() {
         'target_split': {'min': 95.0, 'max': 100.0},
         'target_stroke_rate': {'min': 28, 'max': 32},
         'target_hr_zone': 4,
-        'repeat': 5,
       };
 
       final segment = WorkoutSegment.fromJson(json);
@@ -106,7 +105,6 @@ void main() {
       expect(segment.targetStrokeRate!.min, 28);
       expect(segment.targetStrokeRate!.max, 32);
       expect(segment.targetHrZone, 4);
-      expect(segment.repeat, 5);
     });
 
     test('null targets handled correctly', () {
@@ -114,7 +112,6 @@ void main() {
         'type': 'rest',
         'duration_type': 'time',
         'duration_value': 120.0,
-        'repeat': 1,
       };
 
       final segment = WorkoutSegment.fromJson(json);
@@ -123,23 +120,11 @@ void main() {
       expect(segment.targetHrZone, isNull);
     });
 
-    test('repeat defaults to 1 when missing', () {
-      final json = {
-        'type': 'warmup',
-        'duration_type': 'time',
-        'duration_value': 300.0,
-      };
-
-      final segment = WorkoutSegment.fromJson(json);
-      expect(segment.repeat, 1);
-    });
-
     test('durationValue handles int values from JSON', () {
       final json = {
         'type': 'work',
         'duration_type': 'distance',
         'duration_value': 2000,
-        'repeat': 1,
       };
 
       final segment = WorkoutSegment.fromJson(json);
@@ -156,7 +141,6 @@ void main() {
         targetSplit: SplitTarget(min: 95.0, max: 100.0),
         targetStrokeRate: StrokeRateTarget(min: 28, max: 32),
         targetHrZone: 4,
-        repeat: 5,
       );
 
       final json = segment.toJson();
@@ -166,7 +150,6 @@ void main() {
       expect(json['target_split'], {'min': 95.0, 'max': 100.0});
       expect(json['target_stroke_rate'], {'min': 28, 'max': 32});
       expect(json['target_hr_zone'], 4);
-      expect(json['repeat'], 5);
     });
 
     test('omits null targets from JSON', () {
@@ -192,7 +175,6 @@ void main() {
         'target_split': {'min': 95.0, 'max': 100.0},
         'target_stroke_rate': {'min': 28, 'max': 32},
         'target_hr_zone': 4,
-        'repeat': 5,
       };
 
       final segment = WorkoutSegment.fromJson(original);
@@ -204,7 +186,6 @@ void main() {
       expect(json['target_split'], original['target_split']);
       expect(json['target_stroke_rate'], original['target_stroke_rate']);
       expect(json['target_hr_zone'], original['target_hr_zone']);
-      expect(json['repeat'], original['repeat']);
     });
 
     test('minimal segment survives roundtrip', () {
@@ -224,7 +205,6 @@ void main() {
       expect(roundtripped.targetSplit, isNull);
       expect(roundtripped.targetStrokeRate, isNull);
       expect(roundtripped.targetHrZone, isNull);
-      expect(roundtripped.repeat, 1);
     });
   });
 
@@ -293,7 +273,6 @@ void main() {
         targetSplit: SplitTarget(min: 95.0, max: 100.0),
         targetStrokeRate: StrokeRateTarget(min: 28, max: 32),
         targetHrZone: 4,
-        repeat: 5,
       );
 
       final copied = original.copyWith(durationValue: 500.0);
@@ -304,20 +283,17 @@ void main() {
       expect(copied.targetSplit!.min, original.targetSplit!.min);
       expect(copied.targetStrokeRate!.min, original.targetStrokeRate!.min);
       expect(copied.targetHrZone, original.targetHrZone);
-      expect(copied.repeat, original.repeat);
     });
   });
 
-  test('toString includes type, durationLabel, and repeat', () {
+  test('toString includes type and durationLabel', () {
     const segment = WorkoutSegment(
       type: SegmentType.work,
       durationType: DurationType.distance,
       durationValue: 1000.0,
-      repeat: 5,
     );
     final str = segment.toString();
     expect(str, contains('work'));
     expect(str, contains('1000m'));
-    expect(str, contains('5'));
   });
 }

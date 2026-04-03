@@ -4,19 +4,37 @@ import 'package:rowcraft/utils/workout_utils.dart';
 
 void main() {
   group('computeTotalTime', () {
-    test('returns sum of time-based segments with repeats', () {
+    test('returns sum of time-based segments', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300, // 5:00
-          repeat: 3,
         ),
         const WorkoutSegment(
           type: SegmentType.rest,
           durationType: DurationType.time,
           durationValue: 60,
-          repeat: 3,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.time,
+          durationValue: 300,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.rest,
+          durationType: DurationType.time,
+          durationValue: 60,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.time,
+          durationValue: 300,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.rest,
+          durationType: DurationType.time,
+          durationValue: 60,
         ),
       ];
       expect(computeTotalTime(segments), 1080); // 900 + 180
@@ -35,13 +53,27 @@ void main() {
   });
 
   group('computeTotalDistance', () {
-    test('returns sum of distance-based segments with repeats', () {
+    test('returns sum of distance-based segments', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.distance,
           durationValue: 500,
-          repeat: 4,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.distance,
+          durationValue: 500,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.distance,
+          durationValue: 500,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.distance,
+          durationValue: 500,
         ),
       ];
       expect(computeTotalDistance(segments), 2000);
@@ -60,25 +92,23 @@ void main() {
   });
 
   group('computeSegmentCount', () {
-    test('accounts for repeats', () {
+    test('counts individual segments', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
         ),
-        const WorkoutSegment(
+        ...List.generate(8, (_) => const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 120,
-          repeat: 8,
-        ),
-        const WorkoutSegment(
+        )),
+        ...List.generate(8, (_) => const WorkoutSegment(
           type: SegmentType.rest,
           durationType: DurationType.time,
           durationValue: 60,
-          repeat: 8,
-        ),
+        )),
         const WorkoutSegment(
           type: SegmentType.cooldown,
           durationType: DurationType.time,
@@ -97,14 +127,12 @@ void main() {
           durationType: DurationType.time,
           durationValue: 300,
           targetSplit: SplitTarget(min: 1200, max: 1300), // 2:00
-          repeat: 1,
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
           targetSplit: SplitTarget(min: 1000, max: 1100), // 1:40
-          repeat: 1,
         ),
       ];
       // Equal weight: avg = (1200 + 1000) / 2 = 1100
@@ -312,21 +340,19 @@ void main() {
     });
 
     test('complexity bonus: many segments bumps level', () {
-      // Easy pace but 12 expanded segments → bumps from 1 to 2
+      // Easy pace but 12 individual segments → bumps from 1 to 2
       final segments = [
-        const WorkoutSegment(
+        ...List.generate(6, (_) => const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 60,
           targetSplit: SplitTarget(min: 1400, max: 1400), // ~2:20 → easy
-          repeat: 6,
-        ),
-        const WorkoutSegment(
+        )),
+        ...List.generate(6, (_) => const WorkoutSegment(
           type: SegmentType.rest,
           durationType: DurationType.time,
           durationValue: 30,
-          repeat: 6,
-        ),
+        )),
       ];
       expect(computeSegmentCount(segments), 12);
       expect(computeDifficultyLevel(segments), 2); // bumped from 1→2
@@ -348,9 +374,9 @@ void main() {
 
   group('formatPace', () {
     test('formats tenths to pace string', () {
-      expect(formatPace(1200), '2:00.0');
-      expect(formatPace(1345), '2:14.5');
-      expect(formatPace(1000), '1:40.0');
+      expect(formatPace(1200), '2:00');
+      expect(formatPace(1345), '2:14');
+      expect(formatPace(1000), '1:40');
     });
   });
 

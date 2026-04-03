@@ -1,36 +1,36 @@
 import '../models/workout_segment.dart';
 
-/// Compute total time in seconds for all time-based segments (accounting for repeats).
+/// Compute total time in seconds for all time-based segments.
 /// Returns null if there are no time-based segments.
 int? computeTotalTime(List<WorkoutSegment> segments) {
   var total = 0.0;
   var hasTime = false;
   for (final seg in segments) {
     if (seg.durationType == DurationType.time) {
-      total += seg.durationValue * seg.repeat;
+      total += seg.durationValue;
       hasTime = true;
     }
   }
   return hasTime ? total.round() : null;
 }
 
-/// Compute total distance in meters for all distance-based segments (accounting for repeats).
+/// Compute total distance in meters for all distance-based segments.
 /// Returns null if no distance-based segments exist.
 double? computeTotalDistance(List<WorkoutSegment> segments) {
   var total = 0.0;
   var hasDist = false;
   for (final seg in segments) {
     if (seg.durationType == DurationType.distance) {
-      total += seg.durationValue * seg.repeat;
+      total += seg.durationValue;
       hasDist = true;
     }
   }
   return hasDist ? total : null;
 }
 
-/// Compute total expanded segment count (accounting for repeats).
+/// Compute total segment count.
 int computeSegmentCount(List<WorkoutSegment> segments) {
-  return segments.fold(0, (sum, seg) => sum + seg.repeat);
+  return segments.length;
 }
 
 /// Compute weighted average pace (in tenths per 500m) across work segments with pace targets.
@@ -42,7 +42,7 @@ int? computeAvgPace(List<WorkoutSegment> segments) {
   var totalWeight = 0.0;
   var weightedSum = 0.0;
   for (final s in workSegs) {
-    final weight = s.durationValue * s.repeat;
+    final weight = s.durationValue;
     weightedSum += s.targetSplit!.min * weight;
     totalWeight += weight;
   }
@@ -51,7 +51,7 @@ int? computeAvgPace(List<WorkoutSegment> segments) {
 
 /// Compute workout intensity score (0.00 - 1.00+).
 /// Weighted average of segment pace against a 2:00/500m (1200 tenths) reference.
-/// Higher = harder. Duration-weighted by segment duration value * repeat.
+/// Higher = harder. Duration-weighted by segment duration value.
 /// Returns null if no segments have pace targets.
 double? computeIntensity(List<WorkoutSegment> segments) {
   const referencePace = 1200.0; // 2:00/500m in tenths
@@ -61,7 +61,7 @@ double? computeIntensity(List<WorkoutSegment> segments) {
   for (final seg in segments) {
     if (seg.targetSplit == null) continue;
     if (seg.type != SegmentType.work) continue; // Only work segments count
-    final duration = seg.durationValue * seg.repeat;
+    final duration = seg.durationValue;
     // Invert: faster pace (lower number) = higher intensity
     final intensity = referencePace / seg.targetSplit!.min;
     weightedSum += intensity * duration;
@@ -133,13 +133,12 @@ String formatDuration(int totalSeconds) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-/// Format pace in tenths to M:SS.t display.
-/// e.g. 1200 → "2:00.0"
+/// Format pace in tenths to M:SS display.
+/// e.g. 1200 → "2:00"
 String formatPace(int tenths) {
   final minutes = tenths ~/ 600;
   final secs = (tenths % 600) ~/ 10;
-  final t = tenths % 10;
-  return '$minutes:${secs.toString().padLeft(2, '0')}.$t';
+  return '$minutes:${secs.toString().padLeft(2, '0')}';
 }
 
 /// Format distance for display.

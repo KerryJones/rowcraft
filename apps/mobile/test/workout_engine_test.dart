@@ -138,16 +138,25 @@ void main() {
       expect(engine.currentState.latestData.heartRate, 72);
     });
 
-    test('expands repeated segments', () {
-      const segment = WorkoutSegment(
-        type: SegmentType.work,
-        durationType: DurationType.distance,
-        durationValue: 500,
-        repeat: 3,
-      );
-
+    test('handles multiple individual segments', () {
       engine = WorkoutEngine(
-        workout: makeWorkout([segment]),
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 500,
+          ),
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 500,
+          ),
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 500,
+          ),
+        ]),
         pm5Stream: pm5Controller.stream,
       );
 
@@ -1289,6 +1298,224 @@ void main() {
 
       expect(engine.currentState.phase, WorkoutPhase.finished);
       expect(engine.currentState.finishReason, FinishReason.paceFailed);
+    });
+  });
+
+  group('Time-series sampling', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    Workout makeWorkout(List<WorkoutSegment> segments) {
+      return Workout(
+        id: 'test',
+        authorId: 'user',
+        title: 'Test',
+        workoutType: WorkoutType.intervals,
+        segments: segments,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    test('collects samples once per second during rowing', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 5000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Send data at t=1s, t=1.5s, t=2s, t=3s
+      for (final sec in [1.0, 1.5, 2.0, 3.0]) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(milliseconds: (sec * 1000).toInt()),
+          distance: sec * 5,
+          pace: 1200,
+          strokeRate: 24,
+          watts: 180,
+          calories: 0,
+          strokeCount: (sec * 2).toInt(),
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      // Should have 3 samples (t=1, t=2, t=3) — t=1.5 skipped (< 1s since t=1)
+      expect(engine.timeSamples.length, 3);
+      expect(engine.timeSamples[0].pace, 1200);
+      expect(engine.timeSamples[0].strokeRate, 24);
+      expect(engine.timeSamples[0].segmentIndex, 0);
+    });
+
+    test('collects samples during rest segments', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.time,
+            durationValue: 1, // 1 second — completes immediately
+          ),
+          const WorkoutSegment(
+            type: SegmentType.rest,
+            durationType: DurationType.time,
+            durationValue: 60,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // t=1s — work segment (completes and advances to rest)
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 5,
+        pace: 1200,
+        strokeRate: 24,
+        watts: 180,
+        calories: 0,
+        strokeCount: 2,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // t=2s — should be in rest segment now
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 2),
+        distance: 5,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 0,
+        strokeCount: 2,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Should have samples from both work and rest phases
+      expect(engine.timeSamples.length, greaterThanOrEqualTo(2));
+    });
+
+    test('does not collect samples when paused', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 5000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // t=1s — rowing
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 5,
+        pace: 1200,
+        strokeRate: 24,
+        watts: 180,
+        calories: 0,
+        strokeCount: 2,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 10));
+
+      final countBeforePause = engine.timeSamples.length;
+
+      // Pause
+      engine.pause();
+      await Future.delayed(const Duration(milliseconds: 10));
+
+      // t=2s — paused, should not collect
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 2),
+        distance: 5,
+        pace: 1200,
+        strokeRate: 24,
+        watts: 180,
+        calories: 0,
+        strokeCount: 2,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 10));
+
+      expect(engine.timeSamples.length, countBeforePause);
+    });
+
+    test('samples persist across segments', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.time,
+            durationValue: 1,
+          ),
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.time,
+            durationValue: 60,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // t=1s — first segment
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 5,
+        pace: 1200,
+        strokeRate: 24,
+        watts: 180,
+        calories: 0,
+        strokeCount: 2,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // t=2s — should be in second segment
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 2),
+        distance: 10,
+        pace: 1200,
+        strokeRate: 24,
+        watts: 180,
+        calories: 0,
+        strokeCount: 4,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Samples from both segments should exist
+      final indices = engine.timeSamples.map((s) => s.segmentIndex).toSet();
+      expect(indices.length, greaterThanOrEqualTo(2));
     });
   });
 }

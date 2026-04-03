@@ -22,8 +22,7 @@ function getBarHeight(segment: WorkoutSegment, totalHeight: number): number {
 }
 
 function getBarWidth(segment: WorkoutSegment): number {
-  const repeat = segment.repeat || 1;
-  return segment.duration_value * repeat;
+  return segment.duration_value;
 }
 
 interface MiniGraphProps {

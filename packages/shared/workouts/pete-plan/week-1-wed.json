@@ -10,8 +10,7 @@
       "duration_value": 500,
       "target_split": { "min": 1050, "max": 1150 },
       "target_stroke_rate": { "min": 26, "max": 32 },
-      "target_hr_zone": 4,
-      "repeat": 8
+      "target_hr_zone": 4
     },
     {
       "type": "rest",
@@ -19,8 +18,119 @@
       "duration_value": 210,
       "target_split": null,
       "target_stroke_rate": null,
-      "target_hr_zone": null,
-      "repeat": 8
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "distance",
+      "duration_value": 500,
+      "target_split": { "min": 1050, "max": 1150 },
+      "target_stroke_rate": { "min": 26, "max": 32 },
+      "target_hr_zone": 4
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 210,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
     }
   ]
 }

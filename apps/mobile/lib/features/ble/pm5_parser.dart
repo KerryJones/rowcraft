@@ -86,13 +86,13 @@ class PM5Parser {
   /// [0-2]  Elapsed time (0.01s)
   /// [3]    Interval count
   /// [4-5]  Average power (watts, uint16 LE)
-  /// [6-8]  Total calories (3 bytes LE uint)
+  /// [6-7]  Total calories (uint16 LE)
   static PM5Data parseAdditionalStatus2(Uint8List data, PM5Data current) {
-    if (data.length < 9) return current;
+    if (data.length < 8) return current;
 
     final intervalCount = data[3];
     final watts = data[4] | (data[5] << 8);
-    final calories = data[6] | (data[7] << 8) | (data[8] << 16);
+    final calories = (data[6] | (data[7] << 8)).clamp(0, 9999);
 
     return current.copyWith(
       intervalCount: intervalCount,

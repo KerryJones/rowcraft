@@ -68,7 +68,7 @@ class ConnectScreen extends ConsumerWidget {
 
           // PM5 devices (exclude already-saved)
           if (unseenPm5.isNotEmpty) ...[
-            Text('PM5 Ergometers', style: theme.textTheme.titleMedium),
+            Text('Rowers', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             ...unseenPm5
                 .map((d) => _DiscoveredDeviceTile(
@@ -166,7 +166,7 @@ class _ConnectionStatusBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  pm5Connected ? 'PM5 Connected' : 'PM5 --',
+                  pm5Connected ? 'Rower Connected' : 'Rower --',
                   style: theme.textTheme.bodyMedium,
                 ),
               ],

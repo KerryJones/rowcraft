@@ -1,6 +1,6 @@
 /// Real-time data received from a Concept2 PM5 via BLE.
 ///
-/// Pace is in tenths of seconds per 500m (e.g. 1050 = 1:45.0/500m).
+/// Pace is in tenths of seconds per 500m (e.g. 1050 = 1:45/500m).
 class PM5Data {
   final Duration elapsedTime;
   final double distance;
@@ -60,17 +60,16 @@ class PM5Data {
     );
   }
 
-  /// Format pace as M:SS.t (e.g. 1:45.0)
+  /// Format pace as M:SS (e.g. 1:45)
   String get paceFormatted => formatPaceTenths(pace);
 
   /// Format a pace value in tenths of seconds per 500m.
   static String formatPaceTenths(int tenths) {
-    if (tenths == 0) return '--:--.--';
+    if (tenths == 0) return '--:--';
     final minutes = tenths ~/ 600;
     final remaining = tenths % 600;
     final seconds = remaining ~/ 10;
-    final t = remaining % 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}.$t';
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   /// Format elapsed time as H:MM:SS or MM:SS

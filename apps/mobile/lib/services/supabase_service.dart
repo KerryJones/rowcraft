@@ -19,6 +19,7 @@ class Profile {
   final String? avatarUrl;
   final bool c2Linked;
   final int? currentFtpWatts;
+  final int? maxHeartRate;
 
   const Profile({
     required this.id,
@@ -26,6 +27,7 @@ class Profile {
     this.avatarUrl,
     this.c2Linked = false,
     this.currentFtpWatts,
+    this.maxHeartRate,
   });
 
   Profile copyWith({
@@ -34,6 +36,7 @@ class Profile {
     String? avatarUrl,
     bool? c2Linked,
     int? currentFtpWatts,
+    int? maxHeartRate,
   }) {
     return Profile(
       id: id ?? this.id,
@@ -41,6 +44,7 @@ class Profile {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       c2Linked: c2Linked ?? this.c2Linked,
       currentFtpWatts: currentFtpWatts ?? this.currentFtpWatts,
+      maxHeartRate: maxHeartRate ?? this.maxHeartRate,
     );
   }
 
@@ -51,6 +55,7 @@ class Profile {
       avatarUrl: json['avatar_url'] as String?,
       c2Linked: (json['c2_linked'] as bool?) ?? false,
       currentFtpWatts: json['current_ftp_watts'] as int?,
+      maxHeartRate: json['max_heart_rate'] as int?,
     );
   }
 
@@ -61,6 +66,7 @@ class Profile {
       'avatar_url': avatarUrl,
       'c2_linked': c2Linked,
       if (currentFtpWatts != null) 'current_ftp_watts': currentFtpWatts,
+      if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
     };
   }
 }

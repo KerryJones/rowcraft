@@ -42,7 +42,9 @@
 | `features/ble/ble_provider.dart` | Riverpod BLE state management |
 | `features/workout/workout_engine.dart` | Workout state machine (phases, segments, auto-pause) |
 | `features/workout/workout_provider.dart` | Workout session Riverpod notifier |
-| `features/workout/workout_screen.dart` | Active workout UI (hero split, rower animation) |
+| `features/workout/workout_screen.dart` | Active workout UI (hero split, pace/SPM guide bars, pause overlay) |
+| `features/workout/workout_summary_screen.dart` | Post-workout summary (stats grid, pace/HR charts, splits, save/discard) |
+| `models/workout_time_sample.dart` | Time-series data point (1/sec during workout, for summary charts) |
 | `features/workout/pre_workout_screen.dart` | PM5 connection gate before starting |
 | `features/workout/rowing_animation.dart` | Animated stick-figure rower (CustomPainter) |
 | `services/supabase_service.dart` | Supabase queries |
