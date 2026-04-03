@@ -24,7 +24,6 @@ export interface WorkoutSegment {
 	target_split: SplitTarget | null;
 	target_stroke_rate: StrokeRateTarget | null;
 	target_hr_zone: number | null;
-	repeat: number;
 	messages: SegmentMessage[] | null;
 }
 

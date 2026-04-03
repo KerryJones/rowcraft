@@ -45,13 +45,12 @@ class SplitData {
     };
   }
 
-  /// Format pace as M:SS.t (e.g. 1:45.0)
+  /// Format pace as M:SS (e.g. 1:45)
   String get paceFormatted {
     final minutes = avgPace ~/ 600;
     final remaining = avgPace % 600;
     final seconds = remaining ~/ 10;
-    final tenths = remaining % 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}.$tenths';
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 }
 
@@ -122,13 +121,12 @@ class WorkoutResult {
     );
   }
 
-  /// Format average split as M:SS.t
+  /// Format average split as M:SS
   String get avgSplitFormatted {
     final minutes = avgSplit ~/ 600;
     final remaining = avgSplit % 600;
     final seconds = remaining ~/ 10;
-    final tenths = remaining % 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}.$tenths';
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   /// Format total time as H:MM:SS

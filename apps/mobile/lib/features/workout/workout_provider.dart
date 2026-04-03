@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/pm5_data.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
+import '../../models/workout_time_sample.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../ble/ble_provider.dart';
@@ -14,6 +15,15 @@ import 'workout_engine.dart';
 
 /// Sentinel to distinguish "not passed" from "explicitly null" in copyWith.
 const Object _sentinel = Object();
+
+/// Tracks the progress of saving a workout result.
+enum SaveProgress {
+  idle,
+  saving,
+  savedToCloud,
+  done,
+  error,
+}
 
 /// Combined state for the workout session UI.
 class WorkoutSessionState {
@@ -35,6 +45,18 @@ class WorkoutSessionState {
   final int? planWeek;
   final int? planSession;
 
+  /// User's max heart rate from profile (for HR zone calculation).
+  final int? maxHeartRate;
+
+  /// Result waiting to be saved (after stop, before save).
+  final WorkoutResult? pendingResult;
+
+  /// Time-series data for post-workout graphs.
+  final List<WorkoutTimeSample>? timeSamples;
+
+  /// Tracks the progress of saving the result.
+  final SaveProgress saveProgress;
+
   String? get error => _error;
 
   const WorkoutSessionState({
@@ -51,6 +73,10 @@ class WorkoutSessionState {
     this.planId,
     this.planWeek,
     this.planSession,
+    this.maxHeartRate,
+    this.pendingResult,
+    this.timeSamples,
+    this.saveProgress = SaveProgress.idle,
   }) : _error = error;
 
   WorkoutSessionState copyWith({
@@ -67,6 +93,10 @@ class WorkoutSessionState {
     Object? planId = _sentinel,
     Object? planWeek = _sentinel,
     Object? planSession = _sentinel,
+    Object? maxHeartRate = _sentinel,
+    Object? pendingResult = _sentinel,
+    Object? timeSamples = _sentinel,
+    SaveProgress? saveProgress,
   }) {
     return WorkoutSessionState(
       workoutTitle: workoutTitle ?? this.workoutTitle,
@@ -83,6 +113,13 @@ class WorkoutSessionState {
       planWeek: planWeek == _sentinel ? this.planWeek : planWeek as int?,
       planSession:
           planSession == _sentinel ? this.planSession : planSession as int?,
+      maxHeartRate:
+          maxHeartRate == _sentinel ? this.maxHeartRate : maxHeartRate as int?,
+      pendingResult:
+          pendingResult == _sentinel ? this.pendingResult : pendingResult as WorkoutResult?,
+      timeSamples:
+          timeSamples == _sentinel ? this.timeSamples : timeSamples as List<WorkoutTimeSample>?,
+      saveProgress: saveProgress ?? this.saveProgress,
     );
   }
 }
@@ -171,6 +208,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     try {
       final workout = await _supabaseService.getWorkout(workoutId);
+
+      // Fetch user's max heart rate from profile (non-blocking on failure)
+      int? maxHr;
+      try {
+        final profile = await _supabaseService.getProfile();
+        maxHr = profile.maxHeartRate;
+      } catch (_) {
+        // Non-critical — fall back to default 190
+      }
+
       final isFtpTest = workout.tags.contains('ftp') ||
           workout.tags.contains('test');
       _engine = WorkoutEngine(
@@ -186,12 +233,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           _startedAt = DateTime.now();
         }
         state = state.copyWith(engineState: engineState);
+
+        // When engine finishes on its own (all segments complete or pace fail),
+        // build the pending result so the summary screen appears.
+        if (engineState.phase == WorkoutPhase.finished &&
+            state.pendingResult == null) {
+          _buildPendingResult();
+        }
       });
 
       state = state.copyWith(
         workoutTitle: workout.title,
         expandedSegments: _engine!.expandedSegments,
         workoutTags: workout.tags,
+        maxHeartRate: maxHr,
         isLoading: false,
       );
 
@@ -221,13 +276,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _engine?.resume();
   }
 
-  /// Stop the workout, save results, detect FTP test.
+  /// Stop the workout and build a pending result (does NOT save).
   Future<void> stop() async {
     if (_engine == null) return;
-
     _engine!.stop();
+    // The engine listener will detect finished and call _buildPendingResult().
+    // But if it already fired synchronously, this is a no-op (guarded by null check).
+    _buildPendingResult();
+  }
 
-    // Build result from engine data
+  /// Build WorkoutResult from engine data and store as pendingResult.
+  /// Safe to call multiple times — no-ops if already built.
+  void _buildPendingResult() {
+    if (_engine == null || state.pendingResult != null) return;
+
     final userId = _supabaseService.currentUserId;
     if (userId == null) return;
 
@@ -277,26 +339,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       splits: splits,
     );
 
-    // Queue for sync (offline-first)
-    await _syncService.queueResult(result);
-
-    // Record plan progress if launched from a training plan
-    if (state.planId != null &&
-        state.planWeek != null &&
-        state.planSession != null) {
-      try {
-        await _supabaseService.completePlanSession(
-          state.planId!,
-          state.planWeek!,
-          state.planSession!,
-          // Result ID not yet available — sync is offline-first.
-          // TODO: reconcile resultId after sync completes.
-          null,
-        );
-      } catch (_) {
-        // Non-critical — don't block workout completion
-      }
-    }
+    state = state.copyWith(
+      pendingResult: result,
+      timeSamples: _engine!.timeSamples,
+    );
 
     // Detect FTP test
     final tags = state.workoutTags;
@@ -337,6 +383,50 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         );
       }
     }
+  }
+
+  /// Save the pending result (queue for sync, record plan progress).
+  Future<void> saveResult() async {
+    final result = state.pendingResult;
+    if (result == null) return;
+
+    state = state.copyWith(saveProgress: SaveProgress.saving);
+
+    try {
+      // Queue for offline-first sync
+      await _syncService.queueResult(result);
+      state = state.copyWith(saveProgress: SaveProgress.savedToCloud);
+
+      // Record plan progress if launched from a training plan
+      if (state.planId != null &&
+          state.planWeek != null &&
+          state.planSession != null) {
+        try {
+          await _supabaseService.completePlanSession(
+            state.planId!,
+            state.planWeek!,
+            state.planSession!,
+            // Result ID not yet available — sync is offline-first.
+            null,
+          );
+        } catch (_) {
+          // Non-critical — don't block workout completion
+        }
+      }
+
+      state = state.copyWith(saveProgress: SaveProgress.done);
+    } catch (e) {
+      state = state.copyWith(saveProgress: SaveProgress.error);
+    }
+  }
+
+  /// Discard the pending result without saving.
+  void discardResult() {
+    state = state.copyWith(
+      pendingResult: null,
+      timeSamples: null,
+      saveProgress: SaveProgress.idle,
+    );
   }
 
   /// Save FTP result to Supabase.

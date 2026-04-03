@@ -50,5 +50,7 @@ Browse plans → start plan → complete sessions → track progress in `user_pl
 - **Offline-first mobile** — Drift SQLite queue with async sync
 - **No Web Bluetooth** — web is for building/browsing only, BLE is mobile-only
 - **PM5 notifications only** — never BLE reads (returns junk)
-- **Split times in tenths** — 2:00.0/500m = 1200, C2 standard throughout
+- **Split times in tenths** — 2:00/500m = 1200, stored in tenths, displayed as M:SS (no decimal)
+- **No segment repeat field** — each segment is stored individually, no multiplier/grouping concept
+- **Post-workout flow** — Stop → summary screen (stats, pace/HR charts, splits) → Save/Discard → save progress overlay
 - **Supabase RLS** — all access control at DB level

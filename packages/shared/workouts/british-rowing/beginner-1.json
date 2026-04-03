@@ -18,8 +18,7 @@
       "duration_value": 180,
       "target_split": { "min": 1200, "max": 1400 },
       "target_stroke_rate": { "min": 20, "max": 24 },
-      "target_hr_zone": 3,
-      "repeat": 5
+      "target_hr_zone": 3
     },
     {
       "type": "rest",
@@ -27,8 +26,71 @@
       "duration_value": 60,
       "target_split": null,
       "target_stroke_rate": null,
-      "target_hr_zone": null,
-      "repeat": 5
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "time",
+      "duration_value": 180,
+      "target_split": { "min": 1200, "max": 1400 },
+      "target_stroke_rate": { "min": 20, "max": 24 },
+      "target_hr_zone": 3
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 60,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "time",
+      "duration_value": 180,
+      "target_split": { "min": 1200, "max": 1400 },
+      "target_stroke_rate": { "min": 20, "max": 24 },
+      "target_hr_zone": 3
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 60,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "time",
+      "duration_value": 180,
+      "target_split": { "min": 1200, "max": 1400 },
+      "target_stroke_rate": { "min": 20, "max": 24 },
+      "target_hr_zone": 3
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 60,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
+    },
+    {
+      "type": "work",
+      "duration_type": "time",
+      "duration_value": 180,
+      "target_split": { "min": 1200, "max": 1400 },
+      "target_stroke_rate": { "min": 20, "max": 24 },
+      "target_hr_zone": 3
+    },
+    {
+      "type": "rest",
+      "duration_type": "time",
+      "duration_value": 60,
+      "target_split": null,
+      "target_stroke_rate": null,
+      "target_hr_zone": null
     },
     {
       "type": "cooldown",

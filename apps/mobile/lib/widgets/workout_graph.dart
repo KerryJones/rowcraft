@@ -77,41 +77,9 @@ class _GraphPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GraphPainter old) => old.segments != segments;
 
-  /// Expand segments with interleaving, matching the web implementation.
-  /// [work repeat:8, rest repeat:8] → [W,R,W,R,W,R,W,R,...]
+  /// Return segments as-is (segments are already individual).
   static List<WorkoutSegment> _expandSegments(List<WorkoutSegment> segments) {
-    final result = <WorkoutSegment>[];
-    var i = 0;
-
-    while (i < segments.length) {
-      final seg = segments[i];
-      final reps = seg.repeat;
-
-      if (reps <= 1) {
-        result.add(seg.copyWith(repeat: 1));
-        i++;
-        continue;
-      }
-
-      // Collect consecutive segments with the same repeat count
-      final group = <WorkoutSegment>[seg];
-      var j = i + 1;
-      while (j < segments.length && segments[j].repeat == reps) {
-        group.add(segments[j]);
-        j++;
-      }
-
-      // Interleave: for each rep, emit one of each segment in the group
-      for (var r = 0; r < reps; r++) {
-        for (final g in group) {
-          result.add(g.copyWith(repeat: 1));
-        }
-      }
-
-      i = j;
-    }
-
-    return result;
+    return segments;
   }
 
   static double _effectiveDuration(WorkoutSegment seg) {

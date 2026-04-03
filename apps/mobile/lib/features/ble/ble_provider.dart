@@ -118,7 +118,7 @@ class BleNotifier extends Notifier<BleState> {
           pm5Service.connectedDeviceId != null) {
         _saveDevice(
           pm5Service.connectedDeviceId!,
-          _pendingPm5Name ?? 'PM5',
+          _pendingPm5Name ?? 'Rower',
           'pm5',
         );
         _pendingPm5Name = null;
@@ -210,7 +210,7 @@ class BleNotifier extends Notifier<BleState> {
         },
         onError: (e) {
           state = state.copyWith(
-            error: 'PM5 scan error: $e',
+            error: 'Rower scan error: $e',
             pm5ConnectionState: PM5ConnectionState.error,
           );
         },
@@ -281,7 +281,7 @@ class BleNotifier extends Notifier<BleState> {
       _pendingPm5Name = null;
       state = state.copyWith(
         pm5ConnectionState: PM5ConnectionState.error,
-        error: 'PM5 connection failed: $e',
+        error: 'Rower connection failed: $e',
       );
     }
   }

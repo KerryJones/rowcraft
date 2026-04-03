@@ -278,7 +278,7 @@ class _WorkoutCard extends StatelessWidget {
                       size: 14, color: RowCraftTheme.subtleGrey),
                   const SizedBox(width: 4),
                   Text(
-                    '${workout.segments.fold(0, (sum, s) => sum + s.repeat)} segments',
+                    '${workout.segments.length} segments',
                     style: theme.textTheme.bodySmall,
                   ),
                   const SizedBox(width: 16),

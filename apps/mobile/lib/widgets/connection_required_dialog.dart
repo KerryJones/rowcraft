@@ -105,12 +105,12 @@ class _ConnectionRequiredContentState
 
             // Title
             Text(
-              'PM5 Not Connected',
+              'Rower Not Connected',
               style: theme.textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Connect your Concept2 PM5 to start this workout.',
+              'Connect your rower to start this workout.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: RowCraftTheme.subtleGrey,
               ),

@@ -4,6 +4,7 @@ import '../../models/pm5_data.dart';
 import '../../models/workout.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
+import '../../models/workout_time_sample.dart';
 
 /// Phases of workout execution.
 enum WorkoutPhase {
@@ -135,7 +136,7 @@ class WorkoutEngine {
   Timer? _countdownTimer;
   Timer? _restTimer;
 
-  /// The expanded list of segments (repeats flattened).
+  /// The list of segments to execute.
   late final List<WorkoutSegment> _expandedSegments;
 
   WorkoutEngineState _state = const WorkoutEngineState();
@@ -156,6 +157,10 @@ class WorkoutEngine {
   int _totalHrSum = 0;
   int _totalHrCount = 0;
 
+  // Time-series data collection (running log across whole workout)
+  final List<WorkoutTimeSample> _timeSamples = [];
+  Duration? _lastSampleTime;
+
   // Pace fail tracking
   DateTime? _outOfRangeSince;
 
@@ -174,13 +179,7 @@ class WorkoutEngine {
     required this.pm5Stream,
     this.paceFailThreshold = 10,
   }) {
-    // Flatten repeats into a linear segment list
-    _expandedSegments = [];
-    for (final segment in workout.segments) {
-      for (var i = 0; i < segment.repeat; i++) {
-        _expandedSegments.add(segment);
-      }
-    }
+    _expandedSegments = List.from(workout.segments);
   }
 
   /// Stream of engine state updates.
@@ -189,13 +188,17 @@ class WorkoutEngine {
   /// Current engine state.
   WorkoutEngineState get currentState => _state;
 
-  /// The flattened list of all segments (with repeats expanded).
+  /// The list of all segments.
   List<WorkoutSegment> get expandedSegments =>
       List.unmodifiable(_expandedSegments);
 
   /// All split data collected so far.
   List<SplitData> get completedSplits =>
       List.unmodifiable(_completedSplits);
+
+  /// Time-series samples collected across the whole workout.
+  List<WorkoutTimeSample> get timeSamples =>
+      List.unmodifiable(_timeSamples);
 
   /// Enter the ready phase — listens for PM5 data and starts the workout
   /// automatically when the rower takes the first stroke.
@@ -442,6 +445,24 @@ class WorkoutEngine {
     if (data.heartRate != null) {
       _totalHrSum += data.heartRate!;
       _totalHrCount++;
+    }
+
+    // Collect time-series sample (~1/second, during rowing and resting)
+    if (_state.phase == WorkoutPhase.rowing ||
+        _state.phase == WorkoutPhase.resting) {
+      final elapsed = data.elapsedTime;
+      final shouldSample = _lastSampleTime == null ||
+          (elapsed - _lastSampleTime!).inMilliseconds >= 1000;
+      if (shouldSample) {
+        _timeSamples.add(WorkoutTimeSample(
+          timestamp: elapsed,
+          pace: data.pace,
+          strokeRate: data.strokeRate,
+          heartRate: data.heartRate,
+          segmentIndex: _state.currentSegmentIndex,
+        ));
+        _lastSampleTime = elapsed;
+      }
     }
 
     // Calculate segment progress

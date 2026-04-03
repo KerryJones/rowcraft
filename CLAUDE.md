@@ -10,6 +10,9 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - Run code review agent in a loop until clean before presenting code as done.
 - Always run checks before done: `flutter analyze` (mobile), `npm run check` (web).
 
+### Pre-launch App
+- **No legacy/backward-compat code** — this app has not shipped. Never write migration shims, legacy expansion, or backward-compat wrappers without asking first. If you think old data needs handling, ask.
+
 ### Coding Principles
 **CONSISTENT > CANONICAL > SIMPLE**
 1. **Consistent** — match existing patterns in the codebase first
@@ -28,7 +31,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 
 ### Design Rules
 - **Dark theme only** — both platforms. Rowers are in gyms/garages.
-- **Split times in tenths of seconds** — 2:00.0/500m = 1200. Never floating point.
+- **Split times in tenths of seconds** — 2:00/500m = 1200. Storage is tenths; display is `M:SS` (no decimal).
 - **PM5 data via BLE notifications only** — never use BLE reads (returns junk).
 - Segment colors must match across mobile and web: work=blue, rest=gray, warmup=green, cooldown=yellow.
 - **UX self-review before presenting UI work** — for every visual container, ask: "What mental model does this layout create? Would a first-time user interpret this the same way the code intends it?" Check Gestalt grouping: elements in the same container are perceived as one entity.

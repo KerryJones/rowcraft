@@ -8,7 +8,7 @@ import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { SegmentCard } from '@/components/ui/segment-card';
 import { WorkoutDetailActions } from './actions';
-import { groupSegments } from '@/lib/utils/workout';
+import { expandSegments } from '@/lib/utils/workout';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -55,18 +55,16 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
     segments: normalizeWorkoutSegments(data.segments ?? []),
   };
 
-  const grouped = groupSegments(workout.segments);
+  const expanded = expandSegments(workout.segments);
   const isOwner = user?.id === workout.author_id;
 
-  // Collect coaching cues — one entry per group, not per repeat
+  // Collect coaching cues — one entry per segment
   const coachingCues: { segmentLabel: string; text: string }[] = [];
-  for (let i = 0; i < grouped.length; i++) {
-    const group = grouped[i];
-    if (group.segment.messages) {
-      const label = group.count > 1
-        ? `${group.count} × ${formatSegmentDuration(group.segment)} ${formatSegmentType(group.segment.type)}`
-        : `#${i + 1} ${formatSegmentType(group.segment.type)}`;
-      for (const msg of group.segment.messages) {
+  for (let i = 0; i < expanded.length; i++) {
+    const seg = expanded[i];
+    if (seg.messages) {
+      const label = `#${i + 1} ${formatSegmentType(seg.type)}`;
+      for (const msg of seg.messages) {
         coachingCues.push({ segmentLabel: label, text: msg.text });
       }
     }
@@ -120,11 +118,10 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
       {/* Segments */}
       <h2 className="mb-4 text-lg font-semibold text-white">Segments</h2>
       <div className="mb-8 space-y-3">
-        {grouped.map((group, i) => (
+        {expanded.map((seg, i) => (
           <SegmentCard
             key={i}
-            segment={group.segment}
-            count={group.count}
+            segment={seg}
             index={i}
           />
         ))}
@@ -149,7 +146,7 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
       <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-6 text-center">
         <h3 className="text-lg font-semibold text-white">Ready to row?</h3>
         <p className="mt-1 text-sm text-gray-400">
-          Open RowCraft on your phone and connect to your PM5 to start this workout.
+          Open RowCraft on your phone and connect to your rower to start this workout.
         </p>
       </div>
     </div>

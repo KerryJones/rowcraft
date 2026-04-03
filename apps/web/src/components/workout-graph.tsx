@@ -37,18 +37,17 @@ interface WorkoutGraphProps {
  * Compute the effective duration of a segment in seconds (for proportional width).
  */
 function getEffectiveDuration(seg: WorkoutSegment): number {
-  const repeats = seg.repeat || 1;
   if (seg.duration_type === 'time') {
-    return seg.duration_value * repeats;
+    return seg.duration_value;
   }
   if (seg.duration_type === 'distance') {
     const pacePerMeter = seg.target_split
       ? (seg.target_split.pace / 10) / 500
       : 0.24;
-    return seg.duration_value * repeats * pacePerMeter;
+    return seg.duration_value * pacePerMeter;
   }
   // calories
-  return (seg.duration_value * repeats / 15) * 60;
+  return (seg.duration_value / 15) * 60;
 }
 
 /**

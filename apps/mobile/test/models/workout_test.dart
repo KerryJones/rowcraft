@@ -17,7 +17,6 @@ void main() {
             'type': 'warmup',
             'duration_type': 'time',
             'duration_value': 300.0,
-            'repeat': 1,
           },
           {
             'type': 'work',
@@ -25,19 +24,16 @@ void main() {
             'duration_value': 1000.0,
             'target_split': {'min': 95.0, 'max': 100.0},
             'target_stroke_rate': {'min': 28, 'max': 32},
-            'repeat': 5,
           },
           {
             'type': 'rest',
             'duration_type': 'time',
             'duration_value': 120.0,
-            'repeat': 5,
           },
           {
             'type': 'cooldown',
             'duration_type': 'time',
             'duration_value': 300.0,
-            'repeat': 1,
           },
         ],
         'tags': ['intervals', 'hard', '1000m'],
@@ -116,7 +112,6 @@ void main() {
       expect(workout.segments, hasLength(4));
       expect(workout.segments[0].type, SegmentType.warmup);
       expect(workout.segments[1].type, SegmentType.work);
-      expect(workout.segments[1].repeat, 5);
       expect(workout.segments[1].targetSplit, isNotNull);
       expect(workout.segments[1].targetSplit!.min, 95.0);
       expect(workout.segments[2].type, SegmentType.rest);
@@ -279,4 +274,5 @@ void main() {
     expect(str, contains('5x1000m Intervals'));
     expect(str, contains('intervals'));
   });
+
 }

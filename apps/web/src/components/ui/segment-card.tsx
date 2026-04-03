@@ -19,18 +19,14 @@ const HR_ZONE_BADGE: Record<number, string> = {
 
 interface SegmentCardProps {
   segment: WorkoutSegment;
-  count: number;
   index: number;
 }
 
-export function SegmentCard({ segment, count, index }: SegmentCardProps) {
+export function SegmentCard({ segment, index }: SegmentCardProps) {
   const durationLabel = formatSegmentDuration(segment);
   const typeLabel = formatSegmentType(segment.type);
 
-  // Build primary label — count already includes repeat from groupSegments
-  const primaryLabel = count > 1
-    ? `${count} \u00d7 ${durationLabel} ${typeLabel}`
-    : `#${index + 1} ${typeLabel} \u00b7 ${durationLabel}`;
+  const primaryLabel = `#${index + 1} ${typeLabel} \u00b7 ${durationLabel}`;
 
   return (
     <div className="rounded-lg border border-gray-800 bg-gray-900 p-3">

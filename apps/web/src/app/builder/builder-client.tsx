@@ -39,7 +39,6 @@ function makeDefaultSegment(type: SegmentType, lastWorkPace: number | null, ftpW
     target_split: pace ? { pace } : null,
     target_stroke_rate: null,
     target_hr_zone: null,
-    repeat: 1,
     messages: null,
   };
 }

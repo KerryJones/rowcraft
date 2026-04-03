@@ -12,15 +12,14 @@ int wattsToPaceTenths(int watts) {
   return (pacePer500m * 10).round();
 }
 
-/// Format pace tenths (e.g. 1350) as "2:15.0".
-/// Matches the web app's formatPace function.
+/// Format pace tenths (e.g. 1350) as "2:15".
+/// Drops the tenths digit — whole seconds only.
 String formatPace(int tenths) {
   if (tenths <= 0) return '--';
   final totalSeconds = tenths ~/ 10;
   final minutes = totalSeconds ~/ 60;
   final seconds = totalSeconds % 60;
-  final remainder = tenths % 10;
-  return '$minutes:${seconds.toString().padLeft(2, '0')}.$remainder';
+  return '$minutes:${seconds.toString().padLeft(2, '0')}';
 }
 
 /// Convert watts to a formatted pace string like "1:58.6/500m".

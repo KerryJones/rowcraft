@@ -13,6 +13,7 @@ import 'ftp_result_dialog.dart';
 import 'rowing_animation.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
+import 'workout_summary_screen.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -45,12 +46,13 @@ double _getEffectiveDuration(WorkoutSegment seg) {
   }
 }
 
-/// Format pace tenths to M:SS.t
+/// Format pace tenths to M:SS
 String _formatPace(double tenths) {
   final total = tenths.toInt();
+  if (total == 0) return '--:--';
   final m = total ~/ 600;
   final r = total % 600;
-  return '$m:${(r ~/ 10).toString().padLeft(2, '0')}.${r % 10}';
+  return '$m:${(r ~/ 10).toString().padLeft(2, '0')}';
 }
 
 /// HR zone info: name, label, color.
@@ -65,13 +67,13 @@ String _formatPace(double tenths) {
   };
 }
 
-/// Rough HR zone estimate from BPM (assumes max HR ~190).
-int _estimateHrZone(int bpm) {
-  if (bpm < 114) return 1; // <60%
-  if (bpm < 133) return 2; // 60-70%
-  if (bpm < 152) return 3; // 70-80%
-  if (bpm < 171) return 4; // 80-90%
-  return 5; // 90%+
+/// HR zone estimate from BPM using percentage of max heart rate.
+int _estimateHrZone(int bpm, {int maxHr = 190}) {
+  if (bpm < (maxHr * 0.6).round()) return 1;
+  if (bpm < (maxHr * 0.7).round()) return 2;
+  if (bpm < (maxHr * 0.8).round()) return 3;
+  if (bpm < (maxHr * 0.9).round()) return 4;
+  return 5;
 }
 
 // ---------------------------------------------------------------------------
@@ -181,7 +183,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         ],
       ),
       body: SafeArea(
-        child: Stack(
+        child: engineState.phase == WorkoutPhase.finished &&
+                session.pendingResult != null
+            ? const WorkoutSummaryContent()
+            : Stack(
           children: [
             // Main layout
             Column(
@@ -202,6 +207,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
                 // HR zone band
                 _HrZoneBand(session: session),
+
+                // Distance band
+                _DistanceBand(session: session),
 
                 // Tertiary metrics
                 _TertiaryStrip(session: session),
@@ -229,6 +237,18 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 ),
               ],
             ),
+
+            // Manual pause overlay — full-screen with Keep Rowing / Stop Rowing
+            if (engineState.phase == WorkoutPhase.paused &&
+                !engineState.isAutoPaused)
+              Positioned.fill(
+                child: _ManualPauseOverlay(
+                  onResume: () =>
+                      ref.read(workoutSessionProvider.notifier).resume(),
+                  onStop: () =>
+                      ref.read(workoutSessionProvider.notifier).stop(),
+                ),
+              ),
 
             // Overlay banners (don't push layout)
             if (engineState.phase == WorkoutPhase.paused &&
@@ -319,7 +339,7 @@ class _BleStatusBar extends ConsumerWidget {
           ),
           const SizedBox(width: 6),
           Text(
-            pm5Connected ? 'PM5' : 'PM5 --',
+            pm5Connected ? 'Rower' : 'Rower --',
             style: TextStyle(
               fontSize: 11,
               color: pm5Connected
@@ -688,18 +708,16 @@ class _HeroSection extends StatelessWidget {
       }
     }
 
-    // Stroke rate color based on target
+    // Stroke rate color: white when in range, red when out of range
+    final hasStrokeTarget = segment?.targetStrokeRate != null;
     Color srColor = RowCraftTheme.metricWhite;
-    if (segment?.targetStrokeRate != null && data.strokeRate > 0) {
+    if (hasStrokeTarget && data.strokeRate > 0) {
       final sr = data.strokeRate;
-      if (sr >= segment!.targetStrokeRate!.min &&
-          sr <= segment.targetStrokeRate!.max) {
-        srColor = RowCraftTheme.successGreen;
-      } else if (sr > segment.targetStrokeRate!.max) {
-        srColor = RowCraftTheme.warningAmber;
-      } else {
-        srColor = RowCraftTheme.accentTeal;
-      }
+      final inRange = sr >= segment!.targetStrokeRate!.min &&
+          sr <= segment.targetStrokeRate!.max;
+      srColor = inRange
+          ? RowCraftTheme.metricWhite
+          : RowCraftTheme.errorRose;
     }
 
     return LayoutBuilder(
@@ -758,27 +776,59 @@ class _HeroSection extends StatelessWidget {
                     height: srHeight,
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    '${data.strokeRate}',
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: srFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: srColor,
-                      height: 1.0,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: Text(
-                      's/m',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            '${data.strokeRate}',
+                            style: GoogleFonts.jetBrainsMono(
+                              fontSize: srFontSize,
+                              fontWeight: FontWeight.w600,
+                              color: srColor,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            's/m',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: RowCraftTheme.subtleGrey,
+                                ),
+                          ),
+                        ],
+                      ),
+                      if (hasStrokeTarget) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'tgt ${segment!.targetStrokeRate!.min}\u2013${segment.targetStrokeRate!.max} spm',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
                             color: RowCraftTheme.subtleGrey,
                           ),
-                    ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
+
+              // Stroke rate guide bar
+              if (hasStrokeTarget) ...[
+                const SizedBox(height: 8),
+                _StrokeRateGuideBar(
+                  targetMin: segment!.targetStrokeRate!.min,
+                  targetMax: segment.targetStrokeRate!.max,
+                  currentSpm: data.strokeRate,
+                ),
+              ],
             ],
           ),
         );
@@ -811,8 +861,9 @@ class _PaceGuideBar extends StatelessWidget {
     final displayMax = targetMax + range * 1.5;
     final displayRange = displayMax - displayMin;
 
+    // Invert: slow (high pace) on left, fast (low pace) on right
     final pacePosition = currentPace > 0
-        ? ((currentPace - displayMin) / displayRange).clamp(0.0, 1.0)
+        ? (1.0 - ((currentPace - displayMin) / displayRange).clamp(0.0, 1.0))
         : 0.5;
 
     final isInRange = currentPace >= targetMin && currentPace <= targetMax;
@@ -830,10 +881,11 @@ class _PaceGuideBar extends StatelessWidget {
             ? RowCraftTheme.errorRose.withValues(alpha: 0.08)
             : RowCraftTheme.surfaceContainerHigh;
 
+    // Invert zone positions: slow (high pace) on left, fast (low pace) on right
     final zoneLeft =
-        ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0);
+        (1.0 - ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0));
     final zoneRight =
-        ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0);
+        (1.0 - ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -843,7 +895,7 @@ class _PaceGuideBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('FASTER',
+              Text('SLOWER',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontSize: 9, color: RowCraftTheme.subtleGrey)),
               Text(
@@ -854,7 +906,7 @@ class _PaceGuideBar extends StatelessWidget {
                       fontSize: 12,
                     ),
               ),
-              Text('SLOWER',
+              Text('FASTER',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontSize: 9, color: RowCraftTheme.subtleGrey)),
             ],
@@ -935,6 +987,143 @@ class _PaceGuideBar extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Stroke Rate Guide Bar (40px)
+// ---------------------------------------------------------------------------
+
+class _StrokeRateGuideBar extends StatelessWidget {
+  final int targetMin;
+  final int targetMax;
+  final int currentSpm;
+
+  const _StrokeRateGuideBar({
+    required this.targetMin,
+    required this.targetMax,
+    required this.currentSpm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final range = targetMax - targetMin;
+    if (range <= 0) return const SizedBox.shrink();
+
+    // Extend display range ~50% beyond target on each side
+    final extension = (range * 0.5).ceil().clamp(2, 10);
+    final displayMin = (targetMin - extension).toDouble();
+    final displayMax = (targetMax + extension).toDouble();
+    final displayRange = displayMax - displayMin;
+
+    // Position: 0.0 = left (low), 1.0 = right (high)
+    final spmPosition = currentSpm > 0
+        ? ((currentSpm - displayMin) / displayRange).clamp(0.0, 1.0)
+        : 0.5;
+
+    final isInRange = currentSpm >= targetMin && currentSpm <= targetMax;
+
+    final indicatorColor = isInRange
+        ? RowCraftTheme.successGreen
+        : RowCraftTheme.errorRose;
+
+    final barBgColor = isInRange
+        ? RowCraftTheme.successGreen.withValues(alpha: 0.08)
+        : RowCraftTheme.errorRose.withValues(alpha: 0.08);
+
+    // Green zone position within bar
+    final zoneLeft = ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0);
+    final zoneRight =
+        ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Labels
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('LOW',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontSize: 9, color: RowCraftTheme.subtleGrey)),
+              Text('HIGH',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontSize: 9, color: RowCraftTheme.subtleGrey)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // The bar (40px)
+          SizedBox(
+            height: 40,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                return Stack(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: width,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: barBgColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: RowCraftTheme.surfaceContainerHigh,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    // Green target zone
+                    Positioned(
+                      left: zoneLeft * width,
+                      width: (zoneRight - zoneLeft) * width,
+                      top: 0,
+                      bottom: 0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: RowCraftTheme.successGreen
+                              .withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: RowCraftTheme.successGreen
+                                .withValues(alpha: 0.4),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Current SPM indicator
+                    if (currentSpm > 0)
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 150),
+                        left: (spmPosition * width - 4)
+                            .clamp(0.0, (width - 8).clamp(0.0, double.infinity)),
+                        top: 4,
+                        bottom: 4,
+                        child: Container(
+                          width: 8,
+                          decoration: BoxDecoration(
+                            color: indicatorColor,
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: indicatorColor.withValues(alpha: 0.6),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // HR Zone Band (44px)
 // ---------------------------------------------------------------------------
 
@@ -949,8 +1138,9 @@ class _HrZoneBand extends StatelessWidget {
     final targetZone = session.engineState.currentSegment?.targetHrZone;
 
     // Only show zone when HR data is available
+    final maxHr = session.maxHeartRate ?? 190;
     final zone = hr != null
-        ? (targetZone ?? _estimateHrZone(hr))
+        ? (targetZone ?? _estimateHrZone(hr, maxHr: maxHr))
         : null;
     final isEstimated = zone != null && targetZone == null;
     final info = zone != null
@@ -1025,6 +1215,48 @@ class _HrZoneBand extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Distance Band (44px)
+// ---------------------------------------------------------------------------
+
+class _DistanceBand extends StatelessWidget {
+  final WorkoutSessionState session;
+
+  const _DistanceBand({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = session.pm5Data;
+
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      color: RowCraftTheme.surfaceContainerHigh,
+      child: Row(
+        children: [
+          Text(
+            'DIST',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: RowCraftTheme.subtleGrey,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            data.distanceFormatted,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: RowCraftTheme.metricWhite,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Tertiary Strip (40px)
 // ---------------------------------------------------------------------------
 
@@ -1044,9 +1276,7 @@ class _TertiaryStrip extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _TertiaryItem(label: 'DIST', value: data.distanceFormatted),
           _TertiaryItem(label: 'TIME', value: data.elapsedFormatted),
-          _TertiaryItem(label: 'WATTS', value: '${data.watts}'),
           _TertiaryItem(label: 'CAL', value: '${data.calories}'),
         ],
       ),
@@ -1216,7 +1446,7 @@ class _WorkoutControls extends ConsumerWidget {
               child: Text(
                 pm5Connected
                     ? 'Start rowing to begin'
-                    : 'Connect PM5 to start',
+                    : 'Connect rower to start',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: pm5Connected
                           ? RowCraftTheme.warningAmber
@@ -1341,6 +1571,96 @@ class _ControlButton extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Manual Pause Overlay — full-screen dark overlay
+// ---------------------------------------------------------------------------
+
+class _ManualPauseOverlay extends StatelessWidget {
+  final VoidCallback onResume;
+  final VoidCallback onStop;
+
+  const _ManualPauseOverlay({
+    required this.onResume,
+    required this.onStop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black87,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'PAUSED',
+              style: GoogleFonts.inter(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 4,
+              ),
+            ),
+            const SizedBox(height: 48),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Stop Rowing button (secondary)
+                SizedBox(
+                  width: 160,
+                  height: 64,
+                  child: ElevatedButton.icon(
+                    onPressed: onStop,
+                    icon: const Icon(Icons.stop, size: 24),
+                    label: Text(
+                      'Stop Rowing',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: RowCraftTheme.surfaceContainerHigh,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                // Keep Rowing button (primary CTA)
+                SizedBox(
+                  width: 160,
+                  height: 64,
+                  child: ElevatedButton.icon(
+                    onPressed: onResume,
+                    icon: const Icon(Icons.rowing, size: 24),
+                    label: Text(
+                      'Keep Rowing',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: RowCraftTheme.primaryBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

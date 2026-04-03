@@ -31,8 +31,7 @@ describe('normalizeWorkoutSegments', () => {
 				target_split: { min: 1100, max: 1300 },
 				target_stroke_rate: null,
 				target_hr_zone: null,
-				repeat: 1,
-			},
+				},
 			{
 				type: 'rest',
 				duration_type: 'time',
@@ -40,8 +39,7 @@ describe('normalizeWorkoutSegments', () => {
 				target_split: null,
 				target_stroke_rate: null,
 				target_hr_zone: null,
-				repeat: 1,
-			},
+				},
 		];
 
 		const result = normalizeWorkoutSegments(segments);
@@ -59,8 +57,7 @@ describe('normalizeWorkoutSegments', () => {
 				target_split: { pace: 1200 },
 				target_stroke_rate: null,
 				target_hr_zone: null,
-				repeat: 1,
-				// messages field missing entirely
+					// messages field missing entirely
 			},
 		];
 

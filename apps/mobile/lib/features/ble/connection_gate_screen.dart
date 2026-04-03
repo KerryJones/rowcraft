@@ -73,14 +73,8 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ColorFiltered(
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFFFFD700),
-                          BlendMode.srcIn,
-                        ),
-                        child: Image.asset('assets/logo_transparent.png',
-                            width: 40, height: 40),
-                      ),
+                      Image.asset('assets/logo_transparent.png',
+                          width: 40, height: 40),
                       const SizedBox(width: 10),
                       Text('RowCraft',
                           style: theme.textTheme.headlineMedium
@@ -114,7 +108,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                   // PM5 section
                   _DeviceSection(
                     icon: Icons.rowing,
-                    label: 'PM5 Rower',
+                    label: 'Rower',
                     badge: 'REQUIRED',
                     badgeColor: RowCraftTheme.errorRose,
                     connectedColor: RowCraftTheme.successGreen,

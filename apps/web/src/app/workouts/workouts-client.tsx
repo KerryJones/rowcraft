@@ -70,7 +70,7 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
       const getTime = (w: Workout) => {
         let t = 0;
         for (const s of w.segments) {
-          if (s.duration_type === 'time') t += s.duration_value * (s.repeat || 1);
+          if (s.duration_type === 'time') t += s.duration_value;
         }
         return t;
       };

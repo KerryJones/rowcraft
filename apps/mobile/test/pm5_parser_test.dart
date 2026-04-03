@@ -203,10 +203,10 @@ void main() {
         strokeCount: 0,
         intervalCount: 0,
       );
-      expect(data.paceFormatted, '2:00.0');
+      expect(data.paceFormatted, '2:00');
     });
 
-    test('paceFormatted shows 1:45.5', () {
+    test('paceFormatted shows 1:45', () {
       const data = PM5Data(
         elapsedTime: Duration.zero,
         distance: 0,
@@ -217,12 +217,12 @@ void main() {
         strokeCount: 0,
         intervalCount: 0,
       );
-      expect(data.paceFormatted, '1:45.5');
+      expect(data.paceFormatted, '1:45');
     });
 
     test('paceFormatted shows placeholder for zero pace', () {
       const data = PM5Data.zero();
-      expect(data.paceFormatted, '--:--.--');
+      expect(data.paceFormatted, '--:--');
     });
 
     test('distanceFormatted shows km for >= 1000m', () {

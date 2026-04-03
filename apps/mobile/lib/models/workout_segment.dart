@@ -68,7 +68,6 @@ class WorkoutSegment {
   final SplitTarget? targetSplit;
   final StrokeRateTarget? targetStrokeRate;
   final int? targetHrZone;
-  final int repeat;
 
   const WorkoutSegment({
     required this.type,
@@ -77,7 +76,6 @@ class WorkoutSegment {
     this.targetSplit,
     this.targetStrokeRate,
     this.targetHrZone,
-    this.repeat = 1,
   });
 
   WorkoutSegment copyWith({
@@ -87,7 +85,6 @@ class WorkoutSegment {
     SplitTarget? targetSplit,
     StrokeRateTarget? targetStrokeRate,
     int? targetHrZone,
-    int? repeat,
   }) {
     return WorkoutSegment(
       type: type ?? this.type,
@@ -96,7 +93,6 @@ class WorkoutSegment {
       targetSplit: targetSplit ?? this.targetSplit,
       targetStrokeRate: targetStrokeRate ?? this.targetStrokeRate,
       targetHrZone: targetHrZone ?? this.targetHrZone,
-      repeat: repeat ?? this.repeat,
     );
   }
 
@@ -113,7 +109,6 @@ class WorkoutSegment {
               json['target_stroke_rate'] as Map<String, dynamic>)
           : null,
       targetHrZone: json['target_hr_zone'] as int?,
-      repeat: (json['repeat'] as int?) ?? 1,
     );
   }
 
@@ -126,7 +121,6 @@ class WorkoutSegment {
       if (targetStrokeRate != null)
         'target_stroke_rate': targetStrokeRate!.toJson(),
       if (targetHrZone != null) 'target_hr_zone': targetHrZone,
-      'repeat': repeat,
     };
   }
 
@@ -147,5 +141,5 @@ class WorkoutSegment {
 
   @override
   String toString() =>
-      'WorkoutSegment(${type.name}, $durationLabel, repeat: $repeat)';
+      'WorkoutSegment(${type.name}, $durationLabel)';
 }

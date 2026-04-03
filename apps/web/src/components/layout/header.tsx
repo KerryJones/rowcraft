@@ -54,20 +54,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
-          <div
-            className="h-7 w-7"
-            style={{
-              background: 'linear-gradient(135deg, #FFD700, #FFC107, #B8860B)',
-              maskImage: 'url(/logo.png)',
-              WebkitMaskImage: 'url(/logo.png)',
-              maskSize: 'contain',
-              WebkitMaskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              WebkitMaskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              WebkitMaskPosition: 'center',
-            }}
-          />
+          <img src="/logo.png" className="h-7 w-7" alt="RowCraft" />
           RowCraft
         </Link>
 
