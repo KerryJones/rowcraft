@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../widgets/wod_card.dart';
+import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
 import '../../widgets/workout_type_badge.dart';
 import '../plans/plans_provider.dart';
@@ -253,6 +254,9 @@ class _WorkoutCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  DifficultyIndicator.fromSegments(
+                      segments: workout.segments, size: 14),
+                  const SizedBox(width: 8),
                   WorkoutTypeBadge(type: workout.workoutType),
                 ],
               ),

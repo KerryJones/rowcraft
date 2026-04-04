@@ -20,6 +20,7 @@ class Profile {
   final bool c2Linked;
   final int? currentFtpWatts;
   final int? maxHeartRate;
+  final double? weightKg;
 
   const Profile({
     required this.id,
@@ -28,6 +29,7 @@ class Profile {
     this.c2Linked = false,
     this.currentFtpWatts,
     this.maxHeartRate,
+    this.weightKg,
   });
 
   Profile copyWith({
@@ -37,6 +39,7 @@ class Profile {
     bool? c2Linked,
     int? currentFtpWatts,
     int? maxHeartRate,
+    double? weightKg,
   }) {
     return Profile(
       id: id ?? this.id,
@@ -45,6 +48,7 @@ class Profile {
       c2Linked: c2Linked ?? this.c2Linked,
       currentFtpWatts: currentFtpWatts ?? this.currentFtpWatts,
       maxHeartRate: maxHeartRate ?? this.maxHeartRate,
+      weightKg: weightKg ?? this.weightKg,
     );
   }
 
@@ -56,6 +60,7 @@ class Profile {
       c2Linked: (json['c2_linked'] as bool?) ?? false,
       currentFtpWatts: json['current_ftp_watts'] as int?,
       maxHeartRate: json['max_heart_rate'] as int?,
+      weightKg: (json['weight_kg'] as num?)?.toDouble(),
     );
   }
 
@@ -67,6 +72,7 @@ class Profile {
       'c2_linked': c2Linked,
       if (currentFtpWatts != null) 'current_ftp_watts': currentFtpWatts,
       if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
+      if (weightKg != null) 'weight_kg': weightKg,
     };
   }
 }
@@ -299,6 +305,20 @@ class SupabaseService {
           .update({'current_ftp_watts': ftpWatts}).eq('id', userId);
     } catch (e, stack) {
       _log('updateProfileFtp', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Update just the weight on the profile.
+  Future<void> updateProfileWeight(double kg) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+      await _client
+          .from('profiles')
+          .update({'weight_kg': kg}).eq('id', userId);
+    } catch (e, stack) {
+      _log('updateProfileWeight', e, stack);
       rethrow;
     }
   }
