@@ -8,6 +8,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/workout_result.dart';
 
+/// Error that requires user action to resolve (e.g. set weight in profile).
+class C2ActionableException implements Exception {
+  final String message;
+  const C2ActionableException(this.message);
+  @override
+  String toString() => message;
+}
+
 const _webAppUrl = String.fromEnvironment(
   'WEB_APP_URL',
   defaultValue: 'http://localhost:3000',
@@ -76,8 +84,9 @@ class C2LogbookService {
 
   /// Sync a workout result to the C2 Online Logbook.
   ///
-  /// Calls the web app's sync endpoint which handles the API call
-  /// to Concept2's servers using the stored OAuth tokens.
+  /// Returns `true` on success, `false` on transient failure (will retry).
+  /// Throws [C2ActionableException] on user-fixable errors (e.g. weight
+  /// not set) so the sync service can surface the message to the user.
   Future<bool> syncResult(WorkoutResult result) async {
     final session = _client.auth.currentSession;
     if (session == null) return false;
@@ -96,9 +105,23 @@ class C2LogbookService {
         final data = jsonDecode(response.body);
         return data['success'] == true;
       }
+
+      // Surface actionable server errors so they reach the UI
+      if (response.statusCode == 401) {
+        throw const C2ActionableException(
+          'C2 token expired — reconnect in Profile',
+        );
+      }
+      if (response.statusCode == 422) {
+        final data = jsonDecode(response.body);
+        final msg = data['error'] as String? ?? 'Validation error';
+        throw C2ActionableException(msg);
+      }
+
       return false;
     } catch (e) {
       assert(() { debugPrint('C2 sync error: $e'); return true; }());
+      if (e is C2ActionableException) rethrow;
       return false;
     }
   }

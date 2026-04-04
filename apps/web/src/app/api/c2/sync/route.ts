@@ -50,15 +50,59 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Workout result not found' }, { status: 404 });
   }
 
-  // Fetch user's C2 tokens
+  // Fetch user's C2 tokens and weight
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('c2_access_token, c2_refresh_token, c2_user_id')
+    .select('c2_access_token, c2_user_id, weight_kg')
     .eq('id', userId)
     .single();
 
   if (profileError || !profile?.c2_access_token || !profile?.c2_user_id) {
     return NextResponse.json({ error: 'Not connected to C2' }, { status: 400 });
+  }
+
+  if (!result.finished_at) {
+    return NextResponse.json({ error: 'Workout not finished' }, { status: 422 });
+  }
+
+  // Derive C2 weight class from profile weight (required for type=rower)
+  if (profile.weight_kg == null) {
+    return NextResponse.json(
+      { error: 'Weight not set. Set your weight in Profile to sync to C2 Logbook.' },
+      { status: 422 },
+    );
+  }
+  const weightClass = profile.weight_kg < 75 ? 'L' : 'H';
+
+  // Format finished_at as C2 date in UTC: yyyy-mm-dd hh:mm:ss
+  const finishedAt = new Date(result.finished_at);
+  const c2Date = [
+    finishedAt.getUTCFullYear(),
+    String(finishedAt.getUTCMonth() + 1).padStart(2, '0'),
+    String(finishedAt.getUTCDate()).padStart(2, '0'),
+  ].join('-') + ' ' + [
+    String(finishedAt.getUTCHours()).padStart(2, '0'),
+    String(finishedAt.getUTCMinutes()).padStart(2, '0'),
+    String(finishedAt.getUTCSeconds()).padStart(2, '0'),
+  ].join(':');
+
+  // Build C2 API payload with required + optional fields.
+  // Both DB and C2 API use tenths of seconds for time.
+  const c2Payload: Record<string, unknown> = {
+    type: 'rower',
+    date: c2Date,
+    distance: result.total_distance,
+    time: result.total_time,
+    weight_class: weightClass,
+  };
+  if (result.avg_stroke_rate != null) {
+    c2Payload.stroke_rate = result.avg_stroke_rate;
+  }
+  if (result.calories != null) {
+    c2Payload.calories_total = result.calories;
+  }
+  if (result.avg_heart_rate != null) {
+    c2Payload.heart_rate = { average: result.avg_heart_rate };
   }
 
   // Post result to C2 Logbook
@@ -70,11 +114,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${profile.c2_access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        type: 'rower',
-        distance: result.total_distance,
-        time: result.total_time,
-      }),
+      body: JSON.stringify(c2Payload),
     },
   );
 
@@ -85,9 +125,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!c2Response.ok) {
+  if (c2Response.status === 429) {
     return NextResponse.json(
-      { error: 'Failed to sync to C2' },
+      { error: 'C2 rate limit exceeded' },
+      { status: 429 },
+    );
+  }
+
+  if (!c2Response.ok) {
+    const body = await c2Response.text().catch(() => '');
+    return NextResponse.json(
+      { error: `Failed to sync to C2: ${c2Response.status}`, detail: body },
       { status: 502 },
     );
   }

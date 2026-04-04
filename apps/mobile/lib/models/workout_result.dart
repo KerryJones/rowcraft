@@ -155,7 +155,7 @@ class WorkoutResult {
     }
 
     return WorkoutResult(
-      id: json['id'] as String,
+      id: (json['id'] as String?) ?? '',
       userId: json['user_id'] as String,
       workoutId: json['workout_id'] as String?,
       startedAt: DateTime.parse(json['started_at'] as String),

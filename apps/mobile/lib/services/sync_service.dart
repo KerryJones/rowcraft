@@ -84,11 +84,12 @@ class SyncService {
     try {
       final resultMap =
           jsonDecode(row.resultJson) as Map<String, dynamic>;
-      final result = WorkoutResult.fromJson(resultMap);
+      var result = WorkoutResult.fromJson(resultMap);
 
       // Step 1: Sync to Supabase if not yet done
       if (!row.syncedToSupabase) {
-        await supabaseService.saveResult(result);
+        // saveResult returns the persisted result with a Supabase-generated ID
+        result = await supabaseService.saveResult(result);
         await db.markSyncedToSupabase(row.id);
       }
 
@@ -96,8 +97,12 @@ class SyncService {
       if (!row.syncedToC2) {
         final isLinked = await c2LogbookService.isLinked();
         if (isLinked) {
-          // The web API handles the C2 API call and sets
-          // synced_to_c2=true in the DB — no need for a second upsert
+          if (result.id.isEmpty) {
+            // Need the Supabase ID for C2 sync — re-fetch isn't needed
+            // because step 1 always runs first and returns the ID.
+            // If we somehow got here with no ID, skip C2 this cycle.
+            return;
+          }
           final synced = await c2LogbookService.syncResult(result);
           if (synced) {
             await db.markSyncedToC2(row.id);
@@ -107,6 +112,12 @@ class SyncService {
           await db.markSyncedToC2(row.id);
         }
       }
+    } on C2ActionableException catch (e) {
+      // User-fixable error (e.g. weight not set) — surface message,
+      // mark C2 as done to stop retrying (Supabase sync is already complete).
+      lastError = '$e';
+      debugPrint('C2 actionable error for row ${row.id}: $e');
+      await db.markSyncedToC2(row.id);
     } catch (e) {
       lastError = 'Sync failed for row ${row.id}: $e';
       debugPrint(lastError);

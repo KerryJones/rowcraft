@@ -157,6 +157,25 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => _showEditNameDialog(context, ref),
                 ),
                 const Divider(height: 1),
+                profileAsync.when(
+                  data: (profile) => ListTile(
+                    leading: const Icon(Icons.monitor_weight_outlined),
+                    title: const Text('Weight'),
+                    subtitle: Text(
+                      profile.weightKg != null
+                          ? '${(profile.weightKg! * 2.20462).round()} lbs (${profile.weightKg!.toStringAsFixed(1)} kg)'
+                          : 'Not set',
+                    ),
+                    onTap: () => _showEditWeightDialog(context, ref),
+                  ),
+                  loading: () => const ListTile(
+                    leading: Icon(Icons.monitor_weight_outlined),
+                    title: Text('Weight'),
+                    subtitle: Text('Loading...'),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+                const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: const Text('About RowCraft'),
@@ -225,6 +244,13 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => _EditNameDialog(ref: ref),
+    );
+  }
+
+  static void _showEditWeightDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _EditWeightDialog(ref: ref),
     );
   }
 }
@@ -516,6 +542,128 @@ class _EditNameDialogState extends State<_EditNameDialog> {
             if (context.mounted) {
               Navigator.of(context).pop();
             }
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+enum _WeightUnit { lbs, kg }
+
+class _EditWeightDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _EditWeightDialog({required this.ref});
+
+  @override
+  State<_EditWeightDialog> createState() => _EditWeightDialogState();
+}
+
+class _EditWeightDialogState extends State<_EditWeightDialog> {
+  final _controller = TextEditingController();
+  _WeightUnit _unit = _WeightUnit.lbs;
+
+  /// Stored kg value from profile — used as source of truth for conversions
+  /// to avoid roundtrip precision loss.
+  double? _storedKg;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.ref.read(profileProvider).valueOrNull;
+    _storedKg = profile?.weightKg;
+    if (_storedKg != null) {
+      _controller.text = (_storedKg! * 2.20462).round().toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onUnitChanged(_WeightUnit unit) {
+    setState(() {
+      if (_storedKg != null) {
+        // Convert from stored kg to avoid compounding rounding errors
+        if (unit == _WeightUnit.lbs) {
+          _controller.text = (_storedKg! * 2.20462).round().toString();
+        } else {
+          _controller.text = _storedKg!.toStringAsFixed(1);
+        }
+      } else {
+        // No stored value — convert from current text
+        final current = double.tryParse(_controller.text);
+        if (current != null) {
+          if (_unit == _WeightUnit.lbs && unit == _WeightUnit.kg) {
+            _controller.text = (current * 0.453592).toStringAsFixed(1);
+          } else if (_unit == _WeightUnit.kg && unit == _WeightUnit.lbs) {
+            _controller.text = (current * 2.20462).round().toString();
+          }
+        }
+      }
+      _unit = unit;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Set Weight'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SegmentedButton<_WeightUnit>(
+            segments: const [
+              ButtonSegment(value: _WeightUnit.lbs, label: Text('lbs')),
+              ButtonSegment(value: _WeightUnit.kg, label: Text('kg')),
+            ],
+            selected: {_unit},
+            onSelectionChanged: (s) => _onUnitChanged(s.first),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              hintText: 'Enter weight',
+              suffixText: _unit == _WeightUnit.lbs ? 'lbs' : 'kg',
+            ),
+            autofocus: true,
+            onChanged: (_) {
+              // Clear stored value so unit switching converts from typed input
+              _storedKg = null;
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final value = double.tryParse(_controller.text);
+            if (value == null || value <= 0) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Enter a valid weight')),
+                );
+              }
+              return;
+            }
+            final kg = _unit == _WeightUnit.lbs
+                ? value * 0.453592
+                : value;
+            // Capture ref reads before async gap
+            final service = widget.ref.read(supabaseServiceProvider);
+            await service.updateProfileWeight(kg);
+            if (!context.mounted) return;
+            widget.ref.invalidate(profileProvider);
+            Navigator.of(context).pop();
           },
           child: const Text('Save'),
         ),

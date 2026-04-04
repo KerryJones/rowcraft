@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-
 
 import '../../app/theme.dart';
 import '../../services/local_db.dart';
@@ -73,7 +73,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset('assets/logo_transparent.png',
+                      SvgPicture.asset('assets/logo.svg',
                           width: 40, height: 40),
                       const SizedBox(width: 10),
                       Text('RowCraft',
