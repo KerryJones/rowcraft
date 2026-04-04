@@ -6,6 +6,7 @@ import '../../models/pm5_data.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_time_sample.dart';
+import '../../services/c2_logbook_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../ble/ble_provider.dart';
@@ -20,9 +21,22 @@ const Object _sentinel = Object();
 enum SaveProgress {
   idle,
   saving,
+  savedLocally,
   savedToCloud,
   done,
   error,
+}
+
+/// Tracks C2 Logbook sync independently from the main save flow.
+enum C2SyncStatus {
+  /// Not checked yet.
+  idle,
+  /// User has not linked C2 account.
+  notLinked,
+  /// C2 sync succeeded.
+  synced,
+  /// C2 sync failed (will retry later).
+  failed,
 }
 
 /// Combined state for the workout session UI.
@@ -57,6 +71,12 @@ class WorkoutSessionState {
   /// Tracks the progress of saving the result.
   final SaveProgress saveProgress;
 
+  /// Tracks C2 Logbook sync independently.
+  final C2SyncStatus c2SyncStatus;
+
+  /// Last sync error message for display.
+  final String? syncError;
+
   String? get error => _error;
 
   const WorkoutSessionState({
@@ -77,6 +97,8 @@ class WorkoutSessionState {
     this.pendingResult,
     this.timeSamples,
     this.saveProgress = SaveProgress.idle,
+    this.c2SyncStatus = C2SyncStatus.idle,
+    this.syncError,
   }) : _error = error;
 
   WorkoutSessionState copyWith({
@@ -97,6 +119,8 @@ class WorkoutSessionState {
     Object? pendingResult = _sentinel,
     Object? timeSamples = _sentinel,
     SaveProgress? saveProgress,
+    C2SyncStatus? c2SyncStatus,
+    Object? syncError = _sentinel,
   }) {
     return WorkoutSessionState(
       workoutTitle: workoutTitle ?? this.workoutTitle,
@@ -120,6 +144,8 @@ class WorkoutSessionState {
       timeSamples:
           timeSamples == _sentinel ? this.timeSamples : timeSamples as List<WorkoutTimeSample>?,
       saveProgress: saveProgress ?? this.saveProgress,
+      c2SyncStatus: c2SyncStatus ?? this.c2SyncStatus,
+      syncError: syncError == _sentinel ? this.syncError : syncError as String?,
     );
   }
 }
@@ -393,9 +419,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     state = state.copyWith(saveProgress: SaveProgress.saving);
 
     try {
-      // Queue for offline-first sync
+      // Queue for offline-first sync (SQLite write + Supabase attempt)
       await _syncService.queueResult(result);
-      state = state.copyWith(saveProgress: SaveProgress.savedToCloud);
+      state = state.copyWith(saveProgress: SaveProgress.savedLocally);
 
       // Record plan progress if launched from a training plan
       if (state.planId != null &&
@@ -406,11 +432,32 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
             state.planId!,
             state.planWeek!,
             state.planSession!,
-            // Result ID not yet available — sync is offline-first.
             null,
           );
         } catch (_) {
           // Non-critical — don't block workout completion
+        }
+      }
+
+      // Check if sync actually reached Supabase
+      final pending = await _syncService.pendingCount;
+      final syncErr = _syncService.lastError;
+      if (pending == 0) {
+        state = state.copyWith(saveProgress: SaveProgress.savedToCloud);
+      } else if (syncErr != null) {
+        state = state.copyWith(syncError: syncErr);
+      }
+
+      // Check C2 Logbook sync status
+      final c2Service = _ref.read(c2LogbookServiceProvider);
+      final isLinked = await c2Service.isLinked();
+      if (!isLinked) {
+        state = state.copyWith(c2SyncStatus: C2SyncStatus.notLinked);
+      } else {
+        if (pending == 0) {
+          state = state.copyWith(c2SyncStatus: C2SyncStatus.synced);
+        } else {
+          state = state.copyWith(c2SyncStatus: C2SyncStatus.failed);
         }
       }
 

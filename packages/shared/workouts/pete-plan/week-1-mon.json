@@ -8,7 +8,7 @@
       "type": "work",
       "duration_type": "distance",
       "duration_value": 5000,
-      "target_split": { "min": 1150, "max": 1300 },
+      "target_split": { "min": 1200, "max": 1400 },
       "target_stroke_rate": { "min": 20, "max": 24 },
       "target_hr_zone": 3
     }

@@ -102,6 +102,48 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   bool _ftpDialogShown = false;
   bool _isLocked = false;
 
+  void _confirmStop(BuildContext ctx, VoidCallback onConfirmed) {
+    showDialog(
+      context: ctx,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: RowCraftTheme.surfaceContainer,
+        title: Text(
+          'End Workout?',
+          style: GoogleFonts.inter(
+            color: RowCraftTheme.metricWhite,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Your progress so far will be saved.',
+          style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: Text(
+              'Keep Going',
+              style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogCtx).pop();
+              onConfirmed();
+            },
+            child: Text(
+              'End Workout',
+              style: GoogleFonts.inter(
+                color: RowCraftTheme.errorRose,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -230,8 +272,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                           ref.read(workoutSessionProvider.notifier).pause(),
                       onResume: () =>
                           ref.read(workoutSessionProvider.notifier).resume(),
-                      onStop: () =>
-                          ref.read(workoutSessionProvider.notifier).stop(),
+                      onStop: () => _confirmStop(
+                        context,
+                        () => ref.read(workoutSessionProvider.notifier).stop(),
+                      ),
                     ),
                   ),
                 ),
@@ -811,7 +855,9 @@ class _HeroSection extends StatelessWidget {
                           'tgt ${segment!.targetStrokeRate!.min}\u2013${segment.targetStrokeRate!.max} spm',
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: RowCraftTheme.subtleGrey,
+                            color: srColor == RowCraftTheme.metricWhite
+                                ? RowCraftTheme.subtleGrey
+                                : srColor,
                           ),
                         ),
                       ],
@@ -820,15 +866,8 @@ class _HeroSection extends StatelessWidget {
                 ],
               ),
 
-              // Stroke rate guide bar
-              if (hasStrokeTarget) ...[
-                const SizedBox(height: 8),
-                _StrokeRateGuideBar(
-                  targetMin: segment!.targetStrokeRate!.min,
-                  targetMax: segment.targetStrokeRate!.max,
-                  currentSpm: data.strokeRate,
-                ),
-              ],
+              // SPM target shown as colored text only — not a bar
+              // (bar would replicate the pace guide visual)
             ],
           ),
         );
@@ -989,139 +1028,6 @@ class _PaceGuideBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Stroke Rate Guide Bar (40px)
 // ---------------------------------------------------------------------------
-
-class _StrokeRateGuideBar extends StatelessWidget {
-  final int targetMin;
-  final int targetMax;
-  final int currentSpm;
-
-  const _StrokeRateGuideBar({
-    required this.targetMin,
-    required this.targetMax,
-    required this.currentSpm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final range = targetMax - targetMin;
-    if (range <= 0) return const SizedBox.shrink();
-
-    // Extend display range ~50% beyond target on each side
-    final extension = (range * 0.5).ceil().clamp(2, 10);
-    final displayMin = (targetMin - extension).toDouble();
-    final displayMax = (targetMax + extension).toDouble();
-    final displayRange = displayMax - displayMin;
-
-    // Position: 0.0 = left (low), 1.0 = right (high)
-    final spmPosition = currentSpm > 0
-        ? ((currentSpm - displayMin) / displayRange).clamp(0.0, 1.0)
-        : 0.5;
-
-    final isInRange = currentSpm >= targetMin && currentSpm <= targetMax;
-
-    final indicatorColor = isInRange
-        ? RowCraftTheme.successGreen
-        : RowCraftTheme.errorRose;
-
-    final barBgColor = isInRange
-        ? RowCraftTheme.successGreen.withValues(alpha: 0.08)
-        : RowCraftTheme.errorRose.withValues(alpha: 0.08);
-
-    // Green zone position within bar
-    final zoneLeft = ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0);
-    final zoneRight =
-        ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // Labels
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('LOW',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontSize: 9, color: RowCraftTheme.subtleGrey)),
-              Text('HIGH',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontSize: 9, color: RowCraftTheme.subtleGrey)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          // The bar (40px)
-          SizedBox(
-            height: 40,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final width = constraints.maxWidth;
-                return Stack(
-                  children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: width,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: barBgColor,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: RowCraftTheme.surfaceContainerHigh,
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    // Green target zone
-                    Positioned(
-                      left: zoneLeft * width,
-                      width: (zoneRight - zoneLeft) * width,
-                      top: 0,
-                      bottom: 0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: RowCraftTheme.successGreen
-                              .withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: RowCraftTheme.successGreen
-                                .withValues(alpha: 0.4),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Current SPM indicator
-                    if (currentSpm > 0)
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 150),
-                        left: (spmPosition * width - 4)
-                            .clamp(0.0, (width - 8).clamp(0.0, double.infinity)),
-                        top: 4,
-                        bottom: 4,
-                        child: Container(
-                          width: 8,
-                          decoration: BoxDecoration(
-                            color: indicatorColor,
-                            borderRadius: BorderRadius.circular(4),
-                            boxShadow: [
-                              BoxShadow(
-                                color: indicatorColor.withValues(alpha: 0.6),
-                                blurRadius: 12,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // HR Zone Band (44px)
@@ -1400,6 +1306,16 @@ class _UpNextPreview extends StatelessWidget {
               ),
             ),
           ],
+          if (next.targetStrokeRate != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              '${next.targetStrokeRate!.min}\u2013${next.targetStrokeRate!.max} spm',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: RowCraftTheme.subtleGrey,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1496,14 +1412,6 @@ class _WorkoutControls extends ConsumerWidget {
                 ],
               WorkoutPhase.rowing || WorkoutPhase.resting => [
                   _ControlButton(
-                    icon: Icons.stop,
-                    label: 'STOP',
-                    color: RowCraftTheme.errorRose,
-                    onPressed: onStop,
-                    isLarge: false,
-                  ),
-                  const SizedBox(width: 32),
-                  _ControlButton(
                     icon: Icons.pause,
                     label: 'PAUSE',
                     color: RowCraftTheme.warningAmber,
@@ -1592,58 +1500,34 @@ class _ManualPauseOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.black87,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'PAUSED',
-              style: GoogleFonts.inter(
-                fontSize: 36,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 4,
-              ),
-            ),
-            const SizedBox(height: 48),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Stop Rowing button (secondary)
-                SizedBox(
-                  width: 160,
-                  height: 64,
-                  child: ElevatedButton.icon(
-                    onPressed: onStop,
-                    icon: const Icon(Icons.stop, size: 24),
-                    label: Text(
-                      'Stop Rowing',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: RowCraftTheme.surfaceContainerHigh,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                Text(
+                  'PAUSED',
+                  style: GoogleFonts.inter(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 4,
                   ),
                 ),
-                const SizedBox(width: 24),
+                const SizedBox(height: 48),
                 // Keep Rowing button (primary CTA)
                 SizedBox(
-                  width: 160,
-                  height: 64,
+                  width: double.infinity,
+                  height: 56,
                   child: ElevatedButton.icon(
                     onPressed: onResume,
                     icon: const Icon(Icons.rowing, size: 24),
                     label: Text(
                       'Keep Rowing',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1656,10 +1540,79 @@ class _ManualPauseOverlay extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                // End Workout button (secondary)
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmStop(context),
+                    icon: const Icon(Icons.stop, size: 24),
+                    label: Text(
+                      'End Workout',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: RowCraftTheme.errorRose,
+                      side: const BorderSide(
+                        color: RowCraftTheme.errorRose,
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  void _confirmStop(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: RowCraftTheme.surfaceContainer,
+        title: Text(
+          'End Workout?',
+          style: GoogleFonts.inter(
+            color: RowCraftTheme.metricWhite,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Your progress so far will be saved.',
+          style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Keep Going',
+              style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onStop();
+            },
+            child: Text(
+              'End Workout',
+              style: GoogleFonts.inter(
+                color: RowCraftTheme.errorRose,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

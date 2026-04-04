@@ -10,7 +10,6 @@ import '../../app/theme.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_time_sample.dart';
-import '../../services/c2_logbook_service.dart';
 import 'workout_provider.dart';
 
 // ---------------------------------------------------------------------------
@@ -104,8 +103,10 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
         timeSamples.any((s) => s.heartRate != null && s.heartRate! > 0);
 
     // Auto-navigate on save success
-    if (session.saveProgress == SaveProgress.done && _autoNavTimer == null) {
-      _autoNavTimer = Timer(const Duration(milliseconds: 1500), () {
+    if (session.saveProgress == SaveProgress.done &&
+        session.syncError == null &&
+        _autoNavTimer == null) {
+      _autoNavTimer = Timer(const Duration(seconds: 3), () {
         if (mounted) context.go('/');
       });
     }
@@ -203,6 +204,7 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
           Positioned.fill(
             child: _SaveProgressOverlay(
               saveProgress: session.saveProgress,
+              syncError: session.syncError,
               onRetry: () {
                 ref.read(workoutSessionProvider.notifier).saveResult();
               },
@@ -935,10 +937,12 @@ class _SaveDiscardBar extends StatelessWidget {
 
 class _SaveProgressOverlay extends ConsumerWidget {
   final SaveProgress saveProgress;
+  final String? syncError;
   final VoidCallback onRetry;
 
   const _SaveProgressOverlay({
     required this.saveProgress,
+    this.syncError,
     required this.onRetry,
   });
 
@@ -946,79 +950,132 @@ class _SaveProgressOverlay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDone = saveProgress == SaveProgress.done;
     final isError = saveProgress == SaveProgress.error;
+    final isSavedLocally = saveProgress == SaveProgress.savedLocally ||
+        saveProgress == SaveProgress.savedToCloud ||
+        isDone;
     final isSavedToCloud = saveProgress == SaveProgress.savedToCloud || isDone;
 
     return Container(
       color: Colors.black87,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isDone)
-                const Icon(Icons.check_circle, color: RowCraftTheme.successGreen, size: 64)
-              else if (isError)
-                const Icon(Icons.error_outline, color: RowCraftTheme.errorRose, size: 64)
-              else
-                const SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: CircularProgressIndicator(
-                    color: RowCraftTheme.primaryBlue,
-                    strokeWidth: 3,
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isDone && syncError != null)
+                  const Icon(Icons.warning_amber_rounded, color: RowCraftTheme.warningAmber, size: 64)
+                else if (isDone)
+                  const Icon(Icons.check_circle, color: RowCraftTheme.successGreen, size: 64)
+                else if (isError)
+                  const Icon(Icons.error_outline, color: RowCraftTheme.errorRose, size: 64)
+                else
+                  const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: CircularProgressIndicator(
+                      color: RowCraftTheme.primaryBlue,
+                      strokeWidth: 3,
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                Text(
+                  isDone && syncError != null
+                      ? 'SAVED LOCALLY'
+                      : isDone
+                          ? 'WORKOUT SAVED'
+                          : isError
+                              ? 'SAVE FAILED'
+                              : 'SAVING',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 1,
                   ),
                 ),
-              const SizedBox(height: 24),
-              Text(
-                isDone
-                    ? 'SAVING SUCCESSFUL'
-                    : isError
-                        ? 'SAVE FAILED'
-                        : 'SAVING YOUR SESSION',
-                style: GoogleFonts.inter(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 1,
-                ),
-              ),
-              const SizedBox(height: 32),
-
-              // Service status rows
-              _ServiceStatusRow(
-                icon: Icons.cloud_upload,
-                label: 'RowCraft Cloud',
-                isDone: isSavedToCloud,
-                isActive: !isSavedToCloud && !isError,
-              ),
-              const SizedBox(height: 16),
-              _C2LogbookStatusRow(
-                isDone: isDone,
-                isSyncing: false,
-              ),
-
-              if (isError) ...[
                 const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: onRetry,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: RowCraftTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Retry',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+
+                // Service status rows
+                _ServiceStatusRow(
+                  icon: Icons.save,
+                  label: 'RowCraft',
+                  isDone: isSavedLocally,
+                  isActive: !isSavedLocally && !isError,
                 ),
+                const SizedBox(height: 16),
+                _ServiceStatusRow(
+                  icon: Icons.cloud_upload,
+                  label: 'Cloud Sync',
+                  isDone: isSavedToCloud,
+                  isActive: isSavedLocally && !isSavedToCloud && !isError,
+                ),
+                const SizedBox(height: 16),
+                _C2LogbookStatusRow(
+                  c2Status: ref.watch(workoutSessionProvider).c2SyncStatus,
+                ),
+
+                // Show sync error details if present
+                if (syncError != null && (isDone || isError)) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: RowCraftTheme.warningAmber.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      syncError!,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: RowCraftTheme.warningAmber,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 32),
+
+                if (isError)
+                  ElevatedButton(
+                    onPressed: onRetry,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: RowCraftTheme.primaryBlue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'Retry',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+
+                if (isDone || isError)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: TextButton(
+                      onPressed: () => context.go('/'),
+                      child: Text(
+                        'Return Home',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -1076,57 +1133,63 @@ class _ServiceStatusRow extends StatelessWidget {
   }
 }
 
-class _C2LogbookStatusRow extends ConsumerWidget {
-  final bool isDone;
-  final bool isSyncing;
+class _C2LogbookStatusRow extends StatelessWidget {
+  final C2SyncStatus c2Status;
 
-  const _C2LogbookStatusRow({
-    required this.isDone,
-    required this.isSyncing,
-  });
+  const _C2LogbookStatusRow({required this.c2Status});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return FutureBuilder<bool>(
-      future: ref.read(c2LogbookServiceProvider).isLinked(),
-      builder: (context, snapshot) {
-        final isLinked = snapshot.data ?? false;
+  Widget build(BuildContext context) {
+    final (Widget trailing, String sublabel) = switch (c2Status) {
+      C2SyncStatus.idle => (
+        const Icon(Icons.remove, size: 20, color: RowCraftTheme.subtleGrey),
+        '',
+      ),
+      C2SyncStatus.notLinked => (
+        const Icon(Icons.remove, size: 20, color: RowCraftTheme.subtleGrey),
+        'Not linked',
+      ),
+      C2SyncStatus.synced => (
+        const Icon(Icons.check_circle, size: 20, color: RowCraftTheme.successGreen),
+        '',
+      ),
+      C2SyncStatus.failed => (
+        const Icon(Icons.warning_amber_rounded, size: 20, color: RowCraftTheme.warningAmber),
+        'Will retry',
+      ),
+    };
 
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.menu_book, size: 20, color: RowCraftTheme.subtleGrey),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 160,
-              child: Text(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.menu_book, size: 20, color: RowCraftTheme.subtleGrey),
+        const SizedBox(width: 12),
+        SizedBox(
+          width: 160,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
                 'Concept2 Logbook',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   color: RowCraftTheme.metricWhite,
                 ),
               ),
-            ),
-            if (!isLinked)
-              const Icon(Icons.remove, size: 20, color: RowCraftTheme.subtleGrey)
-            else if (isDone)
-              const Icon(Icons.check_circle,
-                  size: 20, color: RowCraftTheme.successGreen)
-            else if (isSyncing)
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: RowCraftTheme.primaryBlue,
+              if (sublabel.isNotEmpty)
+                Text(
+                  sublabel,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: RowCraftTheme.subtleGrey,
+                  ),
                 ),
-              )
-            else
-              const Icon(Icons.remove,
-                  size: 20, color: RowCraftTheme.subtleGrey),
-          ],
-        );
-      },
+            ],
+          ),
+        ),
+        trailing,
+      ],
     );
   }
 }

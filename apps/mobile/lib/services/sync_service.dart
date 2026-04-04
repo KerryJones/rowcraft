@@ -29,6 +29,9 @@ class SyncService {
 
   bool _syncing = false;
 
+  /// Last sync error message, if any. Cleared on successful sync.
+  String? lastError;
+
   SyncService({
     required this.db,
     required this.supabaseService,
@@ -68,6 +71,10 @@ class SyncService {
 
       // Clean up fully synced results
       await db.cleanupSynced();
+
+      // Clear error if everything synced
+      final remaining = await pendingCount;
+      if (remaining == 0) lastError = null;
     } finally {
       _syncing = false;
     }
@@ -101,8 +108,8 @@ class SyncService {
         }
       }
     } catch (e) {
-      // Failed — increment attempt counter, will retry next time
-      assert(() { debugPrint('Sync failed for row ${row.id}: $e'); return true; }());
+      lastError = 'Sync failed for row ${row.id}: $e';
+      debugPrint(lastError);
       await db.incrementAttempts(row.id);
     }
   }
