@@ -9,21 +9,13 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../app/theme.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
+import '../../utils/segment_color.dart';
 import '../../models/workout_time_sample.dart';
 import 'workout_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-Color _segmentColor(SegmentType type) {
-  return switch (type) {
-    SegmentType.work => RowCraftTheme.segmentWork,
-    SegmentType.rest => RowCraftTheme.segmentRest,
-    SegmentType.warmup => RowCraftTheme.segmentWarmup,
-    SegmentType.cooldown => RowCraftTheme.segmentCooldown,
-  };
-}
 
 String _formatPaceTenths(int tenths) {
   if (tenths == 0) return '--:--';
@@ -529,7 +521,7 @@ class _PaceChartPainter extends CustomPainter {
         final x =
             leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
         final segColor = prevSegIndex < segments.length
-            ? _segmentColor(segments[prevSegIndex].type)
+            ? segmentDisplayColor(segments[prevSegIndex])
             : RowCraftTheme.subtleGrey;
         final paint = Paint()
           ..color = segColor.withValues(alpha: 0.4)
@@ -646,7 +638,7 @@ class _HrChartPainter extends CustomPainter {
         final x =
             leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
         final segColor = prevSegIndex < segments.length
-            ? _segmentColor(segments[prevSegIndex].type)
+            ? segmentDisplayColor(segments[prevSegIndex])
             : RowCraftTheme.subtleGrey;
         final paint = Paint()
           ..color = segColor.withValues(alpha: 0.4)
@@ -783,10 +775,12 @@ class _SplitsTable extends StatelessWidget {
               final i = entry.key;
               final split = entry.value;
               final segIndex = split.intervalIndex;
-              final segType = segIndex < segments.length
-                  ? segments[segIndex].type
-                  : SegmentType.work;
-              final color = _segmentColor(segType);
+              final seg = segIndex < segments.length
+                  ? segments[segIndex]
+                  : null;
+              final color = seg != null
+                  ? segmentDisplayColor(seg)
+                  : RowCraftTheme.segmentWork;
 
               return Padding(
                 padding: const EdgeInsets.symmetric(

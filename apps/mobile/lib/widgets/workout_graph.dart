@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../app/theme.dart';
 import '../models/workout_segment.dart';
+import '../utils/segment_color.dart';
 
 /// Segment bar chart showing intensity (height) and duration (width).
 /// Replicates the web WorkoutGraph component.
@@ -63,7 +63,7 @@ class _GraphPainter extends CustomPainter {
       final heightFraction = _paceToHeight(pace, paceMin, paceMax);
       final barHeight = max(4.0, heightFraction * size.height);
 
-      final paint = Paint()..color = _segmentColor(seg.type);
+      final paint = Paint()..color = segmentDisplayColor(seg);
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, size.height - barHeight, barWidth, barHeight),
         const Radius.circular(2),
@@ -115,12 +115,4 @@ class _GraphPainter extends CustomPainter {
     return _minBarHeightFraction + normalized * (1 - _minBarHeightFraction);
   }
 
-  static Color _segmentColor(SegmentType type) {
-    return switch (type) {
-      SegmentType.work => RowCraftTheme.segmentWork,
-      SegmentType.rest => RowCraftTheme.segmentRest,
-      SegmentType.warmup => RowCraftTheme.segmentWarmup,
-      SegmentType.cooldown => RowCraftTheme.segmentCooldown,
-    };
-  }
 }
