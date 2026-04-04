@@ -808,8 +808,11 @@ class _SplitsTable extends StatelessWidget {
                     SizedBox(
                       width: 48,
                       child: Text(
-                        segType.name.substring(0, 1).toUpperCase() +
-                            segType.name.substring(1, math.min(4, segType.name.length)),
+                        () {
+                          final name = seg?.type.name ?? 'work';
+                          return name.substring(0, 1).toUpperCase() +
+                              name.substring(1, math.min(4, name.length));
+                        }(),
                         style: cellStyle.copyWith(
                           color: color,
                           fontSize: 10,
