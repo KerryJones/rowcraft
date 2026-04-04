@@ -1,11 +1,5 @@
-import type { WorkoutSegment, SegmentType } from '@/lib/types';
-
-const SEGMENT_COLORS: Record<SegmentType, string> = {
-  work: '#3b82f6',
-  rest: '#6b7280',
-  warmup: '#22c55e',
-  cooldown: '#eab308',
-};
+import type { WorkoutSegment } from '@/lib/types';
+import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 
 /** Reference pace for scaling bar heights (very slow = 3:00/500m = 1800 tenths) */
 const MAX_PACE = 1800;
@@ -53,7 +47,7 @@ export function MiniGraph({ segments, height = 48 }: MiniGraphProps) {
               height: barHeight,
               width: `${widthPct}%`,
               minWidth: 2,
-              backgroundColor: SEGMENT_COLORS[segment.type],
+              backgroundColor: getSegmentDisplayColor(segment),
             }}
           />
         );

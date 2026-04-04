@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
+import '../../utils/segment_color.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
 import 'ftp_result_dialog.dart';
@@ -19,14 +20,6 @@ import 'workout_summary_screen.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-Color _segmentColor(SegmentType type) {
-  return switch (type) {
-    SegmentType.work => RowCraftTheme.segmentWork,
-    SegmentType.rest => RowCraftTheme.segmentRest,
-    SegmentType.warmup => RowCraftTheme.segmentWarmup,
-    SegmentType.cooldown => RowCraftTheme.segmentCooldown,
-  };
-}
 
 /// Effective duration in seconds (for proportional width in profile graph).
 /// Approximates web's getEffectiveDuration(). Uses (min+max)/2 pace since
@@ -535,7 +528,7 @@ class _WorkoutProfilePainter extends CustomPainter {
       final barHeight = heightFraction * size.height;
       final barY = size.height - barHeight;
 
-      final color = _segmentColor(seg.type);
+      final color = segmentDisplayColor(seg);
       final isCompleted = i < currentIndex;
       final isCurrent = i == currentIndex;
 
@@ -626,7 +619,7 @@ class _SegmentHeader extends StatelessWidget {
 
     final segColor = engineState.phase == WorkoutPhase.paused
         ? RowCraftTheme.warningAmber
-        : _segmentColor(segment.type);
+        : segmentDisplayColor(segment);
     final segments = session.expandedSegments;
     final currentIndex = engineState.currentSegmentIndex;
 
@@ -1265,7 +1258,7 @@ class _UpNextPreview extends StatelessWidget {
     }
 
     final next = segments[nextIndex];
-    final nextColor = _segmentColor(next.type);
+    final nextColor = segmentDisplayColor(next);
 
     return Container(
       height: 36,

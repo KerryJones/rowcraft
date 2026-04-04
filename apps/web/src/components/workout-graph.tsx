@@ -4,14 +4,8 @@ import type { WorkoutSegment, SegmentType } from '@/lib/types';
 import { cn } from '@/lib/utils/cn';
 import { formatPace } from '@/lib/utils/format';
 import { formatSegmentDuration } from '@/lib/utils/format';
+import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 import { computeCumulativeMinutes, expandSegments } from '@/lib/utils/workout';
-
-const SEGMENT_COLORS: Record<SegmentType, string> = {
-  work: '#3b82f6',
-  rest: '#6b7280',
-  warmup: '#22c55e',
-  cooldown: '#eab308',
-};
 
 const TYPE_ABBREV: Record<SegmentType, string> = {
   work: 'W',
@@ -287,7 +281,7 @@ export function WorkoutGraph({
       {bars.map(({ x, y, width, height, segment, index }) => {
         const isSelected = selectedIndex === index;
         const isClickable = !!onSelectSegment;
-        const color = SEGMENT_COLORS[segment.type];
+        const color = getSegmentDisplayColor(segment);
         const barRadius = Math.min(3, width / 2);
 
         return (
