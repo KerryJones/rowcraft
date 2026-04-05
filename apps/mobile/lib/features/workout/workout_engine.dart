@@ -165,13 +165,14 @@ class WorkoutEngine {
   DateTime? _outOfRangeSince;
 
   // Auto-pause tracking
-  DateTime? _lastPositiveStrokeAt;
+  int _lastStrokeCount = 0;
+  DateTime? _lastActivityAt;
   Timer? _autoPauseTimer;
   DateTime? _pausedAt;
   Duration _totalPausedDuration = Duration.zero;
   WorkoutPhase? _prePausePhase;
   int _segmentStartCalories = 0;
-  static const _autoPauseDelaySeconds = 3;
+  static const _autoPauseDelaySeconds = 5;
 
   final List<SplitData> _completedSplits = [];
 
@@ -261,7 +262,7 @@ class WorkoutEngine {
     // (Branch 3 in _onPM5Data), same as segment start. This avoids
     // immediately re-pausing a rower who resumes then adjusts straps.
     if (restoredPhase == WorkoutPhase.rowing) {
-      _lastPositiveStrokeAt = null;
+      _lastActivityAt = null;
     }
     // Restart rest timer if resuming into a rest segment
     if (restoredPhase == WorkoutPhase.resting) {
@@ -286,8 +287,8 @@ class WorkoutEngine {
 
   void _checkAutoPause() {
     if (_state.phase != WorkoutPhase.rowing) return;
-    if (_lastPositiveStrokeAt == null) return;
-    final elapsed = DateTime.now().difference(_lastPositiveStrokeAt!).inSeconds;
+    if (_lastActivityAt == null) return;
+    final elapsed = DateTime.now().difference(_lastActivityAt!).inSeconds;
     if (elapsed >= _autoPauseDelaySeconds) {
       _autoPause();
     }
@@ -309,7 +310,7 @@ class WorkoutEngine {
   void _autoResume() {
     if (_state.phase != WorkoutPhase.paused) return;
     _accumulatePausedDuration();
-    _lastPositiveStrokeAt = DateTime.now();
+    _lastActivityAt = DateTime.now();
     _state = _state.copyWith(
       phase: _prePausePhase ?? WorkoutPhase.rowing,
       isAutoPaused: false,
@@ -372,7 +373,8 @@ class WorkoutEngine {
     _hrCount = 0;
     _sampleCount = 0;
     _outOfRangeSince = null;
-    _lastPositiveStrokeAt = null;
+    _lastStrokeCount = _state.latestData.strokeCount;
+    _lastActivityAt = null;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
     _pausedAt = null;
@@ -436,18 +438,19 @@ class WorkoutEngine {
 
     // ── Branch 2: Rowing with zero stroke rate — skip accumulation ──
     if (_state.phase == WorkoutPhase.rowing && data.strokeRate == 0) {
-      // Auto-pause is handled by _autoPauseTimer checking _lastPositiveStrokeAt.
+      // Auto-pause is handled by _autoPauseTimer checking _lastActivityAt.
       _state = _state.copyWith(latestData: data);
       _emit();
       return;
     }
 
     // ── Branch 3: Normal rowing (SR > 0) or resting ──
-    // Only update _lastPositiveStrokeAt from fresh stroke rate data
-    // (Additional Status 1), not stale copies from other characteristics.
-    if (data.strokeRateUpdated && data.strokeRate > 0) {
-      _lastPositiveStrokeAt = DateTime.now();
-      // Start auto-pause timer on first positive stroke if not running
+    // Detect actual new strokes via strokeCount (increments only on
+    // completed strokes, unaffected by flywheel spin-down).
+    if (data.strokeCount != _lastStrokeCount) {
+      _lastStrokeCount = data.strokeCount;
+      _lastActivityAt = DateTime.now();
+      // Start auto-pause timer on first activity if not running
       if (_autoPauseTimer == null && _state.phase == WorkoutPhase.rowing) {
         _autoPauseTimer = Timer.periodic(
           const Duration(seconds: 1),
