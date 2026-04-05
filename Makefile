@@ -87,13 +87,15 @@ dev-mobile:
 	cd apps/mobile && flutter run \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY) \
-		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID)
+		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
+		--dart-define=WEB_APP_URL=http://$(LOCAL_IP):3000
 
 dev-mobile-cloud:
 	cd apps/mobile && flutter run \
 		--dart-define=SUPABASE_URL=https://qzzqqgnegvuqmlkfqhus.supabase.co \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_-J6qboxKtmCfn_aIBHKX-g_tCFwUWdV \
-		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID)
+		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
+		--dart-define=WEB_APP_URL=https://rowing.kerryjones.net
 
 dev-web:
 	cd apps/web && npm run dev
@@ -145,5 +147,6 @@ build-apk:
 	cd apps/mobile && flutter build apk --release \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY) \
-		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID)
+		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
+		--dart-define=WEB_APP_URL=https://rowing.kerryjones.net
 	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"

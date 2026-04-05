@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -999,17 +1000,15 @@ class _SaveProgressOverlay extends ConsumerWidget {
 
                 // Service status rows
                 _ServiceStatusRow(
-                  icon: Icons.save,
+                  icon: isSavedLocally && !isSavedToCloud
+                      ? Icons.cloud_off
+                      : Icons.cloud_done,
                   label: 'RowCraft',
-                  isDone: isSavedLocally,
+                  isDone: isSavedToCloud || isDone,
                   isActive: !isSavedLocally && !isError,
-                ),
-                const SizedBox(height: 16),
-                _ServiceStatusRow(
-                  icon: Icons.cloud_upload,
-                  label: 'Cloud Sync',
-                  isDone: isSavedToCloud,
-                  isActive: isSavedLocally && !isSavedToCloud && !isError,
+                  subtitle: isSavedLocally && !isSavedToCloud
+                      ? 'Saved offline — will sync later'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 _C2LogbookStatusRow(
@@ -1025,15 +1024,36 @@ class _SaveProgressOverlay extends ConsumerWidget {
                       color: RowCraftTheme.warningAmber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      syncError!,
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: RowCraftTheme.warningAmber,
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            syncError!,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: RowCraftTheme.warningAmber,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: syncError!));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Copied to clipboard'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: const Icon(
+                            Icons.copy,
+                            size: 16,
+                            color: RowCraftTheme.warningAmber,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1088,12 +1108,14 @@ class _ServiceStatusRow extends StatelessWidget {
   final String label;
   final bool isDone;
   final bool isActive;
+  final String? subtitle;
 
   const _ServiceStatusRow({
     required this.icon,
     required this.label,
     required this.isDone,
     required this.isActive,
+    this.subtitle,
   });
 
   @override
@@ -1105,12 +1127,26 @@ class _ServiceStatusRow extends StatelessWidget {
         const SizedBox(width: 12),
         SizedBox(
           width: 160,
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: RowCraftTheme.metricWhite,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: RowCraftTheme.metricWhite,
+                ),
+              ),
+              if (subtitle != null)
+                Text(
+                  subtitle!,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: RowCraftTheme.subtleGrey,
+                  ),
+                ),
+            ],
           ),
         ),
         if (isDone)

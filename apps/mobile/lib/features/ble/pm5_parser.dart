@@ -77,6 +77,7 @@ class PM5Parser {
       strokeRate: strokeRate,
       heartRate: heartRate ?? current.heartRate,
       pace: pace,
+      strokeRateUpdated: true,
     );
   }
 

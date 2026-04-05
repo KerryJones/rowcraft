@@ -235,19 +235,19 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                   _WorkoutProfileGraph(session: session),
 
                 // Segment header (countdown + progress)
-                if (isActive) _SegmentHeader(session: session),
+                _SegmentHeader(session: session),
 
                 // Hero section (pace, guide bar, stroke rate)
                 Expanded(child: _HeroSection(session: session)),
 
-                // Merged stats row (HR, distance, time, calories)
-                _StatsRow(session: session),
-
-                // Target block (prominent current target)
-                if (isActive) _TargetBlock(session: session),
+                // Target block — adjacent to pace (Gestalt proximity)
+                _TargetBlock(session: session),
 
                 // Up-next preview
-                if (isActive) _UpNextPreview(session: session),
+                _UpNextPreview(session: session),
+
+                // Merged stats row (HR, distance, time, calories)
+                _StatsRow(session: session),
 
                 // Controls (wrapped in IgnorePointer when locked)
                 IgnorePointer(
@@ -611,14 +611,18 @@ class _SegmentHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final engineState = session.engineState;
-    final segment = engineState.currentSegment;
+    final segment = engineState.currentSegment ??
+        session.expandedSegments.firstOrNull;
     if (segment == null) return const SizedBox.shrink();
 
+    final isActive = engineState.phase == WorkoutPhase.rowing ||
+        engineState.phase == WorkoutPhase.resting ||
+        engineState.phase == WorkoutPhase.paused;
     final segColor = engineState.phase == WorkoutPhase.paused
         ? RowCraftTheme.warningAmber
         : segmentDisplayColor(segment);
     final segments = session.expandedSegments;
-    final currentIndex = engineState.currentSegmentIndex;
+    final currentIndex = isActive ? engineState.currentSegmentIndex : 0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -657,28 +661,32 @@ class _SegmentHeader extends StatelessWidget {
           ),
           const SizedBox(height: 4),
 
-          // Countdown timer
-          Text(
-            _remainingLabel(engineState),
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 36,
-              fontWeight: FontWeight.w700,
-              color: RowCraftTheme.metricWhite,
-              height: 1.1,
+          // Progress bar with compact remaining label
+          if (isActive)
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: engineState.segmentProgress,
+                      minHeight: 6,
+                      backgroundColor: RowCraftTheme.surfaceContainerHigh,
+                      valueColor: AlwaysStoppedAnimation(segColor),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _remainingLabel(engineState),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: RowCraftTheme.subtleGrey,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 6),
-
-          // Progress bar (10px thick)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: LinearProgressIndicator(
-              value: engineState.segmentProgress,
-              minHeight: 10,
-              backgroundColor: RowCraftTheme.surfaceContainerHigh,
-              valueColor: AlwaysStoppedAnimation(segColor),
-            ),
-          ),
         ],
       ),
     );
@@ -1127,7 +1135,8 @@ class _TargetBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final segment = session.engineState.currentSegment;
+    final segment = session.engineState.currentSegment ??
+        session.expandedSegments.firstOrNull;
     if (segment == null) return const SizedBox.shrink();
 
     final hasPaceTarget = segment.targetSplit != null;
@@ -1202,11 +1211,15 @@ class _UpNextPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final segments = session.expandedSegments;
-    final currentIndex = session.engineState.currentSegmentIndex;
+    final isActive = session.engineState.phase == WorkoutPhase.rowing ||
+        session.engineState.phase == WorkoutPhase.resting ||
+        session.engineState.phase == WorkoutPhase.paused;
+    final currentIndex = isActive ? session.engineState.currentSegmentIndex : 0;
     final nextIndex = currentIndex + 1;
 
-    // Last segment — show "FINAL SEGMENT"
+    // Last segment — show "FINAL SEGMENT" (only when active)
     if (nextIndex >= segments.length) {
+      if (!isActive) return const SizedBox.shrink();
       return Container(
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 16),

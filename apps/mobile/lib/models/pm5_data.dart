@@ -12,6 +12,10 @@ class PM5Data {
   final int strokeCount;
   final int intervalCount;
 
+  /// True when strokeRate was freshly parsed from Additional Status 1,
+  /// false when copied from a previous snapshot by other characteristics.
+  final bool strokeRateUpdated;
+
   const PM5Data({
     required this.elapsedTime,
     required this.distance,
@@ -22,6 +26,7 @@ class PM5Data {
     this.heartRate,
     required this.strokeCount,
     required this.intervalCount,
+    this.strokeRateUpdated = false,
   });
 
   /// An empty/zero data snapshot, used as initial state.
@@ -34,7 +39,8 @@ class PM5Data {
         calories = 0,
         heartRate = null,
         strokeCount = 0,
-        intervalCount = 0;
+        intervalCount = 0,
+        strokeRateUpdated = false;
 
   PM5Data copyWith({
     Duration? elapsedTime,
@@ -46,6 +52,7 @@ class PM5Data {
     int? heartRate,
     int? strokeCount,
     int? intervalCount,
+    bool? strokeRateUpdated,
   }) {
     return PM5Data(
       elapsedTime: elapsedTime ?? this.elapsedTime,
@@ -57,6 +64,7 @@ class PM5Data {
       heartRate: heartRate ?? this.heartRate,
       strokeCount: strokeCount ?? this.strokeCount,
       intervalCount: intervalCount ?? this.intervalCount,
+      strokeRateUpdated: strokeRateUpdated ?? false,
     );
   }
 

@@ -94,6 +94,7 @@ void main() {
         distance: 2,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 0,
         strokeCount: 1,
@@ -187,6 +188,7 @@ void main() {
         distance: 100,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 10,
         strokeCount: 60,
@@ -250,6 +252,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 30,
@@ -285,6 +288,7 @@ void main() {
         distance: 25,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -297,6 +301,7 @@ void main() {
         distance: 50,
         pace: 1150,
         strokeRate: 26,
+        strokeRateUpdated: true,
         watts: 200,
         calories: 10,
         strokeCount: 40,
@@ -360,6 +365,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -384,20 +390,10 @@ void main() {
 
       expect(engine.currentState.phase, WorkoutPhase.rowing);
 
-      // Wait for 3+ seconds then send another zero SR sample
-      await Future.delayed(const Duration(seconds: 3));
-
-      pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 15),
-        distance: 50,
-        pace: 0,
-        strokeRate: 0,
-        watts: 0,
-        calories: 5,
-        strokeCount: 20,
-        intervalCount: 1,
-      ));
-      await Future.delayed(const Duration(milliseconds: 50));
+      // Wait 4+ seconds — the periodic timer (1s interval) checks
+      // if _lastPositiveStrokeAt is >= 3s ago, needs ~4s for timer
+      // alignment and inSeconds truncation.
+      await Future.delayed(const Duration(seconds: 4));
 
       expect(engine.currentState.phase, WorkoutPhase.paused);
       expect(engine.currentState.isAutoPaused, true);
@@ -424,6 +420,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -464,6 +461,7 @@ void main() {
         distance: 55,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 6,
         strokeCount: 22,
@@ -501,6 +499,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 30,
@@ -561,6 +560,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -602,6 +602,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -628,6 +629,7 @@ void main() {
         distance: 100,
         pace: 1100,
         strokeRate: 26,
+        strokeRateUpdated: true,
         watts: 200,
         calories: 10,
         strokeCount: 25,
@@ -695,6 +697,7 @@ void main() {
         distance: 250,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 50,
         strokeCount: 60,
@@ -730,6 +733,7 @@ void main() {
         distance: 500,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 100,
         strokeCount: 120,
@@ -766,6 +770,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 10,
         strokeCount: 30,
@@ -779,6 +784,7 @@ void main() {
         distance: 100,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 25,
         strokeCount: 60,
@@ -814,6 +820,7 @@ void main() {
         distance: 150,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 10,
         strokeCount: 30,
@@ -840,6 +847,7 @@ void main() {
         distance: 150,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 10,
         strokeCount: 30,
@@ -902,6 +910,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -920,6 +929,7 @@ void main() {
         distance: 55,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 6,
         strokeCount: 22,
@@ -952,6 +962,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -992,6 +1003,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 20,
@@ -1047,6 +1059,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 30,
@@ -1101,6 +1114,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 30,
         strokeCount: 30,
@@ -1117,6 +1131,7 @@ void main() {
         distance: 100,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 40,
         strokeCount: 50,
@@ -1133,6 +1148,7 @@ void main() {
         distance: 150,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 50,
         strokeCount: 70,
@@ -1178,6 +1194,7 @@ void main() {
         distance: 50,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 5,
         strokeCount: 30,
@@ -1234,19 +1251,21 @@ void main() {
       engine.start();
       await Future.delayed(const Duration(milliseconds: 50));
 
-      // Send pace well above max (too slow) for 15+ seconds
-      for (var i = 0; i < 5; i++) {
+      // Send pace well above max (too slow) for 16+ seconds.
+      // Send every 2s to stay within the 3s auto-pause window.
+      for (var i = 0; i < 8; i++) {
         pm5Controller.add(PM5Data(
-          elapsedTime: Duration(seconds: 10 + i * 4),
-          distance: 50.0 + i * 20,
+          elapsedTime: Duration(seconds: 10 + i * 2),
+          distance: 50.0 + i * 10,
           pace: 1500, // Way above max of 1200
           strokeRate: 20,
+          strokeRateUpdated: true,
           watts: 100,
           calories: 5 + i,
-          strokeCount: 20 + i * 4,
+          strokeCount: 20 + i * 2,
           intervalCount: 1,
         ));
-        await Future.delayed(const Duration(seconds: 4));
+        await Future.delayed(const Duration(seconds: 2));
       }
 
       // Should still be rowing (not finished due to pace fail)
@@ -1271,30 +1290,22 @@ void main() {
       engine.start();
       await Future.delayed(const Duration(milliseconds: 50));
 
-      // Send pace above max for 6+ seconds
-      pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 10),
-        distance: 50,
-        pace: 1500,
-        strokeRate: 20,
-        watts: 100,
-        calories: 5,
-        strokeCount: 20,
-        intervalCount: 1,
-      ));
-      await Future.delayed(const Duration(seconds: 6));
-
-      pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 17),
-        distance: 80,
-        pace: 1500,
-        strokeRate: 20,
-        watts: 100,
-        calories: 8,
-        strokeCount: 28,
-        intervalCount: 1,
-      ));
-      await Future.delayed(const Duration(milliseconds: 50));
+      // Send pace above max for 6+ seconds.
+      // Send every 2s to stay within the 3s auto-pause window.
+      for (var i = 0; i < 4; i++) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: 10 + i * 2),
+          distance: 50.0 + i * 10,
+          pace: 1500,
+          strokeRate: 20,
+          strokeRateUpdated: true,
+          watts: 100,
+          calories: 5 + i,
+          strokeCount: 20 + i * 2,
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(seconds: 2));
+      }
 
       expect(engine.currentState.phase, WorkoutPhase.finished);
       expect(engine.currentState.finishReason, FinishReason.paceFailed);
@@ -1349,6 +1360,7 @@ void main() {
           distance: sec * 5,
           pace: 1200,
           strokeRate: 24,
+          strokeRateUpdated: true,
           watts: 180,
           calories: 0,
           strokeCount: (sec * 2).toInt(),
@@ -1391,6 +1403,7 @@ void main() {
         distance: 5,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 0,
         strokeCount: 2,
@@ -1437,6 +1450,7 @@ void main() {
         distance: 5,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 0,
         strokeCount: 2,
@@ -1456,6 +1470,7 @@ void main() {
         distance: 5,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 0,
         strokeCount: 2,
@@ -1493,6 +1508,7 @@ void main() {
         distance: 5,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 0,
         strokeCount: 2,
@@ -1506,6 +1522,7 @@ void main() {
         distance: 10,
         pace: 1200,
         strokeRate: 24,
+        strokeRateUpdated: true,
         watts: 180,
         calories: 0,
         strokeCount: 4,
