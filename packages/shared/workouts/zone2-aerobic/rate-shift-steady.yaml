@@ -1,0 +1,32 @@
+id: 20000000-0000-0000-0000-000000000002
+title: "Rate Shift Steady"
+description: "Same pace, different rates. Feel how rate affects the stroke."
+difficulty: beginner
+tags: [aerobic, steady-state, rate-shift]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "10:00"
+    intensity: 65-75%
+    stroke_rate: 18-18
+    hr_zone: 2
+  - type: work
+    duration: "10:00"
+    intensity: 65-75%
+    stroke_rate: 22-22
+    hr_zone: 2
+  - type: work
+    duration: "10:00"
+    intensity: 65-75%
+    stroke_rate: 20-20
+    hr_zone: 2
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

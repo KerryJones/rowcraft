@@ -1,0 +1,26 @@
+id: f0000000-0000-0000-0004-000000000002
+title: "Return to Rowing Wk4 Day2"
+description: "Week 4 Day 2: 8x500m intervals at Z4 with 90s rest."
+difficulty: beginner
+tags: [return-to-rowing, intervals, week-4]
+estimated_duration_minutes: 34
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 8
+    work:
+      duration: 500m
+      intensity: 85-96%
+      stroke_rate: 26-30
+      hr_zone: 4
+    rest:
+      duration: "1:30"
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

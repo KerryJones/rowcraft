@@ -1,0 +1,26 @@
+id: f1000000-0000-0000-0003-000000000001
+title: "2K Prep Wk3 Threshold 2x1500m"
+description: "Week 3: 2x1500m at threshold intensity with 5-minute rest."
+difficulty: advanced
+tags: [2k-race-prep, threshold, week-3]
+estimated_duration_minutes: 26
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 2
+    work:
+      duration: 1500m
+      intensity: 92-105%
+      stroke_rate: 28-32
+      hr_zone: 4
+    rest:
+      duration: "5:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

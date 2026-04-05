@@ -1,0 +1,72 @@
+id: a0000000-0000-0000-0000-000000000006
+title: "Ramp FTP Test"
+description: "Progressive ramp test. Intensity increases every minute until failure. Last completed stage estimates your FTP."
+difficulty: intermediate
+tags: [ftp, test, benchmark, threshold, ramp]
+estimated_duration_minutes: 20
+segments:
+  - type: warmup
+    duration: "2:00"
+    intensity: 45-50%
+    stroke_rate: 18-22
+    hr_zone: 1
+  - type: work
+    duration: "1:00"
+    intensity: 30-35%
+    stroke_rate: 18-22
+  - type: work
+    duration: "1:00"
+    intensity: 38-42%
+    stroke_rate: 18-22
+  - type: work
+    duration: "1:00"
+    intensity: 45-50%
+    stroke_rate: 18-22
+  - type: work
+    duration: "1:00"
+    intensity: 52-58%
+    stroke_rate: 18-22
+  - type: work
+    duration: "1:00"
+    intensity: 60-65%
+    stroke_rate: 18-22
+  - type: work
+    duration: "1:00"
+    intensity: 68-72%
+    stroke_rate: 20-24
+  - type: work
+    duration: "1:00"
+    intensity: 75-80%
+    stroke_rate: 20-24
+  - type: work
+    duration: "1:00"
+    intensity: 82-88%
+    stroke_rate: 20-24
+  - type: work
+    duration: "1:00"
+    intensity: 90-95%
+    stroke_rate: 26-30
+  - type: work
+    duration: "1:00"
+    intensity: 98-103%
+    stroke_rate: 28-32
+  - type: work
+    duration: "1:00"
+    intensity: 105-110%
+    stroke_rate: 28-34
+  - type: work
+    duration: "1:00"
+    intensity: 112-118%
+    stroke_rate: 28-32
+  - type: work
+    duration: "1:00"
+    intensity: 120-125%
+    stroke_rate: 28-32
+  - type: work
+    duration: "1:00"
+    intensity: 128-133%
+    stroke_rate: 30-36
+  - type: work
+    duration: "1:00"
+    intensity: 135-140%
+    stroke_rate: 30-36

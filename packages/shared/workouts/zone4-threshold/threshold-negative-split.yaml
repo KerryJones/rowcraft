@@ -1,0 +1,27 @@
+id: 40000000-0000-0000-0000-000000000009
+title: "Threshold Negative Split"
+description: "Start moderate threshold, finish at FTP. Disciplined pacing."
+difficulty: intermediate
+tags: [threshold, negative-split]
+estimated_duration_minutes: 30
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "10:00"
+    intensity: 86-92%
+    stroke_rate: 26-28
+    hr_zone: 4
+  - type: work
+    duration: "10:00"
+    intensity: 92-100%
+    stroke_rate: 28-30
+    hr_zone: 4
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

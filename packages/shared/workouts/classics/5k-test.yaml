@@ -1,0 +1,20 @@
+id: a0000000-0000-0000-0000-000000000002
+title: "5K Test"
+description: "Endurance benchmark. 5000 meters at your best sustainable effort."
+difficulty: intermediate
+tags: [test, benchmark, endurance]
+estimated_duration_minutes: 30
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: 5000m
+    stroke_rate: 24-30
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

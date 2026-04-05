@@ -1,0 +1,52 @@
+id: 60000000-0000-0000-0000-000000000008
+title: "Ascending Ladder"
+description: "1 to 5 minute ladder. Rest equals work."
+difficulty: advanced
+tags: [ladder, ascending, time]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "1:00"
+    intensity: 85-100%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "2:00"
+    intensity: 85-100%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "2:00"
+  - type: work
+    duration: "3:00"
+    intensity: 85-100%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "4:00"
+    intensity: 85-100%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "4:00"
+  - type: work
+    duration: "5:00"
+    intensity: 85-100%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "5:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

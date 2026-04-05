@@ -1,0 +1,22 @@
+id: f1000000-0000-0000-0002-000000000003
+title: "2K Prep Wk2 Easy 6K"
+description: "Week 2: Easy 6K at low Z2 for recovery and volume."
+difficulty: advanced
+tags: [2k-race-prep, endurance, week-2]
+estimated_duration_minutes: 30
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: 6000m
+    intensity: 58-68%
+    stroke_rate: 18-22
+    hr_zone: 2
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

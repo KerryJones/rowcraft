@@ -1,0 +1,42 @@
+id: 10000000-0000-0000-0000-000000000003
+title: "Stroke Rate Ladder (Easy)"
+description: "Rate changes at easy pace. Focus on stroke mechanics at each rate."
+difficulty: beginner
+tags: [recovery, technique, rate-ladder]
+estimated_duration_minutes: 31
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "5:00"
+    intensity: 50-60%
+    stroke_rate: 16-16
+    hr_zone: 1
+  - type: work
+    duration: "5:00"
+    intensity: 50-60%
+    stroke_rate: 18-18
+    hr_zone: 1
+  - type: work
+    duration: "5:00"
+    intensity: 50-60%
+    stroke_rate: 20-20
+    hr_zone: 1
+  - type: work
+    duration: "5:00"
+    intensity: 50-60%
+    stroke_rate: 18-18
+    hr_zone: 1
+  - type: work
+    duration: "5:00"
+    intensity: 50-60%
+    stroke_rate: 16-16
+    hr_zone: 1
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

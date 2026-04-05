@@ -1,0 +1,52 @@
+id: 30000000-0000-0000-0000-000000000005
+title: "Rate Ladder Tempo"
+description: "Ascending rate at tempo pace. Same effort, different feel."
+difficulty: intermediate
+tags: [tempo, rate-ladder]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "5:00"
+    intensity: 76-84%
+    stroke_rate: 22-22
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "5:00"
+    intensity: 76-84%
+    stroke_rate: 24-24
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "5:00"
+    intensity: 76-84%
+    stroke_rate: 26-26
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "5:00"
+    intensity: 76-84%
+    stroke_rate: 28-28
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "5:00"
+    intensity: 76-84%
+    stroke_rate: 26-26
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

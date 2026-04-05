@@ -1,0 +1,22 @@
+id: e1000000-0000-0000-0004-000000000003
+title: "FTP Builder Wk4 Steady"
+description: "Week 4: 40-minute steady state at Z2."
+difficulty: intermediate
+tags: [ftp-builder, steady-state, week-4]
+estimated_duration_minutes: 50
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "40:00"
+    intensity: 62-70%
+    stroke_rate: 18-22
+    hr_zone: 2
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

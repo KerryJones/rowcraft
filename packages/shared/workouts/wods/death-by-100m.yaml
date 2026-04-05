@@ -1,0 +1,51 @@
+id: 60000000-0000-0000-0000-00000000000a
+title: "Death By 100m"
+description: "Progressive 100m sprints. Each one harder than the last."
+difficulty: advanced
+tags: [wod, death-by, escalating]
+estimated_duration_minutes: 18
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: 100m
+    intensity: 70-75%
+    stroke_rate: 28-34
+  - type: rest
+    duration: "30"
+  - type: work
+    duration: 100m
+    intensity: 80-85%
+    stroke_rate: 28-34
+  - type: rest
+    duration: "30"
+  - type: work
+    duration: 100m
+    intensity: 90-95%
+    stroke_rate: 28-34
+  - type: rest
+    duration: "30"
+  - type: work
+    duration: 100m
+    intensity: 100-105%
+    stroke_rate: 28-34
+  - type: rest
+    duration: "30"
+  - type: work
+    duration: 100m
+    intensity: 110-115%
+    stroke_rate: 28-34
+  - type: rest
+    duration: "30"
+  - type: work
+    duration: 100m
+    intensity: 120-125%
+    stroke_rate: 28-34
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

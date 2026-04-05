@@ -1,0 +1,26 @@
+id: e1000000-0000-0000-0004-000000000001
+title: "FTP Builder Wk4 Threshold"
+description: "Week 4: 3x8min threshold intervals at Z4 with 3-minute rest."
+difficulty: intermediate
+tags: [ftp-builder, threshold, week-4]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 3
+    work:
+      duration: "8:00"
+      intensity: 90-98%
+      stroke_rate: 26-30
+      hr_zone: 4
+    rest:
+      duration: "3:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

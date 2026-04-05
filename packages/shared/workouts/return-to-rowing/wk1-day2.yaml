@@ -1,0 +1,26 @@
+id: f0000000-0000-0000-0001-000000000002
+title: "Return to Rowing Wk1 Day2"
+description: "Week 1 Day 2: 3x3min intervals at easy Z2 with 1-minute rest."
+difficulty: beginner
+tags: [return-to-rowing, intervals, week-1]
+estimated_duration_minutes: 15
+segments:
+  - type: warmup
+    duration: "2:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 3
+    work:
+      duration: "3:00"
+      intensity: 62-72%
+      stroke_rate: 20-24
+      hr_zone: 2
+    rest:
+      duration: "1:00"
+  - type: cooldown
+    duration: "2:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

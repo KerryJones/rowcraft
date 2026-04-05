@@ -1,0 +1,22 @@
+id: f0000000-0000-0000-0003-000000000001
+title: "Return to Rowing Wk3 Day1"
+description: "Week 3 Day 1: 20 minutes steady state at Z2."
+difficulty: beginner
+tags: [return-to-rowing, steady-state, week-3]
+estimated_duration_minutes: 26
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "20:00"
+    intensity: 62-72%
+    stroke_rate: 18-22
+    hr_zone: 2
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

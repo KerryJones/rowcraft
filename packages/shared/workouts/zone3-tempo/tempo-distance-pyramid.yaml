@@ -1,0 +1,52 @@
+id: 30000000-0000-0000-0000-000000000004
+title: "Tempo Distance Pyramid"
+description: "Distance pyramid at tempo. Peak at 1500m then come back down."
+difficulty: intermediate
+tags: [tempo, pyramid, distance]
+estimated_duration_minutes: 38
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: 500m
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "2:00"
+  - type: work
+    duration: 1000m
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "2:00"
+  - type: work
+    duration: 1500m
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "2:00"
+  - type: work
+    duration: 1000m
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "2:00"
+  - type: work
+    duration: 500m
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "2:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

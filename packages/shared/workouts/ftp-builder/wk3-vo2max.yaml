@@ -1,0 +1,26 @@
+id: e1000000-0000-0000-0003-000000000002
+title: "FTP Builder Wk3 VO2max"
+description: "Week 3: 8x90s VO2max intervals at Z5 with 90s rest."
+difficulty: intermediate
+tags: [ftp-builder, vo2max, week-3]
+estimated_duration_minutes: 34
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 8
+    work:
+      duration: "1:30"
+      intensity: 108-122%
+      stroke_rate: 30-34
+      hr_zone: 5
+    rest:
+      duration: "1:30"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

@@ -1,0 +1,26 @@
+id: a0000000-0000-0000-0000-000000000004
+title: "10 x 500m"
+description: "Ten 500m intervals with 1 minute rest. A classic interval session for building speed and endurance."
+difficulty: intermediate
+tags: [intervals, speed, popular]
+estimated_duration_minutes: 35
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 10
+    work:
+      duration: 500m
+      intensity: 88-96%
+      stroke_rate: 26-30
+      hr_zone: 4
+    rest:
+      duration: "1:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

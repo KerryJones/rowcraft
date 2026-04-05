@@ -1,0 +1,26 @@
+id: f1000000-0000-0000-0002-000000000002
+title: "2K Prep Wk2 Race Pace 6x500m"
+description: "Week 2: 6x500m at race pace intensity with 2:30 rest."
+difficulty: advanced
+tags: [2k-race-prep, race-pace, intervals, week-2]
+estimated_duration_minutes: 35
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 6
+    work:
+      duration: 500m
+      intensity: 108-122%
+      stroke_rate: 30-34
+      hr_zone: 5
+    rest:
+      duration: "2:30"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

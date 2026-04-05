@@ -51,6 +51,8 @@ Browse plans → start plan → complete sessions → track progress in `user_pl
 - **No Web Bluetooth** — web is for building/browsing only, BLE is mobile-only
 - **PM5 notifications only** — never BLE reads (returns junk)
 - **Split times in tenths** — 2:00/500m = 1200, stored in tenths, displayed as M:SS (no decimal)
-- **No segment repeat field** — each segment is stored individually, no multiplier/grouping concept
+- **FTP-relative intensity** — workout targets stored as % of FTP watts (`target_intensity`), not absolute pace. App resolves to pace using user's FTP (default 150W). Mirrors EXR/Zwift approach.
+- **YAML workout definitions** — system workouts defined in `packages/shared/workouts/*.yaml`, validated against JSON schema, built to SQL via `scripts/build-seeds.ts`. Supports `interval` compound blocks (work+rest repeated N times) expanded to flat segments at build time.
+- **No segment repeat in DB** — each segment is stored individually in the database. The YAML `interval` block is a build-time convenience only.
 - **Post-workout flow** — Stop → summary screen (stats, pace/HR charts, splits) → Save/Discard → save progress overlay
 - **Supabase RLS** — all access control at DB level

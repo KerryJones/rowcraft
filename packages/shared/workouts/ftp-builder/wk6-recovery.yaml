@@ -1,0 +1,22 @@
+id: e1000000-0000-0000-0006-000000000001
+title: "FTP Builder Wk6 Recovery"
+description: "Week 6: Easy 20-minute recovery row at Z1."
+difficulty: intermediate
+tags: [ftp-builder, recovery, week-6]
+estimated_duration_minutes: 26
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "20:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

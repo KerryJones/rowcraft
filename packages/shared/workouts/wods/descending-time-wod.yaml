@@ -1,0 +1,43 @@
+id: 60000000-0000-0000-0000-000000000001
+title: "Descending Time WOD"
+description: "8/6/4/2 with 3 min rest. Shorter intervals, higher effort."
+difficulty: advanced
+tags: [wod, descending, time]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "8:00"
+    intensity: 78-82%
+    stroke_rate: 24-26
+    hr_zone: 3
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "6:00"
+    intensity: 82-88%
+    stroke_rate: 26-28
+    hr_zone: 3
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "4:00"
+    intensity: 88-95%
+    stroke_rate: 28-30
+    hr_zone: 4
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "2:00"
+    intensity: 100-110%
+    stroke_rate: 30-34
+    hr_zone: 5
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

@@ -1,0 +1,36 @@
+id: 40000000-0000-0000-0000-000000000002
+title: "Threshold 3x8"
+description: "Longer threshold blocks. Build capacity to hold pace."
+difficulty: intermediate
+tags: [threshold, intervals, long]
+estimated_duration_minutes: 42
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "8:00"
+    intensity: 86-94%
+    stroke_rate: 26-30
+    hr_zone: 4
+  - type: rest
+    duration: "4:00"
+  - type: work
+    duration: "8:00"
+    intensity: 86-94%
+    stroke_rate: 26-30
+    hr_zone: 4
+  - type: rest
+    duration: "4:00"
+  - type: work
+    duration: "8:00"
+    intensity: 86-94%
+    stroke_rate: 26-30
+    hr_zone: 4
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

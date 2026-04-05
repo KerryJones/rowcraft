@@ -1,0 +1,52 @@
+id: 60000000-0000-0000-0000-00000000000b
+title: "Rate Pyramid WOD"
+description: "Rate pyramid from 20 to 32 spm and back. Intensity follows rate."
+difficulty: advanced
+tags: [wod, rate-pyramid]
+estimated_duration_minutes: 31
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "3:00"
+    intensity: 65-70%
+    stroke_rate: 20-20
+    hr_zone: 2
+  - type: work
+    duration: "3:00"
+    intensity: 72-78%
+    stroke_rate: 24-24
+    hr_zone: 2
+  - type: work
+    duration: "3:00"
+    intensity: 82-88%
+    stroke_rate: 28-28
+    hr_zone: 3
+  - type: work
+    duration: "3:00"
+    intensity: 95-105%
+    stroke_rate: 32-32
+    hr_zone: 4
+  - type: work
+    duration: "3:00"
+    intensity: 82-88%
+    stroke_rate: 28-28
+    hr_zone: 3
+  - type: work
+    duration: "3:00"
+    intensity: 72-78%
+    stroke_rate: 24-24
+    hr_zone: 2
+  - type: work
+    duration: "3:00"
+    intensity: 65-70%
+    stroke_rate: 20-20
+    hr_zone: 2
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

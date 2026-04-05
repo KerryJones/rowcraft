@@ -1,0 +1,77 @@
+id: 60000000-0000-0000-0000-00000000000f
+title: "Switchback"
+description: "Tempo/sprint/recovery cycles. Controlled chaos."
+difficulty: advanced
+tags: [wod, mixed-zone]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "4:00"
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "1:00"
+    intensity: 110-120%
+    stroke_rate: 32-36
+    hr_zone: 5
+  - type: work
+    duration: "2:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "4:00"
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "1:00"
+    intensity: 110-120%
+    stroke_rate: 32-36
+    hr_zone: 5
+  - type: work
+    duration: "2:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "4:00"
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "1:00"
+    intensity: 110-120%
+    stroke_rate: 32-36
+    hr_zone: 5
+  - type: work
+    duration: "2:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "4:00"
+    intensity: 78-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "1:00"
+    intensity: 110-120%
+    stroke_rate: 32-36
+    hr_zone: 5
+  - type: work
+    duration: "2:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

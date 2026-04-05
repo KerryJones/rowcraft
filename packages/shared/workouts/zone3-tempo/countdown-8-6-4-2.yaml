@@ -1,0 +1,45 @@
+id: 30000000-0000-0000-0000-000000000007
+title: "Countdown (8/6/4/2)"
+description: "Descending intervals, ascending effort. Shorter gets harder."
+difficulty: intermediate
+tags: [tempo, descending, countdown]
+estimated_duration_minutes: 42
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "8:00"
+    intensity: 78-82%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "6:00"
+    intensity: 80-85%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "4:00"
+    intensity: 82-86%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: "2:00"
+    intensity: 85-90%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "3:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

@@ -5,7 +5,7 @@ LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/nul
 SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.kerryjones.net
 
-.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed build-seeds
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +35,7 @@ list:
 	@echo "  make studio           Open Supabase Studio"
 	@echo ""
 	@echo "Build:"
+	@echo "  make build-seeds      Generate SQL seeds from YAML workout definitions"
 	@echo "  make build-apk        Build Android APK"
 	@echo ""
 	@echo "Utilities:"
@@ -142,6 +143,9 @@ db-seed:
 studio:
 	@echo "Supabase Studio: http://localhost:54323"
 	@open http://localhost:54323
+
+build-seeds:
+	cd scripts && npx tsx build-seeds.ts
 
 build-apk:
 	$(eval PUB_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))

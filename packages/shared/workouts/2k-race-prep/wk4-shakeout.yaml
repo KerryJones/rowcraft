@@ -1,0 +1,25 @@
+id: f1000000-0000-0000-0004-000000000001
+title: "2K Prep Wk4 Shakeout"
+description: "Week 4: Light shakeout with 3 short pickups to stay sharp before race day."
+difficulty: advanced
+tags: [2k-race-prep, shakeout, week-4]
+estimated_duration_minutes: 15
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 3
+    work:
+      duration: "30"
+      intensity: 85-96%
+      stroke_rate: 28-32
+    rest:
+      duration: "1:30"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 45-55%
+    stroke_rate: 16-20
+    hr_zone: 1

@@ -1,0 +1,22 @@
+id: f1000000-0000-0000-0001-000000000001
+title: "2K Prep Wk1 Steady"
+description: "Week 1: 30-minute steady state at Z2 to build aerobic base."
+difficulty: advanced
+tags: [2k-race-prep, steady-state, week-1]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "30:00"
+    intensity: 65-75%
+    stroke_rate: 20-24
+    hr_zone: 2
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

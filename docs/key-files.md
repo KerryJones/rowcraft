@@ -3,16 +3,21 @@
 ## Shared
 | Path | Purpose |
 |------|---------|
-| `packages/shared/schemas/workout.schema.json` | JSON Schema for workout validation |
+| `packages/shared/schemas/workout.schema.json` | JSON Schema for DB workout segments |
+| `packages/shared/schemas/workout-definition.schema.json` | JSON Schema for YAML workout definitions |
 | `packages/shared/schemas/result.schema.json` | JSON Schema for result validation |
-| `packages/shared/workouts/` | 11 pre-built workout JSONs (classics, Pete Plan, etc.) |
+| `packages/shared/workouts/` | YAML workout definitions (~133 workouts, organized by category) |
+| `packages/shared/workouts/_spec.md` | Workout YAML format documentation |
+| `scripts/build-seeds.ts` | YAML → SQL build script for workout seed data |
+| `supabase/seeds/gen_*.sql` | Generated SQL seed files (do not edit — regenerate with build script) |
+| `supabase/seeds/90_training_plans.sql` | Training plan definitions (hand-maintained) |
 
 ## Web (`apps/web/src/`) — Next.js App Router
 | Path | Purpose |
 |------|---------|
 | `lib/types.ts` | All TypeScript interfaces (master type definitions) |
 | `lib/utils/format.ts` | Display formatting (pace, duration, distance) |
-| `lib/utils/ftp.ts` | Power/HR zone calculations, C2 formula |
+| `lib/utils/ftp.ts` | FTP intensity resolution, power/HR zones, C2 watts↔pace formula |
 | `lib/utils/workout.ts` | Workout summary computations |
 | `lib/supabase/server.ts` | Server-side Supabase client (cookie auth) |
 | `lib/supabase/client.ts` | Browser-side Supabase client |

@@ -1,0 +1,9 @@
+id: a0000000-0000-0000-0000-000000000007
+title: "Just Row"
+description: "Open rowing session — no targets, no time pressure. Row as long as you like and sync to your C2 Logbook."
+difficulty: beginner
+tags: [free-row, just-row]
+estimated_duration_minutes: 120
+segments:
+  - type: work
+    duration: "120:00"

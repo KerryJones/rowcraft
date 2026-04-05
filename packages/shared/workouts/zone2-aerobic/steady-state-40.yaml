@@ -1,0 +1,22 @@
+id: 20000000-0000-0000-0000-000000000001
+title: "Steady State 40"
+description: "30 minutes of steady aerobic work. The bread and butter of training."
+difficulty: beginner
+tags: [aerobic, steady-state, endurance]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "30:00"
+    intensity: 65-75%
+    stroke_rate: 20-22
+    hr_zone: 2
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

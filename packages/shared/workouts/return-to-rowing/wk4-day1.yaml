@@ -1,0 +1,22 @@
+id: f0000000-0000-0000-0004-000000000001
+title: "Return to Rowing Wk4 Day1"
+description: "Week 4 Day 1: 25 minutes steady state at Z2."
+difficulty: beginner
+tags: [return-to-rowing, steady-state, week-4]
+estimated_duration_minutes: 31
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "25:00"
+    intensity: 62-72%
+    stroke_rate: 18-22
+    hr_zone: 2
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

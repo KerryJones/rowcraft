@@ -1,0 +1,26 @@
+id: 60000000-0000-0000-0000-00000000000c
+title: "EMOM 150m"
+description: "150m sprint every minute for 10 minutes."
+difficulty: advanced
+tags: [wod, emom]
+estimated_duration_minutes: 20
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 10
+    work:
+      duration: 150m
+      intensity: 110-130%
+      stroke_rate: 32-36
+      hr_zone: 5
+    rest:
+      duration: "30"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

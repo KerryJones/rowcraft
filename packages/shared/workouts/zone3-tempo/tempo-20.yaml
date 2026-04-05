@@ -1,0 +1,22 @@
+id: 30000000-0000-0000-0000-000000000006
+title: "Tempo 20"
+description: "20 minutes sustained tempo. No intervals, just hold the effort."
+difficulty: intermediate
+tags: [tempo, sustained]
+estimated_duration_minutes: 30
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "20:00"
+    intensity: 76-82%
+    stroke_rate: 24-26
+    hr_zone: 3
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

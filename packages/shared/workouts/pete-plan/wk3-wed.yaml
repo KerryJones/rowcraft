@@ -1,0 +1,26 @@
+id: e0000000-0000-0000-0002-000000000002
+title: "Pete Plan Wk3 Wed — 4x1000m"
+description: "Week 3 Wednesday: 4x1000m intervals with 3:00 rest."
+difficulty: beginner
+tags: [pete-plan, intervals, speed, week-3]
+estimated_duration_minutes: 28
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 4
+    work:
+      duration: 1000m
+      intensity: 88-96%
+      stroke_rate: 26-32
+      hr_zone: 4
+    rest:
+      duration: "3:00"
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

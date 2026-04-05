@@ -1,0 +1,81 @@
+id: 40000000-0000-0000-0000-000000000004
+title: "Over-Under Intervals"
+description: "Alternate above and below threshold. Teaches pacing discipline."
+difficulty: intermediate
+tags: [threshold, over-under]
+estimated_duration_minutes: 30
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "2:00"
+    intensity: 95-105%
+    stroke_rate: 28-32
+    hr_zone: 4
+  - type: work
+    duration: "2:00"
+    intensity: 80-88%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "2:00"
+    intensity: 95-105%
+    stroke_rate: 28-32
+    hr_zone: 4
+  - type: work
+    duration: "2:00"
+    intensity: 80-88%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "2:00"
+    intensity: 95-105%
+    stroke_rate: 28-32
+    hr_zone: 4
+  - type: work
+    duration: "2:00"
+    intensity: 80-88%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "2:00"
+    intensity: 95-105%
+    stroke_rate: 28-32
+    hr_zone: 4
+  - type: work
+    duration: "2:00"
+    intensity: 80-88%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "2:00"
+    intensity: 95-105%
+    stroke_rate: 28-32
+    hr_zone: 4
+  - type: work
+    duration: "2:00"
+    intensity: 80-88%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: work
+    duration: "2:00"
+    intensity: 95-105%
+    stroke_rate: 28-32
+    hr_zone: 4
+  - type: work
+    duration: "2:00"
+    intensity: 80-88%
+    stroke_rate: 24-28
+    hr_zone: 3
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

@@ -1,0 +1,32 @@
+id: 30000000-0000-0000-0000-00000000000a
+title: "Long Tempo Build"
+description: "Build from aerobic to tempo then ease off. Progressive session."
+difficulty: intermediate
+tags: [tempo, build, progression]
+estimated_duration_minutes: 40
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "10:00"
+    intensity: 68-75%
+    stroke_rate: 18-22
+    hr_zone: 2
+  - type: work
+    duration: "15:00"
+    intensity: 78-85%
+    stroke_rate: 24-26
+    hr_zone: 3
+  - type: work
+    duration: "5:00"
+    intensity: 65-72%
+    stroke_rate: 18-22
+    hr_zone: 2
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

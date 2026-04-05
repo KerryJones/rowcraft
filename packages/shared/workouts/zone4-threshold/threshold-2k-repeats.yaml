@@ -1,0 +1,43 @@
+id: 40000000-0000-0000-0000-000000000006
+title: "Threshold 2K Repeats"
+description: "Four 2K repeats at threshold. Race-distance practice."
+difficulty: intermediate
+tags: [threshold, distance, 2k]
+estimated_duration_minutes: 51
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: 2000m
+    intensity: 88-96%
+    stroke_rate: 28-30
+    hr_zone: 4
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: 2000m
+    intensity: 88-96%
+    stroke_rate: 28-30
+    hr_zone: 4
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: 2000m
+    intensity: 88-96%
+    stroke_rate: 28-30
+    hr_zone: 4
+  - type: rest
+    duration: "3:00"
+  - type: work
+    duration: 2000m
+    intensity: 88-96%
+    stroke_rate: 28-30
+    hr_zone: 4
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

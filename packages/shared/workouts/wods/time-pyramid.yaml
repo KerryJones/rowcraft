@@ -1,0 +1,64 @@
+id: 60000000-0000-0000-0000-000000000006
+title: "Time Pyramid"
+description: "1/2/3/4/3/2/1 minute pyramid. Peak at 4 minutes."
+difficulty: advanced
+tags: [pyramid, time]
+estimated_duration_minutes: 33
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: "1:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "2:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "3:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "4:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "3:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "2:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: rest
+    duration: "1:00"
+  - type: work
+    duration: "1:00"
+    intensity: 90-105%
+    stroke_rate: 26-32
+    hr_zone: 4
+  - type: cooldown
+    duration: "5:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

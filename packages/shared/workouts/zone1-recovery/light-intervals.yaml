@@ -1,0 +1,26 @@
+id: 10000000-0000-0000-0000-000000000004
+title: "Light Intervals"
+description: "Gentle intervals with rest. Keep it conversational."
+difficulty: beginner
+tags: [recovery, intervals]
+estimated_duration_minutes: 22
+segments:
+  - type: warmup
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: interval
+    reps: 4
+    work:
+      duration: "3:00"
+      intensity: 50-60%
+      stroke_rate: 18-20
+      hr_zone: 1
+    rest:
+      duration: "1:00"
+  - type: cooldown
+    duration: "3:00"
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1

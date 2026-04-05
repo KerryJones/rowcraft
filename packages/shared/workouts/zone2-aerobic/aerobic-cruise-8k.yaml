@@ -1,0 +1,22 @@
+id: 20000000-0000-0000-0000-000000000007
+title: "Aerobic Cruise 8K"
+description: "8K distance piece at aerobic pace."
+difficulty: beginner
+tags: [aerobic, distance]
+estimated_duration_minutes: 32
+segments:
+  - type: warmup
+    duration: 1000m
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
+  - type: work
+    duration: 6000m
+    intensity: 65-75%
+    stroke_rate: 20-22
+    hr_zone: 2
+  - type: cooldown
+    duration: 1000m
+    intensity: 50-55%
+    stroke_rate: 16-20
+    hr_zone: 1
