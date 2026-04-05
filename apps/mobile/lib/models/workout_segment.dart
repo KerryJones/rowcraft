@@ -36,6 +36,9 @@ class SplitTarget {
 
   Map<String, dynamic> toJson() => {'min': min, 'max': max};
 
+  /// The exact target pace (midpoint of the tolerance range).
+  double get midpoint => (min + max) / 2;
+
   SplitTarget copyWith({double? min, double? max}) {
     return SplitTarget(min: min ?? this.min, max: max ?? this.max);
   }
@@ -55,6 +58,9 @@ class StrokeRateTarget {
   }
 
   Map<String, dynamic> toJson() => {'min': min, 'max': max};
+
+  /// The exact target stroke rate (midpoint of the tolerance range).
+  int get midpoint => ((min + max) / 2).round();
 
   StrokeRateTarget copyWith({int? min, int? max}) {
     return StrokeRateTarget(min: min ?? this.min, max: max ?? this.max);

@@ -174,13 +174,14 @@ class SyncService {
             _rowErrors[row.id] = msg;
             return;
           }
-          final synced = await c2LogbookService.syncResult(result);
-          if (synced) {
+          final c2Result = await c2LogbookService.syncResult(result);
+          if (c2Result.success) {
             await db.markSyncedToC2(row.id);
           } else {
-            const msg = 'C2 Logbook sync failed — will retry';
+            final msg = 'C2 sync failed: ${c2Result.error}';
             lastError = msg;
             _rowErrors[row.id] = msg;
+            debugPrint(msg);
           }
         } else {
           // Not linked to C2 — mark as "synced" so it gets cleaned up

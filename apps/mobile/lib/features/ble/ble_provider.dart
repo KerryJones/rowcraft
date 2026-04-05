@@ -57,6 +57,7 @@ class BleState {
   final List<DiscoveredDevice> discoveredPm5Devices;
   final List<DiscoveredDevice> discoveredHrDevices;
   final List<SavedDevice> savedDevices;
+  final bool hasScanned;
   final String? _error;
 
   const BleState({
@@ -65,10 +66,16 @@ class BleState {
     this.discoveredPm5Devices = const [],
     this.discoveredHrDevices = const [],
     this.savedDevices = const [],
+    this.hasScanned = false,
     String? error,
   }) : _error = error;
 
   String? get error => _error;
+
+  Set<String> get discoveredDeviceIds => {
+    ...discoveredPm5Devices.map((d) => d.id),
+    ...discoveredHrDevices.map((d) => d.id),
+  };
 
   bool get isScanning =>
       pm5ConnectionState == PM5ConnectionState.scanning ||
@@ -80,6 +87,7 @@ class BleState {
     List<DiscoveredDevice>? discoveredPm5Devices,
     List<DiscoveredDevice>? discoveredHrDevices,
     List<SavedDevice>? savedDevices,
+    bool? hasScanned,
     Object? error = _sentinel,
   }) {
     return BleState(
@@ -88,6 +96,7 @@ class BleState {
       discoveredPm5Devices: discoveredPm5Devices ?? this.discoveredPm5Devices,
       discoveredHrDevices: discoveredHrDevices ?? this.discoveredHrDevices,
       savedDevices: savedDevices ?? this.savedDevices,
+      hasScanned: hasScanned ?? this.hasScanned,
       error: error == _sentinel ? _error : error as String?,
     );
   }
@@ -194,6 +203,7 @@ class BleNotifier extends Notifier<BleState> {
       pm5ConnectionState: newPm5State,
       discoveredPm5Devices: [],
       discoveredHrDevices: [],
+      hasScanned: false,
       error: null,
     );
 
@@ -257,11 +267,13 @@ class BleNotifier extends Notifier<BleState> {
 
     if (state.pm5ConnectionState == PM5ConnectionState.scanning) {
       state = state.copyWith(
-          pm5ConnectionState: PM5ConnectionState.disconnected);
+          pm5ConnectionState: PM5ConnectionState.disconnected,
+          hasScanned: true);
     }
     if (state.hrConnectionState == HrConnectionState.scanning) {
       state = state.copyWith(
-          hrConnectionState: HrConnectionState.disconnected);
+          hrConnectionState: HrConnectionState.disconnected,
+          hasScanned: true);
     }
   }
 
