@@ -6,8 +6,11 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 
 ### Ownership & Quality
 - You own this entire codebase. A failing test is always your bug — never dismiss as pre-existing.
+- **Write tests before or alongside features** — not comprehensive TDD, but cover the key behaviors: happy path, error paths, and edge cases that would catch regressions. If a bug is being fixed, write a test that reproduces it first.
 - Planning sessions use a separate git worktree (`isolation: "worktree"`).
+- **Sync worktree with main before starting work** — worktrees don't auto-update when main advances. At the start of a session, run `git log --oneline HEAD..main` to check for new commits. If behind, merge main before reading or editing any files. Skipping this causes regressions by overwriting work done in other worktrees.
 - Run code review agent in a loop until clean before presenting code as done.
+- **Resolve TODOs during planning** — when exploring code for a task, scan for existing TODOs in the files you touch. If a TODO is achievable within the current scope, include it in the plan and do it. Don't leave TODOs behind in new code.
 - Always run checks before done: `flutter analyze` (mobile), `npm run check` (web).
 
 ### Pre-launch App

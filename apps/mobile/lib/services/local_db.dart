@@ -92,7 +92,8 @@ class LocalDatabase extends _$LocalDatabase {
   Future<int> getPendingCount() async {
     final count = countAll();
     final query = selectOnly(pendingResults)
-      ..where(pendingResults.syncedToSupabase.equals(false))
+      ..where(pendingResults.syncedToSupabase.equals(false) |
+              pendingResults.syncedToC2.equals(false))
       ..addColumns([count]);
     final result = await query.getSingle();
     return result.read(count) ?? 0;
@@ -112,6 +113,12 @@ class LocalDatabase extends _$LocalDatabase {
         .write(const PendingResultsCompanion(
       syncedToC2: Value(true),
     ));
+  }
+
+  /// Update the stored JSON for a pending result (e.g. after Supabase assigns an ID).
+  Future<void> updateResultJson(int id, String resultJson) {
+    return (update(pendingResults)..where((r) => r.id.equals(id)))
+        .write(PendingResultsCompanion(resultJson: Value(resultJson)));
   }
 
   /// Increment the attempt counter for a failed sync.

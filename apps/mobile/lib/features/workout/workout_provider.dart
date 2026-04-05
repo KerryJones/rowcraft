@@ -156,6 +156,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   final Ref _ref;
 
   WorkoutEngine? _engine;
+
+  /// Supabase-assigned result ID, set after successful save.
+  String? _savedResultId;
   StreamSubscription<WorkoutEngineState>? _engineSub;
   StreamSubscription<PM5Data>? _pm5BleSubscription;
   StreamSubscription<int>? _hrBleSubscription;
@@ -417,10 +420,11 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     if (result == null) return;
 
     state = state.copyWith(saveProgress: SaveProgress.saving);
+    _savedResultId = null;
 
     try {
       // Queue for offline-first sync (SQLite write + Supabase attempt)
-      await _syncService.queueResult(result);
+      final outcome = await _syncService.queueResult(result);
       state = state.copyWith(saveProgress: SaveProgress.savedLocally);
 
       // Record plan progress if launched from a training plan
@@ -439,26 +443,29 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         }
       }
 
-      // Check if sync actually reached Supabase
-      final pending = await _syncService.pendingCount;
-      final syncErr = _syncService.lastError;
-      if (pending == 0) {
+      _savedResultId = outcome.resultId;
+
+      // Cloud status from actual sync outcome
+      if (outcome.savedToSupabase) {
         state = state.copyWith(saveProgress: SaveProgress.savedToCloud);
-      } else if (syncErr != null) {
-        state = state.copyWith(syncError: syncErr);
+      } else if (outcome.error != null) {
+        state = state.copyWith(syncError: outcome.error);
       }
 
-      // Check C2 Logbook sync status
-      final c2Service = _ref.read(c2LogbookServiceProvider);
-      final isLinked = await c2Service.isLinked();
-      if (!isLinked) {
-        state = state.copyWith(c2SyncStatus: C2SyncStatus.notLinked);
+      // C2 Logbook status from actual sync outcome.
+      // Not-linked is encoded as savedToC2: true (marked done) with no error.
+      if (outcome.savedToC2 && outcome.error == null) {
+        // Either synced successfully or user is not C2-linked
+        final c2Service = _ref.read(c2LogbookServiceProvider);
+        final isLinked = await c2Service.isLinked();
+        state = state.copyWith(
+          c2SyncStatus: isLinked ? C2SyncStatus.synced : C2SyncStatus.notLinked,
+        );
       } else {
-        if (pending == 0) {
-          state = state.copyWith(c2SyncStatus: C2SyncStatus.synced);
-        } else {
-          state = state.copyWith(c2SyncStatus: C2SyncStatus.failed);
-        }
+        state = state.copyWith(
+          c2SyncStatus: C2SyncStatus.failed,
+          syncError: outcome.error ?? 'C2 sync failed — will retry',
+        );
       }
 
       state = state.copyWith(saveProgress: SaveProgress.done);
@@ -489,10 +496,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       testedAt: DateTime.now(),
       ftpWatts: watts,
       testType: state.workoutTags.contains('ramp') ? 'ramp' : '20min',
-      // TODO: Link to workout result once sync service returns persisted IDs.
-      // Currently null because queueResult is offline-first and doesn't
-      // return the Supabase-generated UUID synchronously.
-      sourceResultId: null,
+      sourceResultId: _savedResultId,
     );
 
     await _supabaseService.saveFtpRecord(record);
