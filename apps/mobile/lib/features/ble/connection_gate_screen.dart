@@ -74,7 +74,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SvgPicture.asset('assets/logo_gold.svg',
-                          width: 40, height: 40),
+                          height: 40),
                       const SizedBox(width: 10),
                       Text('RowCraft',
                           style: theme.textTheme.headlineMedium
