@@ -193,7 +193,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       // Merge standalone HR — prefer chest strap (more accurate)
       PM5Data merged = pm5Data;
       if (_lastStandaloneHr != null) {
-        merged = pm5Data.copyWith(heartRate: _lastStandaloneHr);
+        merged = pm5Data.copyWith(
+          heartRate: _lastStandaloneHr,
+          strokeRateUpdated: pm5Data.strokeRateUpdated,
+        );
       }
 
       _pm5Controller.add(merged);

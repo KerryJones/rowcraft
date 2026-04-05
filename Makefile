@@ -3,6 +3,7 @@
 
 LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $$1}')
 SUPABASE_URL := http://$(LOCAL_IP):54321
+WEB_APP_URL ?= https://rowcraft.kerryjones.net
 
 .PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed
 
@@ -95,7 +96,7 @@ dev-mobile-cloud:
 		--dart-define=SUPABASE_URL=https://qzzqqgnegvuqmlkfqhus.supabase.co \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_-J6qboxKtmCfn_aIBHKX-g_tCFwUWdV \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
-		--dart-define=WEB_APP_URL=https://rowing.kerryjones.net
+		--dart-define=WEB_APP_URL=$(WEB_APP_URL)
 
 dev-web:
 	cd apps/web && npm run dev
@@ -148,5 +149,5 @@ build-apk:
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY) \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
-		--dart-define=WEB_APP_URL=https://rowing.kerryjones.net
+		--dart-define=WEB_APP_URL=$(WEB_APP_URL)
 	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"

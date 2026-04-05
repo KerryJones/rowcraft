@@ -341,7 +341,7 @@ void main() {
       );
     }
 
-    test('auto-pause triggers after 3s of zero stroke rate', () async {
+    test('auto-pause triggers after 5s of no new strokes', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
@@ -375,7 +375,7 @@ void main() {
 
       expect(engine.currentState.phase, WorkoutPhase.rowing);
 
-      // Send zero stroke rate — should not immediately pause
+      // Send zero stroke rate (strokeCount unchanged) — should not immediately pause
       pm5Controller.add(const PM5Data(
         elapsedTime: Duration(seconds: 11),
         distance: 50,
@@ -390,9 +390,64 @@ void main() {
 
       expect(engine.currentState.phase, WorkoutPhase.rowing);
 
-      // Wait 4+ seconds — the periodic timer (1s interval) checks
-      // if _lastPositiveStrokeAt is >= 3s ago, needs ~4s for timer
+      // Wait 6+ seconds — the periodic timer (1s interval) checks
+      // if _lastActivityAt is >= 5s ago, needs ~6s for timer
       // alignment and inSeconds truncation.
+      await Future.delayed(const Duration(seconds: 6));
+
+      expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
+    });
+
+    test('auto-pause triggers during spin-down (SR > 0 but no new strokes)', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 2000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Normal rowing
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 10),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Simulate flywheel spin-down: SR still > 0 but strokeCount unchanged.
+      // Send multiple spin-down packets to verify they don't reset the timer.
+      for (var i = 0; i < 3; i++) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: 12 + i),
+          distance: 52.0 + i * 0.5,
+          pace: 1500 + i * 100,
+          strokeRate: 10 - i * 3,
+          strokeRateUpdated: true,
+          watts: 50 - i * 15,
+          calories: 5,
+          strokeCount: 20,
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(seconds: 1));
+      }
+
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+
+      // Wait for auto-pause (5s from last strokeCount change + timer alignment)
       await Future.delayed(const Duration(seconds: 4));
 
       expect(engine.currentState.phase, WorkoutPhase.paused);
@@ -428,7 +483,7 @@ void main() {
       ));
       await Future.delayed(const Duration(milliseconds: 50));
 
-      // Zero SR to trigger auto-pause
+      // No new strokes to trigger auto-pause
       pm5Controller.add(const PM5Data(
         elapsedTime: Duration(seconds: 11),
         distance: 50,
@@ -439,10 +494,10 @@ void main() {
         strokeCount: 20,
         intervalCount: 1,
       ));
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 6));
 
       pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 16),
+        elapsedTime: Duration(seconds: 18),
         distance: 50,
         pace: 0,
         strokeRate: 0,
@@ -454,10 +509,11 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
 
       expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
 
-      // Resume rowing — SR > 0
+      // Resume rowing — new stroke (strokeCount changes)
       pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 18),
+        elapsedTime: Duration(seconds: 20),
         distance: 55,
         pace: 1200,
         strokeRate: 24,
@@ -465,6 +521,100 @@ void main() {
         watts: 180,
         calories: 6,
         strokeCount: 22,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+      expect(engine.currentState.isAutoPaused, false);
+    });
+
+    test('no auto-resume on flywheel spin-down (SR > 0 but no new strokes)',
+        () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 2000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Normal rowing
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 10),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Stop rowing — wait for auto-pause
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 11),
+        distance: 50,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(seconds: 6));
+
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 18),
+        distance: 50,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
+
+      // Flywheel spin-down: SR > 0 but strokeCount unchanged
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 19),
+        distance: 50,
+        pace: 1400,
+        strokeRate: 18,
+        strokeRateUpdated: true,
+        watts: 100,
+        calories: 5,
+        strokeCount: 20, // Same — no new strokes
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Should still be paused
+      expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
+
+      // Now an actual new stroke resumes
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 21),
+        distance: 55,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 6,
+        strokeCount: 21, // New stroke
         intervalCount: 1,
       ));
       await Future.delayed(const Duration(milliseconds: 50));
@@ -520,10 +670,10 @@ void main() {
         strokeCount: 30,
         intervalCount: 1,
       ));
-      await Future.delayed(const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 6));
 
       pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 20),
+        elapsedTime: Duration(seconds: 22),
         distance: 50,
         pace: 0,
         strokeRate: 0,
@@ -1252,7 +1402,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
 
       // Send pace well above max (too slow) for 16+ seconds.
-      // Send every 2s to stay within the 3s auto-pause window.
+      // Send every 2s with incrementing strokeCount to stay within the 5s auto-pause window.
       for (var i = 0; i < 8; i++) {
         pm5Controller.add(PM5Data(
           elapsedTime: Duration(seconds: 10 + i * 2),
@@ -1291,7 +1441,7 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
 
       // Send pace above max for 6+ seconds.
-      // Send every 2s to stay within the 3s auto-pause window.
+      // Send every 2s with incrementing strokeCount to stay within the 5s auto-pause window.
       for (var i = 0; i < 4; i++) {
         pm5Controller.add(PM5Data(
           elapsedTime: Duration(seconds: 10 + i * 2),
