@@ -121,6 +121,8 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                             ref.watch(pm5ServiceProvider).connectedDeviceId)
                         : null,
                     savedDevices: savedPm5,
+                    discoveredDeviceIds: bleState.discoveredDeviceIds,
+                    hasScanned: bleState.hasScanned,
                     discoveredDevices: bleState.discoveredPm5Devices
                         .where((d) => !savedPm5Ids.contains(d.id))
                         .toList(),
@@ -162,6 +164,8 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                                 ref.watch(hrServiceProvider).connectedDeviceId)
                             : null,
                     savedDevices: savedHr,
+                    discoveredDeviceIds: bleState.discoveredDeviceIds,
+                    hasScanned: bleState.hasScanned,
                     discoveredDevices: bleState.discoveredHrDevices
                         .where((d) => !savedHrIds.contains(d.id))
                         .toList(),
@@ -258,6 +262,8 @@ class _DeviceSection extends StatelessWidget {
   final bool isScanning;
   final String? connectedDeviceName;
   final List<SavedDevice> savedDevices;
+  final Set<String> discoveredDeviceIds;
+  final bool hasScanned;
   final List<DiscoveredDevice> discoveredDevices;
   final void Function(SavedDevice) onConnectSaved;
   final void Function(DiscoveredDevice) onConnectDiscovered;
@@ -275,6 +281,8 @@ class _DeviceSection extends StatelessWidget {
     required this.isScanning,
     required this.connectedDeviceName,
     required this.savedDevices,
+    required this.discoveredDeviceIds,
+    required this.hasScanned,
     required this.discoveredDevices,
     required this.onConnectSaved,
     required this.onConnectDiscovered,
@@ -393,6 +401,9 @@ class _DeviceSection extends StatelessWidget {
                     ? device.deviceName
                     : device.deviceId,
                 subtitle: null,
+                isAvailable: hasScanned && !isScanning
+                    ? discoveredDeviceIds.contains(device.deviceId)
+                    : null,
                 onTap: () => onConnectSaved(device),
               ),
           ],
@@ -448,47 +459,81 @@ class _DeviceSection extends StatelessWidget {
 class _DeviceRow extends StatelessWidget {
   final String name;
   final String? subtitle;
+  final bool? isAvailable;
   final VoidCallback onTap;
 
   const _DeviceRow({
     required this.name,
     required this.subtitle,
+    this.isAvailable,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        margin: const EdgeInsets.only(bottom: 4),
-        decoration: BoxDecoration(
-          color: RowCraftTheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.bluetooth, size: 16,
-                color: RowCraftTheme.primaryBlue),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: theme.textTheme.bodyMedium),
-                  if (subtitle != null)
-                    Text(subtitle!,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: RowCraftTheme.subtleGrey)),
-                ],
+    final dimRow = isAvailable == false;
+    return Opacity(
+      opacity: dimRow ? 0.5 : 1.0,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 4),
+          decoration: BoxDecoration(
+            color: RowCraftTheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.bluetooth, size: 16,
+                  color: RowCraftTheme.primaryBlue),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: theme.textTheme.bodyMedium),
+                    if (subtitle != null)
+                      Text(subtitle!,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: RowCraftTheme.subtleGrey)),
+                    if (isAvailable != null)
+                      Row(
+                        children: [
+                          if (isAvailable!) ...[
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: RowCraftTheme.successGreen,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Available',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color: RowCraftTheme.successGreen,
+                                  fontSize: 11),
+                            ),
+                          ] else
+                            Text(
+                              'Not found',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color: RowCraftTheme.subtleGrey,
+                                  fontSize: 11),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.chevron_right, size: 20,
-                color: RowCraftTheme.subtleGrey),
-          ],
+              const Icon(Icons.chevron_right, size: 20,
+                  color: RowCraftTheme.subtleGrey),
+            ],
+          ),
         ),
       ),
     );

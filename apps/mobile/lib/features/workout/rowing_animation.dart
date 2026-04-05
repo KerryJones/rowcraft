@@ -4,9 +4,9 @@ import '../../app/theme.dart';
 
 /// Animated rowing indicator — EXR-inspired simple visualization.
 ///
-/// Shows a horizontal rail with a circle (rower) sliding back and forth,
-/// and a short handle bar that moves with the stroke. Speed matches
-/// the current [strokeRate] (strokes per minute).
+/// Shows a horizontal rail with a fixed flywheel circle on the left,
+/// a sliding seat, and a handle bar that moves with the seat.
+/// Speed matches the current [strokeRate] (strokes per minute).
 /// When [strokeRate] is 0, the indicator sits still at the catch position.
 class RowingAnimation extends StatefulWidget {
   final int strokeRate;
@@ -100,13 +100,20 @@ class _RowingAnimationState extends State<RowingAnimation>
           final railWidth = railRight - railLeft;
           final centerY = widget.height * 0.55;
 
-          // Rower circle position along rail
-          final circleX = railLeft + slideProgress * railWidth;
+          // Flywheel circle — fixed at left end of rail
           final circleRadius = widget.height * 0.16;
+          final circleX = railLeft + circleRadius;
 
-          // Handle position (leads the circle during drive, trails during recovery)
-          final handleOffset = widget.height * 0.35;
-          final handleX = circleX - handleOffset;
+          // Seat position — slides along the rail (starts after flywheel)
+          const seatWidth = 12.0;
+          const seatHeight = 6.0;
+          final seatStart = railLeft + circleRadius * 2 + seatWidth / 2;
+          final seatTravel = railRight - seatStart;
+          final seatX = seatStart + slideProgress * seatTravel;
+
+          // Handle bar — positioned between flywheel and seat
+          final handleOffset = widget.height * 0.25;
+          final handleX = seatX - handleOffset;
           final handleHalfHeight = widget.height * 0.12;
 
           return Stack(
@@ -125,7 +132,20 @@ class _RowingAnimationState extends State<RowingAnimation>
                   ),
                 ),
               ),
-              // Handle bar (short vertical line)
+              // Flywheel circle (fixed at left)
+              Positioned(
+                left: circleX - circleRadius,
+                top: centerY - circleRadius,
+                child: Container(
+                  width: circleRadius * 2,
+                  height: circleRadius * 2,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color,
+                  ),
+                ),
+              ),
+              // Handle bar (short vertical line, moves with seat)
               Positioned(
                 left: handleX.clamp(railLeft, railRight) - 1.5,
                 top: centerY - handleHalfHeight,
@@ -138,16 +158,16 @@ class _RowingAnimationState extends State<RowingAnimation>
                   ),
                 ),
               ),
-              // Rower circle
+              // Seat (small rectangle sliding on rail)
               Positioned(
-                left: circleX - circleRadius,
-                top: centerY - circleRadius - widget.height * 0.1,
+                left: seatX - seatWidth / 2,
+                top: centerY - seatHeight,
                 child: Container(
-                  width: circleRadius * 2,
-                  height: circleRadius * 2,
+                  width: seatWidth,
+                  height: seatHeight,
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
                     color: color,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),

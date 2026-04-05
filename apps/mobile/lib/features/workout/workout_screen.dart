@@ -240,14 +240,11 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 // Hero section (pace, guide bar, stroke rate)
                 Expanded(child: _HeroSection(session: session)),
 
-                // HR zone band
-                _HrZoneBand(session: session),
+                // Merged stats row (HR, distance, time, calories)
+                _StatsRow(session: session),
 
-                // Distance band
-                _DistanceBand(session: session),
-
-                // Tertiary metrics
-                _TertiaryStrip(session: session),
+                // Target block (prominent current target)
+                if (isActive) _TargetBlock(session: session),
 
                 // Up-next preview
                 if (isActive) _UpNextPreview(session: session),
@@ -642,7 +639,7 @@ class _SegmentHeader extends StatelessWidget {
               const Spacer(),
               if (segment.targetSplit != null)
                 Text(
-                  'tgt ${_formatPace(segment.targetSplit!.min)} – ${_formatPace(segment.targetSplit!.max)}',
+                  'tgt ${_formatPace(segment.targetSplit!.midpoint)}',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: RowCraftTheme.successGreen,
@@ -745,16 +742,22 @@ class _HeroSection extends StatelessWidget {
       }
     }
 
-    // Stroke rate color: white when in range, red when out of range
+    // Stroke rate color + chevron direction
     final hasStrokeTarget = segment?.targetStrokeRate != null;
     Color srColor = RowCraftTheme.metricWhite;
+    String? srChevron; // null = in range, '▲' = speed up, '▼' = slow down
     if (hasStrokeTarget && data.strokeRate > 0) {
       final sr = data.strokeRate;
-      final inRange = sr >= segment!.targetStrokeRate!.min &&
-          sr <= segment.targetStrokeRate!.max;
-      srColor = inRange
-          ? RowCraftTheme.metricWhite
-          : RowCraftTheme.errorRose;
+      if (sr >= segment!.targetStrokeRate!.min &&
+          sr <= segment.targetStrokeRate!.max) {
+        srColor = RowCraftTheme.successGreen;
+      } else if (sr < segment.targetStrokeRate!.min) {
+        srColor = RowCraftTheme.warningAmber;
+        srChevron = '\u25B2'; // ▲ speed up
+      } else {
+        srColor = RowCraftTheme.errorRose;
+        srChevron = '\u25BC'; // ▼ slow down
+      }
     }
 
     return LayoutBuilder(
@@ -818,9 +821,18 @@ class _HeroSection extends StatelessWidget {
                     children: [
                       Row(
                         mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          if (srChevron != null)
+                            Text(
+                              srChevron,
+                              style: GoogleFonts.jetBrainsMono(
+                                fontSize: srFontSize * 0.5,
+                                color: srColor,
+                                height: 1.0,
+                              ),
+                            ),
+                          if (srChevron != null) const SizedBox(width: 4),
                           Text(
                             '${data.strokeRate}',
                             style: GoogleFonts.jetBrainsMono(
@@ -845,10 +857,10 @@ class _HeroSection extends StatelessWidget {
                       if (hasStrokeTarget) ...[
                         const SizedBox(height: 2),
                         Text(
-                          'tgt ${segment!.targetStrokeRate!.min}\u2013${segment.targetStrokeRate!.max} spm',
+                          'tgt ${segment!.targetStrokeRate!.midpoint} spm',
                           style: GoogleFonts.inter(
                             fontSize: 11,
-                            color: srColor == RowCraftTheme.metricWhite
+                            color: srColor == RowCraftTheme.successGreen
                                 ? RowCraftTheme.subtleGrey
                                 : srColor,
                           ),
@@ -931,7 +943,7 @@ class _PaceGuideBar extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       fontSize: 9, color: RowCraftTheme.subtleGrey)),
               Text(
-                '${_formatPace(targetMin)} – ${_formatPace(targetMax)} /500m',
+                '${_formatPace((targetMin + targetMax) / 2)} /500m',
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: RowCraftTheme.successGreen,
                       fontWeight: FontWeight.w700,
@@ -1023,196 +1035,157 @@ class _PaceGuideBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// HR Zone Band (44px)
+// Stats Row — merged HR, distance, time, calories (single row)
 // ---------------------------------------------------------------------------
 
-class _HrZoneBand extends StatelessWidget {
+class _StatsRow extends StatelessWidget {
   final WorkoutSessionState session;
 
-  const _HrZoneBand({required this.session});
+  const _StatsRow({required this.session});
 
   @override
   Widget build(BuildContext context) {
-    final hr = session.pm5Data.heartRate;
-    final targetZone = session.engineState.currentSegment?.targetHrZone;
-
-    // Only show zone when HR data is available
+    final data = session.pm5Data;
+    final hr = data.heartRate;
     final maxHr = session.maxHeartRate ?? 190;
+    final targetZone = session.engineState.currentSegment?.targetHrZone;
     final zone = hr != null
         ? (targetZone ?? _estimateHrZone(hr, maxHr: maxHr))
         : null;
-    final isEstimated = zone != null && targetZone == null;
     final info = zone != null
         ? _hrZoneInfo(zone)
         : (name: '', label: '', color: RowCraftTheme.subtleGrey);
     final zoneColor = info.color;
+    final isEstimated = zone != null && targetZone == null;
+
+    final labelStyle = GoogleFonts.inter(
+      fontSize: 9,
+      fontWeight: FontWeight.w500,
+      color: RowCraftTheme.subtleGrey,
+      letterSpacing: 0.5,
+    );
+    final valueStyle = GoogleFonts.jetBrainsMono(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+      color: RowCraftTheme.metricWhite,
+    );
 
     return Container(
       height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: zone != null
-            ? zoneColor.withValues(alpha: 0.10)
-            : RowCraftTheme.surfaceContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: const BoxDecoration(
+        color: RowCraftTheme.surfaceContainer,
         border: Border(
-          bottom: BorderSide(
-            color: zone != null ? zoneColor : Colors.transparent,
-            width: 3,
-          ),
+          top: BorderSide(color: RowCraftTheme.surfaceContainerHigh, width: 1),
         ),
       ),
       child: Row(
         children: [
+          // HR + zone
           Icon(
             Icons.favorite,
-            size: 18,
+            size: 14,
             color: hr != null ? zoneColor : RowCraftTheme.subtleGrey,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           Text(
             hr != null ? '$hr' : '--',
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 24,
+            style: valueStyle.copyWith(color: hr != null ? zoneColor : RowCraftTheme.subtleGrey),
+          ),
+          Text(' bpm', style: labelStyle),
+          if (zone != null) ...[
+            const SizedBox(width: 4),
+            Text(
+              isEstimated ? '~Z$zone' : 'Z$zone',
+              style: labelStyle.copyWith(color: zoneColor, fontSize: 10, fontWeight: FontWeight.w700),
+            ),
+          ],
+          const Spacer(),
+          // Distance
+          Text(data.distanceFormatted, style: valueStyle),
+          const SizedBox(width: 12),
+          // Time
+          Text(data.elapsedFormatted, style: valueStyle),
+          const SizedBox(width: 12),
+          // Calories
+          Text('${data.calories}', style: valueStyle),
+          Text(' cal', style: labelStyle),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Target Block — prominent current segment target
+// ---------------------------------------------------------------------------
+
+class _TargetBlock extends StatelessWidget {
+  final WorkoutSessionState session;
+
+  const _TargetBlock({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final segment = session.engineState.currentSegment;
+    if (segment == null) return const SizedBox.shrink();
+
+    final hasPaceTarget = segment.targetSplit != null;
+    final hasSpmTarget = segment.targetStrokeRate != null;
+
+    if (!hasPaceTarget && !hasSpmTarget) return const SizedBox.shrink();
+
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: RowCraftTheme.successGreen.withValues(alpha: 0.08),
+        border: const Border(
+          top: BorderSide(color: RowCraftTheme.surfaceContainerHigh, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(
+            'TARGET',
+            style: GoogleFonts.inter(
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: RowCraftTheme.metricWhite,
+              color: RowCraftTheme.subtleGrey,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(width: 4),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              'bpm',
+          const SizedBox(width: 12),
+          if (hasPaceTarget) ...[
+            Text(
+              _formatPace(segment.targetSplit!.midpoint),
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: RowCraftTheme.successGreen,
+              ),
+            ),
+            Text(
+              ' /500m',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: RowCraftTheme.subtleGrey,
               ),
             ),
-          ),
-          const Spacer(),
-          if (zone != null) ...[
-            Text(
-              isEstimated ? '~${info.name}' : info.name,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: zoneColor,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              info.label,
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: zoneColor.withValues(alpha: 0.7),
-              ),
-            ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Distance Band (44px)
-// ---------------------------------------------------------------------------
-
-class _DistanceBand extends StatelessWidget {
-  final WorkoutSessionState session;
-
-  const _DistanceBand({required this.session});
-
-  @override
-  Widget build(BuildContext context) {
-    final data = session.pm5Data;
-
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: RowCraftTheme.surfaceContainerHigh,
-      child: Row(
-        children: [
-          Text(
-            'DIST',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: RowCraftTheme.subtleGrey,
+          if (hasPaceTarget && hasSpmTarget) const Spacer(),
+          if (!hasPaceTarget && hasSpmTarget) const SizedBox(width: 8),
+          if (hasSpmTarget)
+            Text(
+              '${segment.targetStrokeRate!.midpoint} spm',
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: RowCraftTheme.successGreen,
+              ),
             ),
-          ),
-          const Spacer(),
-          Text(
-            data.distanceFormatted,
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: RowCraftTheme.metricWhite,
-            ),
-          ),
         ],
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Tertiary Strip (40px)
-// ---------------------------------------------------------------------------
-
-class _TertiaryStrip extends StatelessWidget {
-  final WorkoutSessionState session;
-
-  const _TertiaryStrip({required this.session});
-
-  @override
-  Widget build(BuildContext context) {
-    final data = session.pm5Data;
-
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: RowCraftTheme.surfaceContainer,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _TertiaryItem(label: 'TIME', value: data.elapsedFormatted),
-          _TertiaryItem(label: 'CAL', value: '${data.calories}'),
-        ],
-      ),
-    );
-  }
-}
-
-class _TertiaryItem extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _TertiaryItem({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 9,
-            fontWeight: FontWeight.w500,
-            color: RowCraftTheme.subtleGrey,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 1),
-        Text(
-          value,
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: RowCraftTheme.metricWhite,
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1292,7 +1265,7 @@ class _UpNextPreview extends StatelessWidget {
           if (next.targetSplit != null) ...[
             const SizedBox(width: 8),
             Text(
-              'tgt ${_formatPace(next.targetSplit!.min)} – ${_formatPace(next.targetSplit!.max)}',
+              'tgt ${_formatPace(next.targetSplit!.midpoint)}',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: RowCraftTheme.subtleGrey,
@@ -1302,7 +1275,7 @@ class _UpNextPreview extends StatelessWidget {
           if (next.targetStrokeRate != null) ...[
             const SizedBox(width: 8),
             Text(
-              '${next.targetStrokeRate!.min}\u2013${next.targetStrokeRate!.max} spm',
+              '${next.targetStrokeRate!.midpoint} spm',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: RowCraftTheme.subtleGrey,

@@ -84,12 +84,16 @@ class C2LogbookService {
 
   /// Sync a workout result to the C2 Online Logbook.
   ///
-  /// Returns `true` on success, `false` on transient failure (will retry).
+  /// Returns a record with `success` and an optional `error` message.
   /// Throws [C2ActionableException] on user-fixable errors (e.g. weight
   /// not set) so the sync service can surface the message to the user.
-  Future<bool> syncResult(WorkoutResult result) async {
+  Future<({bool success, String? error})> syncResult(
+    WorkoutResult result,
+  ) async {
     final session = _client.auth.currentSession;
-    if (session == null) return false;
+    if (session == null) {
+      return (success: false, error: 'No active session');
+    }
 
     try {
       final response = await http.post(
@@ -103,7 +107,10 @@ class C2LogbookService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['success'] == true;
+        if (data['success'] == true) {
+          return (success: true, error: null);
+        }
+        return (success: false, error: 'API returned success=false');
       }
 
       // Surface actionable server errors so they reach the UI
@@ -118,11 +125,14 @@ class C2LogbookService {
         throw C2ActionableException(msg);
       }
 
-      return false;
+      return (
+        success: false,
+        error: 'HTTP ${response.statusCode}: ${response.body}',
+      );
     } catch (e) {
       assert(() { debugPrint('C2 sync error: $e'); return true; }());
       if (e is C2ActionableException) rethrow;
-      return false;
+      return (success: false, error: '$e');
     }
   }
 

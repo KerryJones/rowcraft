@@ -8,11 +8,30 @@ import 'ble_provider.dart';
 import 'hr_service.dart';
 import 'pm5_service.dart';
 
-class ConnectScreen extends ConsumerWidget {
+class ConnectScreen extends ConsumerStatefulWidget {
   const ConnectScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ConnectScreen> createState() => _ConnectScreenState();
+}
+
+class _ConnectScreenState extends ConsumerState<ConnectScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final bleState = ref.read(bleProvider);
+      // Only auto-scan if not already scanning and not fully connected
+      final pm5Connected = bleState.pm5ConnectionState == PM5ConnectionState.connected;
+      final hrConnected = bleState.hrConnectionState == HrConnectionState.connected;
+      if (!bleState.isScanning && !(pm5Connected && hrConnected)) {
+        ref.read(bleProvider.notifier).startScan();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final bleState = ref.watch(bleProvider);
     final theme = Theme.of(context);
 
@@ -49,6 +68,7 @@ class ConnectScreen extends ConsumerWidget {
             ...bleState.savedDevices.map((device) => _SavedDeviceTile(
                   device: device,
                   bleState: bleState,
+                  discoveredDeviceIds: bleState.discoveredDeviceIds,
                 )),
             const SizedBox(height: 24),
           ],
@@ -201,11 +221,17 @@ class _ConnectionStatusBar extends StatelessWidget {
 class _SavedDeviceTile extends ConsumerWidget {
   final SavedDevice device;
   final BleState bleState;
+  final Set<String> discoveredDeviceIds;
 
-  const _SavedDeviceTile({required this.device, required this.bleState});
+  const _SavedDeviceTile({
+    required this.device,
+    required this.bleState,
+    required this.discoveredDeviceIds,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final isPm5 = device.deviceType == 'pm5';
     final isConnected = isPm5
         ? bleState.pm5ConnectionState == PM5ConnectionState.connected
@@ -213,63 +239,99 @@ class _SavedDeviceTile extends ConsumerWidget {
     final isConnecting = isPm5
         ? bleState.pm5ConnectionState == PM5ConnectionState.connecting
         : bleState.hrConnectionState == HrConnectionState.connecting;
+    final isAvailable = discoveredDeviceIds.contains(device.deviceId);
+    final showAvailability = bleState.hasScanned && !bleState.isScanning;
+    final dimTile = !isConnected && !isConnecting && showAvailability && !isAvailable;
 
-    return Card(
-      child: ListTile(
-        leading: Icon(
-          isPm5 ? Icons.rowing : Icons.favorite,
-          color: isConnected
-              ? RowCraftTheme.successGreen
-              : RowCraftTheme.subtleGrey,
-        ),
-        title: Text(device.deviceName),
-        subtitle: Text(isPm5 ? 'Ergometer' : 'Heart Rate Monitor'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isConnected)
-              TextButton(
-                onPressed: () {
-                  if (isPm5) {
-                    ref.read(bleProvider.notifier).disconnectPm5();
-                  } else {
-                    ref.read(bleProvider.notifier).disconnectHr();
-                  }
-                },
-                child: const Text('Disconnect'),
-              )
-            else if (isConnecting)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              TextButton(
-                onPressed: () {
-                  if (isPm5) {
-                    ref.read(bleProvider.notifier).connectToPm5(
-                          device.deviceId,
-                          deviceName: device.deviceName,
-                        );
-                  } else {
-                    ref.read(bleProvider.notifier).connectToHrDevice(
-                          device.deviceId,
-                          deviceName: device.deviceName,
-                        );
-                  }
-                },
-                child: const Text('Connect'),
-              ),
-            if (!isConnected && !isConnecting)
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                onPressed: () {
-                  ref.read(bleProvider.notifier).removeSavedDevice(device.deviceId);
-                },
-                visualDensity: VisualDensity.compact,
-              ),
-          ],
+    return Opacity(
+      opacity: dimTile ? 0.5 : 1.0,
+      child: Card(
+        child: ListTile(
+          leading: Icon(
+            isPm5 ? Icons.rowing : Icons.favorite,
+            color: isConnected
+                ? RowCraftTheme.successGreen
+                : RowCraftTheme.subtleGrey,
+          ),
+          title: Text(device.deviceName),
+          subtitle: Row(
+            children: [
+              Text(isPm5 ? 'Ergometer' : 'Heart Rate Monitor'),
+              if (!isConnected && !isConnecting && showAvailability) ...[
+                const SizedBox(width: 8),
+                if (isAvailable) ...[
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: RowCraftTheme.successGreen,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Available',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: RowCraftTheme.successGreen),
+                  ),
+                ] else
+                  Text(
+                    'Not found',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: RowCraftTheme.subtleGrey),
+                  ),
+              ],
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isConnected)
+                TextButton(
+                  onPressed: () {
+                    if (isPm5) {
+                      ref.read(bleProvider.notifier).disconnectPm5();
+                    } else {
+                      ref.read(bleProvider.notifier).disconnectHr();
+                    }
+                  },
+                  child: const Text('Disconnect'),
+                )
+              else if (isConnecting)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                TextButton(
+                  onPressed: () {
+                    if (isPm5) {
+                      ref.read(bleProvider.notifier).connectToPm5(
+                            device.deviceId,
+                            deviceName: device.deviceName,
+                          );
+                    } else {
+                      ref.read(bleProvider.notifier).connectToHrDevice(
+                            device.deviceId,
+                            deviceName: device.deviceName,
+                          );
+                    }
+                  },
+                  child: const Text('Connect'),
+                ),
+              if (!isConnected && !isConnecting)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  onPressed: () {
+                    ref
+                        .read(bleProvider.notifier)
+                        .removeSavedDevice(device.deviceId);
+                  },
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
         ),
       ),
     );
