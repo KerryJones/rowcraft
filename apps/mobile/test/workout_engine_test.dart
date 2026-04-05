@@ -509,8 +509,9 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 50));
 
       expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
 
-      // Resume rowing — SR > 0
+      // Resume rowing — new stroke (strokeCount changes)
       pm5Controller.add(const PM5Data(
         elapsedTime: Duration(seconds: 20),
         distance: 55,
@@ -520,6 +521,100 @@ void main() {
         watts: 180,
         calories: 6,
         strokeCount: 22,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+      expect(engine.currentState.isAutoPaused, false);
+    });
+
+    test('no auto-resume on flywheel spin-down (SR > 0 but no new strokes)',
+        () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            type: SegmentType.work,
+            durationType: DurationType.distance,
+            durationValue: 2000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Normal rowing
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 10),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Stop rowing — wait for auto-pause
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 11),
+        distance: 50,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(seconds: 6));
+
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 18),
+        distance: 50,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
+
+      // Flywheel spin-down: SR > 0 but strokeCount unchanged
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 19),
+        distance: 50,
+        pace: 1400,
+        strokeRate: 18,
+        strokeRateUpdated: true,
+        watts: 100,
+        calories: 5,
+        strokeCount: 20, // Same — no new strokes
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Should still be paused
+      expect(engine.currentState.phase, WorkoutPhase.paused);
+      expect(engine.currentState.isAutoPaused, true);
+
+      // Now an actual new stroke resumes
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 21),
+        distance: 55,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 6,
+        strokeCount: 21, // New stroke
         intervalCount: 1,
       ));
       await Future.delayed(const Duration(milliseconds: 50));

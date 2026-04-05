@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   // Fetch user's C2 tokens and weight
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('c2_access_token, c2_user_id, weight_kg')
+    .select('c2_access_token, c2_refresh_token, c2_user_id, weight_kg')
     .eq('id', userId)
     .single();
 
@@ -118,21 +118,79 @@ export async function POST(request: NextRequest) {
     },
   );
 
-  if (c2Response.status === 401) {
+  if (c2Response.status === 401 && profile.c2_refresh_token) {
+    // Attempt to refresh the access token
+    const refreshResponse = await fetch(`${process.env.C2_BASE_URL}/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: profile.c2_refresh_token,
+        client_id: process.env.C2_CLIENT_ID!,
+        client_secret: process.env.C2_CLIENT_SECRET!,
+      }),
+    });
+
+    if (!refreshResponse.ok) {
+      return NextResponse.json(
+        { error: 'C2 token expired — reconnect in Profile' },
+        { status: 401 },
+      );
+    }
+
+    const refreshData = await refreshResponse.json();
+    const newAccessToken: string | undefined = refreshData.access_token;
+    const newRefreshToken: string | undefined = refreshData.refresh_token;
+
+    if (!newAccessToken) {
+      return NextResponse.json(
+        { error: 'C2 token expired — reconnect in Profile' },
+        { status: 401 },
+      );
+    }
+
+    // Persist refreshed tokens (best-effort — proceed with sync even if this fails)
+    await supabase
+      .from('profiles')
+      .update({
+        c2_access_token: newAccessToken,
+        ...(newRefreshToken ? { c2_refresh_token: newRefreshToken } : {}),
+      })
+      .eq('id', userId);
+
+    // Retry the sync with the new token
+    const retryResponse = await fetch(
+      `${process.env.C2_BASE_URL}/api/users/${profile.c2_user_id}/results`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${newAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(c2Payload),
+      },
+    );
+
+    if (!retryResponse.ok) {
+      const body = await retryResponse.text().catch(() => '');
+      return NextResponse.json(
+        { error: `Failed to sync to C2 after token refresh: ${retryResponse.status}`, detail: body },
+        { status: retryResponse.status === 401 ? 401 : retryResponse.status === 429 ? 429 : 502 },
+      );
+    }
+
+    // Retry succeeded — fall through to mark as synced
+  } else if (c2Response.status === 401) {
     return NextResponse.json(
-      { error: 'C2 token expired, reconnect' },
+      { error: 'C2 token expired — reconnect in Profile' },
       { status: 401 },
     );
-  }
-
-  if (c2Response.status === 429) {
+  } else if (c2Response.status === 429) {
     return NextResponse.json(
       { error: 'C2 rate limit exceeded' },
       { status: 429 },
     );
-  }
-
-  if (!c2Response.ok) {
+  } else if (!c2Response.ok) {
     const body = await c2Response.text().catch(() => '');
     return NextResponse.json(
       { error: `Failed to sync to C2: ${c2Response.status}`, detail: body },

@@ -428,7 +428,8 @@ class WorkoutEngine {
     // ── Branch 1: Paused — update latestData, check for auto-resume ──
     if (_state.phase == WorkoutPhase.paused) {
       _state = _state.copyWith(latestData: data);
-      if (data.strokeRateUpdated && data.strokeRate > 0 && _state.isAutoPaused) {
+      if (data.strokeCount != _lastStrokeCount && _state.isAutoPaused) {
+        _lastStrokeCount = data.strokeCount;
         _autoResume();
       } else {
         _emit();
