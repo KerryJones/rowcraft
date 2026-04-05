@@ -138,7 +138,9 @@ db-push:
 	supabase db push
 
 db-seed:
-	supabase db query --linked --file supabase/seed.sql
+	supabase db query --linked --file supabase/seeds/00_functions.sql
+	supabase db query --linked --file supabase/seeds/gen_all_workouts.sql
+	supabase db query --linked --file supabase/seeds/90_training_plans.sql
 
 studio:
 	@echo "Supabase Studio: http://localhost:54323"
