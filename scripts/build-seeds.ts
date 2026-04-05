@@ -169,7 +169,8 @@ function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
 
       for (let i = 0; i < seg.reps; i++) {
         result.push({ ...workSeg });
-        if (restSeg) {
+        // Rest after every rep except the last
+        if (restSeg && i < seg.reps - 1) {
           result.push({ ...restSeg });
         }
       }
@@ -184,6 +185,14 @@ function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
         hr_zone: seg.hr_zone,
         messages: seg.messages,
       }));
+    }
+  }
+
+  // Strip trailing rest before cooldown (common authoring mistake)
+  for (let i = result.length - 1; i > 0; i--) {
+    if (result[i].type === 'cooldown' && result[i - 1].type === 'rest') {
+      result.splice(i - 1, 1);
+      break;
     }
   }
 
@@ -232,6 +241,12 @@ function workoutToSQL(workout: YamlWorkout): string {
   const segments = expandSegments(workout.segments);
   const workoutType = inferWorkoutType(segments);
   const segmentsJson = JSON.stringify(segments);
+  // Validate tags contain only safe characters (lowercase, digits, hyphens)
+  for (const tag of workout.tags) {
+    if (!/^[a-z0-9-]+$/.test(tag)) {
+      throw new Error(`Invalid tag "${tag}" in workout "${workout.title}" — tags must be lowercase alphanumeric with hyphens only`);
+    }
+  }
   const tags = `'{${workout.tags.join(',')}}'`;
 
   return [

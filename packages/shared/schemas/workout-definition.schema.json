@@ -27,7 +27,7 @@
     },
     "tags": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9-]+$" },
       "minItems": 1,
       "maxItems": 10
     },
