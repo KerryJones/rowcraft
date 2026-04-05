@@ -94,11 +94,14 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
     final hasHrData = timeSamples != null &&
         timeSamples.any((s) => s.heartRate != null && s.heartRate! > 0);
 
-    // Auto-navigate on save success
+    // Auto-navigate only on full success (C2 synced or not linked)
+    final c2Ok = session.c2SyncStatus == C2SyncStatus.synced ||
+        session.c2SyncStatus == C2SyncStatus.notLinked;
     if (session.saveProgress == SaveProgress.done &&
         session.syncError == null &&
+        c2Ok &&
         _autoNavTimer == null) {
-      _autoNavTimer = Timer(const Duration(seconds: 3), () {
+      _autoNavTimer = Timer(const Duration(seconds: 5), () {
         if (mounted) context.go('/');
       });
     }
