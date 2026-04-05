@@ -63,7 +63,7 @@ class QuickStartScreen extends ConsumerWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: pm5Connected
                           ? RowCraftTheme.successGreen
-                          : RowCraftTheme.brandBlue,
+                          : RowCraftTheme.primaryBlue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
