@@ -12,7 +12,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":5000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-1}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -23,7 +24,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-1}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -34,7 +36,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-1}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Weeks 2-6 Monday (distance progression: 5500, 6000, 6500, 7000, 7500)
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -46,7 +49,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":5500,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-2}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -57,7 +61,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":6000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-3}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -68,7 +73,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":6500,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-4}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -79,7 +85,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":7000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-5}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -90,7 +97,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":7500,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-6}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Weeks 2-6 Wednesday (intervals: 6x750m, 4x1000m, 8x500m, 6x750m, 4x1000m)
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -102,7 +110,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-2}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -113,7 +122,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-3}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -124,7 +134,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-4}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -135,7 +146,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-5}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -146,7 +158,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":88,"max":96},"target_stroke_rate":{"min":26,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-6}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Weeks 2-6 Friday (steady: 22, 24, 20, 22, 24 min)
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -158,7 +171,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1320,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-2}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -169,7 +183,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1440,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-3}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -180,7 +195,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-4}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -191,7 +207,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1320,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-5}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
 values (
@@ -202,4 +219,5 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1440,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-6}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();

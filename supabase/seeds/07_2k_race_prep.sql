@@ -11,7 +11,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1800,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,steady-state,week-1}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 1 Race Pace 4x500m
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -23,7 +24,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,race-pace,intervals,week-1}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 1 Easy 5K
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -35,7 +37,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":5000,"target_intensity":{"min":58,"max":68},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,endurance,week-1}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 2 Tempo 3K
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -47,7 +50,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":3000,"target_intensity":{"min":85,"max":96},"target_stroke_rate":{"min":26,"max":30},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,tempo,threshold,week-2}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 2 Race Pace 6x500m
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -59,7 +63,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":150,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":150,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":150,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":150,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":150,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,race-pace,intervals,week-2}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 2 Easy 6K
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -71,7 +76,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":6000,"target_intensity":{"min":58,"max":68},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,endurance,week-2}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 3 Threshold 2x1500m
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -83,7 +89,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":1500,"target_intensity":{"min":92,"max":105},"target_stroke_rate":{"min":28,"max":32},"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":300,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1500,"target_intensity":{"min":92,"max":105},"target_stroke_rate":{"min":28,"max":32},"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,threshold,week-3}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 3 Race Pace 8x500m
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -95,7 +102,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":{"min":108,"max":122},"target_stroke_rate":{"min":30,"max":34},"target_hr_zone":5},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,race-pace,intervals,week-3}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 3 Easy Recovery
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -107,7 +115,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":{"min":45,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,recovery,week-3}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 4 Shakeout
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -119,7 +128,8 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":45,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":30,"target_intensity":{"min":85,"max":96},"target_stroke_rate":{"min":28,"max":32},"target_hr_zone":null},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":30,"target_intensity":{"min":85,"max":96},"target_stroke_rate":{"min":28,"max":32},"target_hr_zone":null},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":30,"target_intensity":{"min":85,"max":96},"target_stroke_rate":{"min":28,"max":32},"target_hr_zone":null},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":45,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,shakeout,week-4}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
 
 -- Week 4 Openers
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
@@ -131,4 +141,5 @@ values (
   '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":250,"target_intensity":{"min":110,"max":125},"target_stroke_rate":{"min":32,"max":36},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":240,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":250,"target_intensity":{"min":110,"max":125},"target_stroke_rate":{"min":32,"max":36},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":240,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":250,"target_intensity":{"min":110,"max":125},"target_stroke_rate":{"min":32,"max":36},"target_hr_zone":5},{"type":"rest","duration_type":"time","duration_value":240,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":250,"target_intensity":{"min":110,"max":125},"target_stroke_rate":{"min":32,"max":36},"target_hr_zone":5},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,race-pace,openers,week-4}',
   true
-);
+)
+on conflict (id) do update set title = excluded.title, description = excluded.description, workout_type = excluded.workout_type, segments = excluded.segments, tags = excluded.tags, is_public = excluded.is_public, updated_at = now();
