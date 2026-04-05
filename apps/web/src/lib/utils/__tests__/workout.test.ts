@@ -15,7 +15,7 @@ function makeSegment(overrides: Partial<WorkoutSegment> = {}): WorkoutSegment {
 		type: 'work',
 		duration_type: 'time',
 		duration_value: 300,
-		target_split: null,
+		target_intensity: null,
 		target_stroke_rate: null,
 		target_hr_zone: null,
 		messages: null,
@@ -124,7 +124,7 @@ describe('groupSegments', () => {
 	});
 
 	it('groups consecutive identical segments', () => {
-		const work = makeSegment({ type: 'work', duration_type: 'distance', duration_value: 500, target_split: { pace: 1100 } });
+		const work = makeSegment({ type: 'work', duration_type: 'distance', duration_value: 500, target_intensity: { min: 90, max: 100 } });
 		const rest = makeSegment({ type: 'rest', duration_type: 'time', duration_value: 60 });
 		// 10 x 500m work + 10 x 1:00 rest (alternating in source, but grouped when consecutive)
 		const segments = [work, work, work, rest, rest, rest];
@@ -136,10 +136,10 @@ describe('groupSegments', () => {
 		expect(groups[1].segment.type).toBe('rest');
 	});
 
-	it('does not group segments with different paces', () => {
-		const fast = makeSegment({ target_split: { pace: 1000 } });
-		const slow = makeSegment({ target_split: { pace: 1400 } });
-		const groups = groupSegments([fast, slow]);
+	it('does not group segments with different intensities', () => {
+		const hard = makeSegment({ target_intensity: { min: 90, max: 100 } });
+		const easy = makeSegment({ target_intensity: { min: 60, max: 70 } });
+		const groups = groupSegments([hard, easy]);
 		expect(groups).toHaveLength(2);
 		expect(groups[0].count).toBe(1);
 		expect(groups[1].count).toBe(1);
@@ -160,7 +160,7 @@ describe('groupSegments', () => {
 	});
 
 	it('counts multiple identical consecutive segments', () => {
-		const work = makeSegment({ type: 'work', duration_value: 500, duration_type: 'distance', target_split: { pace: 1100 } });
+		const work = makeSegment({ type: 'work', duration_value: 500, duration_type: 'distance', target_intensity: { min: 90, max: 100 } });
 		const groups = groupSegments([work, work, work, work, work, work, work, work, work, work]);
 		expect(groups).toHaveLength(1);
 		expect(groups[0].count).toBe(10);
@@ -212,32 +212,32 @@ describe('expandSegments', () => {
 });
 
 describe('computeIntensity', () => {
-	it('returns null when no segments have pace targets', () => {
-		const segments = [makeSegment({ target_split: null })];
+	it('returns null when no segments have intensity targets', () => {
+		const segments = [makeSegment({ target_intensity: null })];
 		expect(computeIntensity(segments)).toBeNull();
 	});
 
-	it('returns 1.0 for workout at exactly reference pace (2:00/500m)', () => {
-		const segments = [makeSegment({ target_split: { pace: 1200 } })];
+	it('returns 1.0 for workout at exactly 100% FTP', () => {
+		const segments = [makeSegment({ target_intensity: { min: 95, max: 105 } })];
 		expect(computeIntensity(segments)).toBe(1.0);
 	});
 
-	it('returns > 1.0 for faster-than-reference workout', () => {
-		const segments = [makeSegment({ target_split: { pace: 1000 } })];
+	it('returns > 1.0 for above-FTP workout', () => {
+		const segments = [makeSegment({ target_intensity: { min: 110, max: 120 } })];
 		const intensity = computeIntensity(segments)!;
 		expect(intensity).toBeGreaterThan(1.0);
 	});
 
-	it('returns < 1.0 for slower-than-reference workout', () => {
-		const segments = [makeSegment({ target_split: { pace: 1500 } })];
+	it('returns < 1.0 for below-FTP workout', () => {
+		const segments = [makeSegment({ target_intensity: { min: 60, max: 70 } })];
 		const intensity = computeIntensity(segments)!;
 		expect(intensity).toBeLessThan(1.0);
 	});
 
 	it('weights by duration', () => {
 		// 10 min easy + 1 min hard → should be closer to easy intensity
-		const easy = makeSegment({ duration_value: 600, target_split: { pace: 1500 } });
-		const hard = makeSegment({ duration_value: 60, target_split: { pace: 900 } });
+		const easy = makeSegment({ duration_value: 600, target_intensity: { min: 60, max: 70 } });
+		const hard = makeSegment({ duration_value: 60, target_intensity: { min: 110, max: 120 } });
 		const mixed = computeIntensity([easy, hard])!;
 		const easyOnly = computeIntensity([easy])!;
 		expect(mixed).toBeGreaterThan(easyOnly);

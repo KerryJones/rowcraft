@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
+import '../../utils/pace_utils.dart';
 import '../../utils/segment_color.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
@@ -22,16 +23,24 @@ import 'workout_summary_screen.dart';
 
 
 /// Effective duration in seconds (for proportional width in profile graph).
-/// Approximates web's getEffectiveDuration(). Uses (min+max)/2 pace since
-/// the mobile model has a pace range, not a single scalar.
-double _getEffectiveDuration(WorkoutSegment seg) {
+/// Approximates web's getEffectiveDuration(). Resolves intensity to pace
+/// using FTP, then computes time from distance and pace.
+double _getEffectiveDuration(WorkoutSegment seg, int ftpWatts) {
   switch (seg.durationType) {
     case DurationType.time:
       return seg.durationValue;
     case DurationType.distance:
-      final midPace = seg.targetSplit != null
-          ? (seg.targetSplit!.min + seg.targetSplit!.max) / 2
-          : null;
+      final double? midPace;
+      if (seg.targetIntensity != null) {
+        final resolved = resolveIntensityToPace(
+          seg.targetIntensity!.min,
+          seg.targetIntensity!.max,
+          ftpWatts,
+        );
+        midPace = resolved.paceMid.toDouble();
+      } else {
+        midPace = null;
+      }
       final pacePerMeter = midPace != null ? (midPace / 10) / 500 : 0.24;
       return seg.durationValue * pacePerMeter;
     case DurationType.calories:
@@ -401,7 +410,8 @@ class _OverallProgressBar extends StatelessWidget {
     final segments = session.expandedSegments;
     if (segments.isEmpty) return const SizedBox.shrink();
 
-    final durations = segments.map(_getEffectiveDuration).toList();
+    final ftpWatts = session.ftpWatts;
+    final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold<double>(0, (a, b) => a + b);
     if (totalDuration <= 0) return const SizedBox.shrink();
 
@@ -447,6 +457,7 @@ class _WorkoutProfileGraph extends StatelessWidget {
           currentIndex: session.engineState.currentSegmentIndex,
           segmentProgress: session.engineState.segmentProgress,
           phase: session.engineState.phase,
+          ftpWatts: session.ftpWatts,
         ),
       ),
     );
@@ -458,12 +469,14 @@ class _WorkoutProfilePainter extends CustomPainter {
   final int currentIndex;
   final double segmentProgress;
   final WorkoutPhase phase;
+  final int ftpWatts;
 
   _WorkoutProfilePainter({
     required this.segments,
     required this.currentIndex,
     required this.segmentProgress,
     required this.phase,
+    required this.ftpWatts,
   });
 
   @override
@@ -475,15 +488,20 @@ class _WorkoutProfilePainter extends CustomPainter {
     const defaultPaceMin = 1000.0;
     const defaultPaceMax = 1800.0;
 
-    final durations = segments.map(_getEffectiveDuration).toList();
+    final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold<double>(0, (a, b) => a + b);
     if (totalDuration <= 0) return;
 
     // Compute pace range for height mapping
     final paces = <double>[];
     for (final seg in segments) {
-      if (seg.targetSplit != null) {
-        paces.add((seg.targetSplit!.min + seg.targetSplit!.max) / 2);
+      if (seg.targetIntensity != null) {
+        final resolved = resolveIntensityToPace(
+          seg.targetIntensity!.min,
+          seg.targetIntensity!.max,
+          ftpWatts,
+        );
+        paces.add(resolved.paceMid.toDouble());
       }
     }
     double paceMin, paceMax;
@@ -518,9 +536,17 @@ class _WorkoutProfilePainter extends CustomPainter {
       final seg = segments[i];
       final widthFraction = durations[i] / totalDuration;
       final barWidth = math.max(2.0, widthFraction * availableWidth);
-      final avgPace = seg.targetSplit != null
-          ? (seg.targetSplit!.min + seg.targetSplit!.max) / 2
-          : null;
+      final double? avgPace;
+      if (seg.targetIntensity != null) {
+        final resolved = resolveIntensityToPace(
+          seg.targetIntensity!.min,
+          seg.targetIntensity!.max,
+          ftpWatts,
+        );
+        avgPace = resolved.paceMid.toDouble();
+      } else {
+        avgPace = null;
+      }
       final heightFraction = paceToHeight(avgPace);
       final barHeight = heightFraction * size.height;
       final barY = size.height - barHeight;
@@ -595,7 +621,8 @@ class _WorkoutProfilePainter extends CustomPainter {
     return old.segments != segments ||
         old.currentIndex != currentIndex ||
         (old.segmentProgress - segmentProgress).abs() > 0.005 ||
-        old.phase != phase;
+        old.phase != phase ||
+        old.ftpWatts != ftpWatts;
   }
 }
 
@@ -641,9 +668,9 @@ class _SegmentHeader extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (segment.targetSplit != null)
+              if (segment.targetIntensity != null)
                 Text(
-                  'tgt ${_formatPace(segment.targetSplit!.midpoint)}',
+                  'tgt ${_formatPace(resolveIntensityToPace(segment.targetIntensity!.min, segment.targetIntensity!.max, session.ftpWatts).paceMid.toDouble())}',
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     color: RowCraftTheme.successGreen,
@@ -738,12 +765,16 @@ class _HeroSection extends StatelessWidget {
 
     // Pace color based on target
     Color splitColor = RowCraftTheme.metricWhite;
-    if (segment?.targetSplit != null && data.pace > 0) {
+    if (segment?.targetIntensity != null && data.pace > 0) {
+      final resolved = resolveIntensityToPace(
+        segment!.targetIntensity!.min,
+        segment.targetIntensity!.max,
+        session.ftpWatts,
+      );
       final pace = data.pace.toDouble();
-      if (pace >= segment!.targetSplit!.min &&
-          pace <= segment.targetSplit!.max) {
+      if (pace >= resolved.paceMin && pace <= resolved.paceMax) {
         splitColor = RowCraftTheme.successGreen;
-      } else if (pace > segment.targetSplit!.max) {
+      } else if (pace > resolved.paceMax) {
         splitColor = RowCraftTheme.warningAmber;
       } else {
         splitColor = RowCraftTheme.accentTeal;
@@ -802,13 +833,20 @@ class _HeroSection extends StatelessWidget {
               ),
 
               // Pace guide bar
-              if (segment?.targetSplit != null) ...[
+              if (segment?.targetIntensity != null) ...[
                 const SizedBox(height: 10),
-                _PaceGuideBar(
-                  targetMin: segment!.targetSplit!.min,
-                  targetMax: segment.targetSplit!.max,
-                  currentPace: data.pace.toDouble(),
-                ),
+                Builder(builder: (_) {
+                  final resolved = resolveIntensityToPace(
+                    segment!.targetIntensity!.min,
+                    segment.targetIntensity!.max,
+                    session.ftpWatts,
+                  );
+                  return _PaceGuideBar(
+                    targetMin: resolved.paceMin.toDouble(),
+                    targetMax: resolved.paceMax.toDouble(),
+                    currentPace: data.pace.toDouble(),
+                  );
+                }),
               ],
 
               const SizedBox(height: 12),
@@ -1139,7 +1177,7 @@ class _TargetBlock extends StatelessWidget {
         session.expandedSegments.firstOrNull;
     if (segment == null) return const SizedBox.shrink();
 
-    final hasPaceTarget = segment.targetSplit != null;
+    final hasPaceTarget = segment.targetIntensity != null;
     final hasSpmTarget = segment.targetStrokeRate != null;
 
     if (!hasPaceTarget && !hasSpmTarget) return const SizedBox.shrink();
@@ -1167,7 +1205,7 @@ class _TargetBlock extends StatelessWidget {
           const SizedBox(width: 12),
           if (hasPaceTarget) ...[
             Text(
-              _formatPace(segment.targetSplit!.midpoint),
+              _formatPace(resolveIntensityToPace(segment.targetIntensity!.min, segment.targetIntensity!.max, session.ftpWatts).paceMid.toDouble()),
               style: GoogleFonts.jetBrainsMono(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -1275,10 +1313,10 @@ class _UpNextPreview extends StatelessWidget {
               color: nextColor,
             ),
           ),
-          if (next.targetSplit != null) ...[
+          if (next.targetIntensity != null) ...[
             const SizedBox(width: 8),
             Text(
-              'tgt ${_formatPace(next.targetSplit!.midpoint)}',
+              'tgt ${_formatPace(resolveIntensityToPace(next.targetIntensity!.min, next.targetIntensity!.max, session.ftpWatts).paceMid.toDouble())}',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: RowCraftTheme.subtleGrey,

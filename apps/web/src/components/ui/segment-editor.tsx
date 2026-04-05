@@ -1,9 +1,8 @@
 'use client';
 
 import type { WorkoutSegment, SegmentType, DurationType } from '@/lib/types';
-import { formatPace, parsePace } from '@/lib/utils/format';
-import { paceTenthsToWatts, formatWatts, HR_ZONES } from '@/lib/utils/ftp';
-import { useState, useEffect } from 'react';
+import { formatPace } from '@/lib/utils/format';
+import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts, HR_ZONES } from '@/lib/utils/ftp';
 
 const SEGMENT_TYPES: { value: SegmentType; label: string }[] = [
   { value: 'work', label: 'Work' },
@@ -22,36 +21,23 @@ interface SegmentEditorProps {
   segment: WorkoutSegment;
   onChange: (segment: WorkoutSegment) => void;
   onRemove: () => void;
+  ftpWatts?: number | null;
 }
 
-export function SegmentEditor({ segment, onChange, onRemove }: SegmentEditorProps) {
-  const [paceStr, setPaceStr] = useState(
-    segment.target_split ? formatPace(segment.target_split.pace) : ''
-  );
-
-  useEffect(() => {
-    setPaceStr(segment.target_split ? formatPace(segment.target_split.pace) : '');
-  }, [segment.target_split]);
+export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: SegmentEditorProps) {
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
 
   function updateField<K extends keyof WorkoutSegment>(key: K, value: WorkoutSegment[K]) {
     onChange({ ...segment, [key]: value });
   }
 
-  function handlePaceBlur() {
-    if (!paceStr.trim()) {
-      updateField('target_split', null);
-      return;
-    }
-    const tenths = parsePace(paceStr);
-    if (tenths !== null) {
-      updateField('target_split', { pace: tenths });
-    } else {
-      setPaceStr(segment.target_split ? formatPace(segment.target_split.pace) : '');
-    }
-  }
-
-  const watts = segment.target_split
-    ? paceTenthsToWatts(segment.target_split.pace)
+  // Resolve current intensity to pace/watts for preview
+  const preview = segment.target_intensity
+    ? (() => {
+        const { paceMid } = resolveIntensityToPace(segment.target_intensity, ftp);
+        const midPct = Math.round((segment.target_intensity.min + segment.target_intensity.max) / 2);
+        return { pace: formatPace(paceMid), watts: formatWatts(intensityToWatts(midPct, ftp)) };
+      })()
     : null;
 
   return (
@@ -114,17 +100,41 @@ export function SegmentEditor({ segment, onChange, onRemove }: SegmentEditorProp
           />
         </div>
 
-        {/* Pace */}
+        {/* Intensity % (min) */}
         <div>
           <label className="mb-1 block text-xs text-gray-500">
-            Pace (m:ss/500m) {watts !== null && <span className="text-gray-600">= {formatWatts(watts)}</span>}
+            Intensity % min{' '}
+            {preview && <span className="text-gray-600">= {preview.pace}/500m / {preview.watts}</span>}
           </label>
           <input
-            type="text"
-            placeholder="2:00"
-            value={paceStr}
-            onChange={(e) => setPaceStr(e.target.value)}
-            onBlur={handlePaceBlur}
+            type="number"
+            min={0}
+            max={200}
+            placeholder="e.g. 85"
+            value={segment.target_intensity?.min ?? ''}
+            onChange={(e) => {
+              const min = parseInt(e.target.value) || 0;
+              const max = segment.target_intensity?.max ?? Math.min(200, min + 10);
+              updateField('target_intensity', min > 0 ? { min, max: Math.max(min, max) } : null);
+            }}
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
+          />
+        </div>
+
+        {/* Intensity % (max) */}
+        <div>
+          <label className="mb-1 block text-xs text-gray-500">Intensity % max</label>
+          <input
+            type="number"
+            min={0}
+            max={200}
+            placeholder="e.g. 95"
+            value={segment.target_intensity?.max ?? ''}
+            onChange={(e) => {
+              const max = parseInt(e.target.value) || 0;
+              const min = segment.target_intensity?.min ?? Math.max(0, max - 10);
+              updateField('target_intensity', max > 0 ? { min: Math.min(min, max), max } : null);
+            }}
             className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
           />
         </div>

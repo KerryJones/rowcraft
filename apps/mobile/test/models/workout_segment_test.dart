@@ -42,27 +42,32 @@ void main() {
     });
   });
 
-  group('SplitTarget', () {
+  group('IntensityTarget', () {
     test('fromJson/toJson roundtrip', () {
-      final json = {'min': 95.0, 'max': 100.0};
-      final target = SplitTarget.fromJson(json);
-      expect(target.min, 95.0);
-      expect(target.max, 100.0);
+      final json = {'min': 75, 'max': 85};
+      final target = IntensityTarget.fromJson(json);
+      expect(target.min, 75);
+      expect(target.max, 85);
       expect(target.toJson(), json);
     });
 
-    test('fromJson handles int values by converting to double', () {
-      final json = {'min': 90, 'max': 105};
-      final target = SplitTarget.fromJson(json);
-      expect(target.min, 90.0);
-      expect(target.max, 105.0);
+    test('fromJson handles double values by converting to int', () {
+      final json = {'min': 90.0, 'max': 105.0};
+      final target = IntensityTarget.fromJson(json);
+      expect(target.min, 90);
+      expect(target.max, 105);
     });
 
     test('copyWith', () {
-      const target = SplitTarget(min: 95.0, max: 100.0);
-      final copied = target.copyWith(min: 88.0);
-      expect(copied.min, 88.0);
-      expect(copied.max, 100.0);
+      const target = IntensityTarget(min: 75, max: 85);
+      final copied = target.copyWith(min: 80);
+      expect(copied.min, 80);
+      expect(copied.max, 85);
+    });
+
+    test('midpoint returns average of min and max', () {
+      const target = IntensityTarget(min: 70, max: 80);
+      expect(target.midpoint, 75);
     });
   });
 
@@ -89,7 +94,7 @@ void main() {
         'type': 'work',
         'duration_type': 'distance',
         'duration_value': 1000.0,
-        'target_split': {'min': 95.0, 'max': 100.0},
+        'target_intensity': {'min': 75, 'max': 85},
         'target_stroke_rate': {'min': 28, 'max': 32},
         'target_hr_zone': 4,
       };
@@ -98,9 +103,9 @@ void main() {
       expect(segment.type, SegmentType.work);
       expect(segment.durationType, DurationType.distance);
       expect(segment.durationValue, 1000.0);
-      expect(segment.targetSplit, isNotNull);
-      expect(segment.targetSplit!.min, 95.0);
-      expect(segment.targetSplit!.max, 100.0);
+      expect(segment.targetIntensity, isNotNull);
+      expect(segment.targetIntensity!.min, 75);
+      expect(segment.targetIntensity!.max, 85);
       expect(segment.targetStrokeRate, isNotNull);
       expect(segment.targetStrokeRate!.min, 28);
       expect(segment.targetStrokeRate!.max, 32);
@@ -115,7 +120,7 @@ void main() {
       };
 
       final segment = WorkoutSegment.fromJson(json);
-      expect(segment.targetSplit, isNull);
+      expect(segment.targetIntensity, isNull);
       expect(segment.targetStrokeRate, isNull);
       expect(segment.targetHrZone, isNull);
     });
@@ -138,7 +143,7 @@ void main() {
         type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 1000.0,
-        targetSplit: SplitTarget(min: 95.0, max: 100.0),
+        targetIntensity: IntensityTarget(min: 75, max: 85),
         targetStrokeRate: StrokeRateTarget(min: 28, max: 32),
         targetHrZone: 4,
       );
@@ -147,7 +152,7 @@ void main() {
       expect(json['type'], 'work');
       expect(json['duration_type'], 'distance');
       expect(json['duration_value'], 1000.0);
-      expect(json['target_split'], {'min': 95.0, 'max': 100.0});
+      expect(json['target_intensity'], {'min': 75, 'max': 85});
       expect(json['target_stroke_rate'], {'min': 28, 'max': 32});
       expect(json['target_hr_zone'], 4);
     });
@@ -160,7 +165,7 @@ void main() {
       );
 
       final json = segment.toJson();
-      expect(json.containsKey('target_split'), isFalse);
+      expect(json.containsKey('target_intensity'), isFalse);
       expect(json.containsKey('target_stroke_rate'), isFalse);
       expect(json.containsKey('target_hr_zone'), isFalse);
     });
@@ -172,7 +177,7 @@ void main() {
         'type': 'work',
         'duration_type': 'distance',
         'duration_value': 1000.0,
-        'target_split': {'min': 95.0, 'max': 100.0},
+        'target_intensity': {'min': 75, 'max': 85},
         'target_stroke_rate': {'min': 28, 'max': 32},
         'target_hr_zone': 4,
       };
@@ -183,7 +188,7 @@ void main() {
       expect(json['type'], original['type']);
       expect(json['duration_type'], original['duration_type']);
       expect(json['duration_value'], original['duration_value']);
-      expect(json['target_split'], original['target_split']);
+      expect(json['target_intensity'], original['target_intensity']);
       expect(json['target_stroke_rate'], original['target_stroke_rate']);
       expect(json['target_hr_zone'], original['target_hr_zone']);
     });
@@ -202,7 +207,7 @@ void main() {
       expect(roundtripped.type, segment.type);
       expect(roundtripped.durationType, segment.durationType);
       expect(roundtripped.durationValue, segment.durationValue);
-      expect(roundtripped.targetSplit, isNull);
+      expect(roundtripped.targetIntensity, isNull);
       expect(roundtripped.targetStrokeRate, isNull);
       expect(roundtripped.targetHrZone, isNull);
     });
@@ -270,7 +275,7 @@ void main() {
         type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 1000.0,
-        targetSplit: SplitTarget(min: 95.0, max: 100.0),
+        targetIntensity: IntensityTarget(min: 75, max: 85),
         targetStrokeRate: StrokeRateTarget(min: 28, max: 32),
         targetHrZone: 4,
       );
@@ -280,7 +285,7 @@ void main() {
       expect(copied.type, original.type);
       expect(copied.durationType, original.durationType);
       expect(copied.durationValue, 500.0);
-      expect(copied.targetSplit!.min, original.targetSplit!.min);
+      expect(copied.targetIntensity!.min, original.targetIntensity!.min);
       expect(copied.targetStrokeRate!.min, original.targetStrokeRate!.min);
       expect(copied.targetHrZone, original.targetHrZone);
     });

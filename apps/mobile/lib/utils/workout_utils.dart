@@ -33,38 +33,36 @@ int computeSegmentCount(List<WorkoutSegment> segments) {
   return segments.length;
 }
 
-/// Compute weighted average pace (in tenths per 500m) across work segments with pace targets.
-/// Returns null if no work segments have pace targets.
-int? computeAvgPace(List<WorkoutSegment> segments) {
+/// Compute weighted average target intensity (FTP %) across work segments.
+/// Returns null if no work segments have intensity targets.
+int? computeAvgIntensity(List<WorkoutSegment> segments) {
   final workSegs = segments
-      .where((s) => s.type == SegmentType.work && s.targetSplit != null);
+      .where((s) => s.type == SegmentType.work && s.targetIntensity != null);
   if (workSegs.isEmpty) return null;
   var totalWeight = 0.0;
   var weightedSum = 0.0;
   for (final s in workSegs) {
     final weight = s.durationValue;
-    weightedSum += s.targetSplit!.min * weight;
+    weightedSum += s.targetIntensity!.midpoint * weight;
     totalWeight += weight;
   }
   return totalWeight > 0 ? (weightedSum / totalWeight).round() : null;
 }
 
 /// Compute workout intensity score (0.00 - 1.00+).
-/// Weighted average of segment pace against a 2:00/500m (1200 tenths) reference.
+/// Weighted average of segment intensity against 100% FTP reference.
 /// Higher = harder. Duration-weighted by segment duration value.
-/// Returns null if no segments have pace targets.
+/// Returns null if no segments have intensity targets.
 double? computeIntensity(List<WorkoutSegment> segments) {
-  const referencePace = 1200.0; // 2:00/500m in tenths
+  final workSegs = segments
+      .where((s) => s.type == SegmentType.work && s.targetIntensity != null);
+  if (workSegs.isEmpty) return null;
   var totalWeight = 0.0;
   var weightedSum = 0.0;
 
-  for (final seg in segments) {
-    if (seg.targetSplit == null) continue;
-    if (seg.type != SegmentType.work) continue; // Only work segments count
-    final duration = seg.durationValue;
-    // Invert: faster pace (lower number) = higher intensity
-    final intensity = referencePace / seg.targetSplit!.min;
-    weightedSum += intensity * duration;
+  for (final s in workSegs) {
+    final duration = s.durationValue;
+    weightedSum += (s.targetIntensity!.midpoint / 100.0) * duration;
     totalWeight += duration;
   }
 
@@ -80,22 +78,19 @@ int computeDifficultyLevel(List<WorkoutSegment> segments) {
 
   int level;
 
-  // Thresholds: easy = slower than 2:10, medium = 2:10–2:01, hard = 2:00 or faster
-  // intensity = 1200 / pace_tenths, so 2:10 (1300t) → 0.923, 2:00 (1200t) → 1.0
+  // Thresholds based on FTP %: <75% easy, 75-95% medium, >95% hard
   if (intensity == null) {
-    // No pace targets — derive from duration and complexity
+    // No intensity targets — derive from duration and complexity
     final totalTime = computeTotalTime(segments);
     final totalDist = computeTotalDistance(segments);
 
-    // Estimate total duration in minutes
     double estimatedMinutes;
     if (totalTime != null) {
       estimatedMinutes = totalTime / 60.0;
     } else if (totalDist != null) {
-      // Assume ~2:00/500m pace for estimation
       estimatedMinutes = (totalDist / 500.0) * 2.0;
     } else {
-      estimatedMinutes = 15; // Default guess for calorie-based
+      estimatedMinutes = 15;
     }
 
     if (estimatedMinutes <= 20) {
@@ -105,12 +100,12 @@ int computeDifficultyLevel(List<WorkoutSegment> segments) {
     } else {
       level = 3;
     }
-  } else if (intensity < 0.923) {
-    level = 1; // Easy: slower than 2:10/500m
-  } else if (intensity < 1.0) {
-    level = 2; // Medium: 2:10 to 2:01/500m
+  } else if (intensity < 0.75) {
+    level = 1; // Easy: below 75% FTP
+  } else if (intensity < 0.95) {
+    level = 2; // Medium: 75-95% FTP
   } else {
-    level = 3; // Hard: 2:00/500m or faster
+    level = 3; // Hard: 95%+ FTP
   }
 
   // Bonus: complex workouts (many segments) bump up one level

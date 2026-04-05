@@ -31,5 +31,16 @@ export default async function WorkoutsPage() {
     segments: normalizeWorkoutSegments(w.segments ?? []),
   }));
 
-  return <WorkoutsClient workouts={workouts} userId={userId ?? null} />;
+  // Fetch user's FTP for pace display
+  let ftpWatts: number | null = null;
+  if (userId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('current_ftp_watts')
+      .eq('id', userId)
+      .single();
+    ftpWatts = profile?.current_ftp_watts ?? null;
+  }
+
+  return <WorkoutsClient workouts={workouts} userId={userId ?? null} ftpWatts={ftpWatts} />;
 }

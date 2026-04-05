@@ -3,6 +3,7 @@
 import type { Workout } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { formatWorkoutType, formatDuration, formatDistance, formatPace, formatDate, getWorkoutTypeBadgeColor } from '@/lib/utils/format';
+import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
 import { computeTotalTime, computeTotalDistance, computeSegmentCount } from '@/lib/utils/workout';
 import { GitFork } from 'lucide-react';
 
@@ -12,22 +13,25 @@ interface WorkoutCardProps {
   workout: Workout;
   authorName?: string;
   onClick: () => void;
+  ftpWatts?: number | null;
 }
 
-export function WorkoutCard({ workout, authorName, onClick }: WorkoutCardProps) {
+export function WorkoutCard({ workout, authorName, onClick, ftpWatts }: WorkoutCardProps) {
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
   const totalTime = computeTotalTime(workout.segments);
   const totalDistance = computeTotalDistance(workout.segments);
   const segmentCount = computeSegmentCount(workout.segments);
 
-  // Compute duration-weighted average work pace
-  const workSegs = workout.segments.filter((s) => s.type === 'work' && s.target_split);
+  // Compute duration-weighted average work pace from intensity targets
+  const workSegs = workout.segments.filter((s) => s.type === 'work' && s.target_intensity);
   const avgPace = (() => {
     if (workSegs.length === 0) return null;
     let totalWeight = 0;
     let weightedSum = 0;
     for (const s of workSegs) {
       const weight = s.duration_value;
-      weightedSum += s.target_split!.pace * weight;
+      const { paceMid } = resolveIntensityToPace(s.target_intensity!, ftp);
+      weightedSum += paceMid * weight;
       totalWeight += weight;
     }
     return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : null;

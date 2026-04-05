@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../app/theme.dart';
 import '../models/workout.dart';
+import '../utils/pace_utils.dart';
 import '../utils/workout_utils.dart' as wu;
 import 'workout_graph.dart';
 
@@ -27,7 +28,10 @@ class WodCard extends StatelessWidget {
     final totalTime = wu.computeTotalTime(workout.segments);
     final totalDistance = wu.computeTotalDistance(workout.segments);
     final segmentCount = wu.computeSegmentCount(workout.segments);
-    final avgPace = wu.computeAvgPace(workout.segments);
+    final avgIntensity = wu.computeAvgIntensity(workout.segments);
+    final avgPace = avgIntensity != null
+        ? intensityToPaceTenths(avgIntensity, kDefaultFtpWatts)
+        : null;
 
     return Material(
       color: Colors.transparent,

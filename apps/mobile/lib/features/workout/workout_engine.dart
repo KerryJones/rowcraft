@@ -5,6 +5,7 @@ import '../../models/workout.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_time_sample.dart';
+import '../../utils/pace_utils.dart';
 
 /// Phases of workout execution.
 enum WorkoutPhase {
@@ -119,13 +120,16 @@ class WorkoutEngineState {
 /// Takes a [Workout] definition and a stream of [PM5Data] from BLE,
 /// manages interval transitions, and emits [WorkoutEngineState] updates.
 ///
-/// For ramp/FTP tests: if the rower's pace exceeds the target split max
+/// For ramp/FTP tests: if the rower's pace exceeds the resolved target max
 /// for [paceFailThreshold] consecutive seconds, the workout auto-finishes
 /// with [FinishReason.paceFailed]. The UI can use [secondsOutOfRange] to
 /// show a countdown warning before auto-stop.
 class WorkoutEngine {
   final Workout workout;
   final Stream<PM5Data> pm5Stream;
+
+  /// User's FTP in watts, used to resolve intensity targets to pace.
+  final int ftpWatts;
 
   /// How many consecutive seconds outside target pace before auto-stop.
   /// Default: 10 seconds. Set to 0 to disable pace fail detection.
@@ -178,6 +182,7 @@ class WorkoutEngine {
   WorkoutEngine({
     required this.workout,
     required this.pm5Stream,
+    this.ftpWatts = kDefaultFtpWatts,
     this.paceFailThreshold = 10,
   }) {
     _expandedSegments = List.from(workout.segments);
@@ -525,15 +530,21 @@ class WorkoutEngine {
     );
 
     // ── Pace fail detection ────────────────────────────────────────────
-    // For work segments with a target split, check if the rower's pace
-    // exceeds the target max. Higher pace number = slower rowing.
+    // For work segments with an intensity target, resolve to pace and
+    // check if the rower's pace exceeds the slowest acceptable pace.
+    // Higher pace number = slower rowing.
     // After [paceFailThreshold] consecutive seconds outside range,
     // auto-finish the workout (used for ramp/FTP tests).
     if (paceFailThreshold > 0 &&
         segment.type == SegmentType.work &&
-        segment.targetSplit != null &&
+        segment.targetIntensity != null &&
         data.pace > 0) {
-      final maxPace = segment.targetSplit!.max;
+      final resolved = resolveIntensityToPace(
+        segment.targetIntensity!.min,
+        segment.targetIntensity!.max,
+        ftpWatts,
+      );
+      final maxPace = resolved.paceMax;
 
       if (data.pace > maxPace) {
         // Rower is too slow — start or continue the fail timer

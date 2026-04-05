@@ -9,6 +9,7 @@ import '../../models/workout_time_sample.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
+import '../../utils/pace_utils.dart';
 import '../ble/ble_provider.dart';
 import '../ble/hr_service.dart';
 import 'ftp_calculator.dart';
@@ -62,6 +63,9 @@ class WorkoutSessionState {
   /// User's max heart rate from profile (for HR zone calculation).
   final int? maxHeartRate;
 
+  /// User's FTP in watts (for resolving intensity targets to pace).
+  final int ftpWatts;
+
   /// Result waiting to be saved (after stop, before save).
   final WorkoutResult? pendingResult;
 
@@ -94,6 +98,7 @@ class WorkoutSessionState {
     this.planWeek,
     this.planSession,
     this.maxHeartRate,
+    this.ftpWatts = kDefaultFtpWatts,
     this.pendingResult,
     this.timeSamples,
     this.saveProgress = SaveProgress.idle,
@@ -116,6 +121,7 @@ class WorkoutSessionState {
     Object? planWeek = _sentinel,
     Object? planSession = _sentinel,
     Object? maxHeartRate = _sentinel,
+    int? ftpWatts,
     Object? pendingResult = _sentinel,
     Object? timeSamples = _sentinel,
     SaveProgress? saveProgress,
@@ -139,6 +145,7 @@ class WorkoutSessionState {
           planSession == _sentinel ? this.planSession : planSession as int?,
       maxHeartRate:
           maxHeartRate == _sentinel ? this.maxHeartRate : maxHeartRate as int?,
+      ftpWatts: ftpWatts ?? this.ftpWatts,
       pendingResult:
           pendingResult == _sentinel ? this.pendingResult : pendingResult as WorkoutResult?,
       timeSamples:
@@ -238,13 +245,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     try {
       final workout = await _supabaseService.getWorkout(workoutId);
 
-      // Fetch user's max heart rate from profile (non-blocking on failure)
+      // Fetch user's profile for max HR and FTP (non-blocking on failure)
       int? maxHr;
+      int ftpWatts = kDefaultFtpWatts;
       try {
         final profile = await _supabaseService.getProfile();
         maxHr = profile.maxHeartRate;
+        if (profile.currentFtpWatts != null && profile.currentFtpWatts! > 0) {
+          ftpWatts = profile.currentFtpWatts!;
+        }
       } catch (_) {
-        // Non-critical — fall back to default 190
+        // Non-critical — fall back to defaults
       }
 
       final isFtpTest = workout.tags.contains('ftp') ||
@@ -252,6 +263,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       _engine = WorkoutEngine(
         workout: workout,
         pm5Stream: _pm5Controller.stream,
+        ftpWatts: ftpWatts,
         paceFailThreshold: isFtpTest ? 10 : 0,
       );
 
@@ -276,6 +288,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         expandedSegments: _engine!.expandedSegments,
         workoutTags: workout.tags,
         maxHeartRate: maxHr,
+        ftpWatts: ftpWatts,
         isLoading: false,
       );
 

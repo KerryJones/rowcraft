@@ -1,4 +1,5 @@
 import type { WorkoutSegment } from '@/lib/types';
+import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 
 /** Reference pace for scaling bar heights (very slow = 3:00/500m = 1800 tenths) */
@@ -6,11 +7,11 @@ const MAX_PACE = 1800;
 /** Minimum bar height as a fraction of total height */
 const MIN_HEIGHT_FRACTION = 0.15;
 
-function getBarHeight(segment: WorkoutSegment, totalHeight: number): number {
-  if (!segment.target_split) return totalHeight * MIN_HEIGHT_FRACTION;
-  const pace = segment.target_split.pace;
+function getBarHeight(segment: WorkoutSegment, totalHeight: number, ftp: number): number {
+  if (!segment.target_intensity) return totalHeight * MIN_HEIGHT_FRACTION;
+  const { paceMid } = resolveIntensityToPace(segment.target_intensity, ftp);
   // Lower pace = more intense = taller bar
-  const intensity = Math.max(0, Math.min(1, 1 - pace / MAX_PACE));
+  const intensity = Math.max(0, Math.min(1, 1 - paceMid / MAX_PACE));
   const fraction = MIN_HEIGHT_FRACTION + intensity * (1 - MIN_HEIGHT_FRACTION);
   return Math.round(fraction * totalHeight);
 }
@@ -22,9 +23,11 @@ function getBarWidth(segment: WorkoutSegment): number {
 interface MiniGraphProps {
   segments: WorkoutSegment[];
   height?: number;
+  ftpWatts?: number | null;
 }
 
-export function MiniGraph({ segments, height = 48 }: MiniGraphProps) {
+export function MiniGraph({ segments, height = 48, ftpWatts }: MiniGraphProps) {
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
   if (segments.length === 0) return null;
 
   const totalWidth = segments.reduce((sum, seg) => sum + getBarWidth(seg), 0);
@@ -36,7 +39,7 @@ export function MiniGraph({ segments, height = 48 }: MiniGraphProps) {
       style={{ height }}
     >
       {segments.map((segment, i) => {
-        const barHeight = getBarHeight(segment, height);
+        const barHeight = getBarHeight(segment, height, ftp);
         const widthPct = (getBarWidth(segment) / totalWidth) * 100;
 
         return (

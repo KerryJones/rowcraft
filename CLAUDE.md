@@ -21,6 +21,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 1. **Consistent** — match existing patterns in the codebase first
 2. **Canonical** — use the standard/documented approach for the library/framework
 3. **Simple** — prefer the simplest solution that works
+- **Always prefer the best action over the low-effort action** — don't take shortcuts or propose easier alternatives when the right solution requires more work.
 
 ### Code Style
 - **Dart**: Dart 3.3+, type hints, immutable models with `copyWith`, Riverpod for state

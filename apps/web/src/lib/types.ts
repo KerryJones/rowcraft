@@ -2,8 +2,10 @@ export type SegmentType = 'work' | 'rest' | 'warmup' | 'cooldown';
 export type DurationType = 'time' | 'distance' | 'calories';
 export type WorkoutType = 'single_distance' | 'single_time' | 'intervals' | 'variable_intervals';
 
-export interface SplitTarget {
-	pace: number; // tenths of a second per 500m (single target, engine handles tolerance)
+/** FTP-relative intensity target as percentage of FTP watts (0–200). */
+export interface IntensityTarget {
+	min: number; // lower bound FTP % (less intense / slower)
+	max: number; // upper bound FTP % (more intense / faster)
 }
 
 export interface StrokeRateTarget {
@@ -21,34 +23,22 @@ export interface WorkoutSegment {
 	type: SegmentType;
 	duration_type: DurationType;
 	duration_value: number; // seconds, meters, or calories depending on duration_type
-	target_split: SplitTarget | null;
+	target_intensity: IntensityTarget | null;
 	target_stroke_rate: StrokeRateTarget | null;
 	target_hr_zone: number | null;
 	messages: SegmentMessage[] | null;
 }
 
-/**
- * Normalize a SplitTarget from DB — handles old { min, max } format
- * by averaging to a single pace value.
- */
-export function normalizeSplitTarget(
-	t: SplitTarget | { min: number; max: number } | null
-): SplitTarget | null {
-	if (!t) return null;
-	if ('pace' in t) return t;
-	// Legacy format: { min, max } — average to single target
-	const legacy = t as { min: number; max: number };
-	return { pace: Math.round((legacy.min + legacy.max) / 2) };
-}
+/** Default FTP for users who haven't taken an FTP test. 150W ≈ 2:14/500m. */
+export const DEFAULT_FTP_WATTS = 150;
 
 /**
- * Normalize all segments in a workout, handling legacy SplitTarget format.
+ * Normalize all segments in a workout.
  * Call this when loading workouts from the database.
  */
 export function normalizeWorkoutSegments(segments: WorkoutSegment[]): WorkoutSegment[] {
 	return segments.map((seg) => ({
 		...seg,
-		target_split: normalizeSplitTarget(seg.target_split as any),
 		messages: seg.messages ?? null,
 	}));
 }

@@ -9,6 +9,7 @@ import '../features/auth/auth_screen.dart';
 import '../features/ble/connect_screen.dart';
 import '../features/ble/connection_gate_screen.dart';
 import '../features/library/library_screen.dart';
+import '../features/quick_start/quick_start_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
 import '../features/plans/plans_catalog.dart';
 import '../features/workout/pre_workout_screen.dart';
@@ -115,15 +116,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Bottom nav shell with 5 tabs
+      // Bottom nav shell with 6 tabs
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             ShellScreen(navigationShell: navigationShell),
         branches: [
-          // Tab 0: Workouts
+          // Tab 0: Quick Start
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/',
+              builder: (context, state) => const QuickStartScreen(),
+            ),
+          ]),
+
+          // Tab 1: Workouts
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/workouts',
               builder: (context, state) => const LibraryScreen(),
             ),
           ]),

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../models/workout_segment.dart';
+import '../utils/pace_utils.dart';
 import '../utils/segment_color.dart';
 
 /// Segment bar chart showing intensity (height) and duration (width).
@@ -10,11 +11,13 @@ import '../utils/segment_color.dart';
 class WorkoutGraph extends StatelessWidget {
   final List<WorkoutSegment> segments;
   final double height;
+  final int ftpWatts;
 
   const WorkoutGraph({
     super.key,
     required this.segments,
     this.height = 80,
+    this.ftpWatts = kDefaultFtpWatts,
   });
 
   @override
@@ -25,7 +28,7 @@ class WorkoutGraph extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: CustomPaint(
         size: Size(double.infinity, height),
-        painter: _GraphPainter(segments: segments),
+        painter: _GraphPainter(segments: segments, ftpWatts: ftpWatts),
       ),
     );
   }
@@ -33,20 +36,21 @@ class WorkoutGraph extends StatelessWidget {
 
 class _GraphPainter extends CustomPainter {
   final List<WorkoutSegment> segments;
+  final int ftpWatts;
 
   static const _barGap = 1.5;
   static const _minBarHeightFraction = 0.15;
   static const _defaultPaceMin = 1000.0;
   static const _defaultPaceMax = 1800.0;
 
-  _GraphPainter({required this.segments});
+  _GraphPainter({required this.segments, required this.ftpWatts});
 
   @override
   void paint(Canvas canvas, Size size) {
     final expanded = _expandSegments(segments);
     if (expanded.isEmpty) return;
 
-    final durations = expanded.map(_effectiveDuration).toList();
+    final durations = expanded.map((s) => _effectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold(0.0, (a, b) => a + b);
     if (totalDuration <= 0) return;
 
@@ -59,7 +63,17 @@ class _GraphPainter extends CustomPainter {
     for (var i = 0; i < expanded.length; i++) {
       final seg = expanded[i];
       final barWidth = max(2.0, (durations[i] / totalDuration) * availableWidth);
-      final pace = seg.targetSplit?.min;
+      final double? pace;
+      if (seg.targetIntensity != null) {
+        final resolved = resolveIntensityToPace(
+          seg.targetIntensity!.min,
+          seg.targetIntensity!.max,
+          ftpWatts,
+        );
+        pace = resolved.paceMid.toDouble();
+      } else {
+        pace = null;
+      }
       final heightFraction = _paceToHeight(pace, paceMin, paceMax);
       final barHeight = max(4.0, heightFraction * size.height);
 
@@ -75,29 +89,45 @@ class _GraphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_GraphPainter old) => old.segments != segments;
+  bool shouldRepaint(_GraphPainter old) =>
+      old.segments != segments || old.ftpWatts != ftpWatts;
 
   /// Return segments as-is (segments are already individual).
   static List<WorkoutSegment> _expandSegments(List<WorkoutSegment> segments) {
     return segments;
   }
 
-  static double _effectiveDuration(WorkoutSegment seg) {
+  static double _effectiveDuration(WorkoutSegment seg, int ftpWatts) {
     if (seg.durationType == DurationType.time) return seg.durationValue;
     if (seg.durationType == DurationType.distance) {
-      final pacePerMeter = seg.targetSplit != null
-          ? (seg.targetSplit!.min / 10) / 500
-          : 0.24;
+      final double pacePerMeter;
+      if (seg.targetIntensity != null) {
+        final resolved = resolveIntensityToPace(
+          seg.targetIntensity!.min,
+          seg.targetIntensity!.max,
+          ftpWatts,
+        );
+        pacePerMeter = (resolved.paceMid / 10) / 500;
+      } else {
+        pacePerMeter = 0.24;
+      }
       return seg.durationValue * pacePerMeter;
     }
     // Calories: estimate ~15 cal/min (matches web fallback)
     return (seg.durationValue / 15) * 60;
   }
 
-  static (double, double) _getPaceRange(List<WorkoutSegment> segments) {
+  (double, double) _getPaceRange(List<WorkoutSegment> segments) {
     final paces = <double>[];
     for (final seg in segments) {
-      if (seg.targetSplit != null) paces.add(seg.targetSplit!.min);
+      if (seg.targetIntensity != null) {
+        final resolved = resolveIntensityToPace(
+          seg.targetIntensity!.min,
+          seg.targetIntensity!.max,
+          ftpWatts,
+        );
+        paces.add(resolved.paceMid.toDouble());
+      }
     }
     if (paces.isEmpty) return (_defaultPaceMin, _defaultPaceMax);
     final minP = paces.reduce(min);

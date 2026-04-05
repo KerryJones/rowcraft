@@ -3,27 +3,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
-import type { Workout, WorkoutSegment, WorkoutType, SegmentType, Profile } from '@/lib/types';
+import type { Workout, WorkoutSegment, WorkoutType, SegmentType, IntensityTarget, Profile } from '@/lib/types';
 import { normalizeWorkoutSegments } from '@/lib/types';
-import { wattsToPaceTenths } from '@/lib/utils/ftp';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
 import { SegmentEditor } from '@/components/ui/segment-editor';
 import { Plus, Save, Loader2 } from 'lucide-react';
 
-function makeDefaultSegment(type: SegmentType, lastWorkPace: number | null, ftpWatts: number | null): WorkoutSegment {
-  let pace: number | null = null;
+/** Default intensity targets by segment type (% of FTP). */
+const DEFAULT_INTENSITY: Record<SegmentType, IntensityTarget | null> = {
+  work: { min: 85, max: 95 },
+  rest: null,
+  warmup: { min: 55, max: 65 },
+  cooldown: { min: 45, max: 55 },
+};
 
-  if (type === 'work') {
-    pace = lastWorkPace;
-  } else if (type === 'warmup' && ftpWatts) {
-    // ~60% FTP for warmup
-    pace = wattsToPaceTenths(ftpWatts * 0.6);
-  } else if (type === 'cooldown' && ftpWatts) {
-    // ~50% FTP for cooldown
-    pace = wattsToPaceTenths(ftpWatts * 0.5);
-  }
+function makeDefaultSegment(type: SegmentType, lastWorkIntensity: IntensityTarget | null): WorkoutSegment {
+  const intensity: IntensityTarget | null =
+    type === 'work' && lastWorkIntensity
+      ? lastWorkIntensity
+      : DEFAULT_INTENSITY[type];
 
   const durationDefaults: Record<SegmentType, number> = {
     work: 300,
@@ -36,7 +36,7 @@ function makeDefaultSegment(type: SegmentType, lastWorkPace: number | null, ftpW
     type,
     duration_type: 'time',
     duration_value: durationDefaults[type],
-    target_split: pace ? { pace } : null,
+    target_intensity: intensity,
     target_stroke_rate: null,
     target_hr_zone: null,
     messages: null,
@@ -61,15 +61,14 @@ export default function BuilderPage() {
   const [userId, setUserId] = useState<string | null>(null);
 
   const ftpWatts = profile?.current_ftp_watts ?? null;
-
-  // Get the last work segment's pace for smart defaults
-  const lastWorkPace = (() => {
+  // Get the last work segment's intensity for smart defaults
+  const lastWorkIntensity = (() => {
     for (let i = segments.length - 1; i >= 0; i--) {
-      if (segments[i].type === 'work' && segments[i].target_split) {
-        return segments[i].target_split!.pace;
+      if (segments[i].type === 'work' && segments[i].target_intensity) {
+        return segments[i].target_intensity;
       }
     }
-    return ftpWatts ? wattsToPaceTenths(ftpWatts) : null;
+    return null;
   })();
 
   // Load profile and optional edit workout
@@ -119,10 +118,10 @@ export default function BuilderPage() {
   }, [editId, router]);
 
   const addSegment = useCallback((type: SegmentType) => {
-    const seg = makeDefaultSegment(type, lastWorkPace, ftpWatts);
+    const seg = makeDefaultSegment(type, lastWorkIntensity);
     setSegments((prev) => [...prev, seg]);
     setSelectedIndex(segments.length);
-  }, [lastWorkPace, ftpWatts, segments.length]);
+  }, [lastWorkIntensity, segments.length]);
 
   function updateSegment(index: number, segment: WorkoutSegment) {
     setSegments((prev) => prev.map((s, i) => (i === index ? segment : s)));
@@ -275,6 +274,7 @@ export default function BuilderPage() {
             segment={selectedSegment}
             onChange={(seg) => updateSegment(selectedIndex, seg)}
             onRemove={() => removeSegment(selectedIndex)}
+            ftpWatts={ftpWatts}
           />
         </div>
       )}

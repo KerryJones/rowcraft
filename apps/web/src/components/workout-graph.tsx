@@ -4,6 +4,7 @@ import type { WorkoutSegment, SegmentType } from '@/lib/types';
 import { cn } from '@/lib/utils/cn';
 import { formatPace } from '@/lib/utils/format';
 import { formatSegmentDuration } from '@/lib/utils/format';
+import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 import { computeCumulativeMinutes, expandSegments } from '@/lib/utils/workout';
 
@@ -25,19 +26,22 @@ interface WorkoutGraphProps {
   selectedIndex?: number | null;
   onSelectSegment?: (index: number) => void;
   className?: string;
+  ftpWatts?: number | null;
 }
 
 /**
  * Compute the effective duration of a segment in seconds (for proportional width).
  */
-function getEffectiveDuration(seg: WorkoutSegment): number {
+function getEffectiveDuration(seg: WorkoutSegment, ftp: number): number {
   if (seg.duration_type === 'time') {
     return seg.duration_value;
   }
   if (seg.duration_type === 'distance') {
-    const pacePerMeter = seg.target_split
-      ? (seg.target_split.pace / 10) / 500
-      : 0.24;
+    let pacePerMeter = 0.24; // 2:00/500m default
+    if (seg.target_intensity) {
+      const { paceMid } = resolveIntensityToPace(seg.target_intensity, ftp);
+      pacePerMeter = (paceMid / 10) / 500;
+    }
     return seg.duration_value * pacePerMeter;
   }
   // calories
@@ -45,13 +49,14 @@ function getEffectiveDuration(seg: WorkoutSegment): number {
 }
 
 /**
- * Collect all non-null paces from segments.
+ * Collect all resolved mid-paces from segments.
  */
-function getPaceRange(segments: WorkoutSegment[]): { paceMin: number; paceMax: number } {
+function getPaceRange(segments: WorkoutSegment[], ftp: number): { paceMin: number; paceMax: number } {
   const paces: number[] = [];
   for (const seg of segments) {
-    if (seg.target_split) {
-      paces.push(seg.target_split.pace);
+    if (seg.target_intensity) {
+      const { paceMid } = resolveIntensityToPace(seg.target_intensity, ftp);
+      paces.push(paceMid);
     }
   }
   if (paces.length === 0) {
@@ -147,7 +152,9 @@ export function WorkoutGraph({
   selectedIndex,
   onSelectSegment,
   className,
+  ftpWatts,
 }: WorkoutGraphProps) {
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
   if (segments.length === 0) {
     return (
       <div
@@ -181,14 +188,14 @@ export function WorkoutGraph({
   const chartAreaHeight = chartAreaBottom - chartAreaTop;
 
   // Compute bar layout using expanded segments
-  const durations = expandedSegments.map(getEffectiveDuration);
+  const durations = expandedSegments.map((s) => getEffectiveDuration(s, ftp));
   const totalDuration = durations.reduce((a, b) => a + b, 0);
   if (totalDuration === 0) return null;
 
   const totalGapWidth = BAR_GAP * (expandedSegments.length - 1);
   const availableBarWidth = chartAreaWidth - totalGapWidth;
 
-  const { paceMin, paceMax } = getPaceRange(expandedSegments);
+  const { paceMin, paceMax } = getPaceRange(expandedSegments, ftp);
   const yLabels = getYAxisLabels(paceMin, paceMax);
   const xLabels = getXAxisLabels(expandedSegments, totalDuration);
 
@@ -207,8 +214,11 @@ export function WorkoutGraph({
     const seg = expandedSegments[i];
     const widthFraction = durations[i] / totalDuration;
     const barWidth = Math.max(2, widthFraction * availableBarWidth);
+    const resolvedPace = seg.target_intensity
+      ? resolveIntensityToPace(seg.target_intensity, ftp).paceMid
+      : null;
     const heightFraction = paceToHeight(
-      seg.target_split?.pace ?? null,
+      resolvedPace,
       paceMin,
       paceMax,
     );

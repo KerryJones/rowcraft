@@ -58,6 +58,17 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
   const expanded = expandSegments(workout.segments);
   const isOwner = user?.id === workout.author_id;
 
+  // Fetch user's FTP for pace display
+  let ftpWatts: number | null = null;
+  if (userId) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('current_ftp_watts')
+      .eq('id', userId)
+      .single();
+    ftpWatts = profile?.current_ftp_watts ?? null;
+  }
+
   // Collect coaching cues — one entry per segment
   const coachingCues: { segmentLabel: string; text: string }[] = [];
   for (let i = 0; i < expanded.length; i++) {
@@ -74,7 +85,7 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Hero graph */}
       <div className="mb-6">
-        <WorkoutGraph segments={workout.segments} variant="hero" />
+        <WorkoutGraph segments={workout.segments} variant="hero" ftpWatts={ftpWatts} />
       </div>
 
       {/* Title + actions row */}
@@ -123,6 +134,7 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
             key={i}
             segment={seg}
             index={i}
+            ftpWatts={ftpWatts}
           />
         ))}
       </div>

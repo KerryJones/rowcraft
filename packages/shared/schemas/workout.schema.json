@@ -25,11 +25,11 @@
           "type": { "enum": ["work", "rest", "warmup", "cooldown"] },
           "duration_type": { "enum": ["time", "distance", "calories"] },
           "duration_value": { "type": "number", "exclusiveMinimum": 0 },
-          "target_split": {
+          "target_intensity": {
             "type": ["object", "null"],
             "properties": {
-              "min": { "type": "number", "description": "Pace in tenths of seconds per 500m" },
-              "max": { "type": "number", "description": "Pace in tenths of seconds per 500m" }
+              "min": { "type": "integer", "minimum": 0, "maximum": 200, "description": "Lower bound FTP percentage" },
+              "max": { "type": "integer", "minimum": 0, "maximum": 200, "description": "Upper bound FTP percentage" }
             },
             "required": ["min", "max"]
           },

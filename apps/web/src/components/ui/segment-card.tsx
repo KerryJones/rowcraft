@@ -1,6 +1,6 @@
 import type { WorkoutSegment, SegmentType } from '@/lib/types';
 import { formatSegmentType, formatSegmentDuration, formatPace } from '@/lib/utils/format';
-import { paceTenthsToWatts, formatWatts } from '@/lib/utils/ftp';
+import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts } from '@/lib/utils/ftp';
 
 const SEGMENT_DOT: Record<SegmentType, string> = {
   work: 'bg-blue-500',
@@ -20,9 +20,11 @@ const HR_ZONE_BADGE: Record<number, string> = {
 interface SegmentCardProps {
   segment: WorkoutSegment;
   index: number;
+  ftpWatts?: number | null;
 }
 
-export function SegmentCard({ segment, index }: SegmentCardProps) {
+export function SegmentCard({ segment, index, ftpWatts }: SegmentCardProps) {
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
   const durationLabel = formatSegmentDuration(segment);
   const typeLabel = formatSegmentType(segment.type);
 
@@ -36,15 +38,20 @@ export function SegmentCard({ segment, index }: SegmentCardProps) {
         <span className="text-sm font-medium text-white">{primaryLabel}</span>
       </div>
 
-      {/* Secondary line: pace, SPM, HR zone */}
-      {(segment.target_split || segment.target_stroke_rate || segment.target_hr_zone) && (
+      {/* Secondary line: intensity, SPM, HR zone */}
+      {(segment.target_intensity || segment.target_stroke_rate || segment.target_hr_zone) && (
         <div className="ml-[18px] mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-          {segment.target_split && (
-            <span>
-              {formatPace(segment.target_split.pace)}/500m{' '}
-              <span className="text-gray-500">({formatWatts(paceTenthsToWatts(segment.target_split.pace))})</span>
-            </span>
-          )}
+          {segment.target_intensity && (() => {
+            const { paceMid } = resolveIntensityToPace(segment.target_intensity, ftp);
+            const midPct = Math.round((segment.target_intensity.min + segment.target_intensity.max) / 2);
+            const watts = intensityToWatts(midPct, ftp);
+            return (
+              <span>
+                {formatPace(paceMid)}/500m{' '}
+                <span className="text-gray-500">({midPct}% FTP / {formatWatts(watts)})</span>
+              </span>
+            );
+          })()}
           {segment.target_stroke_rate && (
             <span>
               {segment.target_stroke_rate.min}–{segment.target_stroke_rate.max} spm

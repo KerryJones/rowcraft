@@ -36,6 +36,11 @@ class ShellScreen extends ConsumerWidget {
           },
           destinations: [
             const NavigationDestination(
+              icon: Icon(Icons.play_circle_outline),
+              selectedIcon: Icon(Icons.play_circle),
+              label: 'Quick Start',
+            ),
+            const NavigationDestination(
               icon: Icon(Icons.fitness_center_outlined),
               selectedIcon: Icon(Icons.fitness_center),
               label: 'Workouts',

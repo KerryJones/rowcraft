@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/pace_utils.dart' show intensityToPaceTenths, kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
 import '../../widgets/connection_required_dialog.dart';
 import '../../widgets/difficulty_indicator.dart';
@@ -206,7 +207,10 @@ class _WorkoutDetailBody extends StatelessWidget {
     final totalTime = computeTotalTime(segments);
     final totalDist = computeTotalDistance(segments);
     final segCount = computeSegmentCount(segments);
-    final avgPace = computeAvgPace(segments);
+    final avgIntensity = computeAvgIntensity(segments);
+    final avgPace = avgIntensity != null
+        ? intensityToPaceTenths(avgIntensity, kDefaultFtpWatts)
+        : null;
 
     // Collect HR zones from segments
     final hrZones = <int>{};

@@ -1,0 +1,122 @@
+-- Zone 2 Aerobic workouts
+-- All use target_intensity (FTP percentage), not target_split
+
+-- Steady State 40
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000001',
+  'Steady State 40',
+  '30 minutes of steady aerobic work. The bread and butter of training.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1800,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,steady-state,endurance}',
+  true
+);
+
+-- Rate Shift Steady
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000002',
+  'Rate Shift Steady',
+  'Same pace, different rates. Feel how rate affects the stroke.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":18,"max":18},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":22,"max":22},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":20},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,steady-state,rate-shift}',
+  true
+);
+
+-- Negative Split 30
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000003',
+  'Negative Split 30',
+  'Start easy, finish stronger. Build into the second half.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":900,"target_intensity":{"min":62,"max":70},"target_stroke_rate":{"min":18,"max":22},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":70,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,negative-split}',
+  true
+);
+
+-- Long Steady Intervals
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000004',
+  'Long Steady Intervals',
+  'Four 10-minute blocks with short breaks. Sustained aerobic volume.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,intervals,long}',
+  true
+);
+
+-- Distance Pyramid
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000005',
+  'Distance Pyramid',
+  'Ascending and descending distance at steady pace.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":2000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":3000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":2000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,pyramid,distance}',
+  true
+);
+
+-- Steady State 50
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000006',
+  'Steady State 50',
+  'Long aerobic session. Keep it comfortable for the full 40 minutes.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":2400,"target_intensity":{"min":62,"max":72},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,steady-state,long}',
+  true
+);
+
+-- Aerobic Cruise 8K
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000007',
+  'Aerobic Cruise 8K',
+  '8K distance piece at aerobic pace.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"distance","duration_value":1000,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":6000,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":22},"target_hr_zone":2},{"type":"cooldown","duration_type":"distance","duration_value":1000,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,distance}',
+  true
+);
+
+-- Easy Tempo Mix
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000008',
+  'Easy Tempo Mix',
+  'Aerobic blocks with easy recovery dips.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":480,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":120,"target_intensity":{"min":45,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":480,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":120,"target_intensity":{"min":45,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":480,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":120,"target_intensity":{"min":45,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,mixed}',
+  true
+);
+
+-- Rate Pyramid Steady
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-000000000009',
+  'Rate Pyramid Steady',
+  'Rate pyramid at constant aerobic intensity.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":18,"max":18},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":20},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":22,"max":22},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":24,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":22,"max":22},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":65,"max":75},"target_stroke_rate":{"min":20,"max":20},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,pyramid,rate}',
+  true
+);
+
+-- Two-Pace Aerobic
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public)
+values (
+  '20000000-0000-0000-0000-00000000000a',
+  'Two-Pace Aerobic',
+  'Alternate moderate and easy aerobic blocks.',
+  'variable_intervals',
+  '[{"type":"warmup","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":70,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":60,"max":65},"target_stroke_rate":{"min":18,"max":20},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":70,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":60,"max":65},"target_stroke_rate":{"min":18,"max":20},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":70,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":60,"max":65},"target_stroke_rate":{"min":18,"max":20},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":70,"max":75},"target_stroke_rate":{"min":20,"max":24},"target_hr_zone":2},{"type":"work","duration_type":"time","duration_value":300,"target_intensity":{"min":60,"max":65},"target_stroke_rate":{"min":18,"max":20},"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":300,"target_intensity":{"min":50,"max":55},"target_stroke_rate":{"min":16,"max":20},"target_hr_zone":1}]'::jsonb,
+  '{aerobic,steady-state}',
+  true
+);

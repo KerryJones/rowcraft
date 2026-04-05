@@ -119,27 +119,27 @@ void main() {
     });
   });
 
-  group('computeAvgPace', () {
-    test('returns weighted average pace of work segments', () {
+  group('computeAvgIntensity', () {
+    test('returns weighted average intensity of work segments', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1200, max: 1300), // 2:00
+          targetIntensity: IntensityTarget(min: 80, max: 90), // midpoint 85
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1000, max: 1100), // 1:40
+          targetIntensity: IntensityTarget(min: 90, max: 100), // midpoint 95
         ),
       ];
-      // Equal weight: avg = (1200 + 1000) / 2 = 1100
-      expect(computeAvgPace(segments), 1100);
+      // Equal weight: avg = (85 + 95) / 2 = 90
+      expect(computeAvgIntensity(segments), 90);
     });
 
-    test('returns null when no pace targets', () {
+    test('returns null when no intensity targets', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
@@ -147,7 +147,7 @@ void main() {
           durationValue: 300,
         ),
       ];
-      expect(computeAvgPace(segments), isNull);
+      expect(computeAvgIntensity(segments), isNull);
     });
 
     test('ignores rest segments', () {
@@ -156,57 +156,57 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1200, max: 1300),
+          targetIntensity: IntensityTarget(min: 80, max: 90),
         ),
         const WorkoutSegment(
           type: SegmentType.rest,
           durationType: DurationType.time,
           durationValue: 60,
-          targetSplit: SplitTarget(min: 2000, max: 2000),
+          targetIntensity: IntensityTarget(min: 50, max: 50),
         ),
       ];
-      expect(computeAvgPace(segments), 1200);
+      expect(computeAvgIntensity(segments), 85);
     });
   });
 
   group('computeIntensity', () {
-    test('returns 1.0 at reference pace (2:00/500m)', () {
+    test('returns 1.0 at 100% FTP', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1200, max: 1200),
+          targetIntensity: IntensityTarget(min: 100, max: 100),
         ),
       ];
       expect(computeIntensity(segments), 1.0);
     });
 
-    test('returns > 1.0 for faster than reference', () {
+    test('returns > 1.0 for above 100% FTP', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1000, max: 1000), // 1:40/500m
+          targetIntensity: IntensityTarget(min: 110, max: 120),
         ),
       ];
       expect(computeIntensity(segments), greaterThan(1.0));
     });
 
-    test('returns < 1.0 for slower than reference', () {
+    test('returns < 1.0 for below 100% FTP', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1500, max: 1500), // 2:30/500m
+          targetIntensity: IntensityTarget(min: 60, max: 70),
         ),
       ];
       expect(computeIntensity(segments), lessThan(1.0));
     });
 
-    test('returns null when no pace targets', () {
+    test('returns null when no intensity targets', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
@@ -223,32 +223,32 @@ void main() {
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1500, max: 1500), // easy
+          targetIntensity: IntensityTarget(min: 50, max: 60),
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1200, max: 1200), // reference
+          targetIntensity: IntensityTarget(min: 100, max: 100),
         ),
       ];
       // Only work segment counted → intensity = 1.0
       expect(computeIntensity(segments), 1.0);
     });
 
-    test('returns null when only non-work segments have pace targets', () {
+    test('returns null when only non-work segments have intensity targets', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1500, max: 1500),
+          targetIntensity: IntensityTarget(min: 50, max: 60),
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          // no pace target on work segment
+          // no intensity target on work segment
         ),
       ];
       expect(computeIntensity(segments), isNull);
@@ -256,37 +256,37 @@ void main() {
   });
 
   group('computeDifficultyLevel', () {
-    test('easy: slower than 2:10/500m', () {
+    test('easy: below 75% FTP', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1400, max: 1400), // 2:20/500m → intensity 0.857
+          targetIntensity: IntensityTarget(min: 60, max: 70), // midpoint 65%
         ),
       ];
       expect(computeDifficultyLevel(segments), 1);
     });
 
-    test('medium: 2:10 to 2:01/500m', () {
+    test('medium: 75-95% FTP', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1250, max: 1250), // 2:05/500m → intensity 0.96
+          targetIntensity: IntensityTarget(min: 80, max: 90), // midpoint 85%
         ),
       ];
       expect(computeDifficultyLevel(segments), 2);
     });
 
-    test('hard: 2:00/500m or faster', () {
+    test('hard: 95%+ FTP', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1200, max: 1200), // 2:00/500m → intensity 1.0
+          targetIntensity: IntensityTarget(min: 95, max: 105), // midpoint 100%
         ),
       ];
       expect(computeDifficultyLevel(segments), 3);
@@ -298,26 +298,26 @@ void main() {
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1500, max: 1500), // easy warmup
+          targetIntensity: IntensityTarget(min: 50, max: 60),
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1000, max: 1000), // hard work
+          targetIntensity: IntensityTarget(min: 100, max: 110), // hard work
         ),
         const WorkoutSegment(
           type: SegmentType.cooldown,
           durationType: DurationType.time,
           durationValue: 300,
-          targetSplit: SplitTarget(min: 1500, max: 1500), // easy cooldown
+          targetIntensity: IntensityTarget(min: 50, max: 60),
         ),
       ];
       // Only the work segment should be considered → hard
       expect(computeDifficultyLevel(segments), 3);
     });
 
-    test('no pace targets: short workout = easy', () {
+    test('no intensity targets: short workout = easy', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
@@ -328,7 +328,7 @@ void main() {
       expect(computeDifficultyLevel(segments), 1);
     });
 
-    test('no pace targets: long workout = hard', () {
+    test('no intensity targets: long workout = hard', () {
       final segments = [
         const WorkoutSegment(
           type: SegmentType.work,
@@ -340,13 +340,13 @@ void main() {
     });
 
     test('complexity bonus: many segments bumps level', () {
-      // Easy pace but 12 individual segments → bumps from 1 to 2
+      // Easy intensity but 12 individual segments → bumps from 1 to 2
       final segments = [
         ...List.generate(6, (_) => const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 60,
-          targetSplit: SplitTarget(min: 1400, max: 1400), // ~2:20 → easy
+          targetIntensity: IntensityTarget(min: 60, max: 70), // easy
         )),
         ...List.generate(6, (_) => const WorkoutSegment(
           type: SegmentType.rest,

@@ -1,4 +1,6 @@
 import type { WorkoutSegment } from '@/lib/types';
+import { DEFAULT_FTP_WATTS } from '@/lib/types';
+import { resolveIntensityToPace } from '@/lib/utils/ftp';
 
 /**
  * Compute total time in seconds for all time-based segments (accounting for repeats).
@@ -53,11 +55,18 @@ export function expandSegments(segments: WorkoutSegment[]): WorkoutSegment[] {
 
 /**
  * Group consecutive identical segments for display.
- * Two segments are "identical" if same type, duration_type, duration_value, and target_split pace.
+ * Two segments are "identical" if same type, duration_type, duration_value, and target_intensity.
  */
 export interface GroupedSegment {
 	segment: WorkoutSegment;
 	count: number;
+}
+
+function sameIntensity(a: WorkoutSegment, b: WorkoutSegment): boolean {
+	if (a.target_intensity === null && b.target_intensity === null) return true;
+	if (a.target_intensity === null || b.target_intensity === null) return false;
+	return a.target_intensity.min === b.target_intensity.min &&
+		a.target_intensity.max === b.target_intensity.max;
 }
 
 export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
@@ -69,15 +78,12 @@ export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
 
 	for (let i = 1; i < segments.length; i++) {
 		const seg = segments[i];
-		const samePace =
-			current.target_split?.pace === seg.target_split?.pace &&
-			(current.target_split === null) === (seg.target_split === null);
 
 		if (
 			seg.type === current.type &&
 			seg.duration_type === current.duration_type &&
 			seg.duration_value === current.duration_value &&
-			samePace
+			sameIntensity(current, seg)
 		) {
 			count += 1;
 		} else {
@@ -93,21 +99,19 @@ export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
 
 /**
  * Compute workout intensity score (0.00 - 1.00+).
- * Weighted average of segment pace against a 2:00/500m (1200 tenths) reference.
- * Higher = harder. Time-weighted by segment duration.
- * Returns null if no segments have pace targets.
+ * Weighted average of segment intensity % against 100% FTP.
+ * Higher = harder. Duration-weighted by segment duration.
+ * Returns null if no segments have intensity targets.
  */
 export function computeIntensity(segments: WorkoutSegment[]): number | null {
-	const referencePace = 1200; // 2:00/500m in tenths
 	let totalWeight = 0;
 	let weightedSum = 0;
 
 	for (const seg of segments) {
-		if (!seg.target_split) continue;
+		if (!seg.target_intensity) continue;
 		const duration = seg.duration_value;
-		// Invert: faster pace (lower number) = higher intensity
-		const intensity = referencePace / seg.target_split.pace;
-		weightedSum += intensity * duration;
+		const midPct = (seg.target_intensity.min + seg.target_intensity.max) / 2;
+		weightedSum += (midPct / 100) * duration;
 		totalWeight += duration;
 	}
 
@@ -136,10 +140,12 @@ export function computeCumulativeMinutes(segments: WorkoutSegment[]): MinuteMark
 		if (seg.duration_type === 'time') {
 			segSeconds = seg.duration_value;
 		} else if (seg.duration_type === 'distance') {
-			// Estimate time from pace, or assume 2:00/500m
-			const pacePerMeter = seg.target_split
-				? (seg.target_split.pace / 10) / 500
-				: 0.24; // 2:00/500m = 0.24 sec/m
+			// Estimate time from intensity-resolved pace, or assume 2:00/500m
+			let pacePerMeter = 0.24; // 2:00/500m = 0.24 sec/m
+			if (seg.target_intensity) {
+				const { paceMid } = resolveIntensityToPace(seg.target_intensity, DEFAULT_FTP_WATTS);
+				pacePerMeter = (paceMid / 10) / 500;
+			}
 			segSeconds = seg.duration_value * pacePerMeter;
 		} else {
 			// Calories — rough estimate: ~15 cal/min

@@ -3,6 +3,7 @@
 import type { Workout } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { formatWorkoutType, formatDuration, formatDistance, formatPace } from '@/lib/utils/format';
+import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
 import { computeTotalTime, computeTotalDistance, computeSegmentCount } from '@/lib/utils/workout';
 import { Flame, RefreshCw } from 'lucide-react';
 
@@ -11,21 +12,24 @@ interface WodCardProps {
   onShuffle: () => void;
   onView: () => void;
   canShuffle?: boolean;
+  ftpWatts?: number | null;
 }
 
-export function WodCard({ workout, onShuffle, onView, canShuffle = true }: WodCardProps) {
+export function WodCard({ workout, onShuffle, onView, canShuffle = true, ftpWatts }: WodCardProps) {
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
   const totalTime = computeTotalTime(workout.segments);
   const totalDistance = computeTotalDistance(workout.segments);
   const segmentCount = computeSegmentCount(workout.segments);
 
-  const workSegs = workout.segments.filter((s) => s.type === 'work' && s.target_split);
+  const workSegs = workout.segments.filter((s) => s.type === 'work' && s.target_intensity);
   const avgPace = (() => {
     if (workSegs.length === 0) return null;
     let totalWeight = 0;
     let weightedSum = 0;
     for (const s of workSegs) {
       const weight = s.duration_value;
-      weightedSum += s.target_split!.pace * weight;
+      const { paceMid } = resolveIntensityToPace(s.target_intensity!, ftp);
+      weightedSum += paceMid * weight;
       totalWeight += weight;
     }
     return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : null;

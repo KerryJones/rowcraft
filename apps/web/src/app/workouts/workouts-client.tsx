@@ -21,9 +21,10 @@ function getDaysSinceEpoch(): number {
 interface WorkoutsClientProps {
   workouts: Workout[];
   userId: string | null;
+  ftpWatts?: number | null;
 }
 
-export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
+export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('all');
@@ -116,6 +117,7 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
             canShuffle={publicWorkouts.length > 1}
             onShuffle={() => setWodSeed((s) => s + 1)}
             onView={() => router.push(`/workouts/${wod.id}`)}
+            ftpWatts={ftpWatts}
           />
         </div>
       )}
@@ -209,6 +211,7 @@ export function WorkoutsClient({ workouts, userId }: WorkoutsClientProps) {
               key={workout.id}
               workout={workout}
               onClick={() => router.push(`/workouts/${workout.id}`)}
+              ftpWatts={ftpWatts}
             />
           ))}
         </div>
