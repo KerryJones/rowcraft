@@ -8,6 +8,7 @@ build/
 .svelte-kit/
 .next/
 .vercel/
+*.tsbuildinfo
 
 # Flutter
 apps/mobile/build/
