@@ -235,28 +235,24 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             // Main layout
             Column(
               children: [
-                // BLE status + overall progress
+                // BLE status
                 const _BleStatusBar(),
-                _OverallProgressBar(session: session),
+
+                // Overall stats (time, distance, calories)
+                _OverallStatsBar(session: session),
 
                 // Workout profile graph
                 if (session.expandedSegments.isNotEmpty)
                   _WorkoutProfileGraph(session: session),
 
-                // Segment header (countdown + progress)
-                _SegmentHeader(session: session),
-
                 // Hero section (pace, guide bar, stroke rate)
                 Expanded(child: _HeroSection(session: session)),
 
-                // Target block — adjacent to pace (Gestalt proximity)
-                _TargetBlock(session: session),
+                // Current segment (merged target + progress)
+                _CurrentSegment(session: session),
 
                 // Up-next preview
                 _UpNextPreview(session: session),
-
-                // Merged stats row (HR, distance, time, calories)
-                _StatsRow(session: session),
 
                 // Controls (wrapped in IgnorePointer when locked)
                 IgnorePointer(
@@ -397,41 +393,56 @@ class _BleStatusBar extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Overall Progress Bar (4px)
+// Overall Stats Bar — TIME | DIST | CAL
 // ---------------------------------------------------------------------------
 
-class _OverallProgressBar extends StatelessWidget {
+class _OverallStatsBar extends StatelessWidget {
   final WorkoutSessionState session;
 
-  const _OverallProgressBar({required this.session});
+  const _OverallStatsBar({required this.session});
 
   @override
   Widget build(BuildContext context) {
-    final segments = session.expandedSegments;
-    if (segments.isEmpty) return const SizedBox.shrink();
+    final data = session.pm5Data;
 
-    final ftpWatts = session.ftpWatts;
-    final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
-    final totalDuration = durations.fold<double>(0, (a, b) => a + b);
-    if (totalDuration <= 0) return const SizedBox.shrink();
+    return Container(
+      height: 36,
+      color: RowCraftTheme.surfaceContainer,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          _stat(context, 'TIME', data.elapsedFormatted),
+          _stat(context, 'DIST', data.distanceFormatted),
+          _stat(context, 'CAL', '${data.calories}'),
+        ],
+      ),
+    );
+  }
 
-    final currentIndex = session.engineState.currentSegmentIndex;
-    var completed = 0.0;
-    for (var i = 0; i < currentIndex && i < durations.length; i++) {
-      completed += durations[i];
-    }
-    if (currentIndex < durations.length) {
-      completed += session.engineState.segmentProgress * durations[currentIndex];
-    }
-
-    final progress = (completed / totalDuration).clamp(0.0, 1.0);
-
-    return LinearProgressIndicator(
-      value: progress,
-      minHeight: 4,
-      backgroundColor: RowCraftTheme.surfaceContainerHigh,
-      valueColor:
-          const AlwaysStoppedAnimation(RowCraftTheme.primaryBlue),
+  Widget _stat(BuildContext context, String label, String value) {
+    return Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+              color: RowCraftTheme.subtleGrey,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: RowCraftTheme.metricWhite,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -627,13 +638,40 @@ class _WorkoutProfilePainter extends CustomPainter {
 }
 
 // ---------------------------------------------------------------------------
-// Segment Header — countdown + progress bar
+// Current Segment — merged target + progress + HR
 // ---------------------------------------------------------------------------
 
-class _SegmentHeader extends StatelessWidget {
+/// Remaining label for segment countdown.
+String _remainingLabel(WorkoutEngineState state) {
+  final segment = state.currentSegment;
+  if (segment == null) return '';
+
+  switch (segment.durationType) {
+    case DurationType.time:
+      final totalSec = segment.durationValue.toInt();
+      final remaining =
+          (totalSec * (1 - state.segmentProgress)).round().clamp(0, totalSec);
+      final min = remaining ~/ 60;
+      final sec = remaining % 60;
+      return '$min:${sec.toString().padLeft(2, '0')}';
+    case DurationType.distance:
+      final totalM = segment.durationValue;
+      final remaining =
+          (totalM - state.segmentElapsedDistance).clamp(0.0, totalM).toInt();
+      return '${remaining}m';
+    case DurationType.calories:
+      final totalCal = segment.durationValue;
+      final remaining = (totalCal - state.segmentElapsedCalories)
+          .clamp(0.0, totalCal)
+          .round();
+      return '${remaining}cal';
+  }
+}
+
+class _CurrentSegment extends StatelessWidget {
   final WorkoutSessionState session;
 
-  const _SegmentHeader({required this.session});
+  const _CurrentSegment({required this.session});
 
   @override
   Widget build(BuildContext context) {
@@ -651,11 +689,21 @@ class _SegmentHeader extends StatelessWidget {
     final segments = session.expandedSegments;
     final currentIndex = isActive ? engineState.currentSegmentIndex : 0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    final hasPaceTarget = segment.targetIntensity != null;
+    final hasSpmTarget = segment.targetStrokeRate != null;
+    final data = session.pm5Data;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: segColor.withValues(alpha: 0.08),
+        border: const Border(
+          top: BorderSide(color: RowCraftTheme.surfaceContainerHigh, width: 1),
+        ),
+      ),
       child: Column(
         children: [
-          // Row: segment label | target | counter
+          // Row 1: segment label + progress bar + remaining + counter
           Row(
             children: [
               Text(
@@ -667,13 +715,28 @@ class _SegmentHeader extends StatelessWidget {
                   letterSpacing: 0.5,
                 ),
               ),
-              const Spacer(),
-              if (segment.targetIntensity != null)
+              const SizedBox(width: 10),
+              if (isActive)
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: engineState.segmentProgress,
+                      minHeight: 6,
+                      backgroundColor: RowCraftTheme.surfaceContainerHigh,
+                      valueColor: AlwaysStoppedAnimation(segColor),
+                    ),
+                  ),
+                ),
+              if (!isActive) const Spacer(),
+              const SizedBox(width: 8),
+              if (isActive)
                 Text(
-                  'tgt ${_formatPace(resolveIntensityToPace(segment.targetIntensity!.min, segment.targetIntensity!.max, session.ftpWatts).paceMid.toDouble())}',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: RowCraftTheme.successGreen,
+                  _remainingLabel(engineState),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: RowCraftTheme.subtleGrey,
                   ),
                 ),
               const SizedBox(width: 8),
@@ -686,64 +749,94 @@ class _SegmentHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
 
-          // Progress bar with compact remaining label
-          if (isActive)
+          // Row 2: target pace + target s/m + HR (only if targets or HR exist)
+          if (hasPaceTarget || hasSpmTarget || data.heartRate != null) ...[
+            const SizedBox(height: 6),
             Row(
               children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: engineState.segmentProgress,
-                      minHeight: 6,
-                      backgroundColor: RowCraftTheme.surfaceContainerHigh,
-                      valueColor: AlwaysStoppedAnimation(segColor),
+                if (hasPaceTarget) ...[
+                  Text(
+                    _formatPace(resolveIntensityToPace(
+                      segment.targetIntensity!.min,
+                      segment.targetIntensity!.max,
+                      session.ftpWatts,
+                    ).paceMid.toDouble()),
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: RowCraftTheme.successGreen,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _remainingLabel(engineState),
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: RowCraftTheme.subtleGrey,
+                  Text(
+                    ' /500m',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: RowCraftTheme.subtleGrey,
+                    ),
                   ),
-                ),
+                ],
+                if (hasPaceTarget && hasSpmTarget)
+                  const SizedBox(width: 16),
+                if (hasSpmTarget)
+                  Text(
+                    '${segment.targetStrokeRate!.midpoint} s/m',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: RowCraftTheme.successGreen,
+                    ),
+                  ),
+                const Spacer(),
+                // HR indicator
+                if (data.heartRate != null && data.heartRate! > 0)
+                  Builder(builder: (_) {
+                    final hr = data.heartRate!;
+                    final zone = segment.targetHrZone ??
+                        _estimateHrZone(hr,
+                            maxHr: session.maxHeartRate ?? 190);
+                    final info = _hrZoneInfo(zone);
+                    final isEstimated = segment.targetHrZone == null;
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.favorite, size: 14,
+                            color: info.color),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$hr',
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: RowCraftTheme.metricWhite,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: info.color.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${isEstimated ? '~' : ''}Z$zone',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: info.color,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
               ],
             ),
+          ],
         ],
       ),
     );
-  }
-
-  String _remainingLabel(WorkoutEngineState state) {
-    final segment = state.currentSegment;
-    if (segment == null) return '';
-
-    switch (segment.durationType) {
-      case DurationType.time:
-        final totalSec = segment.durationValue.toInt();
-        // Derive from segmentProgress (already pause-adjusted by engine)
-        final remaining =
-            (totalSec * (1 - state.segmentProgress)).round().clamp(0, totalSec);
-        final min = remaining ~/ 60;
-        final sec = remaining % 60;
-        return '$min:${sec.toString().padLeft(2, '0')}';
-      case DurationType.distance:
-        final totalM = segment.durationValue;
-        final remaining =
-            (totalM - state.segmentElapsedDistance).clamp(0.0, totalM).toInt();
-        return '${remaining}m';
-      case DurationType.calories:
-        final totalCal = segment.durationValue;
-        final remaining = (totalCal - state.segmentElapsedCalories)
-            .clamp(0.0, totalCal)
-            .round();
-        return '${remaining}cal';
-    }
   }
 }
 
@@ -898,21 +991,7 @@ class _HeroSection extends StatelessWidget {
                   ),
                 ],
               ),
-              if (hasStrokeTarget) ...[
-                const SizedBox(height: 2),
-                Text(
-                  'tgt ${segment!.targetStrokeRate!.midpoint} spm',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: srColor == RowCraftTheme.successGreen
-                        ? RowCraftTheme.subtleGrey
-                        : srColor,
-                  ),
-                ),
-              ],
-
-              // SPM target shown as colored text only — not a bar
-              // (bar would replicate the pace guide visual)
+              // Target s/m now shown in _CurrentSegment below
             ],
           ),
         );
@@ -975,27 +1054,28 @@ class _PaceGuideBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Labels
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('SLOWER',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontSize: 9, color: RowCraftTheme.subtleGrey)),
-              Text(
-                '${_formatPace((targetMin + targetMax) / 2)} /500m',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: RowCraftTheme.successGreen,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+          // Warning label area — fixed height to prevent layout jank
+          SizedBox(
+            height: 18,
+            child: (currentPace > 0 && !isInRange)
+                ? Align(
+                    alignment: isTooSlow
+                        ? Alignment.centerLeft
+                        : Alignment.centerRight,
+                    child: Text(
+                      isTooSlow ? 'TOO SLOW' : 'TOO FAST',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: isTooSlow
+                            ? RowCraftTheme.warningAmber
+                            : RowCraftTheme.accentTeal,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-              ),
-              Text('FASTER',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      fontSize: 9, color: RowCraftTheme.subtleGrey)),
-            ],
+                  )
+                : null,
           ),
-          const SizedBox(height: 4),
           // The bar (40px)
           SizedBox(
             height: 40,
@@ -1075,164 +1155,7 @@ class _PaceGuideBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Stats Row — merged HR, distance, time, calories (single row)
-// ---------------------------------------------------------------------------
-
-class _StatsRow extends StatelessWidget {
-  final WorkoutSessionState session;
-
-  const _StatsRow({required this.session});
-
-  @override
-  Widget build(BuildContext context) {
-    final data = session.pm5Data;
-    final hr = data.heartRate;
-    final maxHr = session.maxHeartRate ?? 190;
-    final targetZone = session.engineState.currentSegment?.targetHrZone;
-    final zone = hr != null
-        ? (targetZone ?? _estimateHrZone(hr, maxHr: maxHr))
-        : null;
-    final info = zone != null
-        ? _hrZoneInfo(zone)
-        : (name: '', label: '', color: RowCraftTheme.subtleGrey);
-    final zoneColor = info.color;
-    final isEstimated = zone != null && targetZone == null;
-
-    final labelStyle = GoogleFonts.inter(
-      fontSize: 9,
-      fontWeight: FontWeight.w500,
-      color: RowCraftTheme.subtleGrey,
-      letterSpacing: 0.5,
-    );
-    final valueStyle = GoogleFonts.jetBrainsMono(
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
-      color: RowCraftTheme.metricWhite,
-    );
-
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: const BoxDecoration(
-        color: RowCraftTheme.surfaceContainer,
-        border: Border(
-          top: BorderSide(color: RowCraftTheme.surfaceContainerHigh, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          // HR + zone
-          Icon(
-            Icons.favorite,
-            size: 14,
-            color: hr != null ? zoneColor : RowCraftTheme.subtleGrey,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            hr != null ? '$hr' : '--',
-            style: valueStyle.copyWith(color: hr != null ? zoneColor : RowCraftTheme.subtleGrey),
-          ),
-          Text(' bpm', style: labelStyle),
-          if (zone != null) ...[
-            const SizedBox(width: 4),
-            Text(
-              isEstimated ? '~Z$zone' : 'Z$zone',
-              style: labelStyle.copyWith(color: zoneColor, fontSize: 10, fontWeight: FontWeight.w700),
-            ),
-          ],
-          const Spacer(),
-          // Distance
-          Text(data.distanceFormatted, style: valueStyle),
-          const SizedBox(width: 12),
-          // Time
-          Text(data.elapsedFormatted, style: valueStyle),
-          const SizedBox(width: 12),
-          // Calories
-          Text('${data.calories}', style: valueStyle),
-          Text(' cal', style: labelStyle),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Target Block — prominent current segment target
-// ---------------------------------------------------------------------------
-
-class _TargetBlock extends StatelessWidget {
-  final WorkoutSessionState session;
-
-  const _TargetBlock({required this.session});
-
-  @override
-  Widget build(BuildContext context) {
-    final segment = session.engineState.currentSegment ??
-        session.expandedSegments.firstOrNull;
-    if (segment == null) return const SizedBox.shrink();
-
-    final hasPaceTarget = segment.targetIntensity != null;
-    final hasSpmTarget = segment.targetStrokeRate != null;
-
-    if (!hasPaceTarget && !hasSpmTarget) return const SizedBox.shrink();
-
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: RowCraftTheme.successGreen.withValues(alpha: 0.08),
-        border: const Border(
-          top: BorderSide(color: RowCraftTheme.surfaceContainerHigh, width: 1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(
-            'TARGET',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: RowCraftTheme.subtleGrey,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(width: 12),
-          if (hasPaceTarget) ...[
-            Text(
-              _formatPace(resolveIntensityToPace(segment.targetIntensity!.min, segment.targetIntensity!.max, session.ftpWatts).paceMid.toDouble()),
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: RowCraftTheme.successGreen,
-              ),
-            ),
-            Text(
-              ' /500m',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: RowCraftTheme.subtleGrey,
-              ),
-            ),
-          ],
-          if (hasPaceTarget && hasSpmTarget) const Spacer(),
-          if (!hasPaceTarget && hasSpmTarget) const SizedBox(width: 8),
-          if (hasSpmTarget)
-            Text(
-              '${segment.targetStrokeRate!.midpoint} spm',
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: RowCraftTheme.successGreen,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Up-Next Preview (36px)
+// Up-Next Preview (36px) — EXR-style format
 // ---------------------------------------------------------------------------
 
 class _UpNextPreview extends StatelessWidget {
@@ -1299,34 +1222,46 @@ class _UpNextPreview extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
+          if (next.targetIntensity != null)
+            Text(
+              '${_formatPace(resolveIntensityToPace(next.targetIntensity!.min, next.targetIntensity!.max, session.ftpWatts).paceMid.toDouble())} /500',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: nextColor,
+              ),
+            ),
+          if (next.targetStrokeRate != null) ...[
+            if (next.targetIntensity != null)
+              const SizedBox(width: 8),
+            Text(
+              '${next.targetStrokeRate!.midpoint} s/m',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: nextColor,
+              ),
+            ),
+          ],
+          // Fallback: show segment type when no targets exist
+          if (next.targetIntensity == null && next.targetStrokeRate == null)
+            Text(
+              next.type.name.toUpperCase(),
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: nextColor,
+              ),
+            ),
+          const Spacer(),
           Text(
-            '${next.type.name.toUpperCase()} ${next.durationLabel}',
+            next.durationLabel,
             style: GoogleFonts.inter(
               fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: nextColor,
             ),
           ),
-          if (next.targetIntensity != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              'tgt ${_formatPace(resolveIntensityToPace(next.targetIntensity!.min, next.targetIntensity!.max, session.ftpWatts).paceMid.toDouble())}',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: RowCraftTheme.subtleGrey,
-              ),
-            ),
-          ],
-          if (next.targetStrokeRate != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              '${next.targetStrokeRate!.midpoint} spm',
-              style: GoogleFonts.inter(
-                fontSize: 11,
-                color: RowCraftTheme.subtleGrey,
-              ),
-            ),
-          ],
         ],
       ),
     );

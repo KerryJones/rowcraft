@@ -256,7 +256,12 @@ class _SavedDeviceTile extends ConsumerWidget {
           title: Text(device.deviceName),
           subtitle: Row(
             children: [
-              Text(isPm5 ? 'Ergometer' : 'Heart Rate Monitor'),
+              Flexible(
+                child: Text(
+                  isPm5 ? 'Ergometer' : 'Heart Rate Monitor',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               if (!isConnected && !isConnecting && showAvailability) ...[
                 const SizedBox(width: 8),
                 if (isAvailable) ...[
