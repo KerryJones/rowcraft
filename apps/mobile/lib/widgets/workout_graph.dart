@@ -40,28 +40,26 @@ class _GraphPainter extends CustomPainter {
 
   static const _barGap = 1.5;
   static const _minBarHeightFraction = 0.15;
-  static const _defaultPaceMin = 1000.0;
-  static const _defaultPaceMax = 1800.0;
 
   _GraphPainter({required this.segments, required this.ftpWatts});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final expanded = _expandSegments(segments);
-    if (expanded.isEmpty) return;
+    if (segments.isEmpty) return;
 
-    final durations = expanded.map((s) => _effectiveDuration(s, ftpWatts)).toList();
+    final durations = segments.map((s) => _effectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold(0.0, (a, b) => a + b);
     if (totalDuration <= 0) return;
 
-    final (paceMin, paceMax) = _getPaceRange(expanded);
-    final barCount = expanded.length;
+    final paceMin = intensityToPaceTenths(130, ftpWatts).toDouble();
+    final paceMax = intensityToPaceTenths(40, ftpWatts).toDouble();
+    final barCount = segments.length;
     final totalGap = _barGap * (barCount - 1);
     final availableWidth = size.width - totalGap;
 
     var x = 0.0;
-    for (var i = 0; i < expanded.length; i++) {
-      final seg = expanded[i];
+    for (var i = 0; i < segments.length; i++) {
+      final seg = segments[i];
       final barWidth = max(2.0, (durations[i] / totalDuration) * availableWidth);
       final double? pace;
       if (seg.targetIntensity != null) {
@@ -92,11 +90,6 @@ class _GraphPainter extends CustomPainter {
   bool shouldRepaint(_GraphPainter old) =>
       old.segments != segments || old.ftpWatts != ftpWatts;
 
-  /// Return segments as-is (segments are already individual).
-  static List<WorkoutSegment> _expandSegments(List<WorkoutSegment> segments) {
-    return segments;
-  }
-
   static double _effectiveDuration(WorkoutSegment seg, int ftpWatts) {
     if (seg.durationType == DurationType.time) return seg.durationValue;
     if (seg.durationType == DurationType.distance) {
@@ -117,31 +110,11 @@ class _GraphPainter extends CustomPainter {
     return (seg.durationValue / 15) * 60;
   }
 
-  (double, double) _getPaceRange(List<WorkoutSegment> segments) {
-    final paces = <double>[];
-    for (final seg in segments) {
-      if (seg.targetIntensity != null) {
-        final resolved = resolveIntensityToPace(
-          seg.targetIntensity!.min,
-          seg.targetIntensity!.max,
-          ftpWatts,
-        );
-        paces.add(resolved.paceMid.toDouble());
-      }
-    }
-    if (paces.isEmpty) return (_defaultPaceMin, _defaultPaceMax);
-    final minP = paces.reduce(min);
-    final maxP = paces.reduce(max);
-    final range = maxP - minP;
-    final padding = range == 0 ? 200.0 : range * 0.1;
-    return (max(0, minP - padding), maxP + padding);
-  }
-
   static double _paceToHeight(double? pace, double paceMin, double paceMax) {
     if (pace == null) return _minBarHeightFraction;
     final range = paceMax - paceMin;
     if (range == 0) return 0.7;
-    final normalized = 1 - (pace - paceMin) / range;
+    final normalized = (1 - (pace - paceMin) / range).clamp(0.0, 1.0);
     return _minBarHeightFraction + normalized * (1 - _minBarHeightFraction);
   }
 
