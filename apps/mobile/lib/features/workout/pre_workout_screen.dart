@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout.dart';
+import '../../models/workout_segment.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/pace_utils.dart' show intensityToPaceTenths, kDefaultFtpWatts;
+import '../../utils/segment_color.dart';
+import '../../utils/segment_display.dart';
 import '../../utils/workout_utils.dart';
 import '../../widgets/connection_required_dialog.dart';
 import '../../widgets/difficulty_indicator.dart';
@@ -270,6 +273,16 @@ class _WorkoutDetailBody extends StatelessWidget {
           ],
         ),
 
+        // Segment list
+        if (segments.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text('Segments',
+              style: theme.textTheme.labelLarge?.copyWith(
+                  color: RowCraftTheme.subtleGrey)),
+          const SizedBox(height: 8),
+          ...segments.map((seg) => _SegmentRow(segment: seg)),
+        ],
+
         // HR Zone chips
         if (hrZones.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -328,6 +341,85 @@ class _WorkoutDetailBody extends StatelessWidget {
       5 => RowCraftTheme.hrZone5,
       _ => RowCraftTheme.subtleGrey,
     };
+  }
+}
+
+class _SegmentRow extends StatelessWidget {
+  final WorkoutSegment segment;
+
+  const _SegmentRow({required this.segment});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = segmentDisplayColor(segment);
+    final paceLabel = segmentPaceLabel(segment, kDefaultFtpWatts);
+    final srLabel = segmentStrokeRateLabel(segment);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Container(
+        decoration: BoxDecoration(
+          color: RowCraftTheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: const BorderRadius.horizontal(
+                    left: Radius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Text(
+                        paceLabel,
+                        style: TextStyle(
+                          color: segment.targetIntensity == null
+                              ? RowCraftTheme.subtleGrey
+                              : Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (srLabel != null) ...[
+                        const SizedBox(width: 6),
+                        Text(
+                          '| $srLabel',
+                          style: const TextStyle(
+                            color: RowCraftTheme.subtleGrey,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      Text(
+                        segment.durationLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout.dart';
+import '../../widgets/ble_status_button.dart';
 import '../../widgets/wod_card.dart';
 import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
@@ -41,6 +42,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Workouts'),
+        actions: const [BleStatusButton()],
       ),
       body: Column(
         children: [

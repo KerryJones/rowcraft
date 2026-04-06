@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
+import '../../widgets/ble_status_button.dart';
 import '../../widgets/difficulty_indicator.dart';
 import 'plans_provider.dart';
 
@@ -36,6 +37,7 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Plans'),
+        actions: const [BleStatusButton()],
       ),
       body: Column(
         children: [

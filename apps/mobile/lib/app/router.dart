@@ -100,6 +100,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/workout/:id/active',
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           final planId = state.uri.queryParameters['plan'];
@@ -116,20 +117,35 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Bottom nav shell with 6 tabs
+      // History — full-screen, accessible from Profile
+      GoRoute(
+        path: '/history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const HistoryScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return HistoryDetailScreen(resultId: id);
+            },
+          ),
+        ],
+      ),
+
+      // Devices — full-screen, accessible from Profile and AppBar
+      GoRoute(
+        path: '/devices',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ConnectScreen(),
+      ),
+
+      // Bottom nav shell with 4 tabs
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             ShellScreen(navigationShell: navigationShell),
         branches: [
-          // Tab 0: Quick Start
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/',
-              builder: (context, state) => const QuickStartScreen(),
-            ),
-          ]),
-
-          // Tab 1: Workouts
+          // Tab 0: Workouts
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/workouts',
@@ -154,32 +170,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             ),
           ]),
 
-          // Tab 2: History
+          // Tab 2: Quick Start
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/history',
-              builder: (context, state) => const HistoryScreen(),
-              routes: [
-                GoRoute(
-                  path: ':id',
-                  builder: (context, state) {
-                    final id = state.pathParameters['id']!;
-                    return HistoryDetailScreen(resultId: id);
-                  },
-                ),
-              ],
+              path: '/',
+              builder: (context, state) => const QuickStartScreen(),
             ),
           ]),
 
-          // Tab 3: Devices
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/devices',
-              builder: (context, state) => const ConnectScreen(),
-            ),
-          ]),
-
-          // Tab 4: Profile
+          // Tab 3: Profile
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/profile',

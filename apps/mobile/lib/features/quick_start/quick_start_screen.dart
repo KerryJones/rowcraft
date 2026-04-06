@@ -81,7 +81,7 @@ class QuickStartScreen extends ConsumerWidget {
                 if (!pm5Connected) ...[
                   const SizedBox(height: 12),
                   Text(
-                    'No PM5 connected',
+                    'No rower connected',
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       color: RowCraftTheme.subtleGrey,

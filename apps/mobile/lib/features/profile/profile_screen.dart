@@ -7,6 +7,8 @@ import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
+import '../ble/ble_provider.dart';
+import '../ble/pm5_service.dart';
 
 /// Provider for the user's profile data.
 final profileProvider = FutureProvider<Profile>((ref) async {
@@ -35,6 +37,9 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
     final c2LinkedAsync = ref.watch(c2LinkedProvider);
     final currentUser = ref.watch(currentUserProvider);
+    final bleState = ref.watch(bleProvider);
+    final pm5Connected =
+        bleState.pm5ConnectionState == PM5ConnectionState.connected;
 
     return Scaffold(
       appBar: AppBar(
@@ -87,6 +92,40 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Navigation items (History, Devices)
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.history),
+                  title: const Text('Workout History'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/history'),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: Badge(
+                    isLabelVisible: pm5Connected,
+                    backgroundColor: RowCraftTheme.successGreen,
+                    smallSize: 8,
+                    child: Icon(
+                      pm5Connected
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth,
+                    ),
+                  ),
+                  title: const Text('Devices'),
+                  subtitle: Text(
+                    pm5Connected ? 'Connected' : 'Not connected',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/devices'),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
