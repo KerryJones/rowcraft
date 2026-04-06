@@ -69,6 +69,15 @@ String _formatPace(double tenths) {
   };
 }
 
+/// Pace acceptance range with 5% tolerance around midpoint (matching EXR).
+/// Visual green zone on the bar uses raw paceMin/paceMax; this wider range
+/// determines color feedback and TOO SLOW / TOO FAST warnings.
+(double, double) _paceAcceptanceRange(int paceMin, int paceMax) {
+  final mid = (paceMin + paceMax) / 2;
+  final tolerance = mid * 0.05;
+  return (mid - tolerance, mid + tolerance);
+}
+
 /// HR zone estimate from BPM using percentage of max heart rate.
 int _estimateHrZone(int bpm, {int maxHr = 190}) {
   if (bpm < (maxHr * 0.6).round()) return 1;
@@ -393,7 +402,7 @@ class _BleStatusBar extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Overall Stats Bar — TIME | DIST | CAL
+// Overall Stats Bar — TIME | DIST | CAL | LEFT
 // ---------------------------------------------------------------------------
 
 class _OverallStatsBar extends StatelessWidget {
@@ -414,9 +423,34 @@ class _OverallStatsBar extends StatelessWidget {
           _stat(context, 'TIME', data.elapsedFormatted),
           _stat(context, 'DIST', data.distanceFormatted),
           _stat(context, 'CAL', '${data.calories}'),
+          _stat(context, 'LEFT', _remainingWorkout()),
         ],
       ),
     );
+  }
+
+  String _remainingWorkout() {
+    final segments = session.expandedSegments;
+    if (segments.isEmpty) return '--:--';
+
+    final ftpWatts = session.ftpWatts;
+    final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
+    final totalDuration = durations.fold<double>(0, (a, b) => a + b);
+    if (totalDuration <= 0) return '--:--';
+
+    final currentIndex = session.engineState.currentSegmentIndex;
+    var elapsed = 0.0;
+    for (var i = 0; i < currentIndex && i < durations.length; i++) {
+      elapsed += durations[i];
+    }
+    if (currentIndex < durations.length) {
+      elapsed += session.engineState.segmentProgress * durations[currentIndex];
+    }
+
+    final remainingSec = ((totalDuration - elapsed).clamp(0, totalDuration)).round();
+    final m = remainingSec ~/ 60;
+    final s = remainingSec % 60;
+    return '$m:${s.toString().padLeft(2, '0')}';
   }
 
   Widget _stat(BuildContext context, String label, String value) {
@@ -496,37 +530,15 @@ class _WorkoutProfilePainter extends CustomPainter {
 
     const barGap = 1.5;
     const minHeightFraction = 0.15;
-    const defaultPaceMin = 1000.0;
-    const defaultPaceMax = 1800.0;
 
     final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold<double>(0, (a, b) => a + b);
     if (totalDuration <= 0) return;
 
-    // Compute pace range for height mapping
-    final paces = <double>[];
-    for (final seg in segments) {
-      if (seg.targetIntensity != null) {
-        final resolved = resolveIntensityToPace(
-          seg.targetIntensity!.min,
-          seg.targetIntensity!.max,
-          ftpWatts,
-        );
-        paces.add(resolved.paceMid.toDouble());
-      }
-    }
-    double paceMin, paceMax;
-    if (paces.isEmpty) {
-      paceMin = defaultPaceMin;
-      paceMax = defaultPaceMax;
-    } else {
-      final minP = paces.reduce(math.min);
-      final maxP = paces.reduce(math.max);
-      final range = maxP - minP;
-      final pad = range == 0 ? 200.0 : range * 0.1;
-      paceMin = math.max(0, minP - pad);
-      paceMax = maxP + pad;
-    }
+    // Absolute pace range anchored to FTP (40%-130% intensity).
+    // This prevents tiny pace differences from looking like huge swings.
+    final paceMin = intensityToPaceTenths(130, ftpWatts).toDouble(); // fastest (race pace)
+    final paceMax = intensityToPaceTenths(40, ftpWatts).toDouble();  // slowest (very easy)
 
     double paceToHeight(double? pace) {
       if (pace == null) return minHeightFraction;
@@ -856,7 +868,7 @@ class _HeroSection extends StatelessWidget {
     final isActive = session.engineState.phase == WorkoutPhase.rowing ||
         session.engineState.phase == WorkoutPhase.resting;
 
-    // Pace color based on target
+    // Pace color based on target — uses 5% tolerance range for feedback
     Color splitColor = RowCraftTheme.metricWhite;
     if (segment?.targetIntensity != null && data.pace > 0) {
       final resolved = resolveIntensityToPace(
@@ -864,26 +876,27 @@ class _HeroSection extends StatelessWidget {
         segment.targetIntensity!.max,
         session.ftpWatts,
       );
+      final (acceptMin, acceptMax) = _paceAcceptanceRange(resolved.paceMin, resolved.paceMax);
       final pace = data.pace.toDouble();
-      if (pace >= resolved.paceMin && pace <= resolved.paceMax) {
+      if (pace >= acceptMin && pace <= acceptMax) {
         splitColor = RowCraftTheme.successGreen;
-      } else if (pace > resolved.paceMax) {
+      } else if (pace > acceptMax) {
         splitColor = RowCraftTheme.warningAmber;
       } else {
         splitColor = RowCraftTheme.accentTeal;
       }
     }
 
-    // Stroke rate color + chevron direction
+    // Stroke rate color + chevron direction — ±1 s/m tolerance around midpoint
     final hasStrokeTarget = segment?.targetStrokeRate != null;
     Color srColor = RowCraftTheme.metricWhite;
     String? srChevron; // null = in range, '▲' = speed up, '▼' = slow down
     if (hasStrokeTarget && data.strokeRate > 0) {
       final sr = data.strokeRate;
-      if (sr >= segment!.targetStrokeRate!.min &&
-          sr <= segment.targetStrokeRate!.max) {
+      final srmid = segment!.targetStrokeRate!.midpoint;
+      if (sr >= srmid - 1 && sr <= srmid + 1) {
         srColor = RowCraftTheme.successGreen;
-      } else if (sr < segment.targetStrokeRate!.min) {
+      } else if (sr < srmid - 1) {
         srColor = RowCraftTheme.warningAmber;
         srChevron = '\u25B2'; // ▲ speed up
       } else {
@@ -1029,8 +1042,10 @@ class _PaceGuideBar extends StatelessWidget {
         ? (1.0 - ((currentPace - displayMin) / displayRange).clamp(0.0, 1.0))
         : 0.5;
 
-    final isInRange = currentPace >= targetMin && currentPace <= targetMax;
-    final isTooSlow = currentPace > targetMax;
+    // Use 5% tolerance range for feedback; visual green zone uses raw targetMin/targetMax
+    final (acceptMin, acceptMax) = _paceAcceptanceRange(targetMin.toInt(), targetMax.toInt());
+    final isInRange = currentPace >= acceptMin && currentPace <= acceptMax;
+    final isTooSlow = currentPace > acceptMax;
 
     final indicatorColor = isInRange
         ? RowCraftTheme.successGreen
