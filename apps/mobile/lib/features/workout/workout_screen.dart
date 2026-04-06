@@ -851,9 +851,11 @@ class _HeroSection extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Rowing animation (full width)
+              // Rowing animation — paces to target stroke rate (guide),
+              // falls back to current rate when no target is set
               RowingAnimation(
-                strokeRate: data.strokeRate,
+                strokeRate:
+                    segment?.targetStrokeRate?.midpoint ?? data.strokeRate,
                 isActive: isActive,
                 height: animHeight,
               ),
