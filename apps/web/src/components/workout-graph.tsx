@@ -2,7 +2,6 @@
 
 import type { WorkoutSegment, SegmentType } from '@/lib/types';
 import { cn } from '@/lib/utils/cn';
-import { formatPace } from '@/lib/utils/format';
 import { formatSegmentDuration } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
@@ -17,8 +16,10 @@ const TYPE_ABBREV: Record<SegmentType, string> = {
 
 const BAR_GAP = 1.5;
 const MIN_BAR_HEIGHT_FRACTION = 0.15;
-const DEFAULT_PACE_MIN = 1000;
-const DEFAULT_PACE_MAX = 1800;
+
+/** Fixed scale for absolute intensity mapping. */
+const INTENSITY_FLOOR = 40;  // % FTP — below this, bar is at minimum height
+const INTENSITY_CEIL = 130;  // % FTP — above this, bar is at maximum height
 
 interface WorkoutGraphProps {
   segments: WorkoutSegment[];
@@ -49,76 +50,15 @@ function getEffectiveDuration(seg: WorkoutSegment, ftp: number): number {
 }
 
 /**
- * Collect all resolved mid-paces from segments.
+ * Map a segment's intensity to a height fraction (0-1) on a fixed absolute scale.
+ * Higher intensity % = taller bar. Segments without intensity get minimum height.
  */
-function getPaceRange(segments: WorkoutSegment[], ftp: number): { paceMin: number; paceMax: number } {
-  const paces: number[] = [];
-  for (const seg of segments) {
-    if (seg.target_intensity) {
-      const { paceMid } = resolveIntensityToPace(seg.target_intensity, ftp);
-      paces.push(paceMid);
-    }
-  }
-  if (paces.length === 0) {
-    return { paceMin: DEFAULT_PACE_MIN, paceMax: DEFAULT_PACE_MAX };
-  }
-  const min = Math.min(...paces);
-  const max = Math.max(...paces);
-  // Add some padding so bars don't hit exact top/bottom
-  const range = max - min || 200;
-  return {
-    paceMin: Math.max(0, min - range * 0.1),
-    paceMax: max + range * 0.1,
-  };
-}
-
-/**
- * Map a pace value to a normalized height (0-1) where faster (lower tenths) = taller.
- * Returns MIN_BAR_HEIGHT_FRACTION for segments with no pace.
- */
-function paceToHeight(pace: number | null, paceMin: number, paceMax: number): number {
-  if (pace === null) return MIN_BAR_HEIGHT_FRACTION;
-  const range = paceMax - paceMin;
-  if (range === 0) return 0.7;
-  // Invert: lower pace = taller bar
-  const normalized = 1 - (pace - paceMin) / range;
+function intensityToHeight(segment: WorkoutSegment): number {
+  if (!segment.target_intensity) return MIN_BAR_HEIGHT_FRACTION;
+  const midPct = (segment.target_intensity.min + segment.target_intensity.max) / 2;
+  const clamped = Math.max(INTENSITY_FLOOR, Math.min(INTENSITY_CEIL, midPct));
+  const normalized = (clamped - INTENSITY_FLOOR) / (INTENSITY_CEIL - INTENSITY_FLOOR);
   return MIN_BAR_HEIGHT_FRACTION + normalized * (1 - MIN_BAR_HEIGHT_FRACTION);
-}
-
-/**
- * Generate Y-axis pace labels (2-3 labels). Since the axis is inverted (fast=top),
- * we pick evenly spaced paces between min and max.
- */
-function getYAxisLabels(paceMin: number, paceMax: number): { pace: number; fraction: number }[] {
-  const range = paceMax - paceMin;
-  if (range === 0) {
-    return [{ pace: paceMin, fraction: 0.5 }];
-  }
-
-  // Round to nice pace values (multiples of 50 tenths = 5 seconds)
-  const roundTo = 50;
-  const niceMin = Math.ceil(paceMin / roundTo) * roundTo;
-  const niceMax = Math.floor(paceMax / roundTo) * roundTo;
-
-  const labels: { pace: number; fraction: number }[] = [];
-
-  if (niceMax - niceMin < roundTo) {
-    // Very narrow range, just show midpoint
-    const mid = Math.round((paceMin + paceMax) / 2 / roundTo) * roundTo;
-    labels.push({ pace: mid, fraction: 1 - (mid - paceMin) / range });
-  } else {
-    // Pick 2-3 nice values
-    const step = niceMax - niceMin <= roundTo * 2
-      ? roundTo
-      : Math.ceil((niceMax - niceMin) / 2 / roundTo) * roundTo;
-
-    for (let p = niceMin; p <= niceMax; p += step) {
-      const fraction = 1 - (p - paceMin) / range;
-      labels.push({ pace: p, fraction });
-    }
-  }
-
-  return labels;
 }
 
 /**
@@ -174,7 +114,7 @@ export function WorkoutGraph({
 
   const isHero = variant === 'hero';
   const svgHeight = isHero ? 220 : 120;
-  const paddingLeft = isHero ? 45 : 40;
+  const paddingLeft = 4;
   const paddingBottom = isHero ? 28 : 20;
   const paddingTop = 8;
   const paddingRight = 4;
@@ -195,8 +135,6 @@ export function WorkoutGraph({
   const totalGapWidth = BAR_GAP * (expandedSegments.length - 1);
   const availableBarWidth = chartAreaWidth - totalGapWidth;
 
-  const { paceMin, paceMax } = getPaceRange(expandedSegments, ftp);
-  const yLabels = getYAxisLabels(paceMin, paceMax);
   const xLabels = getXAxisLabels(expandedSegments, totalDuration);
 
   // Compute bar positions
@@ -214,14 +152,7 @@ export function WorkoutGraph({
     const seg = expandedSegments[i];
     const widthFraction = durations[i] / totalDuration;
     const barWidth = Math.max(2, widthFraction * availableBarWidth);
-    const resolvedPace = seg.target_intensity
-      ? resolveIntensityToPace(seg.target_intensity, ftp).paceMid
-      : null;
-    const heightFraction = paceToHeight(
-      resolvedPace,
-      paceMin,
-      paceMax,
-    );
+    const heightFraction = intensityToHeight(seg);
     const barHeight = heightFraction * chartAreaHeight;
     const barY = chartAreaBottom - barHeight;
 
@@ -237,7 +168,6 @@ export function WorkoutGraph({
     currentX += barWidth + BAR_GAP;
   }
 
-  const yLabelFontSize = isHero ? 10 : 9;
   const xLabelFontSize = isHero ? 10 : 9;
   const barLabelFontSize = 9;
 
@@ -250,33 +180,6 @@ export function WorkoutGraph({
       role="img"
       aria-label="Workout intensity graph"
     >
-      {/* Y-axis labels (pace) */}
-      {yLabels.map(({ pace, fraction }) => {
-        const y = chartAreaTop + (1 - fraction) * chartAreaHeight;
-        return (
-          <g key={`y-${pace}`}>
-            <line
-              x1={chartAreaLeft}
-              y1={y}
-              x2={chartAreaRight}
-              y2={y}
-              stroke="#374151"
-              strokeWidth={0.5}
-              strokeDasharray="4,3"
-            />
-            <text
-              x={paddingLeft - 4}
-              y={y + 3}
-              textAnchor="end"
-              fill="#6b7280"
-              fontSize={yLabelFontSize}
-            >
-              {formatPace(pace)}
-            </text>
-          </g>
-        );
-      })}
-
       {/* Baseline */}
       <line
         x1={chartAreaLeft}

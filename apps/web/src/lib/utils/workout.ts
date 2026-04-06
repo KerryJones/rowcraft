@@ -161,3 +161,11 @@ export function computeCumulativeMinutes(segments: WorkoutSegment[]): MinuteMark
 
 	return markers;
 }
+
+/**
+ * Estimate total workout duration in minutes (including distance/calorie segments).
+ */
+export function estimateTotalMinutes(segments: WorkoutSegment[]): number {
+	const markers = computeCumulativeMinutes(segments);
+	return markers[markers.length - 1]?.minute ?? 0;
+}

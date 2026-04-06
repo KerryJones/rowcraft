@@ -89,7 +89,7 @@ export function WodCard({ workout, onShuffle, onView, canShuffle = true, ftpWatt
 
       {/* Graph */}
       <div className="w-full">
-        <WorkoutGraph segments={workout.segments} variant="card" />
+        <WorkoutGraph segments={workout.segments} variant="card" ftpWatts={ftpWatts} />
       </div>
 
       {/* Description */}

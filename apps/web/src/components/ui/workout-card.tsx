@@ -76,7 +76,7 @@ export function WorkoutCard({ workout, authorName, onClick, ftpWatts }: WorkoutC
 
       {/* Graph */}
       <div className="w-full">
-        <WorkoutGraph segments={workout.segments} variant="card" />
+        <WorkoutGraph segments={workout.segments} variant="card" ftpWatts={ftpWatts} />
       </div>
 
       {/* Description */}
