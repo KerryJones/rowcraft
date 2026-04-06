@@ -805,7 +805,7 @@ class _HeroSection extends StatelessWidget {
         final isCompact = constraints.maxHeight < 200;
         final paceFontSize = isCompact ? 60.0 : 80.0;
         final srFontSize = isCompact ? 36.0 : 44.0;
-        final srHeight = isCompact ? 36.0 : 44.0;
+        final animHeight = isCompact ? 50.0 : 70.0;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -849,73 +849,65 @@ class _HeroSection extends StatelessWidget {
                 }),
               ],
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
-              // Stroke rate row
+              // Rowing animation (full width)
+              RowingAnimation(
+                strokeRate: data.strokeRate,
+                isActive: isActive,
+                height: animHeight,
+              ),
+
+              const SizedBox(height: 8),
+
+              // Stroke rate
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  RowingAnimation(
-                    strokeRate: data.strokeRate,
-                    isActive: isActive,
-                    height: srHeight,
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (srChevron != null)
-                            Text(
-                              srChevron,
-                              style: GoogleFonts.jetBrainsMono(
-                                fontSize: srFontSize * 0.5,
-                                color: srColor,
-                                height: 1.0,
-                              ),
-                            ),
-                          if (srChevron != null) const SizedBox(width: 4),
-                          Text(
-                            '${data.strokeRate}',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: srFontSize,
-                              fontWeight: FontWeight.w600,
-                              color: srColor,
-                              height: 1.0,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            's/m',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelLarge
-                                ?.copyWith(
-                                  color: RowCraftTheme.subtleGrey,
-                                ),
-                          ),
-                        ],
+                  if (srChevron != null)
+                    Text(
+                      srChevron,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: srFontSize * 0.5,
+                        color: srColor,
+                        height: 1.0,
                       ),
-                      if (hasStrokeTarget) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          'tgt ${segment!.targetStrokeRate!.midpoint} spm',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: srColor == RowCraftTheme.successGreen
-                                ? RowCraftTheme.subtleGrey
-                                : srColor,
-                          ),
+                    ),
+                  if (srChevron != null) const SizedBox(width: 4),
+                  Text(
+                    '${data.strokeRate}',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: srFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: srColor,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    's/m',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
                         ),
-                      ],
-                    ],
                   ),
                 ],
               ),
+              if (hasStrokeTarget) ...[
+                const SizedBox(height: 2),
+                Text(
+                  'tgt ${segment!.targetStrokeRate!.midpoint} spm',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: srColor == RowCraftTheme.successGreen
+                        ? RowCraftTheme.subtleGrey
+                        : srColor,
+                  ),
+                ),
+              ],
 
               // SPM target shown as colored text only — not a bar
               // (bar would replicate the pace guide visual)
