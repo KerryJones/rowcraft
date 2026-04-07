@@ -10,6 +10,7 @@ import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
 import '../../widgets/workout_type_badge.dart';
 import '../plans/plans_provider.dart';
+import '../../services/workout_repository.dart';
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -156,7 +157,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.invalidate(workoutLibraryProvider);
+                    final repo = ref.read(workoutRepositoryProvider);
+                    await repo.refreshWorkouts(isPublic: true);
+                    ref.read(workoutRefreshTriggerProvider.notifier).state++;
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),

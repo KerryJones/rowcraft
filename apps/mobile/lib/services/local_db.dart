@@ -52,12 +52,21 @@ class CachedWorkouts extends Table {
   Set<Column> get primaryKey => {workoutId};
 }
 
-@DriftDatabase(tables: [PendingResults, CachedWorkouts, SavedDevices])
+/// Key/value store for sync metadata (e.g. last sync timestamps).
+class SyncMetadata extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
+@DriftDatabase(tables: [PendingResults, CachedWorkouts, SavedDevices, SyncMetadata])
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -65,6 +74,9 @@ class LocalDatabase extends _$LocalDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(savedDevices);
+          }
+          if (from < 3) {
+            await m.createTable(syncMetadata);
           }
         },
       );
@@ -184,11 +196,32 @@ class LocalDatabase extends _$LocalDatabase {
     );
   }
 
+  /// Cache multiple workouts in a single transaction.
+  Future<void> cacheWorkouts(List<CachedWorkoutsCompanion> companions) {
+    return transaction(() async {
+      for (final companion in companions) {
+        await into(cachedWorkouts).insertOnConflictUpdate(companion);
+      }
+    });
+  }
+
+  /// Get all cached workouts.
+  Future<List<CachedWorkout>> getAllCachedWorkouts() {
+    return select(cachedWorkouts).get();
+  }
+
   /// Get a cached workout by ID.
   Future<CachedWorkout?> getCachedWorkout(String workoutId) {
     return (select(cachedWorkouts)
           ..where((w) => w.workoutId.equals(workoutId)))
         .getSingleOrNull();
+  }
+
+  /// Remove a single cached workout.
+  Future<void> removeCachedWorkout(String workoutId) {
+    return (delete(cachedWorkouts)
+          ..where((w) => w.workoutId.equals(workoutId)))
+        .go();
   }
 
   /// Clear all cached workouts older than the given duration.
@@ -197,6 +230,23 @@ class LocalDatabase extends _$LocalDatabase {
     return (delete(cachedWorkouts)
           ..where((w) => w.cachedAt.isSmallerThanValue(cutoff)))
         .go();
+  }
+
+  // ── Sync Metadata ────────────────────────────────────────────────────
+
+  /// Get a sync metadata value by key. Returns null if not set.
+  Future<String?> getSyncMeta(String key) async {
+    final row = await (select(syncMetadata)
+          ..where((m) => m.key.equals(key)))
+        .getSingleOrNull();
+    return row?.value;
+  }
+
+  /// Set a sync metadata value.
+  Future<void> setSyncMeta(String key, String value) {
+    return into(syncMetadata).insertOnConflictUpdate(
+      SyncMetadataCompanion.insert(key: key, value: value),
+    );
   }
 }
 

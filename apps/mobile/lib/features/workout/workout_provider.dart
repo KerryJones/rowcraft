@@ -9,6 +9,7 @@ import '../../models/workout_time_sample.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
+import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart';
 import '../ble/ble_provider.dart';
 import '../ble/hr_service.dart';
@@ -160,6 +161,7 @@ class WorkoutSessionState {
 class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   final SupabaseService _supabaseService;
   final SyncService _syncService;
+  final WorkoutRepository _workoutRepository;
   final Ref _ref;
 
   WorkoutEngine? _engine;
@@ -180,8 +182,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// BLE data stream controller — feeds into the workout engine.
   final _pm5Controller = StreamController<PM5Data>.broadcast();
 
-  WorkoutSessionNotifier(this._supabaseService, this._syncService, this._ref)
-      : super(const WorkoutSessionState()) {
+  WorkoutSessionNotifier(
+    this._supabaseService,
+    this._syncService,
+    this._workoutRepository,
+    this._ref,
+  ) : super(const WorkoutSessionState()) {
     _subscribeToBle();
   }
 
@@ -246,7 +252,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     );
 
     try {
-      final workout = await _supabaseService.getWorkout(workoutId);
+      final workout = await _workoutRepository.getWorkout(workoutId);
 
       // Fetch user's profile for max HR and FTP (non-blocking on failure)
       int? maxHr;
@@ -543,6 +549,7 @@ final workoutSessionProvider =
   return WorkoutSessionNotifier(
     ref.watch(supabaseServiceProvider),
     ref.watch(syncServiceProvider),
+    ref.watch(workoutRepositoryProvider),
     ref,
   );
 });
