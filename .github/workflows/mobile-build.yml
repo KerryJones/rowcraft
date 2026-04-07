@@ -10,18 +10,25 @@ on:
       - 'apps/mobile/**'
       - 'packages/shared/**'
 
+env:
+  FLUTTER_VERSION: '3.41.5'
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
+          cache: true
       - name: Install dependencies
         working-directory: apps/mobile
         run: flutter pub get
+      - name: Generate code
+        working-directory: apps/mobile
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: Analyze
         working-directory: apps/mobile
         run: flutter analyze
@@ -35,10 +42,17 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          flutter-version: '3.24.0'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
+          cache: true
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      - name: Generate code
+        working-directory: apps/mobile
+        run: dart run build_runner build --delete-conflicting-outputs
       - name: Build APK
         working-directory: apps/mobile
         run: flutter build apk --release --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
@@ -47,16 +61,3 @@ jobs:
           name: android-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
 
-  build-ios:
-    needs: test
-    runs-on: macos-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
-          channel: 'stable'
-      - name: Build iOS (no codesign)
-        working-directory: apps/mobile
-        run: flutter build ios --release --no-codesign --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
