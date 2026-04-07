@@ -1,0 +1,26 @@
+id: e1000000-0000-0000-0001-000000000001
+title: "FTP Builder Wk1 Threshold Intro"
+description: "Week 1: Threshold introduction. Short threshold intervals to ease into the training zones before the build begins."
+difficulty: intermediate
+tags: [ftp-builder, threshold, week-1]
+estimated_duration_minutes: 25
+segments:
+  - type: warmup
+    duration: "5:00"
+    intensity: 60%
+    stroke_rate: 20
+    hr_zone: 1
+  - type: interval
+    reps: 3
+    work:
+      duration: "3:00"
+      intensity: 90%
+      stroke_rate: 24
+      hr_zone: 4
+    rest:
+      duration: "2:00"
+  - type: cooldown
+    duration: "5:00"
+    intensity: 60%
+    stroke_rate: 20
+    hr_zone: 1
