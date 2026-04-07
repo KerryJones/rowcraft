@@ -63,12 +63,7 @@ class _GraphPainter extends CustomPainter {
       final barWidth = max(2.0, (durations[i] / totalDuration) * availableWidth);
       final double? pace;
       if (seg.targetIntensity != null) {
-        final resolved = resolveIntensityToPace(
-          seg.targetIntensity!.min,
-          seg.targetIntensity!.max,
-          ftpWatts,
-        );
-        pace = resolved.paceMid.toDouble();
+        pace = resolveIntensityToPace(seg.targetIntensity!, ftpWatts).toDouble();
       } else {
         pace = null;
       }
@@ -95,12 +90,8 @@ class _GraphPainter extends CustomPainter {
     if (seg.durationType == DurationType.distance) {
       final double pacePerMeter;
       if (seg.targetIntensity != null) {
-        final resolved = resolveIntensityToPace(
-          seg.targetIntensity!.min,
-          seg.targetIntensity!.max,
-          ftpWatts,
-        );
-        pacePerMeter = (resolved.paceMid / 10) / 500;
+        final targetPace = resolveIntensityToPace(seg.targetIntensity!, ftpWatts);
+        pacePerMeter = (targetPace / 10) / 500;
       } else {
         pacePerMeter = 0.24;
       }

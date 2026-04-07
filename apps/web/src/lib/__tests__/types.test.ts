@@ -9,7 +9,7 @@ describe('normalizeWorkoutSegments', () => {
 				type: 'work',
 				duration_type: 'time',
 				duration_value: 300,
-				target_intensity: { min: 90, max: 100 },
+				target_intensity: 95,
 				target_stroke_rate: null,
 				target_hr_zone: null,
 				// messages field missing entirely
@@ -26,7 +26,7 @@ describe('normalizeWorkoutSegments', () => {
 				type: 'work',
 				duration_type: 'time',
 				duration_value: 300,
-				target_intensity: { min: 85, max: 95 },
+				target_intensity: 90,
 				target_stroke_rate: null,
 				target_hr_zone: null,
 				messages: null,
@@ -43,7 +43,7 @@ describe('normalizeWorkoutSegments', () => {
 		];
 
 		const result = normalizeWorkoutSegments(segments);
-		expect(result[0].target_intensity).toEqual({ min: 85, max: 95 });
+		expect(result[0].target_intensity).toBe(90);
 		expect(result[1].target_intensity).toBeNull();
 	});
 });

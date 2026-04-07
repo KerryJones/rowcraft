@@ -43,7 +43,7 @@ int? computeAvgIntensity(List<WorkoutSegment> segments) {
   var weightedSum = 0.0;
   for (final s in workSegs) {
     final weight = s.durationValue;
-    weightedSum += s.targetIntensity!.midpoint * weight;
+    weightedSum += s.targetIntensity! * weight;
     totalWeight += weight;
   }
   return totalWeight > 0 ? (weightedSum / totalWeight).round() : null;
@@ -62,7 +62,7 @@ double? computeIntensity(List<WorkoutSegment> segments) {
 
   for (final s in workSegs) {
     final duration = s.durationValue;
-    weightedSum += (s.targetIntensity!.midpoint / 100.0) * duration;
+    weightedSum += (s.targetIntensity! / 100.0) * duration;
     totalWeight += duration;
   }
 

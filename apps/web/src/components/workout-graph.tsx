@@ -40,8 +40,8 @@ function getEffectiveDuration(seg: WorkoutSegment, ftp: number): number {
   if (seg.duration_type === 'distance') {
     let pacePerMeter = 0.24; // 2:00/500m default
     if (seg.target_intensity) {
-      const { paceMid } = resolveIntensityToPace(seg.target_intensity, ftp);
-      pacePerMeter = (paceMid / 10) / 500;
+      const pace = resolveIntensityToPace(seg.target_intensity, ftp);
+      pacePerMeter = (pace / 10) / 500;
     }
     return seg.duration_value * pacePerMeter;
   }
@@ -55,8 +55,7 @@ function getEffectiveDuration(seg: WorkoutSegment, ftp: number): number {
  */
 function intensityToHeight(segment: WorkoutSegment): number {
   if (!segment.target_intensity) return MIN_BAR_HEIGHT_FRACTION;
-  const midPct = (segment.target_intensity.min + segment.target_intensity.max) / 2;
-  const clamped = Math.max(INTENSITY_FLOOR, Math.min(INTENSITY_CEIL, midPct));
+  const clamped = Math.max(INTENSITY_FLOOR, Math.min(INTENSITY_CEIL, segment.target_intensity));
   const normalized = (clamped - INTENSITY_FLOOR) / (INTENSITY_CEIL - INTENSITY_FLOOR);
   return MIN_BAR_HEIGHT_FRACTION + normalized * (1 - MIN_BAR_HEIGHT_FRACTION);
 }

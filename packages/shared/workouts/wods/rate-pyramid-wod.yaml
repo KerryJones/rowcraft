@@ -7,46 +7,46 @@ estimated_duration_minutes: 31
 segments:
   - type: warmup
     duration: "5:00"
-    intensity: 50-55%
-    stroke_rate: 16-20
+    intensity: 60%
+    stroke_rate: 20
     hr_zone: 1
   - type: work
     duration: "3:00"
-    intensity: 65-70%
-    stroke_rate: 20-20
+    intensity: 70%
+    stroke_rate: 20
     hr_zone: 2
   - type: work
     duration: "3:00"
-    intensity: 72-78%
-    stroke_rate: 24-24
+    intensity: 70%
+    stroke_rate: 24
     hr_zone: 2
   - type: work
     duration: "3:00"
-    intensity: 82-88%
-    stroke_rate: 28-28
+    intensity: 83%
+    stroke_rate: 28
     hr_zone: 3
   - type: work
     duration: "3:00"
-    intensity: 95-105%
-    stroke_rate: 32-32
+    intensity: 95%
+    stroke_rate: 32
     hr_zone: 4
   - type: work
     duration: "3:00"
-    intensity: 82-88%
-    stroke_rate: 28-28
+    intensity: 83%
+    stroke_rate: 28
     hr_zone: 3
   - type: work
     duration: "3:00"
-    intensity: 72-78%
-    stroke_rate: 24-24
+    intensity: 70%
+    stroke_rate: 24
     hr_zone: 2
   - type: work
     duration: "3:00"
-    intensity: 65-70%
-    stroke_rate: 20-20
+    intensity: 70%
+    stroke_rate: 20
     hr_zone: 2
   - type: cooldown
     duration: "5:00"
-    intensity: 50-55%
-    stroke_rate: 16-20
+    intensity: 60%
+    stroke_rate: 20
     hr_zone: 1

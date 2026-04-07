@@ -41,20 +41,19 @@ export function SegmentCard({ segment, index, ftpWatts }: SegmentCardProps) {
       {/* Secondary line: intensity, SPM, HR zone */}
       {(segment.target_intensity || segment.target_stroke_rate || segment.target_hr_zone) && (
         <div className="ml-[18px] mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-          {segment.target_intensity && (() => {
-            const { paceMid } = resolveIntensityToPace(segment.target_intensity, ftp);
-            const midPct = Math.round((segment.target_intensity.min + segment.target_intensity.max) / 2);
-            const watts = intensityToWatts(midPct, ftp);
+          {segment.target_intensity != null && (() => {
+            const pace = resolveIntensityToPace(segment.target_intensity, ftp);
+            const watts = intensityToWatts(segment.target_intensity, ftp);
             return (
               <span>
-                {formatPace(paceMid)}/500m{' '}
-                <span className="text-gray-500">({midPct}% FTP / {formatWatts(watts)})</span>
+                {formatPace(pace)}/500m{' '}
+                <span className="text-gray-500">({segment.target_intensity}% FTP / {formatWatts(watts)})</span>
               </span>
             );
           })()}
-          {segment.target_stroke_rate && (
+          {segment.target_stroke_rate != null && (
             <span>
-              {segment.target_stroke_rate.min}–{segment.target_stroke_rate.max} spm
+              {segment.target_stroke_rate} spm
             </span>
           )}
           {segment.target_hr_zone && (

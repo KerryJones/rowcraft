@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
-import type { Workout, WorkoutSegment, WorkoutType, SegmentType, IntensityTarget, Profile } from '@/lib/types';
+import type { Workout, WorkoutSegment, WorkoutType, SegmentType, Profile } from '@/lib/types';
 import { normalizeWorkoutSegments } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
@@ -12,15 +12,15 @@ import { SegmentEditor } from '@/components/ui/segment-editor';
 import { Plus, Save, Loader2 } from 'lucide-react';
 
 /** Default intensity targets by segment type (% of FTP). */
-const DEFAULT_INTENSITY: Record<SegmentType, IntensityTarget | null> = {
-  work: { min: 85, max: 95 },
+const DEFAULT_INTENSITY: Record<SegmentType, number | null> = {
+  work: 90,
   rest: null,
-  warmup: { min: 55, max: 65 },
-  cooldown: { min: 45, max: 55 },
+  warmup: 60,
+  cooldown: 55,
 };
 
-function makeDefaultSegment(type: SegmentType, lastWorkIntensity: IntensityTarget | null): WorkoutSegment {
-  const intensity: IntensityTarget | null =
+function makeDefaultSegment(type: SegmentType, lastWorkIntensity: number | null): WorkoutSegment {
+  const intensity: number | null =
     type === 'work' && lastWorkIntensity
       ? lastWorkIntensity
       : DEFAULT_INTENSITY[type];

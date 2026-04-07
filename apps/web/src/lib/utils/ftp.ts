@@ -1,4 +1,4 @@
-import type { HrZone, HrZoneName, IntensityTarget } from '@/lib/types';
+import type { HrZone, HrZoneName } from '@/lib/types';
 import { DEFAULT_FTP_WATTS } from '@/lib/types';
 
 /**
@@ -95,21 +95,14 @@ export function intensityToPaceTenths(intensityPct: number, ftpWatts: number): n
 }
 
 /**
- * Resolve an IntensityTarget to a pace range.
+ * Resolve an intensity percentage to target pace in tenths per 500m.
  * Higher intensity % → more watts → faster pace (lower number).
- *
- * Returns { paceMin (fastest), paceMid (target), paceMax (slowest) }.
  */
 export function resolveIntensityToPace(
-	target: IntensityTarget,
+	intensityPct: number,
 	ftpWatts: number
-): { paceMin: number; paceMid: number; paceMax: number } {
-	const midPct = Math.round((target.min + target.max) / 2);
-	return {
-		paceMin: intensityToPaceTenths(target.max, ftpWatts),
-		paceMid: intensityToPaceTenths(midPct, ftpWatts),
-		paceMax: intensityToPaceTenths(target.min, ftpWatts),
-	};
+): number {
+	return intensityToPaceTenths(intensityPct, ftpWatts);
 }
 
 /**

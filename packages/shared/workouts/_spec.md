@@ -16,22 +16,22 @@ estimated_duration_minutes: 35                # approximate, for display
 segments:
   - type: warmup
     duration: 5:00
-    intensity: 50-55%
-    stroke_rate: 16-20
+    intensity: 60%
+    stroke_rate: 20
     hr_zone: 1
   - type: interval
     reps: 10
     work:
       duration: 500m
-      intensity: 88-96%
-      stroke_rate: 26-30
+      intensity: 95%
+      stroke_rate: 28
       hr_zone: 4
     rest:
       duration: "1:00"
   - type: cooldown
     duration: 5:00
-    intensity: 50-55%
-    stroke_rate: 16-20
+    intensity: 60%
+    stroke_rate: 20
     hr_zone: 1
 ```
 
@@ -57,8 +57,8 @@ Standard segments with optional targets.
 |-------|--------|----------|-------------|
 | `type` | enum | yes | `warmup`, `work`, or `cooldown` |
 | `duration` | string | yes | See Duration Format below |
-| `intensity` | string | no | FTP percentage range, e.g. `88-96%` |
-| `stroke_rate` | string | no | SPM range, e.g. `26-30` |
+| `intensity` | string | no | FTP percentage target, e.g. `95%` |
+| `stroke_rate` | integer | no | SPM target, e.g. `28` |
 | `hr_zone` | integer | no | HR zone 1-5 |
 | `messages` | array | no | Coaching cues (see Messages below) |
 
@@ -99,22 +99,22 @@ Durations with `m` suffix become `duration_type: "distance"`. Durations with `ca
 
 ## Intensity Format
 
-FTP percentage range: `min-max%`
+FTP percentage target: `N%`
 
 Examples:
-- `88-96%` → `{"min": 88, "max": 96}`
-- `50-55%` → `{"min": 50, "max": 55}`
-- `110-125%` → `{"min": 110, "max": 125}`
+- `95%` → `95`
+- `60%` → `60`
+- `112%` → `112`
 
 Omit entirely for segments with no intensity target (tests, free row).
 
 ## Stroke Rate Format
 
-SPM range: `min-max`
+SPM target (integer): `N`
 
 Examples:
-- `26-30` → `{"min": 26, "max": 30}`
-- `16-20` → `{"min": 16, "max": 20}`
+- `28` → `28`
+- `22` → `22`
 
 Omit entirely for segments with no stroke rate target.
 
@@ -144,13 +144,17 @@ The build script infers `workout_type` from segments:
 
 ## FTP Intensity Guidelines
 
-| Zone | Name | FTP % | Stroke Rate |
-|------|------|-------|-------------|
-| Z1 | Recovery | 45-60% | 16-20 spm |
-| Z2 | Aerobic | 60-75% | 18-24 spm |
-| Z3 | Tempo | 75-85% | 22-28 spm |
-| Z4 | Threshold | 85-100% | 26-32 spm |
-| Z5 | VO2max | 100-130% | 28-36 spm |
+Based on Coggan power zones / Peter Attia Z2 framework. Individual workouts may vary within zones.
+
+| Zone | Name | FTP % target | Stroke Rate |
+|------|------|-------------|-------------|
+| Z1 | Recovery | 55% | 20 spm |
+| Z2 | Aerobic | 70% | 22 spm |
+| Z3 | Tempo | 83% | 24 spm |
+| Z4 | Threshold | 95% | 26 spm |
+| Z5 | VO2max | 112% | 30 spm |
+
+Warmup/cooldown: 60% FTP, 20 spm
 
 ## Build Script
 

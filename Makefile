@@ -5,7 +5,7 @@ LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/nul
 SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.kerryjones.net
 
-.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed build-seeds
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,8 @@ list:
 	@echo "  make check            TypeScript type check (web)"
 	@echo ""
 	@echo "Database:"
-	@echo "  make db-reset         Truncate all data (with confirmation)"
+	@echo "  make db-reset              Truncate all data (with confirmation)"
+	@echo "  make db-reseed-workouts    Replace workouts/plans, preserve results + FTP history"
 	@echo "  make db-push          Push migrations to linked project"
 	@echo "  make db-seed          Run seed.sql on linked project"
 	@echo "  make studio           Open Supabase Studio"
@@ -141,6 +142,15 @@ db-seed:
 	supabase db query --linked --file supabase/seeds/00_functions.sql
 	supabase db query --linked --file supabase/seeds/gen_all_workouts.sql
 	supabase db query --linked --file supabase/seeds/90_training_plans.sql
+
+db-reseed-workouts:
+	@echo "Replacing all workouts and plans (results and FTP history are preserved)."
+	supabase db query --linked "truncate public.user_plan_progress, public.training_plans cascade"
+	supabase db query --linked "truncate public.workouts cascade"
+	supabase db query --linked --file supabase/seeds/00_functions.sql
+	supabase db query --linked --file supabase/seeds/gen_all_workouts.sql
+	supabase db query --linked --file supabase/seeds/90_training_plans.sql
+	@echo "Done. Workout results are preserved but their workout_id references are now null."
 
 studio:
 	@echo "Supabase Studio: http://localhost:54323"

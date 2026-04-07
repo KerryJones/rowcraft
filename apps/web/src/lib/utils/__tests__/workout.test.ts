@@ -124,7 +124,7 @@ describe('groupSegments', () => {
 	});
 
 	it('groups consecutive identical segments', () => {
-		const work = makeSegment({ type: 'work', duration_type: 'distance', duration_value: 500, target_intensity: { min: 90, max: 100 } });
+		const work = makeSegment({ type: 'work', duration_type: 'distance', duration_value: 500, target_intensity: 95 });
 		const rest = makeSegment({ type: 'rest', duration_type: 'time', duration_value: 60 });
 		// 10 x 500m work + 10 x 1:00 rest (alternating in source, but grouped when consecutive)
 		const segments = [work, work, work, rest, rest, rest];
@@ -137,8 +137,8 @@ describe('groupSegments', () => {
 	});
 
 	it('does not group segments with different intensities', () => {
-		const hard = makeSegment({ target_intensity: { min: 90, max: 100 } });
-		const easy = makeSegment({ target_intensity: { min: 60, max: 70 } });
+		const hard = makeSegment({ target_intensity: 95 });
+		const easy = makeSegment({ target_intensity: 65 });
 		const groups = groupSegments([hard, easy]);
 		expect(groups).toHaveLength(2);
 		expect(groups[0].count).toBe(1);
@@ -160,7 +160,7 @@ describe('groupSegments', () => {
 	});
 
 	it('counts multiple identical consecutive segments', () => {
-		const work = makeSegment({ type: 'work', duration_value: 500, duration_type: 'distance', target_intensity: { min: 90, max: 100 } });
+		const work = makeSegment({ type: 'work', duration_value: 500, duration_type: 'distance', target_intensity: 95 });
 		const groups = groupSegments([work, work, work, work, work, work, work, work, work, work]);
 		expect(groups).toHaveLength(1);
 		expect(groups[0].count).toBe(10);
@@ -218,26 +218,26 @@ describe('computeIntensity', () => {
 	});
 
 	it('returns 1.0 for workout at exactly 100% FTP', () => {
-		const segments = [makeSegment({ target_intensity: { min: 95, max: 105 } })];
+		const segments = [makeSegment({ target_intensity: 100 })];
 		expect(computeIntensity(segments)).toBe(1.0);
 	});
 
 	it('returns > 1.0 for above-FTP workout', () => {
-		const segments = [makeSegment({ target_intensity: { min: 110, max: 120 } })];
+		const segments = [makeSegment({ target_intensity: 115 })];
 		const intensity = computeIntensity(segments)!;
 		expect(intensity).toBeGreaterThan(1.0);
 	});
 
 	it('returns < 1.0 for below-FTP workout', () => {
-		const segments = [makeSegment({ target_intensity: { min: 60, max: 70 } })];
+		const segments = [makeSegment({ target_intensity: 65 })];
 		const intensity = computeIntensity(segments)!;
 		expect(intensity).toBeLessThan(1.0);
 	});
 
 	it('weights by duration', () => {
 		// 10 min easy + 1 min hard → should be closer to easy intensity
-		const easy = makeSegment({ duration_value: 600, target_intensity: { min: 60, max: 70 } });
-		const hard = makeSegment({ duration_value: 60, target_intensity: { min: 110, max: 120 } });
+		const easy = makeSegment({ duration_value: 600, target_intensity: 65 });
+		const hard = makeSegment({ duration_value: 60, target_intensity: 115 });
 		const mixed = computeIntensity([easy, hard])!;
 		const easyOnly = computeIntensity([easy])!;
 		expect(mixed).toBeGreaterThan(easyOnly);

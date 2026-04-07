@@ -26,20 +26,16 @@
           "duration_type": { "enum": ["time", "distance", "calories"] },
           "duration_value": { "type": "number", "exclusiveMinimum": 0 },
           "target_intensity": {
-            "type": ["object", "null"],
-            "properties": {
-              "min": { "type": "integer", "minimum": 0, "maximum": 200, "description": "Lower bound FTP percentage" },
-              "max": { "type": "integer", "minimum": 0, "maximum": 200, "description": "Upper bound FTP percentage" }
-            },
-            "required": ["min", "max"]
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 200,
+            "description": "FTP percentage target"
           },
           "target_stroke_rate": {
-            "type": ["object", "null"],
-            "properties": {
-              "min": { "type": "integer", "minimum": 10, "maximum": 50 },
-              "max": { "type": "integer", "minimum": 10, "maximum": 50 }
-            },
-            "required": ["min", "max"]
+            "type": ["integer", "null"],
+            "minimum": 10,
+            "maximum": 50,
+            "description": "SPM target"
           },
           "target_hr_zone": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 }
         },

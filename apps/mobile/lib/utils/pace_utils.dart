@@ -81,23 +81,9 @@ int intensityToPaceTenths(int intensityPct, int ftpWatts) {
   return wattsToPaceTenths(intensityToWatts(intensityPct, ftpWatts));
 }
 
-/// Resolve an IntensityTarget to a pace range (min/max in tenths per 500m).
+/// Resolve an intensity percentage to a target pace in tenths per 500m.
 ///
-/// Returns (paceMin, paceMid, paceMax) where:
-/// - paceMin = fastest acceptable pace (from max intensity %)
-/// - paceMid = target pace (from midpoint intensity %)
-/// - paceMax = slowest acceptable pace (from min intensity %)
-///
-/// Note: higher intensity % → more watts → faster pace (lower number).
-({int paceMin, int paceMid, int paceMax}) resolveIntensityToPace(
-  int intensityMin,
-  int intensityMax,
-  int ftpWatts,
-) {
-  final midPct = ((intensityMin + intensityMax) / 2).round();
-  return (
-    paceMin: intensityToPaceTenths(intensityMax, ftpWatts),
-    paceMid: intensityToPaceTenths(midPct, ftpWatts),
-    paceMax: intensityToPaceTenths(intensityMin, ftpWatts),
-  );
+/// Higher intensity % → more watts → faster pace (lower number).
+int resolveIntensityToPace(int intensityPct, int ftpWatts) {
+  return intensityToPaceTenths(intensityPct, ftpWatts);
 }

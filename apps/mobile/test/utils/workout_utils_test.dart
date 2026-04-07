@@ -126,13 +126,13 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 80, max: 90), // midpoint 85
+          targetIntensity: 85,
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 90, max: 100), // midpoint 95
+          targetIntensity: 95,
         ),
       ];
       // Equal weight: avg = (85 + 95) / 2 = 90
@@ -156,13 +156,13 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 80, max: 90),
+          targetIntensity: 85,
         ),
         const WorkoutSegment(
           type: SegmentType.rest,
           durationType: DurationType.time,
           durationValue: 60,
-          targetIntensity: IntensityTarget(min: 50, max: 50),
+          targetIntensity: 50,
         ),
       ];
       expect(computeAvgIntensity(segments), 85);
@@ -176,7 +176,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 100, max: 100),
+          targetIntensity: 100,
         ),
       ];
       expect(computeIntensity(segments), 1.0);
@@ -188,7 +188,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 110, max: 120),
+          targetIntensity: 115,
         ),
       ];
       expect(computeIntensity(segments), greaterThan(1.0));
@@ -200,7 +200,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 60, max: 70),
+          targetIntensity: 65,
         ),
       ];
       expect(computeIntensity(segments), lessThan(1.0));
@@ -223,13 +223,13 @@ void main() {
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 50, max: 60),
+          targetIntensity: 55,
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 100, max: 100),
+          targetIntensity: 100,
         ),
       ];
       // Only work segment counted → intensity = 1.0
@@ -242,7 +242,7 @@ void main() {
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 50, max: 60),
+          targetIntensity: 55,
         ),
         const WorkoutSegment(
           type: SegmentType.work,
@@ -262,7 +262,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 60, max: 70), // midpoint 65%
+          targetIntensity: 65,
         ),
       ];
       expect(computeDifficultyLevel(segments), 1);
@@ -274,7 +274,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 80, max: 90), // midpoint 85%
+          targetIntensity: 85,
         ),
       ];
       expect(computeDifficultyLevel(segments), 2);
@@ -286,7 +286,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 95, max: 105), // midpoint 100%
+          targetIntensity: 100,
         ),
       ];
       expect(computeDifficultyLevel(segments), 3);
@@ -298,19 +298,19 @@ void main() {
           type: SegmentType.warmup,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 50, max: 60),
+          targetIntensity: 55,
         ),
         const WorkoutSegment(
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 100, max: 110), // hard work
+          targetIntensity: 105, // hard work
         ),
         const WorkoutSegment(
           type: SegmentType.cooldown,
           durationType: DurationType.time,
           durationValue: 300,
-          targetIntensity: IntensityTarget(min: 50, max: 60),
+          targetIntensity: 55,
         ),
       ];
       // Only the work segment should be considered → hard
@@ -346,7 +346,7 @@ void main() {
           type: SegmentType.work,
           durationType: DurationType.time,
           durationValue: 60,
-          targetIntensity: IntensityTarget(min: 60, max: 70), // easy
+          targetIntensity: 65, // easy
         )),
         ...List.generate(6, (_) => const WorkoutSegment(
           type: SegmentType.rest,

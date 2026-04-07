@@ -5,7 +5,7 @@ import 'pace_utils.dart';
 String segmentPaceLabel(WorkoutSegment segment, int ftpWatts) {
   final intensity = segment.targetIntensity;
   if (intensity == null) return 'Free';
-  final tenths = intensityToPaceTenths(intensity.midpoint, ftpWatts);
+  final tenths = intensityToPaceTenths(intensity, ftpWatts);
   return '${formatPace(tenths)}/500m';
 }
 
@@ -13,5 +13,5 @@ String segmentPaceLabel(WorkoutSegment segment, int ftpWatts) {
 String? segmentStrokeRateLabel(WorkoutSegment segment) {
   final sr = segment.targetStrokeRate;
   if (sr == null) return null;
-  return '${sr.midpoint} s/m';
+  return '$sr s/m';
 }

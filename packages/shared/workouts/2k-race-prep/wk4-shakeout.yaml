@@ -7,19 +7,19 @@ estimated_duration_minutes: 15
 segments:
   - type: warmup
     duration: "5:00"
-    intensity: 45-55%
-    stroke_rate: 16-20
+    intensity: 60%
+    stroke_rate: 20
     hr_zone: 1
   - type: interval
     reps: 3
     work:
       duration: "30"
-      intensity: 85-96%
-      stroke_rate: 28-32
+      intensity: 112%
+      stroke_rate: 30
     rest:
       duration: "1:30"
   - type: cooldown
     duration: "5:00"
-    intensity: 45-55%
-    stroke_rate: 16-20
+    intensity: 60%
+    stroke_rate: 20
     hr_zone: 1

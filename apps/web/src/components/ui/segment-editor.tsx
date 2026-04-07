@@ -34,9 +34,8 @@ export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: Segment
   // Resolve current intensity to pace/watts for preview
   const preview = segment.target_intensity
     ? (() => {
-        const { paceMid } = resolveIntensityToPace(segment.target_intensity, ftp);
-        const midPct = Math.round((segment.target_intensity.min + segment.target_intensity.max) / 2);
-        return { pace: formatPace(paceMid), watts: formatWatts(intensityToWatts(midPct, ftp)) };
+        const pace = resolveIntensityToPace(segment.target_intensity, ftp);
+        return { pace: formatPace(pace), watts: formatWatts(intensityToWatts(segment.target_intensity, ftp)) };
       })()
     : null;
 
@@ -100,10 +99,10 @@ export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: Segment
           />
         </div>
 
-        {/* Intensity % (min) */}
+        {/* Intensity % */}
         <div>
           <label className="mb-1 block text-xs text-gray-500">
-            Intensity % min{' '}
+            Intensity % FTP{' '}
             {preview && <span className="text-gray-600">= {preview.pace}/500m / {preview.watts}</span>}
           </label>
           <input
@@ -111,29 +110,10 @@ export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: Segment
             min={0}
             max={200}
             placeholder="e.g. 85"
-            value={segment.target_intensity?.min ?? ''}
+            value={segment.target_intensity ?? ''}
             onChange={(e) => {
-              const min = parseInt(e.target.value) || 0;
-              const max = segment.target_intensity?.max ?? Math.min(200, min + 10);
-              updateField('target_intensity', min > 0 ? { min, max: Math.max(min, max) } : null);
-            }}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
-          />
-        </div>
-
-        {/* Intensity % (max) */}
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Intensity % max</label>
-          <input
-            type="number"
-            min={0}
-            max={200}
-            placeholder="e.g. 95"
-            value={segment.target_intensity?.max ?? ''}
-            onChange={(e) => {
-              const max = parseInt(e.target.value) || 0;
-              const min = segment.target_intensity?.min ?? Math.max(0, max - 10);
-              updateField('target_intensity', max > 0 ? { min: Math.min(min, max), max } : null);
+              const val = parseInt(e.target.value) || 0;
+              updateField('target_intensity', val > 0 ? val : null);
             }}
             className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
           />
@@ -141,32 +121,15 @@ export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: Segment
 
         {/* Stroke Rate */}
         <div>
-          <label className="mb-1 block text-xs text-gray-500">Stroke Rate (min)</label>
+          <label className="mb-1 block text-xs text-gray-500">Stroke Rate (spm)</label>
           <input
             type="number"
             min={0}
-            max={60}
-            value={segment.target_stroke_rate?.min ?? ''}
+            max={50}
+            value={segment.target_stroke_rate ?? ''}
             onChange={(e) => {
-              const min = parseInt(e.target.value) || 0;
-              const max = segment.target_stroke_rate?.max ?? min + 4;
-              updateField('target_stroke_rate', min > 0 ? { min, max } : null);
-            }}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Stroke Rate (max)</label>
-          <input
-            type="number"
-            min={0}
-            max={60}
-            value={segment.target_stroke_rate?.max ?? ''}
-            onChange={(e) => {
-              const max = parseInt(e.target.value) || 0;
-              const min = segment.target_stroke_rate?.min ?? Math.max(0, max - 4);
-              updateField('target_stroke_rate', max > 0 ? { min, max } : null);
+              const val = parseInt(e.target.value) || 0;
+              updateField('target_stroke_rate', val > 0 ? val : null);
             }}
             className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
           />

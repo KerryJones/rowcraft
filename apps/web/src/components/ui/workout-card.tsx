@@ -30,8 +30,8 @@ export function WorkoutCard({ workout, authorName, onClick, ftpWatts }: WorkoutC
     let weightedSum = 0;
     for (const s of workSegs) {
       const weight = s.duration_value;
-      const { paceMid } = resolveIntensityToPace(s.target_intensity!, ftp);
-      weightedSum += paceMid * weight;
+      const pace = resolveIntensityToPace(s.target_intensity!, ftp);
+      weightedSum += pace * weight;
       totalWeight += weight;
     }
     return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : null;

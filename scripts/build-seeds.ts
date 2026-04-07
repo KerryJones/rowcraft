@@ -28,7 +28,7 @@ interface YamlMessage {
 interface YamlTargetFields {
   duration: string;
   intensity?: string;
-  stroke_rate?: string;
+  stroke_rate?: number;
   hr_zone?: number;
   messages?: YamlMessage[];
 }
@@ -37,7 +37,7 @@ interface YamlSegment {
   type: 'warmup' | 'work' | 'rest' | 'cooldown' | 'interval';
   duration?: string;
   intensity?: string;
-  stroke_rate?: string;
+  stroke_rate?: number;
   hr_zone?: number;
   messages?: YamlMessage[];
   // interval-specific
@@ -60,8 +60,8 @@ interface DbSegment {
   type: string;
   duration_type: string;
   duration_value: number;
-  target_intensity: { min: number; max: number } | null;
-  target_stroke_rate: { min: number; max: number } | null;
+  target_intensity: number | null;
+  target_stroke_rate: number | null;
   target_hr_zone: number | null;
   messages?: DbMessage[] | null;
 }
@@ -99,24 +99,18 @@ function parseDuration(raw: string): { type: 'time' | 'distance' | 'calories'; v
   throw new Error(`Cannot parse duration: ${raw}`);
 }
 
-function parseIntensity(raw: string): { min: number; max: number } {
-  const match = raw.match(/^(\d{1,3})-(\d{1,3})%$/);
-  if (!match) throw new Error(`Cannot parse intensity: ${raw}`);
-  const min = parseInt(match[1]);
-  const max = parseInt(match[2]);
-  if (min > max) throw new Error(`Intensity min > max: ${raw}`);
-  if (max > 200) throw new Error(`Intensity exceeds 200%: ${raw}`);
-  return { min, max };
+function parseIntensity(raw: string): number {
+  const match = raw.match(/^(\d{1,3})%$/);
+  if (!match) throw new Error(`Cannot parse intensity: ${raw} (expected format: N%)`);
+  const value = parseInt(match[1]);
+  if (value > 200) throw new Error(`Intensity exceeds 200%: ${raw}`);
+  return value;
 }
 
-function parseStrokeRate(raw: string): { min: number; max: number } {
-  const match = raw.match(/^(\d{1,2})-(\d{1,2})$/);
-  if (!match) throw new Error(`Cannot parse stroke_rate: ${raw}`);
-  const min = parseInt(match[1]);
-  const max = parseInt(match[2]);
-  if (min > max) throw new Error(`Stroke rate min > max: ${raw}`);
-  if (min < 10 || max > 50) throw new Error(`Stroke rate out of range 10-50: ${raw}`);
-  return { min, max };
+function parseStrokeRate(raw: number): number {
+  if (!Number.isInteger(raw)) throw new Error(`Stroke rate must be an integer: ${raw}`);
+  if (raw < 10 || raw > 50) throw new Error(`Stroke rate out of range 10-50: ${raw}`);
+  return raw;
 }
 
 function parseMessageTrigger(at: string): { trigger_type: DbMessage['trigger_type']; trigger_value: number } {
@@ -145,8 +139,8 @@ function buildDbSegment(
     type,
     duration_type: dur.type,
     duration_value: dur.value,
-    target_intensity: fields.intensity ? parseIntensity(fields.intensity) : null,
-    target_stroke_rate: fields.stroke_rate ? parseStrokeRate(fields.stroke_rate) : null,
+    target_intensity: fields.intensity != null ? parseIntensity(fields.intensity) : null,
+    target_stroke_rate: fields.stroke_rate != null ? parseStrokeRate(fields.stroke_rate) : null,
     target_hr_zone: fields.hr_zone ?? null,
   };
   if (fields.messages && fields.messages.length > 0) {
@@ -215,8 +209,8 @@ function inferWorkoutType(segments: DbSegment[]): string {
   const allWorkIdentical = workSegs.every((s) =>
     s.duration_type === workSegs[0].duration_type &&
     s.duration_value === workSegs[0].duration_value &&
-    JSON.stringify(s.target_intensity) === JSON.stringify(workSegs[0].target_intensity) &&
-    JSON.stringify(s.target_stroke_rate) === JSON.stringify(workSegs[0].target_stroke_rate) &&
+    s.target_intensity === workSegs[0].target_intensity &&
+    s.target_stroke_rate === workSegs[0].target_stroke_rate &&
     s.target_hr_zone === workSegs[0].target_hr_zone
   );
 

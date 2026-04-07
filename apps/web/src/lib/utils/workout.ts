@@ -63,10 +63,7 @@ export interface GroupedSegment {
 }
 
 function sameIntensity(a: WorkoutSegment, b: WorkoutSegment): boolean {
-	if (a.target_intensity === null && b.target_intensity === null) return true;
-	if (a.target_intensity === null || b.target_intensity === null) return false;
-	return a.target_intensity.min === b.target_intensity.min &&
-		a.target_intensity.max === b.target_intensity.max;
+	return a.target_intensity === b.target_intensity;
 }
 
 export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
@@ -108,10 +105,9 @@ export function computeIntensity(segments: WorkoutSegment[]): number | null {
 	let weightedSum = 0;
 
 	for (const seg of segments) {
-		if (!seg.target_intensity) continue;
+		if (seg.target_intensity == null) continue;
 		const duration = seg.duration_value;
-		const midPct = (seg.target_intensity.min + seg.target_intensity.max) / 2;
-		weightedSum += (midPct / 100) * duration;
+		weightedSum += (seg.target_intensity / 100) * duration;
 		totalWeight += duration;
 	}
 
@@ -142,9 +138,9 @@ export function computeCumulativeMinutes(segments: WorkoutSegment[]): MinuteMark
 		} else if (seg.duration_type === 'distance') {
 			// Estimate time from intensity-resolved pace, or assume 2:00/500m
 			let pacePerMeter = 0.24; // 2:00/500m = 0.24 sec/m
-			if (seg.target_intensity) {
-				const { paceMid } = resolveIntensityToPace(seg.target_intensity, DEFAULT_FTP_WATTS);
-				pacePerMeter = (paceMid / 10) / 500;
+			if (seg.target_intensity != null) {
+				const pace = resolveIntensityToPace(seg.target_intensity, DEFAULT_FTP_WATTS);
+				pacePerMeter = (pace / 10) / 500;
 			}
 			segSeconds = seg.duration_value * pacePerMeter;
 		} else {

@@ -30,18 +30,16 @@ double _getEffectiveDuration(WorkoutSegment seg, int ftpWatts) {
     case DurationType.time:
       return seg.durationValue;
     case DurationType.distance:
-      final double? midPace;
+      final double? targetPace;
       if (seg.targetIntensity != null) {
-        final resolved = resolveIntensityToPace(
-          seg.targetIntensity!.min,
-          seg.targetIntensity!.max,
+        targetPace = resolveIntensityToPace(
+          seg.targetIntensity!,
           ftpWatts,
-        );
-        midPace = resolved.paceMid.toDouble();
+        ).toDouble();
       } else {
-        midPace = null;
+        targetPace = null;
       }
-      final pacePerMeter = midPace != null ? (midPace / 10) / 500 : 0.24;
+      final pacePerMeter = targetPace != null ? (targetPace / 10) / 500 : 0.24;
       return seg.durationValue * pacePerMeter;
     case DurationType.calories:
       return (seg.durationValue / 15) * 60;
@@ -69,13 +67,11 @@ String _formatPace(double tenths) {
   };
 }
 
-/// Pace acceptance range with 5% tolerance around midpoint (matching EXR).
-/// Visual green zone on the bar uses raw paceMin/paceMax; this wider range
-/// determines color feedback and TOO SLOW / TOO FAST warnings.
-(double, double) _paceAcceptanceRange(int paceMin, int paceMax) {
-  final mid = (paceMin + paceMax) / 2;
-  final tolerance = mid * 0.05;
-  return (mid - tolerance, mid + tolerance);
+/// Pace acceptance range with 5% tolerance around target pace.
+/// Determines color feedback and TOO SLOW / TOO FAST warnings.
+(double, double) _paceAcceptanceRange(int targetPace) {
+  final tolerance = targetPace * 0.05;
+  return (targetPace - tolerance, targetPace + tolerance);
 }
 
 /// HR zone estimate from BPM using percentage of max heart rate.
@@ -561,12 +557,10 @@ class _WorkoutProfilePainter extends CustomPainter {
       final barWidth = math.max(2.0, widthFraction * availableWidth);
       final double? avgPace;
       if (seg.targetIntensity != null) {
-        final resolved = resolveIntensityToPace(
-          seg.targetIntensity!.min,
-          seg.targetIntensity!.max,
+        avgPace = resolveIntensityToPace(
+          seg.targetIntensity!,
           ftpWatts,
-        );
-        avgPace = resolved.paceMid.toDouble();
+        ).toDouble();
       } else {
         avgPace = null;
       }
@@ -770,10 +764,9 @@ class _CurrentSegment extends StatelessWidget {
                 if (hasPaceTarget) ...[
                   Text(
                     _formatPace(resolveIntensityToPace(
-                      segment.targetIntensity!.min,
-                      segment.targetIntensity!.max,
+                      segment.targetIntensity!,
                       session.ftpWatts,
-                    ).paceMid.toDouble()),
+                    ).toDouble()),
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 22,
                       fontWeight: FontWeight.w700,
@@ -792,7 +785,7 @@ class _CurrentSegment extends StatelessWidget {
                   const SizedBox(width: 16),
                 if (hasSpmTarget)
                   Text(
-                    '${segment.targetStrokeRate!.midpoint} s/m',
+                    '${segment.targetStrokeRate!} s/m',
                     style: GoogleFonts.jetBrainsMono(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -871,12 +864,11 @@ class _HeroSection extends StatelessWidget {
     // Pace color based on target — uses 5% tolerance range for feedback
     Color splitColor = RowCraftTheme.metricWhite;
     if (segment?.targetIntensity != null && data.pace > 0) {
-      final resolved = resolveIntensityToPace(
-        segment!.targetIntensity!.min,
-        segment.targetIntensity!.max,
+      final targetPace = resolveIntensityToPace(
+        segment!.targetIntensity!,
         session.ftpWatts,
       );
-      final (acceptMin, acceptMax) = _paceAcceptanceRange(resolved.paceMin, resolved.paceMax);
+      final (acceptMin, acceptMax) = _paceAcceptanceRange(targetPace);
       final pace = data.pace.toDouble();
       if (pace >= acceptMin && pace <= acceptMax) {
         splitColor = RowCraftTheme.successGreen;
@@ -893,10 +885,10 @@ class _HeroSection extends StatelessWidget {
     String? srChevron; // null = in range, '▲' = speed up, '▼' = slow down
     if (hasStrokeTarget && data.strokeRate > 0) {
       final sr = data.strokeRate;
-      final srmid = segment!.targetStrokeRate!.midpoint;
-      if (sr >= srmid - 1 && sr <= srmid + 1) {
+      final srTarget = segment!.targetStrokeRate!;
+      if (sr >= srTarget - 1 && sr <= srTarget + 1) {
         srColor = RowCraftTheme.successGreen;
-      } else if (sr < srmid - 1) {
+      } else if (sr < srTarget - 1) {
         srColor = RowCraftTheme.warningAmber;
         srChevron = '\u25B2'; // ▲ speed up
       } else {
@@ -942,14 +934,12 @@ class _HeroSection extends StatelessWidget {
               if (segment?.targetIntensity != null) ...[
                 const SizedBox(height: 10),
                 Builder(builder: (_) {
-                  final resolved = resolveIntensityToPace(
-                    segment!.targetIntensity!.min,
-                    segment.targetIntensity!.max,
+                  final targetPace = resolveIntensityToPace(
+                    segment!.targetIntensity!,
                     session.ftpWatts,
-                  );
+                  ).toDouble();
                   return _PaceGuideBar(
-                    targetMin: resolved.paceMin.toDouble(),
-                    targetMax: resolved.paceMax.toDouble(),
+                    targetPace: targetPace,
                     currentPace: data.pace.toDouble(),
                   );
                 }),
@@ -961,7 +951,7 @@ class _HeroSection extends StatelessWidget {
               // falls back to current rate when no target is set
               RowingAnimation(
                 strokeRate:
-                    segment?.targetStrokeRate?.midpoint ?? data.strokeRate,
+                    segment?.targetStrokeRate ?? data.strokeRate,
                 isActive: isActive,
                 height: animHeight,
               ),
@@ -1018,32 +1008,31 @@ class _HeroSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PaceGuideBar extends StatelessWidget {
-  final double targetMin;
-  final double targetMax;
+  final double targetPace;
   final double currentPace;
 
   const _PaceGuideBar({
-    required this.targetMin,
-    required this.targetMax,
+    required this.targetPace,
     required this.currentPace,
   });
 
   @override
   Widget build(BuildContext context) {
-    final range = targetMax - targetMin;
-    if (range <= 0) return const SizedBox.shrink();
+    // Derive acceptance window (5% tolerance) for both feedback and visual zone
+    final (acceptMin, acceptMax) = _paceAcceptanceRange(targetPace.toInt());
+    final toleranceRange = acceptMax - acceptMin;
 
-    final displayMin = targetMin - range * 1.5;
-    final displayMax = targetMax + range * 1.5;
+    // Display range is 4× the tolerance window centred on target
+    final displayMin = acceptMin - toleranceRange * 1.5;
+    final displayMax = acceptMax + toleranceRange * 1.5;
     final displayRange = displayMax - displayMin;
+    if (displayRange <= 0) return const SizedBox.shrink();
 
     // Invert: slow (high pace) on left, fast (low pace) on right
     final pacePosition = currentPace > 0
         ? (1.0 - ((currentPace - displayMin) / displayRange).clamp(0.0, 1.0))
         : 0.5;
 
-    // Use 5% tolerance range for feedback; visual green zone uses raw targetMin/targetMax
-    final (acceptMin, acceptMax) = _paceAcceptanceRange(targetMin.toInt(), targetMax.toInt());
     final isInRange = currentPace >= acceptMin && currentPace <= acceptMax;
     final isTooSlow = currentPace > acceptMax;
 
@@ -1061,9 +1050,9 @@ class _PaceGuideBar extends StatelessWidget {
 
     // Invert zone positions: slow (high pace) on left, fast (low pace) on right
     final zoneLeft =
-        (1.0 - ((targetMax - displayMin) / displayRange).clamp(0.0, 1.0));
+        (1.0 - ((acceptMax - displayMin) / displayRange).clamp(0.0, 1.0));
     final zoneRight =
-        (1.0 - ((targetMin - displayMin) / displayRange).clamp(0.0, 1.0));
+        (1.0 - ((acceptMin - displayMin) / displayRange).clamp(0.0, 1.0));
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1239,7 +1228,7 @@ class _UpNextPreview extends StatelessWidget {
           const SizedBox(width: 10),
           if (next.targetIntensity != null)
             Text(
-              '${_formatPace(resolveIntensityToPace(next.targetIntensity!.min, next.targetIntensity!.max, session.ftpWatts).paceMid.toDouble())} /500',
+              '${_formatPace(resolveIntensityToPace(next.targetIntensity!, session.ftpWatts).toDouble())} /500',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -1250,7 +1239,7 @@ class _UpNextPreview extends StatelessWidget {
             if (next.targetIntensity != null)
               const SizedBox(width: 8),
             Text(
-              '${next.targetStrokeRate!.midpoint} s/m',
+              '${next.targetStrokeRate!} s/m',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,

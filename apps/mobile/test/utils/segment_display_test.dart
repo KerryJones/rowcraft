@@ -10,9 +10,8 @@ void main() {
         type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
-        targetIntensity: IntensityTarget(min: 80, max: 90),
+        targetIntensity: 85,
       );
-      // midpoint = 85%, at 150W FTP → some pace
       final expectedTenths = intensityToPaceTenths(85, kDefaultFtpWatts);
       final expectedPace = formatPace(expectedTenths);
       expect(segmentPaceLabel(segment, kDefaultFtpWatts), '$expectedPace/500m');
@@ -50,7 +49,7 @@ void main() {
         type: SegmentType.cooldown,
         durationType: DurationType.time,
         durationValue: 180,
-        targetIntensity: IntensityTarget(min: 50, max: 60),
+        targetIntensity: 55,
       );
       final expectedTenths = intensityToPaceTenths(55, kDefaultFtpWatts);
       final expectedPace = formatPace(expectedTenths);
@@ -62,7 +61,7 @@ void main() {
         type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
-        targetIntensity: IntensityTarget(min: 95, max: 105),
+        targetIntensity: 100,
       );
       const customFtp = 200;
       final expectedTenths = intensityToPaceTenths(100, customFtp);
@@ -77,7 +76,7 @@ void main() {
         type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
-        targetStrokeRate: StrokeRateTarget(min: 20, max: 24),
+        targetStrokeRate: 22,
       );
       expect(segmentStrokeRateLabel(segment), '22 s/m');
     });
@@ -91,15 +90,14 @@ void main() {
       expect(segmentStrokeRateLabel(segment), isNull);
     });
 
-    test('handles odd midpoint rounding', () {
+    test('returns exact target as label', () {
       const segment = WorkoutSegment(
         type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
-        targetStrokeRate: StrokeRateTarget(min: 19, max: 22),
+        targetStrokeRate: 26,
       );
-      // midpoint = (19+22)/2 = 20.5 → rounds to 21
-      expect(segmentStrokeRateLabel(segment), '21 s/m');
+      expect(segmentStrokeRateLabel(segment), '26 s/m');
     });
   });
 }

@@ -22,8 +22,8 @@ void main() {
             'type': 'work',
             'duration_type': 'distance',
             'duration_value': 1000.0,
-            'target_intensity': {'min': 75, 'max': 85},
-            'target_stroke_rate': {'min': 28, 'max': 32},
+            'target_intensity': 80,
+            'target_stroke_rate': 30,
           },
           {
             'type': 'rest',
@@ -112,8 +112,7 @@ void main() {
       expect(workout.segments, hasLength(4));
       expect(workout.segments[0].type, SegmentType.warmup);
       expect(workout.segments[1].type, SegmentType.work);
-      expect(workout.segments[1].targetIntensity, isNotNull);
-      expect(workout.segments[1].targetIntensity!.min, 75);
+      expect(workout.segments[1].targetIntensity, 80);
       expect(workout.segments[2].type, SegmentType.rest);
       expect(workout.segments[3].type, SegmentType.cooldown);
       expect(workout.tags, ['intervals', 'hard', '1000m']);

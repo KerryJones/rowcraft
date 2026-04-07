@@ -9,9 +9,9 @@ const MIN_HEIGHT_FRACTION = 0.15;
 
 function getBarHeight(segment: WorkoutSegment, totalHeight: number, ftp: number): number {
   if (!segment.target_intensity) return totalHeight * MIN_HEIGHT_FRACTION;
-  const { paceMid } = resolveIntensityToPace(segment.target_intensity, ftp);
+  const pace = resolveIntensityToPace(segment.target_intensity, ftp);
   // Lower pace = more intense = taller bar
-  const intensity = Math.max(0, Math.min(1, 1 - paceMid / MAX_PACE));
+  const intensity = Math.max(0, Math.min(1, 1 - pace / MAX_PACE));
   const fraction = MIN_HEIGHT_FRACTION + intensity * (1 - MIN_HEIGHT_FRACTION);
   return Math.round(fraction * totalHeight);
 }

@@ -543,14 +543,12 @@ class WorkoutEngine {
         segment.type == SegmentType.work &&
         segment.targetIntensity != null &&
         data.pace > 0) {
-      final resolved = resolveIntensityToPace(
-        segment.targetIntensity!.min,
-        segment.targetIntensity!.max,
+      final targetPace = resolveIntensityToPace(
+        segment.targetIntensity!,
         ftpWatts,
       );
-      final maxPace = resolved.paceMax;
 
-      if (data.pace > maxPace) {
+      if (data.pace > targetPace) {
         // Rower is too slow — start or continue the fail timer
         _outOfRangeSince ??= DateTime.now();
         final secondsOut =

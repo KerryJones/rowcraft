@@ -52,13 +52,14 @@
     },
     "intensity": {
       "type": "string",
-      "description": "FTP percentage range: min-max%",
-      "pattern": "^\\d{1,3}-\\d{1,3}%$"
+      "description": "FTP percentage target: N%",
+      "pattern": "^\\d{1,3}%$"
     },
     "stroke_rate": {
-      "type": "string",
-      "description": "SPM range: min-max",
-      "pattern": "^\\d{1,2}-\\d{1,2}$"
+      "type": "integer",
+      "description": "SPM target",
+      "minimum": 10,
+      "maximum": 50
     },
     "message": {
       "type": "object",

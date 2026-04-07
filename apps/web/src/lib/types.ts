@@ -2,17 +2,6 @@ export type SegmentType = 'work' | 'rest' | 'warmup' | 'cooldown';
 export type DurationType = 'time' | 'distance' | 'calories';
 export type WorkoutType = 'single_distance' | 'single_time' | 'intervals' | 'variable_intervals';
 
-/** FTP-relative intensity target as percentage of FTP watts (0–200). */
-export interface IntensityTarget {
-	min: number; // lower bound FTP % (less intense / slower)
-	max: number; // upper bound FTP % (more intense / faster)
-}
-
-export interface StrokeRateTarget {
-	min: number;
-	max: number;
-}
-
 export interface SegmentMessage {
 	trigger_type: 'time' | 'distance' | 'start' | 'end';
 	trigger_value: number; // seconds or meters (0 for start/end)
@@ -23,8 +12,10 @@ export interface WorkoutSegment {
 	type: SegmentType;
 	duration_type: DurationType;
 	duration_value: number; // seconds, meters, or calories depending on duration_type
-	target_intensity: IntensityTarget | null;
-	target_stroke_rate: StrokeRateTarget | null;
+	/** FTP percentage target (0–200). Higher % = more watts = faster pace. */
+	target_intensity: number | null;
+	/** Strokes per minute target (10–50). */
+	target_stroke_rate: number | null;
 	target_hr_zone: number | null;
 	messages: SegmentMessage[] | null;
 }
