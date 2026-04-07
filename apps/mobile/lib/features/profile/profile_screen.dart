@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
 import '../../services/supabase_service.dart';
@@ -251,6 +252,18 @@ class ProfileScreen extends ConsumerWidget {
               side: const BorderSide(color: RowCraftTheme.errorRose),
             ),
           ),
+          const SizedBox(height: 32),
+
+          // Delete account
+          TextButton(
+            onPressed: () => _showDeleteAccountDialog(context),
+            child: Text(
+              'Delete Account',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: RowCraftTheme.subtleGrey,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -290,6 +303,77 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (dialogContext) => _EditWeightDialog(ref: ref),
+    );
+  }
+
+  static void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => const _DeleteAccountDialog(),
+    );
+  }
+}
+
+class _DeleteAccountDialog extends ConsumerStatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  ConsumerState<_DeleteAccountDialog> createState() =>
+      _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
+  bool _isDeleting = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete Account'),
+      content: _isDeleting
+          ? const SizedBox(
+              height: 60,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : const Text(
+              'This will permanently delete your account and all workout data. '
+              'This action cannot be undone.',
+            ),
+      actions: _isDeleting
+          ? []
+          : [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: RowCraftTheme.errorRose,
+                ),
+                onPressed: () async {
+                  setState(() => _isDeleting = true);
+                  try {
+                    final client = Supabase.instance.client;
+                    await client.rpc('delete_user_account');
+                    // Sign out clears the session; the router's auth redirect
+                    // handles navigation to /auth automatically.
+                    await ref.read(signOutProvider.future);
+                  } catch (_) {
+                    if (mounted) setState(() => _isDeleting = false);
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Account deletion failed. Please try again.'),
+                          backgroundColor: RowCraftTheme.errorRose,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Delete'),
+              ),
+            ],
     );
   }
 }

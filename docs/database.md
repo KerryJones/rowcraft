@@ -15,6 +15,7 @@ Extends Supabase `auth.users`. Auto-created on signup via trigger.
 | c2_access_token, c2_refresh_token | text | C2 OAuth tokens |
 | current_ftp_watts | int | Power threshold |
 | max_heart_rate | int | For HR zone calculations |
+| weight_kg | float | Used for C2 Logbook calorie sync |
 
 ### workouts
 | Column | Type | Notes |
@@ -78,3 +79,6 @@ Tracks per-user plan completion. Unique on (user_id, plan_id).
 7. `007_training_plans.sql` — training_plans + user_plan_progress
 8. `008_max_heart_rate.sql` — max_heart_rate column
 9. `009_plan_author.sql` — author_id on training_plans + RLS for plan ownership
+10. `010_sync_all_workout_segments.sql` — sync all workout segments
+11. `011_add_weight_kg.sql` — weight_kg column on profiles
+12. `012_delete_account.sql` — `delete_user_account()` RPC for self-serve account deletion (cascades through all user data)

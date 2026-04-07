@@ -13,6 +13,7 @@ import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart';
 import '../ble/ble_provider.dart';
 import '../ble/hr_service.dart';
+import '../ble/pm5_service.dart';
 import 'ftp_calculator.dart';
 import 'workout_engine.dart';
 
@@ -172,6 +173,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   StreamSubscription<PM5Data>? _pm5BleSubscription;
   StreamSubscription<int>? _hrBleSubscription;
   StreamSubscription<HrConnectionState>? _hrConnectionSub;
+  StreamSubscription<PM5ConnectionState>? _pm5ConnectionSub;
+  DateTime? _lastReconnectAttempt;
 
   /// The latest standalone HR value for merging with PM5 data.
   int? _lastStandaloneHr;
@@ -226,6 +229,21 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _hrConnectionSub = hrService.connectionState.listen((connState) {
       if (connState == HrConnectionState.disconnected) {
         _lastStandaloneHr = null;
+      }
+    });
+
+    // Auto-reconnect PM5 if it disconnects mid-workout (with cooldown)
+    final pm5Service = _ref.read(pm5ServiceProvider);
+    _pm5ConnectionSub = pm5Service.connectionState.listen((connState) {
+      if (connState == PM5ConnectionState.disconnected &&
+          pm5Service.connectedDeviceId == null) {
+        final now = DateTime.now();
+        final cooldown = _lastReconnectAttempt == null ||
+            now.difference(_lastReconnectAttempt!).inSeconds >= 10;
+        if (cooldown) {
+          _lastReconnectAttempt = now;
+          _ref.read(bleProvider.notifier).autoReconnect();
+        }
       }
     });
   }
@@ -540,6 +558,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _pm5BleSubscription?.cancel();
     _hrBleSubscription?.cancel();
     _hrConnectionSub?.cancel();
+    _pm5ConnectionSub?.cancel();
     super.dispose();
   }
 }

@@ -27,7 +27,7 @@ rowcraft/
 │       ├── components/  # shared UI components
 │       └── lib/         # supabase clients (server/client), utils, types
 ├── packages/shared/     # JSON schemas, pre-built workouts
-└── supabase/migrations/ # 9 SQL migrations
+└── supabase/migrations/ # 12 SQL migrations
 ```
 
 ## Data Flows
@@ -59,3 +59,6 @@ Browse plans → start plan → complete sessions → track progress in `user_pl
 - **No segment repeat in DB** — each segment is stored individually in the database. The YAML `interval` block is a build-time convenience only.
 - **Post-workout flow** — Stop → summary screen (stats, pace/HR charts, splits) → Save/Discard → save progress overlay
 - **Supabase RLS** — all access control at DB level
+- **Google-only auth** — email/password removed for beta; Google OAuth is the sole auth method on both platforms
+- **Crash reporting** — Sentry integrated in mobile app, enabled when `SENTRY_DSN` dart-define is set; disabled in dev by default
+- **BLE auto-reconnect** — `WorkoutSessionNotifier` watches PM5 connection state and calls `autoReconnect()` on disconnect, with a 10-second cooldown to prevent retry loops
