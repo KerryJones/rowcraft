@@ -79,8 +79,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 _buildTypeChip(null, 'All'),
                 _buildTypeChip(WorkoutType.singleDistance, 'Distance'),
                 _buildTypeChip(WorkoutType.singleTime, 'Time'),
-                _buildTypeChip(WorkoutType.intervals, 'Intervals'),
-                _buildTypeChip(WorkoutType.variableIntervals, 'Variable'),
               ],
             ),
           ),
