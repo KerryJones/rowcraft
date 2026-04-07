@@ -1,6 +1,9 @@
 # RowCraft — Development Commands
 # Run `make setup` for first-time setup, then `make dev` to start everything.
 
+-include apps/mobile/.env
+export
+
 LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $$1}')
 SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.kerryjones.net
@@ -95,9 +98,10 @@ dev-mobile:
 
 dev-mobile-cloud:
 	cd apps/mobile && flutter run \
-		--dart-define=SUPABASE_URL=https://qzzqqgnegvuqmlkfqhus.supabase.co \
-		--dart-define=SUPABASE_PUBLISHABLE_KEY=sb_publishable_-J6qboxKtmCfn_aIBHKX-g_tCFwUWdV \
+		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
+		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(SUPABASE_PUBLISHABLE_KEY) \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
+		--dart-define=SENTRY_DSN=$(SENTRY_DSN) \
 		--dart-define=WEB_APP_URL=$(WEB_APP_URL)
 
 dev-web:
@@ -144,13 +148,7 @@ db-seed:
 	supabase db query --linked --file supabase/seeds/90_training_plans.sql
 
 db-reseed-workouts:
-	@echo "Replacing all workouts and plans (results and FTP history are preserved)."
-	supabase db query --linked "truncate public.user_plan_progress, public.training_plans cascade"
-	supabase db query --linked "truncate public.workouts cascade"
-	supabase db query --linked --file supabase/seeds/00_functions.sql
 	supabase db query --linked --file supabase/seeds/gen_all_workouts.sql
-	supabase db query --linked --file supabase/seeds/90_training_plans.sql
-	@echo "Done. Workout results are preserved but their workout_id references are now null."
 
 studio:
 	@echo "Supabase Studio: http://localhost:54323"
@@ -160,10 +158,10 @@ build-seeds:
 	cd scripts && npx tsx build-seeds.ts
 
 build-apk:
-	$(eval PUB_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
 	cd apps/mobile && flutter build apk --release \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
-		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY) \
+		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(SUPABASE_PUBLISHABLE_KEY) \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
+		--dart-define=SENTRY_DSN=$(SENTRY_DSN) \
 		--dart-define=WEB_APP_URL=$(WEB_APP_URL)
 	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"
