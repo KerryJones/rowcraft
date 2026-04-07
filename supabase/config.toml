@@ -7,3 +7,6 @@ port = 54322
 
 [studio]
 port = 54323
+
+[analytics]
+enabled = false
