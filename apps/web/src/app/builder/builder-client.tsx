@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import type { Workout, WorkoutSegment, WorkoutType, Profile } from '@/lib/types';
@@ -9,10 +9,13 @@ import { intensityToHrZone } from '@/lib/utils/ftp';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
-import { SegmentEditor } from '@/components/ui/segment-editor';
 import { BuilderSegmentItem } from '@/components/ui/builder-segment-item';
 import { validateWorkout } from '@/lib/utils/builder-validation';
 import { Plus, Save, Loader2, Dumbbell } from 'lucide-react';
+
+function makeKey(): string {
+  return Math.random().toString(36).slice(2);
+}
 
 function makeDefaultSegment(lastIntensity: number | null): WorkoutSegment {
   const intensity = lastIntensity ?? 90;
@@ -30,9 +33,6 @@ export default function BuilderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
-  const editorRef = useRef<HTMLDivElement>(null);
-  const scrollToEditor = () =>
-    setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -40,7 +40,7 @@ export default function BuilderPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [segments, setSegments] = useState<WorkoutSegment[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [segmentKeys, setSegmentKeys] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -95,7 +95,9 @@ export default function BuilderPage() {
         setWorkoutType(w.workout_type);
         setTags(w.tags);
         setIsPublic(w.is_public);
-        setSegments(normalizeWorkoutSegments(w.segments));
+        const normalized = normalizeWorkoutSegments(w.segments);
+        setSegments(normalized);
+        setSegmentKeys(normalized.map(() => makeKey()));
       }
 
     }
@@ -115,18 +117,9 @@ export default function BuilderPage() {
 
   function addSegment() {
     const seg = makeDefaultSegment(lastWorkIntensity);
-    const newIndex = segments.length;
     setSegments((prev) => [...prev, seg]);
-    setSelectedIndex(newIndex);
+    setSegmentKeys((prev) => [...prev, makeKey()]);
     setHasEdited(true);
-    scrollToEditor();
-  }
-
-  function handleSelectSegment(index: number) {
-    setSelectedIndex(selectedIndex === index ? null : index);
-    if (selectedIndex !== index) {
-      scrollToEditor();
-    }
   }
 
   function updateSegment(index: number, segment: WorkoutSegment) {
@@ -136,7 +129,7 @@ export default function BuilderPage() {
 
   function removeSegment(index: number) {
     setSegments((prev) => prev.filter((_, i) => i !== index));
-    setSelectedIndex(null);
+    setSegmentKeys((prev) => prev.filter((_, i) => i !== index));
     setHasEdited(true);
   }
 
@@ -148,8 +141,11 @@ export default function BuilderPage() {
       [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
       return next;
     });
-    if (selectedIndex === fromIndex) setSelectedIndex(toIndex);
-    else if (selectedIndex === toIndex) setSelectedIndex(fromIndex);
+    setSegmentKeys((prev) => {
+      const next = [...prev];
+      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+      return next;
+    });
     setHasEdited(true);
   }
 
@@ -159,9 +155,12 @@ export default function BuilderPage() {
       next.splice(index + 1, 0, { ...prev[index] });
       return next;
     });
-    setSelectedIndex(index + 1);
+    setSegmentKeys((prev) => {
+      const next = [...prev];
+      next.splice(index + 1, 0, makeKey());
+      return next;
+    });
     setHasEdited(true);
-    scrollToEditor();
   }
 
   async function handleSave() {
@@ -183,12 +182,12 @@ export default function BuilderPage() {
 
     try {
       // Ensure hr_zone is derived from intensity before saving
-    const normalizedSegments = segments.map((s) => ({
-      ...s,
-      target_hr_zone: intensityToHrZone(s.target_intensity),
-    }));
+      const normalizedSegments = segments.map((s) => ({
+        ...s,
+        target_hr_zone: intensityToHrZone(s.target_intensity),
+      }));
 
-    const payload = {
+      const payload = {
         title: title.trim(),
         description: description.trim(),
         workout_type: workoutType,
@@ -223,8 +222,6 @@ export default function BuilderPage() {
       setSaving(false);
     }
   }
-
-  const selectedSegment = selectedIndex !== null ? segments[selectedIndex] : null;
 
   const addSegmentButton = (
     <button
@@ -281,11 +278,7 @@ export default function BuilderPage() {
         <>
           {/* Graph */}
           <div className="mb-4">
-            <WorkoutGraph
-              segments={segments}
-              selectedIndex={selectedIndex}
-              onSelectSegment={handleSelectSegment}
-            />
+            <WorkoutGraph segments={segments} />
           </div>
 
           {/* Stats */}
@@ -298,16 +291,17 @@ export default function BuilderPage() {
             <h2 className="mb-2 text-sm font-medium text-gray-400">Segments</h2>
             {segments.map((seg, i) => (
               <BuilderSegmentItem
-                key={i}
+                key={segmentKeys[i]}
                 segment={seg}
                 index={i}
-                isSelected={selectedIndex === i}
                 isFirst={i === 0}
                 isLast={i === segments.length - 1}
-                onSelect={() => handleSelectSegment(i)}
+                onChange={(updated) => updateSegment(i, updated)}
                 onMoveUp={() => moveSegment(i, 'up')}
                 onMoveDown={() => moveSegment(i, 'down')}
                 onDuplicate={() => duplicateSegment(i)}
+                onRemove={() => removeSegment(i)}
+                ftpWatts={ftpWatts}
               />
             ))}
           </div>
@@ -316,21 +310,6 @@ export default function BuilderPage() {
           <div className="mb-6">{addSegmentButton}</div>
         </>
       )}
-
-      {/* Segment editor */}
-      <div ref={editorRef}>
-        {selectedSegment !== null && selectedIndex !== null && (
-          <div className="mb-6">
-            <SegmentEditor
-              segment={selectedSegment}
-              onChange={(seg) => updateSegment(selectedIndex, seg)}
-              onRemove={() => removeSegment(selectedIndex)}
-              onDuplicate={() => duplicateSegment(selectedIndex)}
-              ftpWatts={ftpWatts}
-            />
-          </div>
-        )}
-      </div>
 
       {/* Save button */}
       <div className="flex justify-end">
