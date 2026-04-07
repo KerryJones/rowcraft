@@ -1,5 +1,5 @@
-import type { HrZone, HrZoneName } from '@/lib/types';
-import { DEFAULT_FTP_WATTS } from '@/lib/types';
+import type { HrZone, HrZoneName } from '../types';
+import { DEFAULT_FTP_WATTS } from '../types';
 
 /**
  * Convert watts to pace in tenths of a second per 500m.
@@ -110,4 +110,18 @@ export function resolveIntensityToPace(
  */
 export function getEffectiveFtp(ftpWatts: number | null): number {
 	return ftpWatts ?? DEFAULT_FTP_WATTS;
+}
+
+/**
+ * Derive HR zone (1–5) from intensity % of FTP.
+ * Boundaries match HR_ZONES thresholds above.
+ * Returns null for null/undefined intensity.
+ */
+export function intensityToHrZone(intensityPct: number | null | undefined): number | null {
+	if (intensityPct == null) return null;
+	if (intensityPct < 60) return 1;   // recovery
+	if (intensityPct < 75) return 2;   // aerobic
+	if (intensityPct < 85) return 3;   // tempo
+	if (intensityPct < 92) return 4;   // threshold
+	return 5;                           // max / VO2max
 }

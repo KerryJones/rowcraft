@@ -5,18 +5,12 @@ difficulty: intermediate
 tags: [ftp-builder, steady-state, week-4]
 estimated_duration_minutes: 50
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: "40:00"
+  - duration: "40:00"
     intensity: 70%
     stroke_rate: 22
-    hr_zone: 2
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

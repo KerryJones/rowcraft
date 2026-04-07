@@ -5,22 +5,17 @@ difficulty: intermediate
 tags: [ftp-builder, vo2max, week-4]
 estimated_duration_minutes: 40
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 5
     work:
       duration: "3:00"
       intensity: 112%
       stroke_rate: 30
-      hr_zone: 5
     rest:
       duration: "3:00"
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

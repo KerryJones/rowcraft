@@ -5,9 +5,8 @@ import 'package:rowcraft/utils/segment_display.dart';
 
 void main() {
   group('segmentPaceLabel', () {
-    test('work segment with intensity returns formatted pace', () {
+    test('segment with intensity returns formatted pace', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
         targetIntensity: 85,
@@ -17,36 +16,24 @@ void main() {
       expect(segmentPaceLabel(segment, kDefaultFtpWatts), '$expectedPace/500m');
     });
 
-    test('work segment without intensity returns Free', () {
+    test('segment without intensity returns Free', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
       );
       expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free');
     });
 
-    test('rest segment without intensity returns Free', () {
+    test('rest segment (no targets) returns Free', () {
       const segment = WorkoutSegment(
-        type: SegmentType.rest,
         durationType: DurationType.time,
         durationValue: 60,
       );
       expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free');
     });
 
-    test('warmup segment without intensity returns Free', () {
+    test('low intensity segment returns formatted pace', () {
       const segment = WorkoutSegment(
-        type: SegmentType.warmup,
-        durationType: DurationType.time,
-        durationValue: 120,
-      );
-      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free');
-    });
-
-    test('cooldown segment with intensity returns formatted pace', () {
-      const segment = WorkoutSegment(
-        type: SegmentType.cooldown,
         durationType: DurationType.time,
         durationValue: 180,
         targetIntensity: 55,
@@ -58,7 +45,6 @@ void main() {
 
     test('uses custom FTP watts for pace calculation', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
         targetIntensity: 100,
@@ -73,7 +59,6 @@ void main() {
   group('segmentStrokeRateLabel', () {
     test('returns formatted stroke rate when present', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
         targetStrokeRate: 22,
@@ -83,7 +68,6 @@ void main() {
 
     test('returns null when no stroke rate target', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
       );
@@ -92,7 +76,6 @@ void main() {
 
     test('returns exact target as label', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 300,
         targetStrokeRate: 26,

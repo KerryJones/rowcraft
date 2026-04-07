@@ -11,11 +11,11 @@ class WorkoutTypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (type) {
-      WorkoutType.singleDistance => ('Distance', RowCraftTheme.segmentWork),
-      WorkoutType.singleTime => ('Time', RowCraftTheme.segmentWarmup),
+      WorkoutType.singleDistance => ('Distance', RowCraftTheme.warningAmber),
+      WorkoutType.singleTime => ('Time', RowCraftTheme.accentTeal),
       WorkoutType.intervals => ('Intervals', RowCraftTheme.warningAmber),
       WorkoutType.variableIntervals =>
-        ('Variable', RowCraftTheme.segmentCooldown),
+        ('Variable', RowCraftTheme.errorRose),
     };
 
     return Container(

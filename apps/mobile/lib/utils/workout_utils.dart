@@ -1,6 +1,7 @@
 import '../models/workout_segment.dart';
 import 'pace_utils.dart';
 
+
 /// Compute total time in seconds for all time-based segments.
 /// Returns null if there are no time-based segments.
 int? computeTotalTime(List<WorkoutSegment> segments) {
@@ -68,11 +69,11 @@ int computeSegmentCount(List<WorkoutSegment> segments) {
   return segments.length;
 }
 
-/// Compute weighted average target intensity (FTP %) across work segments.
-/// Returns null if no work segments have intensity targets.
+/// Compute weighted average target intensity (FTP %) across active segments.
+/// Returns null if no segments have intensity targets.
 int? computeAvgIntensity(List<WorkoutSegment> segments) {
   final workSegs = segments
-      .where((s) => s.type == SegmentType.work && s.targetIntensity != null);
+      .where((s) => s.targetIntensity != null);
   if (workSegs.isEmpty) return null;
   var totalWeight = 0.0;
   var weightedSum = 0.0;
@@ -90,7 +91,7 @@ int? computeAvgIntensity(List<WorkoutSegment> segments) {
 /// Returns null if no segments have intensity targets.
 double? computeIntensity(List<WorkoutSegment> segments) {
   final workSegs = segments
-      .where((s) => s.type == SegmentType.work && s.targetIntensity != null);
+      .where((s) => s.targetIntensity != null);
   if (workSegs.isEmpty) return null;
   var totalWeight = 0.0;
   var weightedSum = 0.0;

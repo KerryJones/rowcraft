@@ -5,22 +5,17 @@ difficulty: beginner
 tags: [beginner, british-rowing, structured]
 estimated_duration_minutes: 26
 segments:
-  - type: warmup
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 5
     work:
       duration: "3:00"
       intensity: 83%
       stroke_rate: 24
-      hr_zone: 3
     rest:
       duration: "1:00"
-  - type: cooldown
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

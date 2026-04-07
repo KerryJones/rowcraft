@@ -5,18 +5,12 @@ difficulty: beginner
 tags: [recovery, distance]
 estimated_duration_minutes: 16
 segments:
-  - type: warmup
-    duration: 500m
+  - duration: 500m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 3000m
+  - duration: 3000m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: cooldown
-    duration: 500m
+  - duration: 500m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1

@@ -1,6 +1,6 @@
 import type { WorkoutSegment } from '@/lib/types';
-import { DEFAULT_FTP_WATTS } from '@/lib/types';
-import { resolveIntensityToPace } from '@/lib/utils/ftp';
+import { DEFAULT_FTP_WATTS } from '../types';
+import { resolveIntensityToPace } from './ftp';
 
 /**
  * Compute total time in seconds for all time-based segments (accounting for repeats).
@@ -77,10 +77,10 @@ export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
 		const seg = segments[i];
 
 		if (
-			seg.type === current.type &&
 			seg.duration_type === current.duration_type &&
 			seg.duration_value === current.duration_value &&
-			sameIntensity(current, seg)
+			sameIntensity(current, seg) &&
+			seg.target_stroke_rate === current.target_stroke_rate
 		) {
 			count += 1;
 		} else {

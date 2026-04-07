@@ -93,7 +93,7 @@ class MetricsDisplay extends StatelessWidget {
       return RowCraftTheme.successGreen;
     } else if (current < min) {
       // Below target range — could be good (pace) or bad (SR)
-      return RowCraftTheme.segmentWarmup;
+      return RowCraftTheme.successGreen;
     } else {
       // Above target range
       return RowCraftTheme.warningAmber;

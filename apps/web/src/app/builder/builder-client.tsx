@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
-import type { Workout, WorkoutSegment, WorkoutType, SegmentType, Profile } from '@/lib/types';
+import type { Workout, WorkoutSegment, WorkoutType, Profile } from '@/lib/types';
 import { normalizeWorkoutSegments } from '@/lib/types';
+import { intensityToHrZone } from '@/lib/utils/ftp';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
@@ -13,60 +14,17 @@ import { BuilderSegmentItem } from '@/components/ui/builder-segment-item';
 import { validateWorkout } from '@/lib/utils/builder-validation';
 import { Plus, Save, Loader2, Dumbbell } from 'lucide-react';
 
-/** Default intensity targets by segment type (% of FTP). */
-const DEFAULT_INTENSITY: Record<SegmentType, number | null> = {
-  work: 90,
-  rest: null,
-  warmup: 60,
-  cooldown: 55,
-};
-
-function makeDefaultSegment(type: SegmentType, lastWorkIntensity: number | null): WorkoutSegment {
-  const intensity: number | null =
-    type === 'work' && lastWorkIntensity
-      ? lastWorkIntensity
-      : DEFAULT_INTENSITY[type];
-
-  const durationDefaults: Record<SegmentType, number> = {
-    work: 300,
-    rest: 60,
-    warmup: 300,
-    cooldown: 300,
-  };
-
+function makeDefaultSegment(lastIntensity: number | null): WorkoutSegment {
+  const intensity = lastIntensity ?? 90;
   return {
-    type,
     duration_type: 'time',
-    duration_value: durationDefaults[type],
+    duration_value: 300,
     target_intensity: intensity,
     target_stroke_rate: null,
-    target_hr_zone: null,
+    target_hr_zone: intensityToHrZone(intensity),
     messages: null,
   };
 }
-
-const ADD_SEGMENT_BUTTONS: { type: SegmentType; label: string; className: string }[] = [
-  {
-    type: 'work',
-    label: 'Work',
-    className: 'bg-blue-600 text-white hover:bg-blue-500',
-  },
-  {
-    type: 'rest',
-    label: 'Rest',
-    className: 'bg-gray-700 text-white hover:bg-gray-600',
-  },
-  {
-    type: 'warmup',
-    label: 'Warm Up',
-    className: 'border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20',
-  },
-  {
-    type: 'cooldown',
-    label: 'Cool Down',
-    className: 'border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20',
-  },
-];
 
 export default function BuilderPage() {
   const router = useRouter();
@@ -92,7 +50,7 @@ export default function BuilderPage() {
   const ftpWatts = profile?.current_ftp_watts ?? null;
   const lastWorkIntensity = (() => {
     for (let i = segments.length - 1; i >= 0; i--) {
-      if (segments[i].type === 'work' && segments[i].target_intensity != null) {
+      if (segments[i].target_intensity != null) {
         return segments[i].target_intensity;
       }
     }
@@ -155,8 +113,8 @@ export default function BuilderPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasEdited]);
 
-  function addSegment(type: SegmentType) {
-    const seg = makeDefaultSegment(type, lastWorkIntensity);
+  function addSegment() {
+    const seg = makeDefaultSegment(lastWorkIntensity);
     const newIndex = segments.length;
     setSegments((prev) => [...prev, seg]);
     setSelectedIndex(newIndex);
@@ -224,11 +182,17 @@ export default function BuilderPage() {
     const supabase = createSupabaseBrowser();
 
     try {
-      const payload = {
+      // Ensure hr_zone is derived from intensity before saving
+    const normalizedSegments = segments.map((s) => ({
+      ...s,
+      target_hr_zone: intensityToHrZone(s.target_intensity),
+    }));
+
+    const payload = {
         title: title.trim(),
         description: description.trim(),
         workout_type: workoutType,
-        segments,
+        segments: normalizedSegments,
         tags,
         is_public: isPublic,
         author_id: userId,
@@ -262,20 +226,15 @@ export default function BuilderPage() {
 
   const selectedSegment = selectedIndex !== null ? segments[selectedIndex] : null;
 
-  const addSegmentButtons = (
-    <div className="flex flex-wrap gap-2">
-      {ADD_SEGMENT_BUTTONS.map(({ type, label, className }) => (
-        <button
-          key={type}
-          type="button"
-          onClick={() => addSegment(type)}
-          className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${className}`}
-        >
-          <Plus className="h-4 w-4" />
-          {label}
-        </button>
-      ))}
-    </div>
+  const addSegmentButton = (
+    <button
+      type="button"
+      onClick={() => addSegment()}
+      className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+    >
+      <Plus className="h-4 w-4" />
+      Add Segment
+    </button>
   );
 
   return (
@@ -316,7 +275,7 @@ export default function BuilderPage() {
           <p className="mb-6 max-w-xs text-sm text-gray-500">
             Add your first segment to start building your workout.
           </p>
-          {addSegmentButtons}
+          {addSegmentButton}
         </div>
       ) : (
         <>
@@ -353,8 +312,8 @@ export default function BuilderPage() {
             ))}
           </div>
 
-          {/* Add segment buttons */}
-          <div className="mb-6">{addSegmentButtons}</div>
+          {/* Add segment button */}
+          <div className="mb-6">{addSegmentButton}</div>
         </>
       )}
 

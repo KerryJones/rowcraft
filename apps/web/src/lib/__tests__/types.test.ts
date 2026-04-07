@@ -6,7 +6,6 @@ describe('normalizeWorkoutSegments', () => {
 	it('ensures messages is null when missing', () => {
 		const segments: any[] = [
 			{
-				type: 'work',
 				duration_type: 'time',
 				duration_value: 300,
 				target_intensity: 95,
@@ -23,7 +22,6 @@ describe('normalizeWorkoutSegments', () => {
 	it('passes through segments with intensity targets unchanged', () => {
 		const segments: WorkoutSegment[] = [
 			{
-				type: 'work',
 				duration_type: 'time',
 				duration_value: 300,
 				target_intensity: 90,
@@ -32,7 +30,6 @@ describe('normalizeWorkoutSegments', () => {
 				messages: null,
 			},
 			{
-				type: 'rest',
 				duration_type: 'time',
 				duration_value: 60,
 				target_intensity: null,

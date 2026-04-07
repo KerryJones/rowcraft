@@ -5,22 +5,17 @@ difficulty: intermediate
 tags: [ftp-builder, threshold, week-2]
 estimated_duration_minutes: 36
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 4
     work:
       duration: "5:00"
       intensity: 95%
       stroke_rate: 26
-      hr_zone: 4
     rest:
       duration: "2:00"
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

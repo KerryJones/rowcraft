@@ -5,8 +5,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'b0000000-0000-0000-0000-000000000003',
   'Pete Plan Wk1 Fri — 20min Steady',
   'Week 1 Friday: 20 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-1}',
   true
 );
@@ -15,8 +15,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'b0000000-0000-0000-0000-000000000001',
   'Pete Plan Wk1 Mon — 5000m',
   'Week 1 Monday: 5000m steady state at Z2 pace.',
-  'single_distance',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":5000,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5000,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-1}',
   true
 );
@@ -26,7 +26,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pete Plan Wk1 Wed — 8x500m',
   'Week 1 Wednesday: 8x500m intervals with 3:30 rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,intervals,speed,week-1}',
   true
 );
@@ -35,8 +35,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0003-000000000001',
   'Pete Plan Wk2 Fri — 22min Steady',
   'Week 2 Friday: 22 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1320,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1320,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-2}',
   true
 );
@@ -45,8 +45,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0001-000000000001',
   'Pete Plan Wk2 Mon — 5500m',
   'Week 2 Monday: 5500m steady state at Z2 pace.',
-  'single_distance',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":5500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-2}',
   true
 );
@@ -56,7 +56,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pete Plan Wk2 Wed — 6x750m',
   'Week 2 Wednesday: 6x750m intervals with 3:00 rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,intervals,speed,week-2}',
   true
 );
@@ -65,8 +65,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0003-000000000002',
   'Pete Plan Wk3 Fri — 24min Steady',
   'Week 3 Friday: 24 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1440,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1440,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-3}',
   true
 );
@@ -75,8 +75,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0001-000000000002',
   'Pete Plan Wk3 Mon — 6000m',
   'Week 3 Monday: 6000m steady state at Z2 pace.',
-  'single_distance',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":6000,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":6000,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-3}',
   true
 );
@@ -86,7 +86,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pete Plan Wk3 Wed — 4x1000m',
   'Week 3 Wednesday: 4x1000m intervals with 3:00 rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,intervals,speed,week-3}',
   true
 );
@@ -95,8 +95,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0003-000000000003',
   'Pete Plan Wk4 Fri — 20min Steady',
   'Week 4 Friday: 20 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-4}',
   true
 );
@@ -105,8 +105,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0001-000000000003',
   'Pete Plan Wk4 Mon — 6500m',
   'Week 4 Monday: 6500m steady state at Z2 pace.',
-  'single_distance',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":6500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":6500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-4}',
   true
 );
@@ -116,7 +116,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pete Plan Wk4 Wed — 8x500m',
   'Week 4 Wednesday: 8x500m intervals with 3:00 rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,intervals,speed,week-4}',
   true
 );
@@ -125,8 +125,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0003-000000000004',
   'Pete Plan Wk5 Fri — 22min Steady',
   'Week 5 Friday: 22 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1320,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1320,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-5}',
   true
 );
@@ -135,8 +135,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0001-000000000004',
   'Pete Plan Wk5 Mon — 7000m',
   'Week 5 Monday: 7000m steady state at Z2 pace.',
-  'single_distance',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":7000,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":7000,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-5}',
   true
 );
@@ -146,7 +146,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pete Plan Wk5 Wed — 6x750m',
   'Week 5 Wednesday: 6x750m intervals with 3:00 rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":750,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,intervals,speed,week-5}',
   true
 );
@@ -155,8 +155,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0003-000000000005',
   'Pete Plan Wk6 Fri — 24min Steady',
   'Week 6 Friday: 24 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1440,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1440,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-6}',
   true
 );
@@ -165,8 +165,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'e0000000-0000-0000-0001-000000000005',
   'Pete Plan Wk6 Mon — 7500m',
   'Week 6 Monday: 7500m steady state at Z2 pace.',
-  'single_distance',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":7500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":7500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,steady-state,week-6}',
   true
 );
@@ -176,7 +176,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pete Plan Wk6 Wed — 4x1000m',
   'Week 6 Wednesday: 4x1000m intervals with 3:00 rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":1000,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{pete-plan,intervals,speed,week-6}',
   true
 );

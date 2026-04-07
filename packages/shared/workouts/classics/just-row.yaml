@@ -5,5 +5,4 @@ difficulty: beginner
 tags: [free-row, just-row]
 estimated_duration_minutes: 120
 segments:
-  - type: work
-    duration: "120:00"
+  - duration: "120:00"

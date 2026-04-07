@@ -22,8 +22,8 @@ export function WorkoutCard({ workout, authorName, onClick, ftpWatts }: WorkoutC
   const totalDistance = computeTotalDistance(workout.segments);
   const segmentCount = computeSegmentCount(workout.segments);
 
-  // Compute duration-weighted average work pace from intensity targets
-  const workSegs = workout.segments.filter((s) => s.type === 'work' && s.target_intensity);
+  // Compute duration-weighted average pace from intensity targets
+  const workSegs = workout.segments.filter((s) => s.target_intensity != null);
   const avgPace = (() => {
     if (workSegs.length === 0) return null;
     let totalWeight = 0;

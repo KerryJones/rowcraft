@@ -1,4 +1,3 @@
-export type SegmentType = 'work' | 'rest' | 'warmup' | 'cooldown';
 export type DurationType = 'time' | 'distance' | 'calories';
 export type WorkoutType = 'single_distance' | 'single_time' | 'intervals' | 'variable_intervals';
 
@@ -9,15 +8,20 @@ export interface SegmentMessage {
 }
 
 export interface WorkoutSegment {
-	type: SegmentType;
 	duration_type: DurationType;
 	duration_value: number; // seconds, meters, or calories depending on duration_type
 	/** FTP percentage target (0–200). Higher % = more watts = faster pace. */
 	target_intensity: number | null;
 	/** Strokes per minute target (10–50). */
 	target_stroke_rate: number | null;
+	/** HR zone (1–5) derived from target_intensity at build/save time. Read-only. */
 	target_hr_zone: number | null;
 	messages: SegmentMessage[] | null;
+}
+
+/** True when a segment has no targets — pure rest/recovery time. */
+export function isRestSegment(seg: WorkoutSegment): boolean {
+	return seg.target_intensity == null && seg.target_stroke_rate == null;
 }
 
 /** Default FTP for users who haven't taken an FTP test. 150W ≈ 2:14/500m. */

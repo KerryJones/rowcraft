@@ -45,7 +45,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - **Dark theme only** — both platforms. Rowers are in gyms/garages.
 - **Split times in tenths of seconds** — 2:00/500m = 1200. Storage is tenths; display is `M:SS` (no decimal).
 - **PM5 data via BLE notifications only** — never use BLE reads (returns junk).
-- Segment colors must match across mobile and web: work=blue, rest=gray, warmup=green, cooldown=yellow.
+- Segment colors from stored `target_hr_zone` (derived from intensity at build/save time). No zone = gray (#6b7280). Z1=green, Z2=blue, Z3=amber, Z4=orange, Z5=red.
 - **UX self-review before presenting UI work** — for every visual container, ask: "What mental model does this layout create? Would a first-time user interpret this the same way the code intends it?" Check Gestalt grouping: elements in the same container are perceived as one entity.
 
 ### Tool Usage

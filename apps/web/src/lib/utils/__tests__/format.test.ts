@@ -5,7 +5,6 @@ import {
 	formatTimeTenths,
 	formatDistance,
 	formatWorkoutType,
-	formatSegmentType,
 	formatDifficulty,
 	formatSegmentDuration,
 	parsePace,
@@ -131,15 +130,6 @@ describe('formatWorkoutType', () => {
 	});
 });
 
-describe('formatSegmentType', () => {
-	it('formats known types', () => {
-		expect(formatSegmentType('work')).toBe('Work');
-		expect(formatSegmentType('rest')).toBe('Rest');
-		expect(formatSegmentType('warmup')).toBe('Warm Up');
-		expect(formatSegmentType('cooldown')).toBe('Cool Down');
-	});
-});
-
 describe('formatDifficulty', () => {
 	it('formats known difficulties', () => {
 		expect(formatDifficulty('beginner')).toBe('Beginner');
@@ -150,7 +140,6 @@ describe('formatDifficulty', () => {
 
 describe('formatSegmentDuration', () => {
 	const makeSegment = (overrides: Partial<WorkoutSegment>): WorkoutSegment => ({
-		type: 'work',
 		duration_type: 'time',
 		duration_value: 300,
 		target_intensity: null,

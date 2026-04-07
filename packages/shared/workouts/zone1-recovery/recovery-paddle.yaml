@@ -5,18 +5,12 @@ difficulty: beginner
 tags: [recovery, easy]
 estimated_duration_minutes: 31
 segments:
-  - type: warmup
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: "25:00"
+  - duration: "25:00"
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: cooldown
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1

@@ -110,11 +110,11 @@ void main() {
       expect(workout.description, 'Hard interval session with 2 min rest');
       expect(workout.workoutType, WorkoutType.intervals);
       expect(workout.segments, hasLength(4));
-      expect(workout.segments[0].type, SegmentType.warmup);
-      expect(workout.segments[1].type, SegmentType.work);
+      expect(workout.segments[0].durationType, DurationType.time);
+      expect(workout.segments[1].durationType, DurationType.distance);
       expect(workout.segments[1].targetIntensity, 80);
-      expect(workout.segments[2].type, SegmentType.rest);
-      expect(workout.segments[3].type, SegmentType.cooldown);
+      expect(workout.segments[2].targetIntensity, isNull);
+      expect(workout.segments[3].durationType, DurationType.time);
       expect(workout.tags, ['intervals', 'hard', '1000m']);
       expect(workout.isPublic, true);
       expect(workout.forkCount, 7);

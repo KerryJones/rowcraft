@@ -1,36 +1,10 @@
 'use client';
 
 import { ChevronUp, ChevronDown, Copy } from 'lucide-react';
-import type { WorkoutSegment, SegmentType } from '@/lib/types';
+import type { WorkoutSegment } from '@/lib/types';
+import { isRestSegment } from '@/lib/types';
 import { formatSegmentDuration } from '@/lib/utils/format';
-
-const BAR_COLOR: Record<SegmentType, string> = {
-  work: 'bg-blue-500',
-  rest: 'bg-gray-500',
-  warmup: 'bg-emerald-500',
-  cooldown: 'bg-yellow-500',
-};
-
-const BADGE_COLOR: Record<SegmentType, string> = {
-  work: 'bg-blue-500/20 text-blue-400',
-  rest: 'bg-gray-500/20 text-gray-400',
-  warmup: 'bg-emerald-500/20 text-emerald-400',
-  cooldown: 'bg-yellow-500/20 text-yellow-400',
-};
-
-const BORDER_COLOR: Record<SegmentType, string> = {
-  work: 'border-blue-500/20 bg-blue-500/5',
-  rest: 'border-gray-500/20 bg-gray-500/5',
-  warmup: 'border-emerald-500/20 bg-emerald-500/5',
-  cooldown: 'border-yellow-500/20 bg-yellow-500/5',
-};
-
-const TYPE_LABEL: Record<SegmentType, string> = {
-  work: 'Work',
-  rest: 'Rest',
-  warmup: 'Warm Up',
-  cooldown: 'Cool Down',
-};
+import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 
 interface BuilderSegmentItemProps {
   segment: WorkoutSegment;
@@ -55,14 +29,18 @@ export function BuilderSegmentItem({
   onMoveDown,
   onDuplicate,
 }: BuilderSegmentItemProps) {
+  const color = getSegmentDisplayColor(segment);
+  const isRest = isRestSegment(segment);
+  const label = isRest ? 'Rest' : segment.target_hr_zone != null ? `Z${segment.target_hr_zone}` : 'Active';
+
   return (
     <div
-      className={`group flex min-h-[48px] overflow-hidden rounded-lg border transition-all duration-150 ${BORDER_COLOR[segment.type]} ${
+      className={`group flex min-h-[48px] overflow-hidden rounded-lg border border-gray-700/50 bg-gray-800/50 transition-all duration-150 ${
         isSelected ? 'ring-2 ring-blue-500' : 'ring-0'
       }`}
     >
       {/* Colored left bar */}
-      <div className={`w-1 shrink-0 ${BAR_COLOR[segment.type]}`} />
+      <div className="w-1 shrink-0" style={{ backgroundColor: color }} />
 
       {/* Main clickable area */}
       <button
@@ -75,9 +53,12 @@ export function BuilderSegmentItem({
           {index + 1}
         </span>
 
-        {/* Type badge */}
-        <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${BADGE_COLOR[segment.type]}`}>
-          {TYPE_LABEL[segment.type]}
+        {/* Zone/rest badge */}
+        <span
+          className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium"
+          style={{ backgroundColor: color + '33', color }}
+        >
+          {label}
         </span>
 
         {/* Duration */}
@@ -96,13 +77,6 @@ export function BuilderSegmentItem({
         {segment.target_stroke_rate != null && (
           <span className="rounded bg-gray-700/50 px-1.5 py-0.5 text-xs text-gray-400">
             {segment.target_stroke_rate} spm
-          </span>
-        )}
-
-        {/* HR zone badge */}
-        {segment.target_hr_zone != null && (
-          <span className="rounded bg-gray-700/50 px-1.5 py-0.5 text-xs text-gray-400">
-            Z{segment.target_hr_zone}
           </span>
         )}
       </button>

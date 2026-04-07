@@ -2,27 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rowcraft/models/workout_segment.dart';
 
 void main() {
-  group('SegmentType enum', () {
-    test('toJson returns the enum name', () {
-      expect(SegmentType.work.toJson(), 'work');
-      expect(SegmentType.rest.toJson(), 'rest');
-      expect(SegmentType.warmup.toJson(), 'warmup');
-      expect(SegmentType.cooldown.toJson(), 'cooldown');
-    });
-
-    test('fromJson parses the enum name', () {
-      expect(SegmentType.fromJson('work'), SegmentType.work);
-      expect(SegmentType.fromJson('rest'), SegmentType.rest);
-      expect(SegmentType.fromJson('warmup'), SegmentType.warmup);
-      expect(SegmentType.fromJson('cooldown'), SegmentType.cooldown);
-    });
-
-    test('fromJson throws on unknown value', () {
-      expect(
-          () => SegmentType.fromJson('sprint'), throwsA(isA<StateError>()));
-    });
-  });
-
   group('DurationType enum', () {
     test('toJson returns the enum name', () {
       expect(DurationType.time.toJson(), 'time');
@@ -45,7 +24,6 @@ void main() {
   group('WorkoutSegment.fromJson', () {
     test('deserializes full segment with all targets', () {
       final json = {
-        'type': 'work',
         'duration_type': 'distance',
         'duration_value': 1000.0,
         'target_intensity': 80,
@@ -54,7 +32,6 @@ void main() {
       };
 
       final segment = WorkoutSegment.fromJson(json);
-      expect(segment.type, SegmentType.work);
       expect(segment.durationType, DurationType.distance);
       expect(segment.durationValue, 1000.0);
       expect(segment.targetIntensity, 80);
@@ -64,7 +41,6 @@ void main() {
 
     test('null targets handled correctly', () {
       final json = {
-        'type': 'rest',
         'duration_type': 'time',
         'duration_value': 120.0,
       };
@@ -77,7 +53,6 @@ void main() {
 
     test('durationValue handles int values from JSON', () {
       final json = {
-        'type': 'work',
         'duration_type': 'distance',
         'duration_value': 2000,
       };
@@ -85,12 +60,24 @@ void main() {
       final segment = WorkoutSegment.fromJson(json);
       expect(segment.durationValue, 2000.0);
     });
+
+    test('ignores unknown fields like type', () {
+      final json = {
+        'type': 'work', // legacy field, should be ignored
+        'duration_type': 'time',
+        'duration_value': 300.0,
+        'target_intensity': 85,
+      };
+
+      final segment = WorkoutSegment.fromJson(json);
+      expect(segment.durationType, DurationType.time);
+      expect(segment.targetIntensity, 85);
+    });
   });
 
   group('WorkoutSegment.toJson', () {
     test('serializes full segment', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 1000.0,
         targetIntensity: 80,
@@ -99,7 +86,7 @@ void main() {
       );
 
       final json = segment.toJson();
-      expect(json['type'], 'work');
+      expect(json.containsKey('type'), isFalse);
       expect(json['duration_type'], 'distance');
       expect(json['duration_value'], 1000.0);
       expect(json['target_intensity'], 80);
@@ -109,7 +96,6 @@ void main() {
 
     test('omits null targets from JSON', () {
       const segment = WorkoutSegment(
-        type: SegmentType.rest,
         durationType: DurationType.time,
         durationValue: 120.0,
       );
@@ -124,7 +110,6 @@ void main() {
   group('fromJson/toJson roundtrip', () {
     test('full segment survives roundtrip', () {
       final original = {
-        'type': 'work',
         'duration_type': 'distance',
         'duration_value': 1000.0,
         'target_intensity': 80,
@@ -135,7 +120,6 @@ void main() {
       final segment = WorkoutSegment.fromJson(original);
       final json = segment.toJson();
 
-      expect(json['type'], original['type']);
       expect(json['duration_type'], original['duration_type']);
       expect(json['duration_value'], original['duration_value']);
       expect(json['target_intensity'], original['target_intensity']);
@@ -145,7 +129,6 @@ void main() {
 
     test('minimal segment survives roundtrip', () {
       final original = {
-        'type': 'rest',
         'duration_type': 'time',
         'duration_value': 60.0,
       };
@@ -154,7 +137,6 @@ void main() {
       final json = segment.toJson();
       final roundtripped = WorkoutSegment.fromJson(json);
 
-      expect(roundtripped.type, segment.type);
       expect(roundtripped.durationType, segment.durationType);
       expect(roundtripped.durationValue, segment.durationValue);
       expect(roundtripped.targetIntensity, isNull);
@@ -163,10 +145,37 @@ void main() {
     });
   });
 
+  group('isRest', () {
+    test('segment with no targets is rest', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+      );
+      expect(segment.isRest, isTrue);
+    });
+
+    test('segment with intensity is not rest', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 300.0,
+        targetIntensity: 85,
+      );
+      expect(segment.isRest, isFalse);
+    });
+
+    test('segment with stroke rate only is not rest', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 300.0,
+        targetStrokeRate: 22,
+      );
+      expect(segment.isRest, isFalse);
+    });
+  });
+
   group('durationLabel', () {
     test('distance type formats as meters', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 2000.0,
       );
@@ -175,7 +184,6 @@ void main() {
 
     test('time type formats as M:SS', () {
       const segment = WorkoutSegment(
-        type: SegmentType.warmup,
         durationType: DurationType.time,
         durationValue: 300.0,
       );
@@ -184,7 +192,6 @@ void main() {
 
     test('time type with non-zero seconds formats correctly', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.time,
         durationValue: 90.0,
       );
@@ -193,7 +200,6 @@ void main() {
 
     test('time type with single-digit seconds pads with zero', () {
       const segment = WorkoutSegment(
-        type: SegmentType.rest,
         durationType: DurationType.time,
         durationValue: 65.0,
       );
@@ -202,7 +208,6 @@ void main() {
 
     test('calories type formats with cal suffix', () {
       const segment = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.calories,
         durationValue: 100.0,
       );
@@ -211,7 +216,6 @@ void main() {
 
     test('zero time formats as 0:00', () {
       const segment = WorkoutSegment(
-        type: SegmentType.rest,
         durationType: DurationType.time,
         durationValue: 0.0,
       );
@@ -222,7 +226,6 @@ void main() {
   group('WorkoutSegment.copyWith', () {
     test('preserves unchanged fields', () {
       const original = WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 1000.0,
         targetIntensity: 80,
@@ -232,7 +235,6 @@ void main() {
 
       final copied = original.copyWith(durationValue: 500.0);
 
-      expect(copied.type, original.type);
       expect(copied.durationType, original.durationType);
       expect(copied.durationValue, 500.0);
       expect(copied.targetIntensity, original.targetIntensity);
@@ -241,14 +243,23 @@ void main() {
     });
   });
 
-  test('toString includes type and durationLabel', () {
+  test('toString includes isRest status and durationLabel', () {
     const segment = WorkoutSegment(
-      type: SegmentType.work,
       durationType: DurationType.distance,
       durationValue: 1000.0,
+      targetIntensity: 85,
     );
     final str = segment.toString();
-    expect(str, contains('work'));
+    expect(str, contains('active'));
     expect(str, contains('1000m'));
+  });
+
+  test('toString shows rest for segment without targets', () {
+    const segment = WorkoutSegment(
+      durationType: DurationType.time,
+      durationValue: 60.0,
+    );
+    final str = segment.toString();
+    expect(str, contains('rest'));
   });
 }

@@ -735,7 +735,7 @@ class _CurrentSegment extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${segment.type.name.toUpperCase()} ${segment.durationLabel}',
+                '${segment.isRest ? 'REST' : segment.targetHrZone != null ? 'Z${segment.targetHrZone}' : ''} ${segment.durationLabel}'.trim(),
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1266,10 +1266,10 @@ class _UpNextPreview extends StatelessWidget {
               ),
             ),
           ],
-          // Fallback: show segment type when no targets exist
-          if (next.targetIntensity == null && next.targetStrokeRate == null)
+          // Fallback: show REST label when no targets exist
+          if (next.isRest)
             Text(
-              next.type.name.toUpperCase(),
+              'REST',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,

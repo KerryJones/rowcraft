@@ -5,22 +5,17 @@ difficulty: advanced
 tags: [vo2max, intervals]
 estimated_duration_minutes: 30
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 10
     work:
       duration: "1:00"
       intensity: 112%
       stroke_rate: 30
-      hr_zone: 5
     rest:
       duration: "1:00"
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

@@ -12,7 +12,6 @@ import type { WorkoutSegment } from '../../types';
 
 function makeSegment(overrides: Partial<WorkoutSegment> = {}): WorkoutSegment {
 	return {
-		type: 'work',
 		duration_type: 'time',
 		duration_value: 300,
 		target_intensity: null,
@@ -27,7 +26,7 @@ describe('computeTotalTime', () => {
 	it('sums time-based segments', () => {
 		const segments = [
 			makeSegment({ duration_type: 'time', duration_value: 300 }),
-			makeSegment({ duration_type: 'time', duration_value: 60, type: 'rest' }),
+			makeSegment({ duration_type: 'time', duration_value: 60 }),
 			makeSegment({ duration_type: 'time', duration_value: 300 }),
 		];
 		expect(computeTotalTime(segments)).toBe(660);
@@ -124,16 +123,15 @@ describe('groupSegments', () => {
 	});
 
 	it('groups consecutive identical segments', () => {
-		const work = makeSegment({ type: 'work', duration_type: 'distance', duration_value: 500, target_intensity: 95 });
-		const rest = makeSegment({ type: 'rest', duration_type: 'time', duration_value: 60 });
-		// 10 x 500m work + 10 x 1:00 rest (alternating in source, but grouped when consecutive)
-		const segments = [work, work, work, rest, rest, rest];
+		const active = makeSegment({ duration_type: 'distance', duration_value: 500, target_intensity: 95 });
+		const rest = makeSegment({ duration_type: 'time', duration_value: 60, target_intensity: null });
+		const segments = [active, active, active, rest, rest, rest];
 		const groups = groupSegments(segments);
 		expect(groups).toHaveLength(2);
 		expect(groups[0].count).toBe(3);
-		expect(groups[0].segment.type).toBe('work');
+		expect(groups[0].segment.target_intensity).toBe(95);
 		expect(groups[1].count).toBe(3);
-		expect(groups[1].segment.type).toBe('rest');
+		expect(groups[1].segment.target_intensity).toBeNull();
 	});
 
 	it('does not group segments with different intensities', () => {
@@ -145,22 +143,22 @@ describe('groupSegments', () => {
 		expect(groups[1].count).toBe(1);
 	});
 
-	it('does not group segments with different types', () => {
-		const work = makeSegment({ type: 'work' });
-		const rest = makeSegment({ type: 'rest' });
-		const groups = groupSegments([work, rest, work]);
+	it('does not group segments with different durations', () => {
+		const short = makeSegment({ target_intensity: 90, duration_value: 300 });
+		const long = makeSegment({ target_intensity: 90, duration_value: 600 });
+		const groups = groupSegments([short, long, short]);
 		expect(groups).toHaveLength(3);
 	});
 
 	it('handles all-identical segments', () => {
-		const seg = makeSegment({ type: 'work', duration_value: 300 });
+		const seg = makeSegment({ target_intensity: 90, duration_value: 300 });
 		const groups = groupSegments([seg, seg, seg, seg, seg]);
 		expect(groups).toHaveLength(1);
 		expect(groups[0].count).toBe(5);
 	});
 
 	it('counts multiple identical consecutive segments', () => {
-		const work = makeSegment({ type: 'work', duration_value: 500, duration_type: 'distance', target_intensity: 95 });
+		const work = makeSegment({ duration_value: 500, duration_type: 'distance', target_intensity: 95 });
 		const groups = groupSegments([work, work, work, work, work, work, work, work, work, work]);
 		expect(groups).toHaveLength(1);
 		expect(groups[0].count).toBe(10);
@@ -169,45 +167,28 @@ describe('groupSegments', () => {
 
 describe('expandSegments', () => {
 	it('returns single segments unchanged', () => {
-		const seg = makeSegment({ type: 'work' });
+		const seg = makeSegment({ target_intensity: 90 });
 		const expanded = expandSegments([seg]);
 		expect(expanded).toHaveLength(1);
-		expect(expanded[0].type).toBe('work');
+		expect(expanded[0].target_intensity).toBe(90);
 	});
 
 	it('passes through all individual segments', () => {
-		const work = makeSegment({ type: 'work', duration_type: 'distance', duration_value: 500 });
-		const rest = makeSegment({ type: 'rest', duration_type: 'time', duration_value: 60 });
-		const expanded = expandSegments([work, rest, work, rest, work, rest]);
+		const active = makeSegment({ duration_type: 'distance', duration_value: 500, target_intensity: 95 });
+		const rest = makeSegment({ duration_type: 'time', duration_value: 60, target_intensity: null });
+		const expanded = expandSegments([active, rest, active, rest, active, rest]);
 		expect(expanded).toHaveLength(6);
-		expect(expanded.map(s => s.type)).toEqual(['work', 'rest', 'work', 'rest', 'work', 'rest']);
-	});
-
-	it('handles warmup + intervals + cooldown', () => {
-		const warmup = makeSegment({ type: 'warmup' });
-		const work = makeSegment({ type: 'work' });
-		const rest = makeSegment({ type: 'rest' });
-		const cooldown = makeSegment({ type: 'cooldown' });
-		const segments = [warmup, work, rest, work, rest, work, rest, work, rest, work, rest, cooldown];
-		const expanded = expandSegments(segments);
-		expect(expanded).toHaveLength(12);
-		expect(expanded[0].type).toBe('warmup');
-		expect(expanded[1].type).toBe('work');
-		expect(expanded[2].type).toBe('rest');
-		expect(expanded[11].type).toBe('cooldown');
 	});
 
 	it('preserves segment order', () => {
-		const work = makeSegment({ type: 'work' });
-		const rest = makeSegment({ type: 'rest' });
-		const cooldown = makeSegment({ type: 'cooldown' });
-		const expanded = expandSegments([work, rest, cooldown, work, rest, cooldown, work, rest, cooldown]);
-		expect(expanded).toHaveLength(9);
-		expect(expanded.map(s => s.type)).toEqual([
-			'work', 'rest', 'cooldown',
-			'work', 'rest', 'cooldown',
-			'work', 'rest', 'cooldown',
-		]);
+		const s1 = makeSegment({ target_intensity: 60 });
+		const s2 = makeSegment({ target_intensity: 95 });
+		const s3 = makeSegment({ target_intensity: null });
+		const expanded = expandSegments([s1, s2, s3, s1, s2, s3]);
+		expect(expanded).toHaveLength(6);
+		expect(expanded[0].target_intensity).toBe(60);
+		expect(expanded[1].target_intensity).toBe(95);
+		expect(expanded[2].target_intensity).toBeNull();
 	});
 });
 

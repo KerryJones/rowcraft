@@ -5,47 +5,32 @@ difficulty: advanced
 tags: [wod, death-by, escalating]
 estimated_duration_minutes: 18
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 100m
+  - duration: 100m
     intensity: 70%
     stroke_rate: 22
-  - type: rest
-    duration: "30"
-  - type: work
-    duration: 100m
+  - duration: "30"
+  - duration: 100m
     intensity: 83%
     stroke_rate: 24
-  - type: rest
-    duration: "30"
-  - type: work
-    duration: 100m
+  - duration: "30"
+  - duration: 100m
     intensity: 95%
     stroke_rate: 26
-  - type: rest
-    duration: "30"
-  - type: work
-    duration: 100m
+  - duration: "30"
+  - duration: 100m
     intensity: 102%
     stroke_rate: 28
-  - type: rest
-    duration: "30"
-  - type: work
-    duration: 100m
+  - duration: "30"
+  - duration: 100m
     intensity: 112%
     stroke_rate: 30
-  - type: rest
-    duration: "30"
-  - type: work
-    duration: 100m
+  - duration: "30"
+  - duration: 100m
     intensity: 122%
     stroke_rate: 30
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

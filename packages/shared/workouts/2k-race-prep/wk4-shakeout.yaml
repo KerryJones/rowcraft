@@ -5,11 +5,9 @@ difficulty: advanced
 tags: [2k-race-prep, shakeout, week-4]
 estimated_duration_minutes: 15
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 3
     work:
@@ -18,8 +16,6 @@ segments:
       stroke_rate: 30
     rest:
       duration: "1:30"
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

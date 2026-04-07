@@ -784,7 +784,7 @@ class _SplitsTable extends StatelessWidget {
                   : null;
               final color = seg != null
                   ? segmentDisplayColor(seg)
-                  : RowCraftTheme.segmentWork;
+                  : RowCraftTheme.segmentRest;
 
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -813,9 +813,9 @@ class _SplitsTable extends StatelessWidget {
                       width: 48,
                       child: Text(
                         () {
-                          final name = seg?.type.name ?? 'work';
-                          return name.substring(0, 1).toUpperCase() +
-                              name.substring(1, math.min(4, name.length));
+                          if (seg == null || seg.isRest) return 'Rest';
+                          if (seg.targetHrZone != null) return 'Z${seg.targetHrZone}';
+                          return 'Act';
                         }(),
                         style: cellStyle.copyWith(
                           color: color,

@@ -20,15 +20,15 @@ import '../../app/theme.dart';
 // ── COLORS (dark theme) ─────────────────────────────────────────────────────
 const _colorActive = RowCraftTheme.errorRose; // muscle highlight — red
 const _colorRest = RowCraftTheme.metricWhite; // body at rest — light
-const _colorHandle = RowCraftTheme.segmentWork; // handle/chain — blue
+const _colorHandle = RowCraftTheme.hrZone2; // handle/chain — blue
 const _colorInactive = RowCraftTheme.subtleGrey; // everything when not rowing
 const _colorErg = RowCraftTheme.subtleGrey; // rail, seat
 
 // ── STROKE WIDTHS (virtual coordinate px) ───────────────────────────────────
-const _strokeLegs = 5.0;
-const _strokeTorso = 5.0;
-const _strokeNeck = 4.0;
-const _strokeArms = 4.0;
+const _strokeLegs = 8.0;
+const _strokeTorso = 8.0;
+const _strokeNeck = 6.0;
+const _strokeArms = 7.0;
 const _strokeRail = 2.5;
 
 // ── BODY SEGMENT LENGTHS (virtual px) ───────────────────────────────────────

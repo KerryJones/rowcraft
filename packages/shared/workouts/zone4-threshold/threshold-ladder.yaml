@@ -5,60 +5,36 @@ difficulty: intermediate
 tags: [threshold, ladder]
 estimated_duration_minutes: 44
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: "2:00"
+  - duration: "2:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "4:00"
+  - duration: "2:00"
+  - duration: "4:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "6:00"
+  - duration: "2:00"
+  - duration: "6:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "8:00"
+  - duration: "2:00"
+  - duration: "8:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "6:00"
+  - duration: "2:00"
+  - duration: "6:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "4:00"
+  - duration: "2:00"
+  - duration: "4:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "2:00"
+  - duration: "2:00"
+  - duration: "2:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

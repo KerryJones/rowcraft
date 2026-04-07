@@ -5,53 +5,33 @@ difficulty: intermediate
 tags: [challenge, half-marathon, endurance]
 estimated_duration_minutes: 84
 segments:
-  - type: warmup
-    duration: 2000m
+  - duration: 2000m
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 4000m
+  - duration: 4000m
     intensity: 70%
     stroke_rate: 22
-    hr_zone: 2
-  - type: work
-    duration: 500m
+  - duration: 500m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 4000m
+  - duration: 4000m
     intensity: 70%
     stroke_rate: 22
-    hr_zone: 2
-  - type: work
-    duration: 500m
+  - duration: 500m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 4000m
+  - duration: 4000m
     intensity: 70%
     stroke_rate: 22
-    hr_zone: 2
-  - type: work
-    duration: 500m
+  - duration: 500m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 4000m
+  - duration: 4000m
     intensity: 70%
     stroke_rate: 22
-    hr_zone: 2
-  - type: work
-    duration: 500m
+  - duration: 500m
     intensity: 55%
     stroke_rate: 20
-    hr_zone: 1
-  - type: cooldown
-    duration: 1000m
+  - duration: 1000m
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

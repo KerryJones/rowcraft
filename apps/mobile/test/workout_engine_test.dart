@@ -36,9 +36,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -51,9 +51,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -72,9 +72,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -109,9 +109,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -143,19 +143,19 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 500,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -168,7 +168,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 100,
           ),
@@ -203,9 +202,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -222,19 +221,18 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 1,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -271,9 +269,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -345,9 +343,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -403,9 +401,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -458,9 +456,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -534,9 +532,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -627,12 +625,11 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 30,
           ),
@@ -693,9 +690,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -735,9 +732,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -830,7 +827,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.calories,
             durationValue: 100,
           ),
@@ -863,7 +859,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.calories,
             durationValue: 100,
           ),
@@ -898,14 +893,14 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -953,7 +948,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.time,
             durationValue: 60,
           ),
@@ -1043,9 +1037,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1096,9 +1090,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1137,9 +1131,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1179,19 +1173,18 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 2,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1242,14 +1235,14 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.calories,
             durationValue: 20,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1314,19 +1307,18 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.rest,
             durationType: DurationType.time,
             durationValue: 0,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 50,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1388,7 +1380,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
             targetIntensity: 100,
@@ -1427,7 +1418,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 2000,
             targetIntensity: 100,
@@ -1491,9 +1481,9 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 5000,
+            targetIntensity: 80,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1530,14 +1520,13 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.time,
-            durationValue: 1, // 1 second — completes immediately
+            durationValue: 1, // 1 second work — completes immediately
+            targetIntensity: 80,
           ),
           const WorkoutSegment(
-            type: SegmentType.rest,
             durationType: DurationType.time,
-            durationValue: 60,
+            durationValue: 60, // rest segment (no targetIntensity)
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1582,7 +1571,6 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.distance,
             durationValue: 5000,
           ),
@@ -1635,12 +1623,10 @@ void main() {
       engine = WorkoutEngine(
         workout: makeWorkout([
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.time,
             durationValue: 1,
           ),
           const WorkoutSegment(
-            type: SegmentType.work,
             durationType: DurationType.time,
             durationValue: 60,
           ),

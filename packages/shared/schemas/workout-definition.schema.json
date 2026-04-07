@@ -78,75 +78,24 @@
         }
       }
     },
-    "target_fields": {
+    "segment": {
+      "oneOf": [
+        { "$ref": "#/definitions/flat_segment" },
+        { "$ref": "#/definitions/interval_segment" }
+      ]
+    },
+    "flat_segment": {
       "type": "object",
+      "additionalProperties": false,
+      "required": ["duration"],
       "properties": {
         "duration": { "$ref": "#/definitions/duration" },
         "intensity": { "$ref": "#/definitions/intensity" },
         "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
-        "hr_zone": { "type": "integer", "minimum": 1, "maximum": 5 },
         "messages": {
           "type": "array",
           "items": { "$ref": "#/definitions/message" }
         }
-      },
-      "required": ["duration"]
-    },
-    "segment": {
-      "oneOf": [
-        { "$ref": "#/definitions/warmup_segment" },
-        { "$ref": "#/definitions/work_segment" },
-        { "$ref": "#/definitions/rest_segment" },
-        { "$ref": "#/definitions/cooldown_segment" },
-        { "$ref": "#/definitions/interval_segment" }
-      ]
-    },
-    "warmup_segment": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "duration"],
-      "properties": {
-        "type": { "const": "warmup" },
-        "duration": { "$ref": "#/definitions/duration" },
-        "intensity": { "$ref": "#/definitions/intensity" },
-        "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
-        "hr_zone": { "type": "integer", "minimum": 1, "maximum": 5 },
-        "messages": { "type": "array", "items": { "$ref": "#/definitions/message" } }
-      }
-    },
-    "work_segment": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "duration"],
-      "properties": {
-        "type": { "const": "work" },
-        "duration": { "$ref": "#/definitions/duration" },
-        "intensity": { "$ref": "#/definitions/intensity" },
-        "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
-        "hr_zone": { "type": "integer", "minimum": 1, "maximum": 5 },
-        "messages": { "type": "array", "items": { "$ref": "#/definitions/message" } }
-      }
-    },
-    "rest_segment": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "duration"],
-      "properties": {
-        "type": { "const": "rest" },
-        "duration": { "$ref": "#/definitions/duration" }
-      }
-    },
-    "cooldown_segment": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "duration"],
-      "properties": {
-        "type": { "const": "cooldown" },
-        "duration": { "$ref": "#/definitions/duration" },
-        "intensity": { "$ref": "#/definitions/intensity" },
-        "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
-        "hr_zone": { "type": "integer", "minimum": 1, "maximum": 5 },
-        "messages": { "type": "array", "items": { "$ref": "#/definitions/message" } }
       }
     },
     "interval_segment": {
@@ -164,7 +113,6 @@
             "duration": { "$ref": "#/definitions/duration" },
             "intensity": { "$ref": "#/definitions/intensity" },
             "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
-            "hr_zone": { "type": "integer", "minimum": 1, "maximum": 5 },
             "messages": { "type": "array", "items": { "$ref": "#/definitions/message" } }
           }
         },

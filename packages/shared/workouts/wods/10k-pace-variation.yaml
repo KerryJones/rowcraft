@@ -5,33 +5,21 @@ difficulty: advanced
 tags: [challenge, 10k, distance]
 estimated_duration_minutes: 36
 segments:
-  - type: warmup
-    duration: 1000m
+  - duration: 1000m
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 3000m
+  - duration: 3000m
     intensity: 83%
     stroke_rate: 24
-    hr_zone: 3
-  - type: work
-    duration: 500m
+  - duration: 500m
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: work
-    duration: 3000m
+  - duration: 3000m
     intensity: 83%
     stroke_rate: 24
-    hr_zone: 3
-  - type: work
-    duration: 500m
+  - duration: 500m
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: cooldown
-    duration: 1000m
+  - duration: 1000m
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

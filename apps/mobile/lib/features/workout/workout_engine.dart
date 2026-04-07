@@ -365,7 +365,7 @@ class WorkoutEngine {
     }
 
     final segment = _expandedSegments[index];
-    final isRest = segment.type == SegmentType.rest;
+    final isRest = segment.isRest;
 
     // Reset accumulators
     _segmentStartDistance = _state.latestData.distance;
@@ -540,7 +540,6 @@ class WorkoutEngine {
     // After [paceFailThreshold] consecutive seconds outside range,
     // auto-finish the workout (used for ramp/FTP tests).
     if (paceFailThreshold > 0 &&
-        segment.type == SegmentType.work &&
         segment.targetIntensity != null &&
         data.pace > 0) {
       final targetPace = resolveIntensityToPace(

@@ -5,18 +5,12 @@ difficulty: beginner
 tags: [pete-plan, steady-state, week-2]
 estimated_duration_minutes: 28
 segments:
-  - type: warmup
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 5500m
+  - duration: 5500m
     intensity: 70%
     stroke_rate: 22
-    hr_zone: 2
-  - type: cooldown
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

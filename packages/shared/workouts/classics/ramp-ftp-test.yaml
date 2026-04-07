@@ -5,68 +5,51 @@ difficulty: intermediate
 tags: [ftp, test, benchmark, threshold, ramp]
 estimated_duration_minutes: 20
 segments:
-  - type: warmup
-    duration: "2:00"
+  - duration: "2:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 46%
     stroke_rate: 18
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 52%
     stroke_rate: 18
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 58%
     stroke_rate: 20
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 64%
     stroke_rate: 20
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 70%
     stroke_rate: 22
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 76%
     stroke_rate: 22
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 82%
     stroke_rate: 24
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 88%
     stroke_rate: 24
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 94%
     stroke_rate: 26
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 100%
     stroke_rate: 26
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 106%
     stroke_rate: 28
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 112%
     stroke_rate: 30
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 118%
     stroke_rate: 32
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 124%
     stroke_rate: 34
-  - type: work
-    duration: "1:00"
+  - duration: "1:00"
     intensity: 130%
     stroke_rate: 36

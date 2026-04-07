@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { createSupabaseServer, getUser } from '@/lib/supabase/server';
 import type { Workout } from '@/lib/types';
 import { normalizeWorkoutSegments } from '@/lib/types';
-import { formatWorkoutType, getWorkoutTypeBadgeColor, formatDate, formatSegmentDuration, formatSegmentType } from '@/lib/utils/format';
+import { formatWorkoutType, getWorkoutTypeBadgeColor, formatDate, formatSegmentDuration } from '@/lib/utils/format';
+import { isRestSegment } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { SegmentCard } from '@/components/ui/segment-card';
@@ -74,7 +75,8 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
   for (let i = 0; i < expanded.length; i++) {
     const seg = expanded[i];
     if (seg.messages) {
-      const label = `#${i + 1} ${formatSegmentType(seg.type)}`;
+      const zoneLabel = isRestSegment(seg) ? 'REST' : seg.target_hr_zone != null ? `Z${seg.target_hr_zone}` : 'Active';
+      const label = `#${i + 1} ${zoneLabel}`;
       for (const msg of seg.messages) {
         coachingCues.push({ segmentLabel: label, text: msg.text });
       }

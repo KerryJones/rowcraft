@@ -1,18 +1,18 @@
 'use client';
 
-import type { WorkoutSegment, SegmentType } from '@/lib/types';
+import type { WorkoutSegment } from '@/lib/types';
+import { isRestSegment } from '@/lib/types';
 import { cn } from '@/lib/utils/cn';
 import { formatSegmentDuration } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 import { computeCumulativeMinutes, expandSegments } from '@/lib/utils/workout';
 
-const TYPE_ABBREV: Record<SegmentType, string> = {
-  work: 'W',
-  rest: 'R',
-  warmup: 'WU',
-  cooldown: 'CD',
-};
+function segmentBarLabel(segment: WorkoutSegment): string {
+  if (isRestSegment(segment)) return 'R';
+  if (segment.target_hr_zone != null) return `Z${segment.target_hr_zone}`;
+  return '';
+}
 
 const BAR_GAP = 1.5;
 const MIN_BAR_HEIGHT_FRACTION = 0.15;
@@ -276,7 +276,7 @@ export function WorkoutGraph({
                   fontSize={barLabelFontSize}
                   fontWeight={500}
                 >
-                  {TYPE_ABBREV[segment.type]}
+                  {segmentBarLabel(segment)}
                 </text>
                 {width > 50 && (
                   <text

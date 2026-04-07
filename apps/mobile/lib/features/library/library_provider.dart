@@ -3,6 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
+import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
+import '../../utils/workout_utils.dart';
+
+enum LibrarySortOrder { newest, duration, mostForked }
+
+enum DurationFilter { under30, from30to60, over60 }
 
 /// Increment to force a library refresh (e.g. pull-to-refresh).
 final workoutRefreshTriggerProvider = StateProvider<int>((ref) => 0);
@@ -62,13 +68,29 @@ final myWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
   return fresh ?? [];
 });
 
-/// Filtered workouts based on search query, type, and tag.
+/// Filtered and sorted workouts based on search, type, tag, duration, zone, and sort order.
 final filteredWorkoutsProvider = FutureProvider.family<
     List<Workout>,
-    ({String? search, WorkoutType? type, String? tag})>((ref, filter) async {
+    ({
+      String? search,
+      WorkoutType? type,
+      String? tag,
+      DurationFilter? duration,
+      int? hrZone,
+      LibrarySortOrder sort,
+    })>((ref, filter) async {
   final allWorkouts = await ref.watch(workoutLibraryProvider.future);
 
   var filtered = allWorkouts;
+
+  // Pre-compute durations once if needed for filter or sort (avoids O(n·segments) per comparison).
+  final Map<String, int>? durationMap =
+      (filter.duration != null || filter.sort == LibrarySortOrder.duration)
+          ? {
+              for (final w in allWorkouts)
+                w.id: computeEstimatedTotalTime(w.segments, kDefaultFtpWatts),
+            }
+          : null;
 
   // Filter by search query
   if (filter.search != null && filter.search!.isNotEmpty) {
@@ -90,7 +112,37 @@ final filteredWorkoutsProvider = FutureProvider.family<
     filtered = filtered.where((w) => w.tags.contains(filter.tag)).toList();
   }
 
-  return filtered;
+  // Filter by duration (estimated total time using default FTP)
+  if (filter.duration != null) {
+    filtered = filtered.where((w) {
+      final secs = durationMap![w.id]!;
+      return switch (filter.duration!) {
+        DurationFilter.under30 => secs < 1800,
+        DurationFilter.from30to60 => secs >= 1800 && secs < 3600,
+        DurationFilter.over60 => secs >= 3600,
+      };
+    }).toList();
+  }
+
+  // Filter by HR zone — workouts containing at least one segment in that zone
+  if (filter.hrZone != null) {
+    filtered = filtered
+        .where((w) => w.segments.any((s) => s.targetHrZone == filter.hrZone))
+        .toList();
+  }
+
+  // Sort
+  final result = List.of(filtered);
+  switch (filter.sort) {
+    case LibrarySortOrder.newest:
+      result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    case LibrarySortOrder.duration:
+      result.sort((a, b) => durationMap![a.id]!.compareTo(durationMap[b.id]!));
+    case LibrarySortOrder.mostForked:
+      result.sort((a, b) => b.forkCount.compareTo(a.forkCount));
+  }
+
+  return result;
 });
 
 /// All unique tags across all workouts, for filter chips.

@@ -5,39 +5,24 @@ difficulty: advanced
 tags: [wod, chipper, descending]
 estimated_duration_minutes: 34
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: 2000m
+  - duration: 2000m
     intensity: 83%
     stroke_rate: 24
-    hr_zone: 3
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: 1500m
+  - duration: "2:00"
+  - duration: 1500m
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: 1000m
+  - duration: "2:00"
+  - duration: 1000m
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: 500m
+  - duration: "2:00"
+  - duration: 500m
     intensity: 112%
     stroke_rate: 30
-    hr_zone: 5
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

@@ -4,7 +4,6 @@ import type { WorkoutSegment } from '../../types';
 
 function makeSegment(overrides: Partial<WorkoutSegment> = {}): WorkoutSegment {
   return {
-    type: 'work',
     duration_type: 'time',
     duration_value: 300,
     target_intensity: 90,
@@ -50,10 +49,10 @@ describe('validateWorkout', () => {
 
     it('accepts multiple segments', () => {
       const result = validateWorkout('My Workout', [
-        makeSegment({ type: 'warmup' }),
-        makeSegment({ type: 'work' }),
-        makeSegment({ type: 'rest' }),
-        makeSegment({ type: 'cooldown' }),
+        makeSegment({ target_intensity: 60 }),
+        makeSegment({ target_intensity: 95 }),
+        makeSegment({ target_intensity: null }),
+        makeSegment({ target_intensity: 70 }),
       ]);
       expect(result.valid).toBe(true);
     });

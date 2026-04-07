@@ -66,19 +66,6 @@ export function formatWorkoutType(type: string): string {
 }
 
 /**
- * Format a segment type as a human-readable label
- */
-export function formatSegmentType(type: string): string {
-	const labels: Record<string, string> = {
-		work: 'Work',
-		rest: 'Rest',
-		warmup: 'Warm Up',
-		cooldown: 'Cool Down'
-	};
-	return labels[type] ?? type;
-}
-
-/**
  * Format a difficulty level as a human-readable label
  */
 export function formatDifficulty(difficulty: string): string {

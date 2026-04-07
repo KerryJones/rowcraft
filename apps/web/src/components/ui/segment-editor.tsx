@@ -1,22 +1,23 @@
 'use client';
 
 import { Copy } from 'lucide-react';
-import type { WorkoutSegment, SegmentType, DurationType } from '@/lib/types';
+import type { WorkoutSegment, DurationType } from '@/lib/types';
 import { formatPace } from '@/lib/utils/format';
-import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts, HR_ZONES } from '@/lib/utils/ftp';
-
-const SEGMENT_TYPES: { value: SegmentType; label: string }[] = [
-  { value: 'work', label: 'Work' },
-  { value: 'rest', label: 'Rest' },
-  { value: 'warmup', label: 'Warm Up' },
-  { value: 'cooldown', label: 'Cool Down' },
-];
+import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts, intensityToHrZone, HR_ZONES } from '@/lib/utils/ftp';
 
 const DURATION_TYPES: { value: DurationType; label: string }[] = [
   { value: 'time', label: 'Time (seconds)' },
   { value: 'distance', label: 'Distance (meters)' },
   { value: 'calories', label: 'Calories' },
 ];
+
+const HR_ZONE_BADGE: Record<number, string> = {
+  1: 'bg-green-500/20 text-green-400',
+  2: 'bg-blue-500/20 text-blue-400',
+  3: 'bg-yellow-500/20 text-yellow-400',
+  4: 'bg-orange-500/20 text-orange-400',
+  5: 'bg-red-500/20 text-red-400',
+};
 
 interface SegmentEditorProps {
   segment: WorkoutSegment;
@@ -30,7 +31,12 @@ export function SegmentEditor({ segment, onChange, onRemove, onDuplicate, ftpWat
   const ftp = getEffectiveFtp(ftpWatts ?? null);
 
   function updateField<K extends keyof WorkoutSegment>(key: K, value: WorkoutSegment[K]) {
-    onChange({ ...segment, [key]: value });
+    const updated = { ...segment, [key]: value };
+    // Auto-derive hr_zone from intensity whenever intensity changes
+    if (key === 'target_intensity') {
+      updated.target_hr_zone = intensityToHrZone(value as number | null);
+    }
+    onChange(updated);
   }
 
   // Resolve current intensity to pace/watts for preview
@@ -41,10 +47,19 @@ export function SegmentEditor({ segment, onChange, onRemove, onDuplicate, ftpWat
       })()
     : null;
 
+  const derivedZone = segment.target_hr_zone;
+
   return (
     <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-white">Edit Segment</h4>
+        <div className="flex items-center gap-2">
+          <h4 className="text-sm font-medium text-white">Edit Segment</h4>
+          {derivedZone != null && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${HR_ZONE_BADGE[derivedZone] ?? 'bg-gray-700 text-gray-300'}`}>
+              Z{derivedZone} · {HR_ZONES[derivedZone - 1]?.label}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           {onDuplicate && (
             <button
@@ -67,20 +82,6 @@ export function SegmentEditor({ segment, onChange, onRemove, onDuplicate, ftpWat
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Segment Type */}
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Type</label>
-          <select
-            value={segment.type}
-            onChange={(e) => updateField('type', e.target.value as SegmentType)}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
-          >
-            {SEGMENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-        </div>
-
         {/* Duration Type */}
         <div>
           <label className="mb-1 block text-xs text-gray-500">Duration Type</label>
@@ -123,7 +124,7 @@ export function SegmentEditor({ segment, onChange, onRemove, onDuplicate, ftpWat
             type="number"
             min={0}
             max={200}
-            placeholder="e.g. 85"
+            placeholder="e.g. 85 (leave blank for rest)"
             value={segment.target_intensity ?? ''}
             onChange={(e) => {
               const val = parseInt(e.target.value) || 0;
@@ -147,23 +148,6 @@ export function SegmentEditor({ segment, onChange, onRemove, onDuplicate, ftpWat
             }}
             className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
           />
-        </div>
-
-        {/* HR Zone */}
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">HR Zone</label>
-          <select
-            value={segment.target_hr_zone ?? ''}
-            onChange={(e) =>
-              updateField('target_hr_zone', e.target.value ? parseInt(e.target.value) : null)
-            }
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-white"
-          >
-            <option value="">None</option>
-            {HR_ZONES.map((zone, i) => (
-              <option key={zone.name} value={i + 1}>Z{i + 1} {zone.label}</option>
-            ))}
-          </select>
         </div>
       </div>
     </div>

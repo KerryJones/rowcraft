@@ -5,22 +5,17 @@ difficulty: beginner
 tags: [return-to-rowing, intervals, week-4]
 estimated_duration_minutes: 34
 segments:
-  - type: warmup
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 8
     work:
       duration: 500m
       intensity: 95%
       stroke_rate: 26
-      hr_zone: 4
     rest:
       duration: "1:30"
-  - type: cooldown
-    duration: "3:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

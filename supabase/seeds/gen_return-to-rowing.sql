@@ -5,8 +5,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0001-000000000001',
   'Return to Rowing Wk1 Day1',
   'Week 1 Day 1: Easy 10 minutes at recovery pace to get back on the erg.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"type":"cooldown","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,recovery,week-1}',
   true
 );
@@ -16,7 +16,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk1 Day2',
   'Week 1 Day 2: 3x3min intervals at easy Z2 with 1-minute rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"rest","duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":180,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":180,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,intervals,week-1}',
   true
 );
@@ -25,8 +25,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0001-000000000003',
   'Return to Rowing Wk1 Day3',
   'Week 1 Day 3: Easy 15 minutes at recovery pace.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"type":"cooldown","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,recovery,week-1}',
   true
 );
@@ -35,8 +35,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0002-000000000001',
   'Return to Rowing Wk2 Day1',
   'Week 2 Day 1: 15 minutes at easy Z2 pace.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":900,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":900,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,steady-state,week-2}',
   true
 );
@@ -46,7 +46,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk2 Day2',
   'Week 2 Day 2: 5x3min intervals at Z3 with 1-minute rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,intervals,week-2}',
   true
 );
@@ -55,8 +55,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0002-000000000003',
   'Return to Rowing Wk2 Day3',
   'Week 2 Day 3: 20 minutes at easy Z2 pace.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,steady-state,week-2}',
   true
 );
@@ -65,8 +65,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0003-000000000001',
   'Return to Rowing Wk3 Day1',
   'Week 3 Day 1: 20 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,steady-state,week-3}',
   true
 );
@@ -76,7 +76,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk3 Day2',
   'Week 3 Day 2: 6x500m intervals at Z3 with 90s rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":83,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,intervals,week-3}',
   true
 );
@@ -85,8 +85,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0003-000000000003',
   'Return to Rowing Wk3 Day3',
   'Week 3 Day 3: 25 minutes at easy Z2 pace.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,steady-state,week-3}',
   true
 );
@@ -95,8 +95,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'f0000000-0000-0000-0004-000000000001',
   'Return to Rowing Wk4 Day1',
   'Week 4 Day 1: 25 minutes steady state at Z2.',
-  'single_time',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"time","duration_value":1500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1500,"target_intensity":70,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,steady-state,week-4}',
   true
 );
@@ -106,7 +106,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk4 Day2',
   'Week 4 Day 2: 8x500m intervals at Z4 with 90s rest.',
   'variable_intervals',
-  '[{"type":"warmup","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"rest","duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"type":"work","duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":4},{"type":"cooldown","duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,intervals,week-4}',
   true
 );

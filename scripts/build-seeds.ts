@@ -29,22 +29,24 @@ interface YamlTargetFields {
   duration: string;
   intensity?: string;
   stroke_rate?: number;
-  hr_zone?: number;
   messages?: YamlMessage[];
 }
 
-interface YamlSegment {
-  type: 'warmup' | 'work' | 'rest' | 'cooldown' | 'interval';
-  duration?: string;
+interface YamlFlatSegment {
+  duration: string;
   intensity?: string;
   stroke_rate?: number;
-  hr_zone?: number;
   messages?: YamlMessage[];
-  // interval-specific
-  reps?: number;
-  work?: YamlTargetFields;
+}
+
+interface YamlIntervalSegment {
+  type: 'interval';
+  reps: number;
+  work: YamlTargetFields;
   rest?: { duration: string };
 }
+
+type YamlSegment = YamlFlatSegment | YamlIntervalSegment;
 
 interface YamlWorkout {
   id: string;
@@ -57,7 +59,6 @@ interface YamlWorkout {
 }
 
 interface DbSegment {
-  type: string;
   duration_type: string;
   duration_value: number;
   target_intensity: number | null;
@@ -70,6 +71,20 @@ interface DbMessage {
   trigger_type: 'time' | 'distance' | 'start' | 'end';
   trigger_value: number;
   text: string;
+}
+
+// ── HR Zone Derivation ───────────────────────────────────────────────────────
+
+/**
+ * Derive HR zone (1-5) from intensity % of FTP.
+ * Boundaries match the HR_ZONES definition in apps/web/src/lib/utils/ftp.ts.
+ */
+function intensityToHrZone(intensityPct: number): number {
+  if (intensityPct < 60) return 1;   // recovery
+  if (intensityPct < 75) return 2;   // aerobic
+  if (intensityPct < 85) return 3;   // tempo
+  if (intensityPct < 92) return 4;   // threshold
+  return 5;                           // max / VO2max
 }
 
 // ── Parsers ─────────────────────────────────────────────────────────────────
@@ -130,18 +145,15 @@ function parseMessageTrigger(at: string): { trigger_type: DbMessage['trigger_typ
 
 // ── Segment Expansion ───────────────────────────────────────────────────────
 
-function buildDbSegment(
-  type: string,
-  fields: YamlTargetFields,
-): DbSegment {
+function buildDbSegment(fields: YamlTargetFields): DbSegment {
   const dur = parseDuration(fields.duration);
+  const targetIntensity = fields.intensity != null ? parseIntensity(fields.intensity) : null;
   const seg: DbSegment = {
-    type,
     duration_type: dur.type,
     duration_value: dur.value,
-    target_intensity: fields.intensity != null ? parseIntensity(fields.intensity) : null,
+    target_intensity: targetIntensity,
     target_stroke_rate: fields.stroke_rate != null ? parseStrokeRate(fields.stroke_rate) : null,
-    target_hr_zone: fields.hr_zone ?? null,
+    target_hr_zone: targetIntensity != null ? intensityToHrZone(targetIntensity) : null,
   };
   if (fields.messages && fields.messages.length > 0) {
     seg.messages = fields.messages.map((m) => ({
@@ -152,14 +164,18 @@ function buildDbSegment(
   return seg;
 }
 
+function isIntervalSegment(seg: YamlSegment): seg is YamlIntervalSegment {
+  return (seg as YamlIntervalSegment).type === 'interval';
+}
+
 function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
   const result: DbSegment[] = [];
 
   for (const seg of yamlSegments) {
-    if (seg.type === 'interval') {
+    if (isIntervalSegment(seg)) {
       if (!seg.reps || !seg.work) throw new Error('interval segment requires reps and work');
-      const workSeg = buildDbSegment('work', seg.work);
-      const restSeg = seg.rest ? buildDbSegment('rest', { duration: seg.rest.duration }) : null;
+      const workSeg = buildDbSegment(seg.work);
+      const restSeg = seg.rest ? buildDbSegment({ duration: seg.rest.duration }) : null;
 
       for (let i = 0; i < seg.reps; i++) {
         result.push({ ...workSeg });
@@ -168,25 +184,8 @@ function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
           result.push({ ...restSeg });
         }
       }
-    } else if (seg.type === 'rest') {
-      result.push(buildDbSegment('rest', { duration: seg.duration! }));
     } else {
-      // warmup, work, cooldown
-      result.push(buildDbSegment(seg.type, {
-        duration: seg.duration!,
-        intensity: seg.intensity,
-        stroke_rate: seg.stroke_rate,
-        hr_zone: seg.hr_zone,
-        messages: seg.messages,
-      }));
-    }
-  }
-
-  // Strip trailing rest before cooldown (common authoring mistake)
-  for (let i = result.length - 1; i > 0; i--) {
-    if (result[i].type === 'cooldown' && result[i - 1].type === 'rest') {
-      result.splice(i - 1, 1);
-      break;
+      result.push(buildDbSegment(seg as YamlTargetFields));
     }
   }
 
@@ -196,29 +195,30 @@ function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
 // ── Workout Type Inference ──────────────────────────────────────────────────
 
 function inferWorkoutType(segments: DbSegment[]): string {
-  const workSegs = segments.filter((s) => s.type === 'work');
+  // Active segments are those with an intensity target (formerly "work" type)
+  const activeSegs = segments.filter((s) => s.target_intensity != null);
 
-  if (workSegs.length === 0) return 'single_time';
+  if (activeSegs.length === 0) return 'single_time';
 
-  // Check if it's a single work segment (ignoring warmup/cooldown)
-  if (workSegs.length === 1) {
-    return workSegs[0].duration_type === 'distance' ? 'single_distance' : 'single_time';
+  // Single active segment (ignoring rest segments)
+  if (activeSegs.length === 1) {
+    return activeSegs[0].duration_type === 'distance' ? 'single_distance' : 'single_time';
   }
 
-  // Check if all work segments are identical (intervals pattern)
-  const allWorkIdentical = workSegs.every((s) =>
-    s.duration_type === workSegs[0].duration_type &&
-    s.duration_value === workSegs[0].duration_value &&
-    s.target_intensity === workSegs[0].target_intensity &&
-    s.target_stroke_rate === workSegs[0].target_stroke_rate &&
-    s.target_hr_zone === workSegs[0].target_hr_zone
+  // Check if all active segments are identical (intervals pattern)
+  const allIdentical = activeSegs.every((s) =>
+    s.duration_type === activeSegs[0].duration_type &&
+    s.duration_value === activeSegs[0].duration_value &&
+    s.target_intensity === activeSegs[0].target_intensity &&
+    s.target_stroke_rate === activeSegs[0].target_stroke_rate &&
+    s.target_hr_zone === activeSegs[0].target_hr_zone
   );
 
-  // Also check that warmup/cooldown presence is consistent with variable_intervals
-  const hasWarmup = segments.some((s) => s.type === 'warmup');
-  const hasCooldown = segments.some((s) => s.type === 'cooldown');
+  // Pure intervals: all active segments identical, no leading/trailing non-identical active segs
+  const hasLeadingRest = segments[0]?.target_intensity == null && segments[0]?.target_stroke_rate == null;
+  const hasTrailingRest = segments[segments.length - 1]?.target_intensity == null && segments[segments.length - 1]?.target_stroke_rate == null;
 
-  if (allWorkIdentical && !hasWarmup && !hasCooldown) {
+  if (allIdentical && !hasLeadingRest && !hasTrailingRest) {
     return 'intervals';
   }
 

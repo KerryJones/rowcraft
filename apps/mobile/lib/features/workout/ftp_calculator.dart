@@ -20,7 +20,7 @@ class FtpCalculator {
       // Match split to segment if possible
       final segIndex = splits[i].intervalIndex;
       final isWork = segIndex < segments.length &&
-          segments[segIndex].type == SegmentType.work;
+          segments[segIndex].targetIntensity != null;
 
       // If we can't match segments, count all splits
       if (isWork || segments.isEmpty) {

@@ -276,7 +276,6 @@ Workout _makeWorkout({
     workoutType: WorkoutType.intervals,
     segments: const [
       WorkoutSegment(
-        type: SegmentType.work,
         durationType: DurationType.distance,
         durationValue: 500,
         targetIntensity: 95,

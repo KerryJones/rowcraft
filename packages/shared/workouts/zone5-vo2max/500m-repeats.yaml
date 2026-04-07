@@ -5,22 +5,17 @@ difficulty: advanced
 tags: [vo2max, 500m, repeats]
 estimated_duration_minutes: 32
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
   - type: interval
     reps: 6
     work:
       duration: 500m
       intensity: 112%
       stroke_rate: 30
-      hr_zone: 5
     rest:
       duration: "2:00"
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

@@ -5,25 +5,16 @@ difficulty: intermediate
 tags: [threshold, cruise, long]
 estimated_duration_minutes: 38
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: "12:00"
+  - duration: "12:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "4:00"
-  - type: work
-    duration: "12:00"
+  - duration: "4:00"
+  - duration: "12:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

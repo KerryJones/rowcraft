@@ -5,46 +5,28 @@ difficulty: advanced
 tags: [ladder, descending, time]
 estimated_duration_minutes: 35
 segments:
-  - type: warmup
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1
-  - type: work
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "4:00"
+  - duration: "2:00"
+  - duration: "4:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "3:00"
+  - duration: "2:00"
+  - duration: "3:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "2:00"
+  - duration: "2:00"
+  - duration: "2:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: rest
-    duration: "2:00"
-  - type: work
-    duration: "1:00"
+  - duration: "2:00"
+  - duration: "1:00"
     intensity: 95%
     stroke_rate: 26
-    hr_zone: 4
-  - type: cooldown
-    duration: "5:00"
+  - duration: "5:00"
     intensity: 60%
     stroke_rate: 20
-    hr_zone: 1

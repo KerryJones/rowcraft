@@ -23,7 +23,18 @@ class LibraryScreen extends ConsumerStatefulWidget {
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final _searchController = TextEditingController();
   WorkoutType? _selectedType;
+  DurationFilter? _selectedDuration;
+  int? _selectedZone;
+  LibrarySortOrder _sortOrder = LibrarySortOrder.newest;
   int _wodShuffleOffset = 0;
+
+  // Sort order is intentionally excluded: changing sort is not "filtering"
+  // and should not suppress the WOD hero card.
+  bool get _hasFilters =>
+      _searchController.text.isNotEmpty ||
+      _selectedType != null ||
+      _selectedDuration != null ||
+      _selectedZone != null;
 
   @override
   void dispose() {
@@ -38,18 +49,27 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       search: _searchController.text,
       type: _selectedType,
       tag: null,
+      duration: _selectedDuration,
+      hrZone: _selectedZone,
+      sort: _sortOrder,
     )));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Workouts'),
-        actions: const [BleStatusButton()],
+        actions: [
+          _SortButton(
+            current: _sortOrder,
+            onSelected: (order) => setState(() => _sortOrder = order),
+          ),
+          const BleStatusButton(),
+        ],
       ),
       body: Column(
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -69,9 +89,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
 
-          // Filter chips
+          // Type + Duration chips
           SizedBox(
-            height: 48,
+            height: 44,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -79,11 +99,31 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 _buildTypeChip(null, 'All'),
                 _buildTypeChip(WorkoutType.singleDistance, 'Distance'),
                 _buildTypeChip(WorkoutType.singleTime, 'Time'),
+                const _ChipDivider(),
+                _buildDurationChip(DurationFilter.under30, '<30m'),
+                _buildDurationChip(DurationFilter.from30to60, '30–60m'),
+                _buildDurationChip(DurationFilter.over60, '60m+'),
               ],
             ),
           ),
 
-          const SizedBox(height: 8),
+          // Zone chips
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                _buildZoneChip(1, 'Z1', RowCraftTheme.hrZone1),
+                _buildZoneChip(2, 'Z2', RowCraftTheme.hrZone2),
+                _buildZoneChip(3, 'Z3', RowCraftTheme.hrZone3),
+                _buildZoneChip(4, 'Z4', RowCraftTheme.hrZone4),
+                _buildZoneChip(5, 'Z5', RowCraftTheme.hrZone5),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 4),
 
           // Workout list
           Expanded(
@@ -117,8 +157,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 }
 
                 // WOD: only show when no filters active
-                final hasFilters = _searchController.text.isNotEmpty ||
-                    _selectedType != null;
                 final allWorkouts =
                     ref.watch(workoutLibraryProvider).valueOrNull ?? [];
 
@@ -139,7 +177,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     .toList();
 
                 Workout? wodWorkout;
-                if (!hasFilters && wodPool.isNotEmpty) {
+                if (!_hasFilters && wodPool.isNotEmpty) {
                   final wodIdx = getWodIndex(wodPool.length,
                       shuffleOffset: _wodShuffleOffset);
                   wodWorkout = wodPool[wodIdx];
@@ -224,6 +262,104 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         onSelected: (_) {
           setState(() => _selectedType = isSelected ? null : type);
         },
+      ),
+    );
+  }
+
+  Widget _buildDurationChip(DurationFilter filter, String label) {
+    final isSelected = _selectedDuration == filter;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (_) {
+          setState(() => _selectedDuration = isSelected ? null : filter);
+        },
+      ),
+    );
+  }
+
+  Widget _buildZoneChip(int zone, String label, Color color) {
+    final isSelected = _selectedZone == zone;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        selectedColor: color.withValues(alpha: 0.25),
+        checkmarkColor: color,
+        side: BorderSide(
+          color: isSelected ? color : Colors.transparent,
+          width: 1.5,
+        ),
+        onSelected: (_) {
+          setState(() => _selectedZone = isSelected ? null : zone);
+        },
+      ),
+    );
+  }
+}
+
+/// A thin vertical divider for separating chip groups in a horizontal scroll.
+class _ChipDivider extends StatelessWidget {
+  const _ChipDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Container(
+        width: 1,
+        height: 28,
+        color: RowCraftTheme.subtleGrey.withValues(alpha: 0.3),
+      ),
+    );
+  }
+}
+
+/// Sort popup menu button shown in the AppBar.
+class _SortButton extends StatelessWidget {
+  final LibrarySortOrder current;
+  final ValueChanged<LibrarySortOrder> onSelected;
+
+  const _SortButton({required this.current, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDefault = current == LibrarySortOrder.newest;
+    return PopupMenuButton<LibrarySortOrder>(
+      icon: Badge(
+        isLabelVisible: !isDefault,
+        child: const Icon(Icons.sort),
+      ),
+      tooltip: 'Sort',
+      initialValue: current,
+      onSelected: onSelected,
+      itemBuilder: (_) => [
+        _sortItem(LibrarySortOrder.newest, 'Newest', current),
+        _sortItem(LibrarySortOrder.duration, 'Duration', current),
+        _sortItem(LibrarySortOrder.mostForked, 'Most Forked', current),
+      ],
+    );
+  }
+
+  PopupMenuItem<LibrarySortOrder> _sortItem(
+    LibrarySortOrder value,
+    String label,
+    LibrarySortOrder current,
+  ) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          if (value == current)
+            const Icon(Icons.check, size: 16)
+          else
+            const SizedBox(width: 16),
+          const SizedBox(width: 8),
+          Text(label),
+        ],
       ),
     );
   }
@@ -324,4 +460,3 @@ class _WorkoutCard extends StatelessWidget {
     );
   }
 }
-
