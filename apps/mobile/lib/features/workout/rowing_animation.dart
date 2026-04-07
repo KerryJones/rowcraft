@@ -20,7 +20,7 @@ import '../../app/theme.dart';
 // ── COLORS (dark theme) ─────────────────────────────────────────────────────
 const _colorActive = RowCraftTheme.errorRose; // muscle highlight — red
 const _colorRest = RowCraftTheme.metricWhite; // body at rest — light
-const _colorHandle = RowCraftTheme.warningAmber; // handle/chain — orange
+const _colorHandle = RowCraftTheme.segmentWork; // handle/chain — blue
 const _colorInactive = RowCraftTheme.subtleGrey; // everything when not rowing
 const _colorErg = RowCraftTheme.subtleGrey; // rail, seat
 
@@ -43,7 +43,7 @@ const _fArmLen = 46.0; // elbow → handle
 // ── SEAT / HANDLE GEOMETRY ──────────────────────────────────────────────────
 const _seatW = 22.0;
 const _seatH = 5.0;
-const _handleR = 6.0;
+const _handleR = 12.0;
 const _handleY = 157.0; // fixed Y for handle throughout stroke
 const _armPullDist = 22.0; // how far in front of shoulder handle stops
 
