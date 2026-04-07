@@ -26,6 +26,9 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 3. **Simple** — prefer the simplest solution that works
 - **Always prefer the best action over the low-effort action** — don't take shortcuts or propose easier alternatives when the right solution requires more work.
 
+### Dependencies
+- **Always upgrade, never downgrade** — when a dependency conflict or version mismatch occurs, upgrade to the latest stable version. Never downgrade a package or pin to an older version unless there is no other option, and then only with explicit user permission.
+
 ### Code Style
 - **Dart**: Dart 3.3+, type hints, immutable models with `copyWith`, Riverpod for state
 - **TypeScript**: Strict mode, Next.js App Router (Server Components default, `'use client'` for interactive)

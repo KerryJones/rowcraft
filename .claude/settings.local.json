@@ -52,7 +52,8 @@
       "Bash(flutter:*)",
       "Bash(curl:*)",
       "Bash(gh search:*)",
-      "Bash(find /Users/kerryjones/code/rowcraft/apps/web/src -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))"
+      "Bash(find /Users/kerryjones/code/rowcraft/apps/web/src -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))",
+      "WebFetch(domain:api.supabase.com)"
     ]
   }
 }
