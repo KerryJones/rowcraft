@@ -1,8 +1,74 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rowcraft/models/workout_segment.dart';
+import 'package:rowcraft/utils/pace_utils.dart' show kDefaultFtpWatts;
 import 'package:rowcraft/utils/workout_utils.dart';
 
 void main() {
+  group('effectiveDuration', () {
+    test('returns durationValue directly for time segments', () {
+      const seg = WorkoutSegment(
+        type: SegmentType.work,
+        durationType: DurationType.time,
+        durationValue: 300,
+      );
+      expect(effectiveDuration(seg, kDefaultFtpWatts), 300);
+    });
+
+    test('estimates time for distance segment with intensity', () {
+      const seg = WorkoutSegment(
+        type: SegmentType.work,
+        durationType: DurationType.distance,
+        durationValue: 2000,
+        targetIntensity: 85,
+      );
+      // 85% of 150W = 128W → 1398 tenths → (1398/10)/500 = 0.2796 s/m
+      // 2000 * 0.2796 = 559.2
+      expect(effectiveDuration(seg, kDefaultFtpWatts), closeTo(559.2, 0.1));
+    });
+
+    test('uses fallback pace for distance segment without intensity', () {
+      const seg = WorkoutSegment(
+        type: SegmentType.work,
+        durationType: DurationType.distance,
+        durationValue: 2000,
+      );
+      // Fallback: 0.24 sec/meter → 2000 * 0.24 = 480 sec
+      expect(effectiveDuration(seg, kDefaultFtpWatts), 480);
+    });
+
+    test('estimates time for calorie segment', () {
+      const seg = WorkoutSegment(
+        type: SegmentType.work,
+        durationType: DurationType.calories,
+        durationValue: 150,
+      );
+      // 150 cal ÷ 15 cal/min × 60 sec = 600 sec
+      expect(effectiveDuration(seg, kDefaultFtpWatts), 600);
+    });
+  });
+
+  group('computeEstimatedTotalTime', () {
+    test('sums all segment types', () {
+      final segments = [
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.time,
+          durationValue: 300,
+        ),
+        const WorkoutSegment(
+          type: SegmentType.work,
+          durationType: DurationType.calories,
+          durationValue: 15, // 15 cal → 60 sec
+        ),
+      ];
+      expect(computeEstimatedTotalTime(segments, kDefaultFtpWatts), 360);
+    });
+
+    test('returns 0 for empty segments', () {
+      expect(computeEstimatedTotalTime([], kDefaultFtpWatts), 0);
+    });
+  });
+
   group('computeTotalTime', () {
     test('returns sum of time-based segments', () {
       final segments = [

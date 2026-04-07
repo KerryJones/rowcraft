@@ -7,6 +7,7 @@ import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
 import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
@@ -466,14 +467,12 @@ class _WorkoutMeta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final totalTime = computeTotalTime(workout.segments);
-    final totalDist = computeTotalDistance(workout.segments);
+    final totalTime = computeEstimatedTotalTime(
+        workout.segments, kDefaultFtpWatts);
 
     String durationLabel;
-    if (totalTime != null) {
+    if (totalTime > 0) {
       durationLabel = formatDuration(totalTime);
-    } else if (totalDist != null) {
-      durationLabel = formatDistance(totalDist);
     } else {
       durationLabel = '';
     }

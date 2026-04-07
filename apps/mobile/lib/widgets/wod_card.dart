@@ -25,8 +25,8 @@ class WodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final totalTime = wu.computeTotalTime(workout.segments);
-    final totalDistance = wu.computeTotalDistance(workout.segments);
+    final totalTime = wu.computeEstimatedTotalTime(
+        workout.segments, kDefaultFtpWatts);
     final segmentCount = wu.computeSegmentCount(workout.segments);
     final avgIntensity = wu.computeAvgIntensity(workout.segments);
     final avgPace = avgIntensity != null
@@ -148,12 +148,10 @@ class WodCard extends StatelessWidget {
             Row(
               children: [
                 _StatItem(
-                  label: totalTime != null ? 'TIME' : 'DISTANCE',
-                  value: totalTime != null
+                  label: 'TIME',
+                  value: totalTime > 0
                       ? wu.formatDuration(totalTime)
-                      : totalDistance != null
-                          ? wu.formatDistance(totalDistance)
-                          : '—',
+                      : '—',
                 ),
                 const SizedBox(width: 20),
                 _StatItem(label: 'SEGMENTS', value: '$segmentCount'),

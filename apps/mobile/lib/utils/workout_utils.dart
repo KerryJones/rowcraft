@@ -1,4 +1,5 @@
 import '../models/workout_segment.dart';
+import 'pace_utils.dart';
 
 /// Compute total time in seconds for all time-based segments.
 /// Returns null if there are no time-based segments.
@@ -12,6 +13,40 @@ int? computeTotalTime(List<WorkoutSegment> segments) {
     }
   }
   return hasTime ? total.round() : null;
+}
+
+/// Effective duration in seconds for a single segment.
+/// Time segments return their value directly. Distance and calorie segments
+/// are converted to estimated seconds using target intensity / FTP.
+double effectiveDuration(WorkoutSegment seg, int ftpWatts) {
+  switch (seg.durationType) {
+    case DurationType.time:
+      return seg.durationValue;
+    case DurationType.distance:
+      final double? targetPace;
+      if (seg.targetIntensity != null) {
+        targetPace = resolveIntensityToPace(
+          seg.targetIntensity!,
+          ftpWatts,
+        ).toDouble();
+      } else {
+        targetPace = null;
+      }
+      final pacePerMeter = targetPace != null ? (targetPace / 10) / 500 : 0.24;
+      return seg.durationValue * pacePerMeter;
+    case DurationType.calories:
+      return (seg.durationValue / 15) * 60;
+  }
+}
+
+/// Compute estimated total time in seconds across all segment types.
+/// Uses target intensity + FTP to estimate time for distance/calorie segments.
+int computeEstimatedTotalTime(List<WorkoutSegment> segments, int ftpWatts) {
+  var total = 0.0;
+  for (final seg in segments) {
+    total += effectiveDuration(seg, ftpWatts);
+  }
+  return total.round();
 }
 
 /// Compute total distance in meters for all distance-based segments.

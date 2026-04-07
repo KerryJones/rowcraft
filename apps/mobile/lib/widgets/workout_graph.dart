@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/workout_segment.dart';
 import '../utils/pace_utils.dart';
 import '../utils/segment_color.dart';
+import '../utils/workout_utils.dart';
 
 /// Segment bar chart showing intensity (height) and duration (width).
 /// Replicates the web WorkoutGraph component.
@@ -47,7 +48,7 @@ class _GraphPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (segments.isEmpty) return;
 
-    final durations = segments.map((s) => _effectiveDuration(s, ftpWatts)).toList();
+    final durations = segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold(0.0, (a, b) => a + b);
     if (totalDuration <= 0) return;
 
@@ -84,22 +85,6 @@ class _GraphPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GraphPainter old) =>
       old.segments != segments || old.ftpWatts != ftpWatts;
-
-  static double _effectiveDuration(WorkoutSegment seg, int ftpWatts) {
-    if (seg.durationType == DurationType.time) return seg.durationValue;
-    if (seg.durationType == DurationType.distance) {
-      final double pacePerMeter;
-      if (seg.targetIntensity != null) {
-        final targetPace = resolveIntensityToPace(seg.targetIntensity!, ftpWatts);
-        pacePerMeter = (targetPace / 10) / 500;
-      } else {
-        pacePerMeter = 0.24;
-      }
-      return seg.durationValue * pacePerMeter;
-    }
-    // Calories: estimate ~15 cal/min (matches web fallback)
-    return (seg.durationValue / 15) * 60;
-  }
 
   static double _paceToHeight(double? pace, double paceMin, double paceMax) {
     if (pace == null) return _minBarHeightFraction;

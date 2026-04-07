@@ -207,7 +207,7 @@ class _WorkoutDetailBody extends StatelessWidget {
     final theme = Theme.of(context);
     final segments = workout.segments;
 
-    final totalTime = computeTotalTime(segments);
+    final totalTime = computeEstimatedTotalTime(segments, kDefaultFtpWatts);
     final totalDist = computeTotalDistance(segments);
     final segCount = computeSegmentCount(segments);
     final avgIntensity = computeAvgIntensity(segments);
@@ -258,7 +258,7 @@ class _WorkoutDetailBody extends StatelessWidget {
           spacing: 24,
           runSpacing: 8,
           children: [
-            if (totalTime != null)
+            if (totalTime > 0)
               _StatItem(label: 'DURATION', value: formatDuration(totalTime)),
             if (totalDist != null)
               _StatItem(

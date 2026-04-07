@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../utils/pace_utils.dart';
+import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
@@ -21,30 +22,6 @@ import 'workout_summary_screen.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-
-/// Effective duration in seconds (for proportional width in profile graph).
-/// Approximates web's getEffectiveDuration(). Resolves intensity to pace
-/// using FTP, then computes time from distance and pace.
-double _getEffectiveDuration(WorkoutSegment seg, int ftpWatts) {
-  switch (seg.durationType) {
-    case DurationType.time:
-      return seg.durationValue;
-    case DurationType.distance:
-      final double? targetPace;
-      if (seg.targetIntensity != null) {
-        targetPace = resolveIntensityToPace(
-          seg.targetIntensity!,
-          ftpWatts,
-        ).toDouble();
-      } else {
-        targetPace = null;
-      }
-      final pacePerMeter = targetPace != null ? (targetPace / 10) / 500 : 0.24;
-      return seg.durationValue * pacePerMeter;
-    case DurationType.calories:
-      return (seg.durationValue / 15) * 60;
-  }
-}
 
 /// Format pace tenths to M:SS
 String _formatPace(double tenths) {
@@ -430,7 +407,7 @@ class _OverallStatsBar extends StatelessWidget {
     if (segments.isEmpty) return '--:--';
 
     final ftpWatts = session.ftpWatts;
-    final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
+    final durations = segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold<double>(0, (a, b) => a + b);
     if (totalDuration <= 0) return '--:--';
 
@@ -527,7 +504,7 @@ class _WorkoutProfilePainter extends CustomPainter {
     const barGap = 1.5;
     const minHeightFraction = 0.15;
 
-    final durations = segments.map((s) => _getEffectiveDuration(s, ftpWatts)).toList();
+    final durations = segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold<double>(0, (a, b) => a + b);
     if (totalDuration <= 0) return;
 
@@ -858,8 +835,6 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = session.pm5Data;
     final segment = session.engineState.currentSegment;
-    final isActive = session.engineState.phase == WorkoutPhase.rowing ||
-        session.engineState.phase == WorkoutPhase.resting;
 
     // Pace color based on target — uses 5% tolerance range for feedback
     Color splitColor = RowCraftTheme.metricWhite;
@@ -945,16 +920,15 @@ class _HeroSection extends StatelessWidget {
                 }),
               ],
 
-              const SizedBox(height: 8),
-
-              // Rowing animation — paces to target stroke rate (guide),
-              // falls back to current rate when no target is set
-              RowingAnimation(
-                strokeRate:
-                    segment?.targetStrokeRate ?? data.strokeRate,
-                isActive: isActive,
-                height: animHeight,
-              ),
+              // Rowing animation — only shown when segment has a target s/m
+              if (segment?.targetStrokeRate != null) ...[
+                const SizedBox(height: 8),
+                RowingAnimation(
+                  strokeRate: segment!.targetStrokeRate!,
+                  isActive: true,
+                  height: animHeight,
+                ),
+              ],
 
               const SizedBox(height: 8),
 
