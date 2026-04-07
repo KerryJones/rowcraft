@@ -12,6 +12,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - Run code review agent in a loop until clean before presenting code as done.
 - **Resolve TODOs during planning** — when exploring code for a task, scan for existing TODOs in the files you touch. If a TODO is achievable within the current scope, include it in the plan and do it. Don't leave TODOs behind in new code.
 - Always run checks before done: `flutter analyze` (mobile), `npm run check` (web).
+- **Test builds, not just analyze** — when changing dependencies, Android config, or native code, run `flutter build apk --debug` to catch Gradle/Kotlin compilation errors that `flutter analyze` misses.
 
 ### Pre-launch App
 - **No legacy/backward-compat code** — this app has not shipped. Never write migration shims, legacy expansion, or backward-compat wrappers without asking first. If you think old data needs handling, ask.

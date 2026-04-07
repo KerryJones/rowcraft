@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../app/theme.dart';
 import 'auth_provider.dart';
@@ -28,7 +29,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       // when the session arrives via onAuthStateChange.
       ref.invalidate(googleSignInProvider);
       await ref.read(googleSignInProvider.future);
-    } catch (_) {
+    } catch (e, stack) {
+      Sentry.captureException(e, stackTrace: stack);
       if (mounted) {
         setState(() {
           _errorMessage = 'Sign in failed. Please try again.';
@@ -97,17 +99,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ],
 
                 // Google sign-in
-                OutlinedButton.icon(
-                  onPressed: _isLoading ? null : _handleGoogleSignIn,
-                  icon: const Icon(Icons.g_mobiledata, size: 24),
-                  label: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Continue with Google'),
-                ),
+                if (_isLoading)
+                  const OutlinedButton(
+                    onPressed: null,
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: _handleGoogleSignIn,
+                    icon: const Icon(Icons.g_mobiledata, size: 24),
+                    label: const Text('Continue with Google'),
+                  ),
               ],
             ),
           ),

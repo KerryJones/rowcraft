@@ -5,7 +5,7 @@
 export
 
 LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $$1}')
-SUPABASE_URL := http://$(LOCAL_IP):54321
+LOCAL_SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.kerryjones.net
 
 .PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds
@@ -78,7 +78,7 @@ setup-web:
 
 dev: dev-supabase
 	@echo ""
-	@echo "Supabase running at $(SUPABASE_URL)"
+	@echo "Supabase running at $(LOCAL_SUPABASE_URL)"
 	@echo "Run in separate terminals:"
 	@echo "  make dev-mobile    # Flutter on phone/emulator"
 	@echo "  make dev-web       # Next.js at http://localhost:3000"
@@ -91,7 +91,7 @@ dev-mobile:
 	@echo "Starting Flutter app (local IP: $(LOCAL_IP))..."
 	$(eval PUB_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
 	cd apps/mobile && flutter run \
-		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
+		--dart-define=SUPABASE_URL=$(LOCAL_SUPABASE_URL) \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(PUB_KEY) \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
 		--dart-define=WEB_APP_URL=http://$(LOCAL_IP):3000
