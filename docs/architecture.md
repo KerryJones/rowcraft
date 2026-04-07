@@ -38,6 +38,9 @@ User builds in `/builder` → saves segments as JSONB to `workouts` table → ca
 ### Workout Execution (Mobile)
 Select workout → pair PM5 via BLE → receive real-time data via notifications → track against targets → save result to Drift (offline) → sync to Supabase + C2 Logbook.
 
+### Workout Library Loading
+`workoutLibraryProvider` → `WorkoutRepository.getWorkouts()` reads from `CachedWorkouts` SQLite table (instant). If cache is non-empty, a background `refreshWorkouts()` call updates it silently. If empty (first launch), waits for network. Pull-to-refresh forces an explicit refresh then re-reads cache.
+
 ### Result Sync
 Completed workout → `PendingResults` table (Drift SQLite) → `sync_service` uploads to Supabase → optionally pushes to C2 Logbook API.
 
@@ -47,7 +50,7 @@ Browse plans → start plan → complete sessions → track progress in `user_pl
 ## Key Design Decisions
 
 - **Dark theme only** — rowers train in gyms/garages
-- **Offline-first mobile** — Drift SQLite queue with async sync
+- **Offline-first mobile** — workout library cached in `CachedWorkouts` Drift table; results queued in `PendingResults`. Both survive app restarts and airplane mode. `SyncMetadata` table stores last sync timestamps for incremental fetches (`updated_at >= lastSyncedAt`). Full sync runs every 24 h to detect remote deletions.
 - **No Web Bluetooth** — web is for building/browsing only, BLE is mobile-only
 - **PM5 notifications only** — never BLE reads (returns junk)
 - **Split times in tenths** — 2:00/500m = 1200, stored in tenths, displayed as M:SS (no decimal)

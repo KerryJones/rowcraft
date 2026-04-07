@@ -2,19 +2,64 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
+import '../../services/workout_repository.dart';
 
-/// Fetches all workouts from Supabase.
+/// Increment to force a library refresh (e.g. pull-to-refresh).
+final workoutRefreshTriggerProvider = StateProvider<int>((ref) => 0);
+
+/// All public workouts, served from cache.
+///
+/// Returns cached workouts immediately. If the cache is non-empty, a background
+/// refresh runs silently. If the cache is empty (first launch), waits for the
+/// network before returning.
 final workoutLibraryProvider = FutureProvider<List<Workout>>((ref) async {
-  final service = ref.watch(supabaseServiceProvider);
-  return service.getWorkouts(isPublic: true);
+  // Re-run when refresh is triggered.
+  ref.watch(workoutRefreshTriggerProvider);
+
+  final repo = ref.watch(workoutRepositoryProvider);
+  final cached = await repo.getWorkouts(isPublic: true);
+
+  if (cached.isNotEmpty) {
+    // Return cache immediately; refresh in background.
+    // minInterval prevents a redundant network call when pull-to-refresh
+    // has just run and re-triggered the provider.
+    repo
+        .refreshWorkouts(
+          isPublic: true,
+          minInterval: const Duration(minutes: 5),
+        )
+        .ignore();
+    return cached;
+  }
+
+  // First launch or empty cache — wait for network.
+  final fresh = await repo.refreshWorkouts(isPublic: true);
+  return fresh ?? [];
 });
 
-/// Fetches workouts authored by the current user.
+/// Workouts authored by the current user.
 final myWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
+  ref.watch(workoutRefreshTriggerProvider);
+
   final service = ref.watch(supabaseServiceProvider);
   final userId = service.currentUserId;
   if (userId == null) return [];
-  return service.getWorkouts(authorId: userId);
+
+  final repo = ref.watch(workoutRepositoryProvider);
+  final cached = await repo.getWorkouts(authorId: userId);
+
+  if (cached.isNotEmpty) {
+    repo
+        .refreshWorkouts(
+          authorId: userId,
+          minInterval: const Duration(minutes: 5),
+        )
+        .ignore();
+    return cached;
+  }
+
+  final fresh = await repo.refreshWorkouts(authorId: userId);
+  return fresh ?? [];
 });
 
 /// Filtered workouts based on search query, type, and tag.

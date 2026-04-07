@@ -156,6 +156,56 @@ class SupabaseService {
     }
   }
 
+  Future<List<Workout>> getWorkoutsUpdatedSince(
+    DateTime since, {
+    bool? isPublic,
+    String? authorId,
+  }) async {
+    try {
+      var query = _client
+          .from('workouts')
+          .select()
+          .gte('updated_at', since.toIso8601String());
+
+      if (isPublic != null) {
+        query = query.eq('is_public', isPublic);
+      }
+      if (authorId != null) {
+        query = query.eq('author_id', authorId);
+      }
+
+      final response = await query.order('created_at', ascending: false);
+      return (response as List<dynamic>)
+          .map((e) => Workout.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getWorkoutsUpdatedSince', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Fetches only workout IDs — used for delete detection during full sync.
+  Future<List<String>> getWorkoutIds({bool? isPublic, String? authorId}) async {
+    try {
+      var query = _client.from('workouts').select('id');
+
+      if (isPublic != null) {
+        query = query.eq('is_public', isPublic);
+      }
+      if (authorId != null) {
+        query = query.eq('author_id', authorId);
+      }
+
+      final response = await query;
+      return (response as List<dynamic>)
+          .map((e) => (e as Map<String, dynamic>)['id'] as String)
+          .toList();
+    } catch (e, stack) {
+      _log('getWorkoutIds', e, stack);
+      rethrow;
+    }
+  }
+
   Future<Workout> getWorkout(String id) async {
     try {
       final response =
