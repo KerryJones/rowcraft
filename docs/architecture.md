@@ -60,5 +60,5 @@ Browse plans → start plan → complete sessions → track progress in `user_pl
 - **Post-workout flow** — Stop → summary screen (stats, pace/HR charts, splits) → Save/Discard → save progress overlay
 - **Supabase RLS** — all access control at DB level
 - **Google-only auth** — email/password removed for beta; Google OAuth is the sole auth method on both platforms
-- **Crash reporting** — Sentry integrated in mobile app, enabled when `SENTRY_DSN` dart-define is set; disabled in dev by default
+- **Crash reporting** — Sentry integrated on both platforms. Mobile: enabled when `SENTRY_DSN` dart-define is set (disabled in dev by default). Web: `@sentry/nextjs` via `withSentryConfig`; DSN from `NEXT_PUBLIC_SENTRY_DSN`. Same Sentry project/DSN for both. Error boundary at `app/error.tsx` captures uncaught errors.
 - **BLE auto-reconnect** — `WorkoutSessionNotifier` watches PM5 connection state and calls `autoReconnect()` on disconnect, with a 10-second cooldown to prevent retry loops

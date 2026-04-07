@@ -1,11 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Waves } from 'lucide-react';
+import { Waves, Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  oauth_failed: 'Sign-in failed. Please try again.',
+  session_expired: 'Your session has expired. Please sign in again.',
+};
+
+function LoginPageInner() {
+  const searchParams = useSearchParams();
+  const errorParam = searchParams.get('error');
+
+  const [error, setError] = useState<string | null>(
+    errorParam ? (OAUTH_ERROR_MESSAGES[errorParam] ?? 'An error occurred. Please try again.') : null,
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleGoogleOAuth() {
@@ -91,5 +102,19 @@ export default function LoginPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[80vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      }
+    >
+      <LoginPageInner />
+    </Suspense>
   );
 }

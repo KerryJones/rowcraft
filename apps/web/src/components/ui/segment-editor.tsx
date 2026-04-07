@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from 'lucide-react';
 import type { WorkoutSegment, SegmentType, DurationType } from '@/lib/types';
 import { formatPace } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts, HR_ZONES } from '@/lib/utils/ftp';
@@ -21,10 +22,11 @@ interface SegmentEditorProps {
   segment: WorkoutSegment;
   onChange: (segment: WorkoutSegment) => void;
   onRemove: () => void;
+  onDuplicate?: () => void;
   ftpWatts?: number | null;
 }
 
-export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: SegmentEditorProps) {
+export function SegmentEditor({ segment, onChange, onRemove, onDuplicate, ftpWatts }: SegmentEditorProps) {
   const ftp = getEffectiveFtp(ftpWatts ?? null);
 
   function updateField<K extends keyof WorkoutSegment>(key: K, value: WorkoutSegment[K]) {
@@ -43,16 +45,28 @@ export function SegmentEditor({ segment, onChange, onRemove, ftpWatts }: Segment
     <div className="space-y-3 rounded-lg border border-gray-800 bg-gray-900 p-4">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-white">Edit Segment</h4>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="cursor-pointer text-xs text-red-400 hover:text-red-300"
-        >
-          Remove
-        </button>
+        <div className="flex items-center gap-3">
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={onDuplicate}
+              className="flex cursor-pointer items-center gap-1 text-xs text-gray-400 hover:text-gray-300"
+            >
+              <Copy className="h-3 w-3" />
+              Duplicate
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="cursor-pointer text-xs text-red-400 hover:text-red-300"
+          >
+            Remove
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Segment Type */}
         <div>
           <label className="mb-1 block text-xs text-gray-500">Type</label>

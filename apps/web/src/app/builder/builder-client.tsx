@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
 import type { Workout, WorkoutSegment, WorkoutType, SegmentType, Profile } from '@/lib/types';
@@ -9,7 +9,9 @@ import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
 import { SegmentEditor } from '@/components/ui/segment-editor';
-import { Plus, Save, Loader2 } from 'lucide-react';
+import { BuilderSegmentItem } from '@/components/ui/builder-segment-item';
+import { validateWorkout } from '@/lib/utils/builder-validation';
+import { Plus, Save, Loader2, Dumbbell } from 'lucide-react';
 
 /** Default intensity targets by segment type (% of FTP). */
 const DEFAULT_INTENSITY: Record<SegmentType, number | null> = {
@@ -43,10 +45,36 @@ function makeDefaultSegment(type: SegmentType, lastWorkIntensity: number | null)
   };
 }
 
+const ADD_SEGMENT_BUTTONS: { type: SegmentType; label: string; className: string }[] = [
+  {
+    type: 'work',
+    label: 'Work',
+    className: 'bg-blue-600 text-white hover:bg-blue-500',
+  },
+  {
+    type: 'rest',
+    label: 'Rest',
+    className: 'bg-gray-700 text-white hover:bg-gray-600',
+  },
+  {
+    type: 'warmup',
+    label: 'Warm Up',
+    className: 'border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20',
+  },
+  {
+    type: 'cooldown',
+    label: 'Cool Down',
+    className: 'border border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20',
+  },
+];
+
 export default function BuilderPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
+  const editorRef = useRef<HTMLDivElement>(null);
+  const scrollToEditor = () =>
+    setTimeout(() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -59,12 +87,12 @@ export default function BuilderPage() {
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hasEdited, setHasEdited] = useState(false);
 
   const ftpWatts = profile?.current_ftp_watts ?? null;
-  // Get the last work segment's intensity for smart defaults
   const lastWorkIntensity = (() => {
     for (let i = segments.length - 1; i >= 0; i--) {
-      if (segments[i].type === 'work' && segments[i].target_intensity) {
+      if (segments[i].type === 'work' && segments[i].target_intensity != null) {
         return segments[i].target_intensity;
       }
     }
@@ -98,7 +126,6 @@ export default function BuilderPage() {
 
         if (!data) return;
 
-        // Verify ownership before populating form
         if (data.author_id !== currentUserId) {
           router.push('/workouts');
           return;
@@ -112,35 +139,84 @@ export default function BuilderPage() {
         setIsPublic(w.is_public);
         setSegments(normalizeWorkoutSegments(w.segments));
       }
+
     }
 
     init();
   }, [editId, router]);
 
-  const addSegment = useCallback((type: SegmentType) => {
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (hasEdited) {
+        e.preventDefault();
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasEdited]);
+
+  function addSegment(type: SegmentType) {
     const seg = makeDefaultSegment(type, lastWorkIntensity);
+    const newIndex = segments.length;
     setSegments((prev) => [...prev, seg]);
-    setSelectedIndex(segments.length);
-  }, [lastWorkIntensity, segments.length]);
+    setSelectedIndex(newIndex);
+    setHasEdited(true);
+    scrollToEditor();
+  }
+
+  function handleSelectSegment(index: number) {
+    setSelectedIndex(selectedIndex === index ? null : index);
+    if (selectedIndex !== index) {
+      scrollToEditor();
+    }
+  }
 
   function updateSegment(index: number, segment: WorkoutSegment) {
     setSegments((prev) => prev.map((s, i) => (i === index ? segment : s)));
+    setHasEdited(true);
   }
 
   function removeSegment(index: number) {
     setSegments((prev) => prev.filter((_, i) => i !== index));
     setSelectedIndex(null);
+    setHasEdited(true);
+  }
+
+  function moveSegment(fromIndex: number, direction: 'up' | 'down') {
+    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= segments.length) return;
+    setSegments((prev) => {
+      const next = [...prev];
+      [next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]];
+      return next;
+    });
+    if (selectedIndex === fromIndex) setSelectedIndex(toIndex);
+    else if (selectedIndex === toIndex) setSelectedIndex(fromIndex);
+    setHasEdited(true);
+  }
+
+  function duplicateSegment(index: number) {
+    setSegments((prev) => {
+      const next = [...prev];
+      next.splice(index + 1, 0, { ...prev[index] });
+      return next;
+    });
+    setSelectedIndex(index + 1);
+    setHasEdited(true);
+    scrollToEditor();
   }
 
   async function handleSave() {
     setError(null);
 
-    if (!title.trim()) {
-      setError('Title is required');
+    const validation = validateWorkout(title, segments);
+    if (!validation.valid) {
+      setError(validation.error);
       return;
     }
-    if (segments.length < 1) {
-      setError('Add at least one segment');
+
+    if (!userId) {
+      setError('Not authenticated');
       return;
     }
 
@@ -159,13 +235,13 @@ export default function BuilderPage() {
       };
 
       if (editId) {
-        if (!userId) throw new Error('Not authenticated');
         const { error: updateError } = await supabase
           .from('workouts')
           .update(payload)
           .eq('id', editId)
           .eq('author_id', userId);
         if (updateError) throw updateError;
+        setHasEdited(false);
         router.push(`/workouts/${editId}`);
       } else {
         const { data, error: insertError } = await supabase
@@ -174,6 +250,7 @@ export default function BuilderPage() {
           .select('id')
           .single();
         if (insertError) throw insertError;
+        setHasEdited(false);
         if (data) router.push(`/workouts/${data.id}`);
       }
     } catch (err: unknown) {
@@ -184,6 +261,22 @@ export default function BuilderPage() {
   }
 
   const selectedSegment = selectedIndex !== null ? segments[selectedIndex] : null;
+
+  const addSegmentButtons = (
+    <div className="flex flex-wrap gap-2">
+      {ADD_SEGMENT_BUTTONS.map(({ type, label, className }) => (
+        <button
+          key={type}
+          type="button"
+          onClick={() => addSegment(type)}
+          className={`flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${className}`}
+        >
+          <Plus className="h-4 w-4" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -205,120 +298,80 @@ export default function BuilderPage() {
           workoutType={workoutType}
           tags={tags}
           isPublic={isPublic}
-          onTitleChange={setTitle}
-          onDescriptionChange={setDescription}
-          onWorkoutTypeChange={setWorkoutType}
-          onTagsChange={setTags}
-          onPublicChange={setIsPublic}
+          onTitleChange={(v) => { setTitle(v); setHasEdited(true); }}
+          onDescriptionChange={(v) => { setDescription(v); setHasEdited(true); }}
+          onWorkoutTypeChange={(v) => { setWorkoutType(v); setHasEdited(true); }}
+          onTagsChange={(v) => { setTags(v); setHasEdited(true); }}
+          onPublicChange={(v) => { setIsPublic(v); setHasEdited(true); }}
         />
       </div>
 
-      {/* Graph */}
-      {segments.length > 0 && (
-        <div className="mb-6">
-          <WorkoutGraph
-            segments={segments}
-            selectedIndex={selectedIndex}
-            onSelectSegment={setSelectedIndex}
-          />
+      {segments.length === 0 ? (
+        /* Empty state */
+        <div className="mb-8 flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-700 bg-gray-900/50 px-8 py-16 text-center">
+          <div className="mb-4 rounded-full bg-gray-800 p-4">
+            <Dumbbell className="h-8 w-8 text-gray-500" />
+          </div>
+          <h3 className="mb-1 text-lg font-medium text-white">No segments yet</h3>
+          <p className="mb-6 max-w-xs text-sm text-gray-500">
+            Add your first segment to start building your workout.
+          </p>
+          {addSegmentButtons}
         </div>
-      )}
+      ) : (
+        <>
+          {/* Graph */}
+          <div className="mb-4">
+            <WorkoutGraph
+              segments={segments}
+              selectedIndex={selectedIndex}
+              onSelectSegment={handleSelectSegment}
+            />
+          </div>
 
-      {/* Stats */}
-      {segments.length > 0 && (
-        <div className="mb-6">
-          <StatsBar segments={segments} />
-        </div>
-      )}
+          {/* Stats */}
+          <div className="mb-6">
+            <StatsBar segments={segments} />
+          </div>
 
-      {/* Add segment buttons */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => addSegment('work')}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
-        >
-          <Plus className="h-4 w-4" />
-          Work
-        </button>
-        <button
-          type="button"
-          onClick={() => addSegment('rest')}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-gray-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-600"
-        >
-          <Plus className="h-4 w-4" />
-          Rest
-        </button>
-        <button
-          type="button"
-          onClick={() => addSegment('warmup')}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
-        >
-          <Plus className="h-4 w-4" />
-          Warm Up
-        </button>
-        <button
-          type="button"
-          onClick={() => addSegment('cooldown')}
-          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-yellow-500/50 bg-yellow-500/10 px-3 py-2 text-sm font-medium text-yellow-400 transition-colors hover:bg-yellow-500/20"
-        >
-          <Plus className="h-4 w-4" />
-          Cool Down
-        </button>
-      </div>
+          {/* Segment list */}
+          <div className="mb-4 space-y-1.5">
+            <h2 className="mb-2 text-sm font-medium text-gray-400">Segments</h2>
+            {segments.map((seg, i) => (
+              <BuilderSegmentItem
+                key={i}
+                segment={seg}
+                index={i}
+                isSelected={selectedIndex === i}
+                isFirst={i === 0}
+                isLast={i === segments.length - 1}
+                onSelect={() => handleSelectSegment(i)}
+                onMoveUp={() => moveSegment(i, 'up')}
+                onMoveDown={() => moveSegment(i, 'down')}
+                onDuplicate={() => duplicateSegment(i)}
+              />
+            ))}
+          </div>
+
+          {/* Add segment buttons */}
+          <div className="mb-6">{addSegmentButtons}</div>
+        </>
+      )}
 
       {/* Segment editor */}
-      {selectedSegment && selectedIndex !== null && (
-        <div className="mb-6">
-          <SegmentEditor
-            segment={selectedSegment}
-            onChange={(seg) => updateSegment(selectedIndex, seg)}
-            onRemove={() => removeSegment(selectedIndex)}
-            ftpWatts={ftpWatts}
-          />
-        </div>
-      )}
-
-      {/* Segment list (clickable to select) */}
-      {segments.length > 0 && (
-        <div className="mb-8 space-y-2">
-          <h2 className="text-sm font-medium text-gray-400">Segments</h2>
-          {segments.map((seg, i) => {
-            const typeColors: Record<string, string> = {
-              work: 'border-blue-500/30 bg-blue-500/5',
-              rest: 'border-gray-500/30 bg-gray-500/5',
-              warmup: 'border-emerald-500/30 bg-emerald-500/5',
-              cooldown: 'border-yellow-500/30 bg-yellow-500/5',
-            };
-            const dotColors: Record<string, string> = {
-              work: 'bg-blue-500',
-              rest: 'bg-gray-500',
-              warmup: 'bg-emerald-500',
-              cooldown: 'bg-yellow-500',
-            };
-
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setSelectedIndex(selectedIndex === i ? null : i)}
-                className={`flex w-full cursor-pointer items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                  typeColors[seg.type]
-                } ${selectedIndex === i ? 'ring-2 ring-blue-500' : ''}`}
-              >
-                <div className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotColors[seg.type]}`} />
-                <span className="text-sm font-medium text-white">
-                  #{i + 1} {seg.type.charAt(0).toUpperCase() + seg.type.slice(1)}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {seg.duration_value}
-                  {seg.duration_type === 'time' ? 's' : seg.duration_type === 'distance' ? 'm' : 'cal'}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div ref={editorRef}>
+        {selectedSegment !== null && selectedIndex !== null && (
+          <div className="mb-6">
+            <SegmentEditor
+              segment={selectedSegment}
+              onChange={(seg) => updateSegment(selectedIndex, seg)}
+              onRemove={() => removeSegment(selectedIndex)}
+              onDuplicate={() => duplicateSegment(selectedIndex)}
+              ftpWatts={ftpWatts}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Save button */}
       <div className="flex justify-end">

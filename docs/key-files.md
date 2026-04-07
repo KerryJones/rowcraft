@@ -19,19 +19,26 @@
 | `lib/utils/format.ts` | Display formatting (pace, duration, distance) |
 | `lib/utils/ftp.ts` | FTP intensity resolution, power/HR zones, C2 watts↔pace formula |
 | `lib/utils/workout.ts` | Workout summary computations |
+| `lib/utils/builder-validation.ts` | Validate workout title + segments before save |
 | `lib/supabase/server.ts` | Server-side Supabase client (cookie auth) |
 | `lib/supabase/client.ts` | Browser-side Supabase client |
 | `middleware.ts` | Auth token refresh on every request |
+| `instrumentation.ts` | Sentry server/edge initialization (Next.js instrumentation hook) |
 | `components/workout-graph.tsx` | Interactive workout visualization |
 | `components/ui/segment-editor.tsx` | Segment editor (pace, HR zones, cues) |
+| `components/ui/builder-segment-item.tsx` | Builder segment list row (colored bar, badges, move/duplicate actions) |
 | `components/ui/workout-card.tsx` | Workout card with MiniGraph |
 | `components/ui/segment-card.tsx` | Read-only segment display |
 | `components/ui/stats-bar.tsx` | Summary stats (time, distance, segments) |
 | `components/ui/wod-card.tsx` | Workout of the Day card |
+| `app/error.tsx` | Global error boundary (logs to Sentry, "Try again" reset) |
+| `app/not-found.tsx` | Custom 404 page |
 | `app/builder/` | Graph-first workout builder |
 | `app/workouts/page.tsx` | Workout list with WOD, search, filters |
 | `app/workouts/[id]/page.tsx` | Workout detail with hero graph + OG meta |
 | `app/plans/builder/` | Training plan builder |
+| `app/profile/page.tsx` | Profile page (server component, requires auth) |
+| `app/profile/profile-client.tsx` | Profile client component (FTP, C2 link) |
 | `app/auth/callback/page.tsx` | Google OAuth callback (server-side token exchange) |
 | `app/api/c2/` | C2 Logbook OAuth + sync (server-side) |
 
