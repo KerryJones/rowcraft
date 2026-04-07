@@ -1,48 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createSupabaseBrowser } from '@/lib/supabase/client';
-import { Waves, Mail, Lock } from 'lucide-react';
+import { Waves } from 'lucide-react';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    const supabase = createSupabaseBrowser();
-
-    try {
-      if (isSignUp) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (signUpError) throw signUpError;
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
-      }
-      router.push('/workouts');
-      router.refresh();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleGoogleOAuth() {
     setError(null);
@@ -88,9 +52,7 @@ export default function LoginPage() {
             <Waves className="h-8 w-8 text-amber-500" />
             RowCraft
           </Link>
-          <p className="mt-2 text-sm text-gray-400">
-            {isSignUp ? 'Create your account' : 'Sign in to your account'}
-          </p>
+          <p className="mt-2 text-sm text-gray-400">Sign in to your account</p>
         </div>
 
         {/* Error */}
@@ -100,60 +62,12 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Email/Password form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm text-gray-400">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-                className="w-full rounded-lg border border-gray-700 bg-gray-800 py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm text-gray-400">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="••••••••"
-                className="w-full rounded-lg border border-gray-700 bg-gray-800 py-2.5 pl-10 pr-4 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full cursor-pointer rounded-lg bg-blue-600 py-2.5 font-semibold text-white transition-colors hover:bg-blue-500 disabled:opacity-50"
-          >
-            {loading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
-          </button>
-        </form>
-
-        {/* Divider */}
-        <div className="flex items-center gap-3">
-          <div className="h-px flex-1 bg-gray-800" />
-          <span className="text-xs text-gray-500">OR</span>
-          <div className="h-px flex-1 bg-gray-800" />
-        </div>
-
         {/* Google OAuth */}
         <button
           type="button"
           onClick={handleGoogleOAuth}
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          disabled={loading}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-700 bg-gray-800 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path
@@ -173,23 +87,8 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          Continue with Google
+          {loading ? 'Redirecting...' : 'Continue with Google'}
         </button>
-
-        {/* Toggle */}
-        <p className="text-center text-sm text-gray-400">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError(null);
-            }}
-            className="cursor-pointer text-blue-500 hover:text-blue-400"
-          >
-            {isSignUp ? 'Sign In' : 'Sign Up'}
-          </button>
-        </p>
       </div>
     </div>
   );

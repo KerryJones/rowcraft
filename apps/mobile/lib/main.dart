@@ -1,18 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/router.dart';
 import 'app/theme.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
     anonKey: const String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY'),
   );
 
-  runApp(const ProviderScope(child: RowCraftApp()));
+  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
+  if (sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = sentryDsn;
+        options.tracesSampleRate = 0.2;
+        options.attachScreenshot = false;
+      },
+      appRunner: () {
+        FlutterNativeSplash.remove();
+        runApp(const ProviderScope(child: RowCraftApp()));
+      },
+    );
+  } else {
+    FlutterNativeSplash.remove();
+    runApp(const ProviderScope(child: RowCraftApp()));
+  }
 }
 
 class RowCraftApp extends ConsumerWidget {

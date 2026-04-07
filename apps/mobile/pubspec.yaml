@@ -29,6 +29,8 @@ dependencies:
   url_launcher: ^6.3.0
   path: ^1.9.0
   google_sign_in: ^6.2.1
+  sentry_flutter: ^8.3.0
+  flutter_native_splash: ^2.4.0
 
 dev_dependencies:
   flutter_test:
@@ -39,6 +41,15 @@ dev_dependencies:
   freezed: ^2.5.0
   json_serializable: ^6.8.0
   flutter_launcher_icons: ^0.14.0
+
+flutter_native_splash:
+  color: "#000000"
+  image: "assets/app_icon.png"
+  android: true
+  ios: false
+  android_12:
+    color: "#000000"
+    image: "assets/app_icon.png"
 
 flutter_launcher_icons:
   android: true

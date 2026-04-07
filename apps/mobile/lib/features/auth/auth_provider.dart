@@ -23,28 +23,6 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
   return ref.watch(currentSessionProvider) != null;
 });
 
-/// Sign in with email and password.
-final signInProvider =
-    FutureProvider.family<AuthResponse, ({String email, String password})>(
-  (ref, credentials) async {
-    return Supabase.instance.client.auth.signInWithPassword(
-      email: credentials.email,
-      password: credentials.password,
-    );
-  },
-);
-
-/// Sign up with email and password.
-final signUpProvider =
-    FutureProvider.family<AuthResponse, ({String email, String password})>(
-  (ref, credentials) async {
-    return Supabase.instance.client.auth.signUp(
-      email: credentials.email,
-      password: credentials.password,
-    );
-  },
-);
-
 /// Sign in with Google using native SDK + Supabase signInWithIdToken.
 final googleSignInProvider = FutureProvider<AuthResponse>((ref) async {
   const clientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');

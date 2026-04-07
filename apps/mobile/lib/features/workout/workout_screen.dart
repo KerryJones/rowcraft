@@ -339,35 +339,80 @@ class _BleStatusBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bleState = ref.watch(bleProvider);
-    final pm5Connected =
-        bleState.pm5ConnectionState == PM5ConnectionState.connected;
+    final connState = bleState.pm5ConnectionState;
+    final isConnected = connState == PM5ConnectionState.connected;
+    final isReconnecting = connState == PM5ConnectionState.connecting;
+
+    final Color dotColor;
+    final Color bgColor;
+    final String label;
+
+    if (isConnected) {
+      dotColor = RowCraftTheme.successGreen;
+      bgColor = RowCraftTheme.surfaceContainer;
+      label = 'Rower';
+    } else if (isReconnecting) {
+      dotColor = RowCraftTheme.warningAmber;
+      bgColor = RowCraftTheme.warningAmber.withValues(alpha: 0.15);
+      label = 'Reconnecting...';
+    } else if (connState == PM5ConnectionState.error) {
+      dotColor = RowCraftTheme.errorRose;
+      bgColor = RowCraftTheme.errorRose.withValues(alpha: 0.15);
+      label = 'Connection error';
+    } else {
+      dotColor = RowCraftTheme.errorRose;
+      bgColor = RowCraftTheme.errorRose.withValues(alpha: 0.15);
+      label = 'Rower disconnected';
+    }
 
     return Container(
       height: 28,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: RowCraftTheme.surfaceContainer,
+      color: bgColor,
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: pm5Connected
-                  ? RowCraftTheme.successGreen
-                  : RowCraftTheme.subtleGrey,
+          if (isReconnecting)
+            const SizedBox(
+              width: 10,
+              height: 10,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: RowCraftTheme.warningAmber,
+              ),
+            )
+          else
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: dotColor,
+              ),
             ),
-          ),
           const SizedBox(width: 6),
           Text(
-            pm5Connected ? 'Rower' : 'Rower --',
+            label,
             style: TextStyle(
               fontSize: 11,
-              color: pm5Connected
+              color: isConnected
                   ? RowCraftTheme.metricWhite
-                  : RowCraftTheme.subtleGrey,
+                  : dotColor,
             ),
           ),
+          if (!isConnected && !isReconnecting) ...[
+            const Spacer(),
+            GestureDetector(
+              onTap: () => ref.read(bleProvider.notifier).autoReconnect(),
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: RowCraftTheme.primaryBlue,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
