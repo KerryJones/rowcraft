@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Waves, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   oauth_failed: 'Sign-in failed. Please try again.',
@@ -60,7 +60,7 @@ function LoginPageInner() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
-            <Waves className="h-8 w-8 text-amber-500" />
+            <img src="/logo_gold.svg" alt="" className="h-8 w-auto" />
             RowCraft
           </Link>
           <p className="mt-2 text-sm text-gray-400">Sign in to your account</p>

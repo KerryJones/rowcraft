@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getUser } from '@/lib/supabase/server';
-import { Waves, Bluetooth, Wrench, Calendar, Gauge } from 'lucide-react';
+import { Bluetooth, Wrench, Calendar, Gauge } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'RowCraft — Structured Rowing Workouts',
@@ -41,7 +41,7 @@ export default async function LandingPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Hero */}
       <section className="flex flex-col items-center py-24 text-center">
-        <Waves className="mb-6 h-16 w-16 text-amber-500" />
+        <img src="/logo_gold.svg" alt="" className="mb-6 h-16 w-auto" fetchPriority="high" />
         <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl">
           RowCraft
         </h1>

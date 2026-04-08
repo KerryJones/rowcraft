@@ -1,13 +1,10 @@
 import Link from 'next/link';
-import { Waves } from 'lucide-react';
 
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-800">
-          <Waves className="h-8 w-8 text-gray-500" />
-        </div>
+        <img src="/logo_gold.svg" alt="" className="mx-auto mb-4 h-16 w-auto opacity-40" />
         <h2 className="mb-2 text-4xl font-bold text-white">404</h2>
         <p className="mb-6 text-sm text-gray-400">
           The page you&apos;re looking for doesn&apos;t exist.
