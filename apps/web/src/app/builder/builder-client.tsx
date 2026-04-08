@@ -293,7 +293,7 @@ export default function BuilderPage() {
             {/* Column headers (desktop only) */}
             <div className="hidden items-center pb-1 pl-3.5 text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:flex">
               <div
-                className="grid flex-1 items-center gap-1.5"
+                className="grid flex-1 items-center gap-3"
                 style={{ gridTemplateColumns: SEGMENT_GRID_COLS }}
               >
                 <span>#</span>

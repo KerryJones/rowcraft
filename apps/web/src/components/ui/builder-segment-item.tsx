@@ -67,7 +67,7 @@ export function BuilderSegmentItem({
 
 			{/* Editable fields — flex-wrap on mobile, CSS grid on sm+ */}
 			<div
-				className="flex flex-1 flex-wrap items-center gap-1.5 px-2.5 py-2 sm:grid sm:items-center"
+				className="flex flex-1 flex-wrap items-center gap-3 px-2.5 py-2 sm:grid sm:items-center"
 				style={{ gridTemplateColumns: SEGMENT_GRID_COLS }}
 			>
 				{/* # */}
@@ -126,7 +126,7 @@ export function BuilderSegmentItem({
 							className="w-14 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
 						/>
 						<span className={`whitespace-nowrap text-[11px] ${preview ? 'text-gray-500' : 'text-gray-700'}`}>
-							{preview ?? '—'}
+							{preview ? `${preview}/500m` : '—'}
 						</span>
 					</div>
 				</div>
