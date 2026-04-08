@@ -1,4 +1,4 @@
-package com.rowcraft.rowcraft
+package com.rowcraft.app
 
 import io.flutter.embedding.android.FlutterActivity
 
