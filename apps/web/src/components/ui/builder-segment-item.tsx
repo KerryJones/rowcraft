@@ -6,7 +6,13 @@ import { formatPace } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp, intensityToHrZone } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 
-export const SEGMENT_GRID_COLS = '2rem 4.5rem 1fr 1fr 3.5rem 5rem';
+export const SEGMENT_GRID_COLS = '2rem 4.5rem 8rem 9rem 3.5rem';
+
+const DURATION_UNIT_LABELS: Record<DurationType, string> = {
+	time: 's',
+	distance: 'm',
+	calories: 'cal',
+};
 
 const DURATION_TYPE_OPTIONS: { value: DurationType; label: string }[] = [
 	{ value: 'time', label: 'Time' },
@@ -84,35 +90,45 @@ export function BuilderSegmentItem({
 					</select>
 				</div>
 
-				{/* Value */}
+				{/* Value + unit suffix */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] text-gray-500 sm:hidden">Value</span>
-					<input
-						type="number"
-						min={1}
-						value={segment.duration_value}
-						onChange={(e) => updateField('duration_value', Math.max(1, parseInt(e.target.value, 10) || 1))}
-						aria-label={`Segment ${index + 1} duration value`}
-						className="w-16 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 sm:w-full"
-					/>
+					<div className="relative">
+						<input
+							type="number"
+							min={1}
+							value={segment.duration_value}
+							onChange={(e) => updateField('duration_value', Math.max(1, parseInt(e.target.value, 10) || 1))}
+							aria-label={`Segment ${index + 1} duration value`}
+							className="w-full rounded border border-gray-700 bg-gray-800/80 py-1 pl-1.5 pr-7 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+						/>
+						<span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-500">
+							{DURATION_UNIT_LABELS[segment.duration_type]}
+						</span>
+					</div>
 				</div>
 
-				{/* % FTP */}
+				{/* % FTP + inline pace */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] text-gray-500 sm:hidden">% FTP</span>
-					<input
-						type="number"
-						min={0}
-						max={200}
-						placeholder="—"
-						value={segment.target_intensity ?? ''}
-						onChange={(e) => {
-							const val = parseInt(e.target.value, 10);
-							updateField('target_intensity', !isNaN(val) && val > 0 ? val : null);
-						}}
-						aria-label={`Segment ${index + 1} intensity percent FTP`}
-						className="w-16 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 sm:w-full"
-					/>
+					<div className="flex items-center gap-1.5">
+						<input
+							type="number"
+							min={0}
+							max={200}
+							placeholder="—"
+							value={segment.target_intensity ?? ''}
+							onChange={(e) => {
+								const val = parseInt(e.target.value, 10);
+								updateField('target_intensity', !isNaN(val) && val > 0 ? val : null);
+							}}
+							aria-label={`Segment ${index + 1} intensity percent FTP`}
+							className="w-14 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+						/>
+						<span className={`whitespace-nowrap text-[11px] ${preview ? 'text-gray-500' : 'text-gray-700'}`}>
+							{preview ?? '—'}
+						</span>
+					</div>
 				</div>
 
 				{/* SPM */}
@@ -129,16 +145,8 @@ export function BuilderSegmentItem({
 							updateField('target_stroke_rate', !isNaN(val) && val > 0 ? val : null);
 						}}
 						aria-label={`Segment ${index + 1} stroke rate`}
-						className="w-12 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 sm:w-full"
+						className="w-full rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
 					/>
-				</div>
-
-				{/* Pace preview */}
-				<div className="flex flex-col gap-0.5">
-					<span className="text-[10px] text-gray-500 sm:hidden">Pace</span>
-					<span className={preview ? 'text-[11px] text-gray-500' : 'text-[11px] text-gray-700'}>
-						{preview ? `${preview}/500m` : '—'}
-					</span>
 				</div>
 			</div>
 

@@ -18,7 +18,7 @@ function makeKey(): string {
 }
 
 function makeDefaultSegment(lastIntensity: number | null): WorkoutSegment {
-  const intensity = lastIntensity ?? 90;
+  const intensity = lastIntensity ?? 75;
   return {
     duration_type: 'time',
     duration_value: 300,
@@ -301,7 +301,6 @@ export default function BuilderPage() {
                 <span>Value</span>
                 <span>% FTP</span>
                 <span>SPM</span>
-                <span>Pace</span>
               </div>
               {/* Spacer matching the action button panel (4 × 32px + 3 × 2px gaps + 4px pr-1) */}
               <div className="w-[138px] shrink-0" />
