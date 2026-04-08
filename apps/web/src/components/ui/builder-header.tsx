@@ -1,23 +1,12 @@
 'use client';
 
-import type { WorkoutType } from '@/lib/types';
-
-const WORKOUT_TYPES: { value: WorkoutType; label: string }[] = [
-  { value: 'single_time', label: 'Single Time' },
-  { value: 'single_distance', label: 'Single Distance' },
-  { value: 'intervals', label: 'Intervals' },
-  { value: 'variable_intervals', label: 'Variable Intervals' },
-];
-
 interface BuilderHeaderProps {
   title: string;
   description: string;
-  workoutType: WorkoutType;
   tags: string[];
   isPublic: boolean;
   onTitleChange: (title: string) => void;
   onDescriptionChange: (description: string) => void;
-  onWorkoutTypeChange: (type: WorkoutType) => void;
   onTagsChange: (tags: string[]) => void;
   onPublicChange: (isPublic: boolean) => void;
 }
@@ -25,12 +14,10 @@ interface BuilderHeaderProps {
 export function BuilderHeader({
   title,
   description,
-  workoutType,
   tags,
   isPublic,
   onTitleChange,
   onDescriptionChange,
-  onWorkoutTypeChange,
   onTagsChange,
   onPublicChange,
 }: BuilderHeaderProps) {
@@ -60,21 +47,7 @@ export function BuilderHeader({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {/* Workout Type */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-400">Workout Type</label>
-          <select
-            value={workoutType}
-            onChange={(e) => onWorkoutTypeChange(e.target.value as WorkoutType)}
-            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm text-white"
-          >
-            {WORKOUT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-        </div>
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Tags */}
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-400">Tags (comma separated)</label>

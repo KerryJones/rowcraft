@@ -1,5 +1,5 @@
-import type { WorkoutSegment } from '@/lib/types';
-import { DEFAULT_FTP_WATTS } from '../types';
+import type { WorkoutSegment, WorkoutType } from '@/lib/types';
+import { DEFAULT_FTP_WATTS, isRestSegment } from '../types';
 import { resolveIntensityToPace } from './ftp';
 
 /**
@@ -188,4 +188,32 @@ export function computeDominantZone(segments: WorkoutSegment[]): number | null {
 	}
 
 	return maxZone;
+}
+
+/**
+ * Infer workout type from segment structure.
+ * - 1 active segment + distance → single_distance
+ * - 1 active segment + time → single_time
+ * - Multiple identical active segments → intervals
+ * - Otherwise → variable_intervals
+ */
+export function inferWorkoutType(segments: WorkoutSegment[]): WorkoutType {
+	const activeSegs = segments.filter((s) => !isRestSegment(s));
+
+	if (activeSegs.length === 0) return 'single_time';
+
+	if (activeSegs.length === 1) {
+		return activeSegs[0].duration_type === 'distance' ? 'single_distance' : 'single_time';
+	}
+
+	const allIdentical = activeSegs.every((s) =>
+		s.duration_type === activeSegs[0].duration_type &&
+		s.duration_value === activeSegs[0].duration_value &&
+		s.target_intensity === activeSegs[0].target_intensity &&
+		s.target_stroke_rate === activeSegs[0].target_stroke_rate
+	);
+
+	if (allIdentical) return 'intervals';
+
+	return 'variable_intervals';
 }

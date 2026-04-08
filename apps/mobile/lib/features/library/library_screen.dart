@@ -23,7 +23,6 @@ class LibraryScreen extends ConsumerStatefulWidget {
 
 class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final _searchController = TextEditingController();
-  WorkoutType? _selectedType;
   DurationFilter? _selectedDuration;
   int? _selectedZone;
   LibrarySortOrder _sortOrder = LibrarySortOrder.newest;
@@ -31,7 +30,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   bool get _hasFilters =>
       _searchController.text.isNotEmpty ||
-      _selectedType != null ||
       _selectedDuration != null ||
       _selectedZone != null;
 
@@ -126,39 +124,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
-  void _showTypeFilter() {
-    _showFilterSheet(
-      title: 'Type',
-      options: [
-        (
-          label: 'Any',
-          selected: _selectedType == null,
-          onTap: () => setState(() => _selectedType = null),
-        ),
-        (
-          label: 'Distance',
-          selected: _selectedType == WorkoutType.singleDistance,
-          onTap: () => setState(() => _selectedType = WorkoutType.singleDistance),
-        ),
-        (
-          label: 'Time',
-          selected: _selectedType == WorkoutType.singleTime,
-          onTap: () => setState(() => _selectedType = WorkoutType.singleTime),
-        ),
-        (
-          label: 'Intervals',
-          selected: _selectedType == WorkoutType.intervals,
-          onTap: () => setState(() => _selectedType = WorkoutType.intervals),
-        ),
-        (
-          label: 'Variable',
-          selected: _selectedType == WorkoutType.variableIntervals,
-          onTap: () => setState(() => _selectedType = WorkoutType.variableIntervals),
-        ),
-      ],
-    );
-  }
-
   String _durationLabel() {
     return switch (_selectedDuration) {
       null => 'Duration',
@@ -173,22 +138,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     return 'Z$_selectedZone';
   }
 
-  String _typeLabel() {
-    return switch (_selectedType) {
-      null => 'Type',
-      WorkoutType.singleDistance => 'Distance',
-      WorkoutType.singleTime => 'Time',
-      WorkoutType.intervals => 'Intervals',
-      WorkoutType.variableIntervals => 'Variable',
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final workoutsAsync = ref.watch(filteredWorkoutsProvider((
       search: _searchController.text,
-      type: _selectedType,
+      type: null,
       tag: null,
       duration: _selectedDuration,
       hrZone: _selectedZone,
@@ -245,12 +200,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   label: _zoneLabel(),
                   active: _selectedZone != null,
                   onTap: _showZoneFilter,
-                )),
-                const SizedBox(width: 8),
-                Expanded(child: _FilterButton(
-                  label: _typeLabel(),
-                  active: _selectedType != null,
-                  onTap: _showTypeFilter,
                 )),
               ],
             ),

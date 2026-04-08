@@ -7,6 +7,7 @@ import {
 	expandSegments,
 	computeIntensity,
 	computeCumulativeMinutes,
+	inferWorkoutType,
 } from '../workout';
 import type { WorkoutSegment } from '../../types';
 
@@ -223,6 +224,62 @@ describe('computeIntensity', () => {
 		const easyOnly = computeIntensity([easy])!;
 		expect(mixed).toBeGreaterThan(easyOnly);
 		expect(mixed).toBeLessThan(1.0); // still mostly easy
+	});
+});
+
+describe('inferWorkoutType', () => {
+	it('returns single_time for empty segments', () => {
+		expect(inferWorkoutType([])).toBe('single_time');
+	});
+
+	it('returns single_time for all rest segments', () => {
+		const segments = [makeSegment({ target_intensity: null, target_stroke_rate: null })];
+		expect(inferWorkoutType(segments)).toBe('single_time');
+	});
+
+	it('returns single_distance for one distance segment', () => {
+		const segments = [
+			makeSegment({ duration_type: 'distance', duration_value: 2000, target_intensity: 80 }),
+		];
+		expect(inferWorkoutType(segments)).toBe('single_distance');
+	});
+
+	it('returns single_time for one time segment', () => {
+		const segments = [
+			makeSegment({ duration_type: 'time', duration_value: 1200, target_intensity: 75 }),
+		];
+		expect(inferWorkoutType(segments)).toBe('single_time');
+	});
+
+	it('returns single_distance for one distance segment with rest', () => {
+		const segments = [
+			makeSegment({ duration_type: 'time', duration_value: 60 }), // rest (no targets)
+			makeSegment({ duration_type: 'distance', duration_value: 5000, target_intensity: 70 }),
+			makeSegment({ duration_type: 'time', duration_value: 60 }), // rest
+		];
+		expect(inferWorkoutType(segments)).toBe('single_distance');
+	});
+
+	it('returns intervals for identical active segments', () => {
+		const work = makeSegment({ duration_type: 'distance', duration_value: 500, target_intensity: 95 });
+		const rest = makeSegment({ duration_type: 'time', duration_value: 60 });
+		expect(inferWorkoutType([work, rest, work, rest, work])).toBe('intervals');
+	});
+
+	it('returns variable_intervals for mixed active segments', () => {
+		const hard = makeSegment({ duration_type: 'time', duration_value: 120, target_intensity: 100 });
+		const easy = makeSegment({ duration_type: 'time', duration_value: 300, target_intensity: 65 });
+		expect(inferWorkoutType([hard, easy, hard, easy])).toBe('variable_intervals');
+	});
+
+	it('treats stroke-rate-only segments as active', () => {
+		const spmOnly = makeSegment({ target_intensity: null, target_stroke_rate: 24 });
+		expect(inferWorkoutType([spmOnly])).toBe('single_time');
+	});
+
+	it('counts stroke-rate-only segments toward interval detection', () => {
+		const spm = makeSegment({ target_stroke_rate: 24, duration_value: 300 });
+		expect(inferWorkoutType([spm, spm, spm])).toBe('intervals');
 	});
 });
 

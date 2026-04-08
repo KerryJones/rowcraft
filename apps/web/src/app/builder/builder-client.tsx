@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
-import type { Workout, WorkoutSegment, WorkoutType, Profile } from '@/lib/types';
+import type { Workout, WorkoutSegment, Profile } from '@/lib/types';
 import { normalizeWorkoutSegments } from '@/lib/types';
 import { intensityToHrZone } from '@/lib/utils/ftp';
 import { WorkoutGraph } from '@/components/workout-graph';
@@ -11,6 +11,7 @@ import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
 import { BuilderSegmentItem, SEGMENT_GRID_COLS } from '@/components/ui/builder-segment-item';
 import { validateWorkout } from '@/lib/utils/builder-validation';
+import { inferWorkoutType } from '@/lib/utils/workout';
 import { Plus, Save, Loader2, Dumbbell } from 'lucide-react';
 
 function makeKey(): string {
@@ -36,7 +37,6 @@ export default function BuilderPage() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [workoutType, setWorkoutType] = useState<WorkoutType>('intervals');
   const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(true);
   const [segments, setSegments] = useState<WorkoutSegment[]>([]);
@@ -92,7 +92,6 @@ export default function BuilderPage() {
         const w = data as Workout;
         setTitle(w.title);
         setDescription(w.description);
-        setWorkoutType(w.workout_type);
         setTags(w.tags);
         setIsPublic(w.is_public);
         const normalized = normalizeWorkoutSegments(w.segments);
@@ -190,7 +189,7 @@ export default function BuilderPage() {
       const payload = {
         title: title.trim(),
         description: description.trim(),
-        workout_type: workoutType,
+        workout_type: inferWorkoutType(normalizedSegments),
         segments: normalizedSegments,
         tags,
         is_public: isPublic,
@@ -251,12 +250,10 @@ export default function BuilderPage() {
         <BuilderHeader
           title={title}
           description={description}
-          workoutType={workoutType}
           tags={tags}
           isPublic={isPublic}
           onTitleChange={(v) => { setTitle(v); setHasEdited(true); }}
           onDescriptionChange={(v) => { setDescription(v); setHasEdited(true); }}
-          onWorkoutTypeChange={(v) => { setWorkoutType(v); setHasEdited(true); }}
           onTagsChange={(v) => { setTags(v); setHasEdited(true); }}
           onPublicChange={(v) => { setIsPublic(v); setHasEdited(true); }}
         />
