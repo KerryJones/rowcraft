@@ -6,7 +6,7 @@ export
 
 LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $$1}')
 LOCAL_SUPABASE_URL := http://$(LOCAL_IP):54321
-WEB_APP_URL ?= https://rowcraft.kerryjones.net
+WEB_APP_URL ?= https://rowcraft.app
 
 .PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds
 

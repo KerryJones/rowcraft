@@ -146,8 +146,8 @@ export default function TermsPage() {
           <h2 className="text-lg font-semibold text-white">14. Contact</h2>
           <p>
             If you have any questions about these Terms of Service, please contact us at{' '}
-            <a href="mailto:kerry@kerryjones.net" className="text-blue-400 hover:text-blue-300">
-              kerry@kerryjones.net
+            <a href="mailto:support@rowcraft.app" className="text-blue-400 hover:text-blue-300">
+              support@rowcraft.app
             </a>
             .
           </p>
