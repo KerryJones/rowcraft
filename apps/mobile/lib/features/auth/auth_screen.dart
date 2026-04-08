@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../app/theme.dart';
 import 'auth_provider.dart';
 
@@ -59,10 +61,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo / Title
-                const Icon(
-                  Icons.rowing,
-                  size: 64,
-                  color: RowCraftTheme.primaryBlue,
+                SvgPicture.asset(
+                  'assets/logo_gold.svg',
+                  height: 80,
                 ),
                 const SizedBox(height: 16),
                 Text(
