@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout.dart';
+import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
+import '../../utils/workout_utils.dart';
 import '../../widgets/ble_status_button.dart';
 import '../../widgets/wod_card.dart';
-import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
 import '../../widgets/workout_type_badge.dart';
 import '../plans/plans_provider.dart';
@@ -28,8 +29,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   LibrarySortOrder _sortOrder = LibrarySortOrder.newest;
   int _wodShuffleOffset = 0;
 
-  // Sort order is intentionally excluded: changing sort is not "filtering"
-  // and should not suppress the WOD hero card.
   bool get _hasFilters =>
       _searchController.text.isNotEmpty ||
       _selectedType != null ||
@@ -40,6 +39,148 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _showFilterSheet({
+    required String title,
+    required List<({String label, bool selected, VoidCallback onTap})> options,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(title, style: Theme.of(ctx).textTheme.titleMedium),
+            ),
+            ...options.map((opt) => ListTile(
+                  title: Text(opt.label),
+                  trailing: opt.selected
+                      ? const Icon(Icons.check, color: RowCraftTheme.primaryBlue)
+                      : null,
+                  onTap: () {
+                    opt.onTap();
+                    Navigator.pop(ctx);
+                  },
+                )),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDurationFilter() {
+    _showFilterSheet(
+      title: 'Duration',
+      options: [
+        (
+          label: 'Any',
+          selected: _selectedDuration == null,
+          onTap: () => setState(() => _selectedDuration = null),
+        ),
+        (
+          label: 'Under 30 min',
+          selected: _selectedDuration == DurationFilter.under30,
+          onTap: () => setState(() => _selectedDuration = DurationFilter.under30),
+        ),
+        (
+          label: '30–60 min',
+          selected: _selectedDuration == DurationFilter.from30to60,
+          onTap: () => setState(() => _selectedDuration = DurationFilter.from30to60),
+        ),
+        (
+          label: '60+ min',
+          selected: _selectedDuration == DurationFilter.over60,
+          onTap: () => setState(() => _selectedDuration = DurationFilter.over60),
+        ),
+      ],
+    );
+  }
+
+  void _showZoneFilter() {
+    _showFilterSheet(
+      title: 'Zone',
+      options: [
+        (
+          label: 'Any',
+          selected: _selectedZone == null,
+          onTap: () => setState(() => _selectedZone = null),
+        ),
+        for (final (z, name) in [
+          (1, 'Z1 — Recovery'),
+          (2, 'Z2 — Aerobic'),
+          (3, 'Z3 — Tempo'),
+          (4, 'Z4 — Threshold'),
+          (5, 'Z5 — VO2max'),
+        ])
+          (
+            label: name,
+            selected: _selectedZone == z,
+            onTap: () => setState(() => _selectedZone = z),
+          ),
+      ],
+    );
+  }
+
+  void _showTypeFilter() {
+    _showFilterSheet(
+      title: 'Type',
+      options: [
+        (
+          label: 'Any',
+          selected: _selectedType == null,
+          onTap: () => setState(() => _selectedType = null),
+        ),
+        (
+          label: 'Distance',
+          selected: _selectedType == WorkoutType.singleDistance,
+          onTap: () => setState(() => _selectedType = WorkoutType.singleDistance),
+        ),
+        (
+          label: 'Time',
+          selected: _selectedType == WorkoutType.singleTime,
+          onTap: () => setState(() => _selectedType = WorkoutType.singleTime),
+        ),
+        (
+          label: 'Intervals',
+          selected: _selectedType == WorkoutType.intervals,
+          onTap: () => setState(() => _selectedType = WorkoutType.intervals),
+        ),
+        (
+          label: 'Variable',
+          selected: _selectedType == WorkoutType.variableIntervals,
+          onTap: () => setState(() => _selectedType = WorkoutType.variableIntervals),
+        ),
+      ],
+    );
+  }
+
+  String _durationLabel() {
+    return switch (_selectedDuration) {
+      null => 'Duration',
+      DurationFilter.under30 => '<30m',
+      DurationFilter.from30to60 => '30–60m',
+      DurationFilter.over60 => '60m+',
+    };
+  }
+
+  String _zoneLabel() {
+    if (_selectedZone == null) return 'Zone';
+    return 'Z$_selectedZone';
+  }
+
+  String _typeLabel() {
+    return switch (_selectedType) {
+      null => 'Type',
+      WorkoutType.singleDistance => 'Distance',
+      WorkoutType.singleTime => 'Time',
+      WorkoutType.intervals => 'Intervals',
+      WorkoutType.variableIntervals => 'Variable',
+    };
   }
 
   @override
@@ -69,7 +210,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         children: [
           // Search bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -89,41 +230,33 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             ),
           ),
 
-          // Type + Duration chips
-          SizedBox(
-            height: 44,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+          // Filter dropdown buttons
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
               children: [
-                _buildTypeChip(null, 'All'),
-                _buildTypeChip(WorkoutType.singleDistance, 'Distance'),
-                _buildTypeChip(WorkoutType.singleTime, 'Time'),
-                const _ChipDivider(),
-                _buildDurationChip(DurationFilter.under30, '<30m'),
-                _buildDurationChip(DurationFilter.from30to60, '30–60m'),
-                _buildDurationChip(DurationFilter.over60, '60m+'),
+                Expanded(child: _FilterButton(
+                  label: _durationLabel(),
+                  active: _selectedDuration != null,
+                  onTap: _showDurationFilter,
+                )),
+                const SizedBox(width: 8),
+                Expanded(child: _FilterButton(
+                  label: _zoneLabel(),
+                  active: _selectedZone != null,
+                  onTap: _showZoneFilter,
+                )),
+                const SizedBox(width: 8),
+                Expanded(child: _FilterButton(
+                  label: _typeLabel(),
+                  active: _selectedType != null,
+                  onTap: _showTypeFilter,
+                )),
               ],
             ),
           ),
 
-          // Zone chips
-          SizedBox(
-            height: 40,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildZoneChip(1, 'Z1', RowCraftTheme.hrZone1),
-                _buildZoneChip(2, 'Z2', RowCraftTheme.hrZone2),
-                _buildZoneChip(3, 'Z3', RowCraftTheme.hrZone3),
-                _buildZoneChip(4, 'Z4', RowCraftTheme.hrZone4),
-                _buildZoneChip(5, 'Z5', RowCraftTheme.hrZone5),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
 
           // Workout list
           Expanded(
@@ -146,11 +279,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                             color: RowCraftTheme.subtleGrey,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Create your first workout to get started',
-                          style: theme.textTheme.bodySmall,
-                        ),
                       ],
                     ),
                   );
@@ -160,7 +288,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 final allWorkouts =
                     ref.watch(workoutLibraryProvider).valueOrNull ?? [];
 
-                // Build WOD pool: exclude tests and plan workouts
                 const wodExcludeTags = {'ftp', 'ramp', 'test'};
                 final plans =
                     ref.watch(trainingPlansProvider).valueOrNull ?? [];
@@ -183,7 +310,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   wodWorkout = wodPool[wodIdx];
                 }
 
-                // Exclude WOD from filtered list (keep if only 1 workout)
                 final wod = wodWorkout;
                 final displayWorkouts = wod != null && workouts.length > 1
                     ? workouts
@@ -201,7 +327,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     padding: const EdgeInsets.only(bottom: 80),
                     itemCount: displayWorkouts.length + (wod != null ? 1 : 0),
                     itemBuilder: (context, index) {
-                      // WOD card at position 0
                       if (wod != null && index == 0) {
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -251,68 +376,60 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       ),
     );
   }
-
-  Widget _buildTypeChip(WorkoutType? type, String label) {
-    final isSelected = _selectedType == type;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (_) {
-          setState(() => _selectedType = isSelected ? null : type);
-        },
-      ),
-    );
-  }
-
-  Widget _buildDurationChip(DurationFilter filter, String label) {
-    final isSelected = _selectedDuration == filter;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        onSelected: (_) {
-          setState(() => _selectedDuration = isSelected ? null : filter);
-        },
-      ),
-    );
-  }
-
-  Widget _buildZoneChip(int zone, String label, Color color) {
-    final isSelected = _selectedZone == zone;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: isSelected,
-        selectedColor: color.withValues(alpha: 0.25),
-        checkmarkColor: color,
-        side: BorderSide(
-          color: isSelected ? color : Colors.transparent,
-          width: 1.5,
-        ),
-        onSelected: (_) {
-          setState(() => _selectedZone = isSelected ? null : zone);
-        },
-      ),
-    );
-  }
 }
 
-/// A thin vertical divider for separating chip groups in a horizontal scroll.
-class _ChipDivider extends StatelessWidget {
-  const _ChipDivider();
+/// A compact dropdown-style filter button.
+class _FilterButton extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _FilterButton({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Container(
-        width: 1,
-        height: 28,
-        color: RowCraftTheme.subtleGrey.withValues(alpha: 0.3),
+    return Material(
+      color: active
+          ? RowCraftTheme.primaryBlue.withValues(alpha: 0.15)
+          : RowCraftTheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: active
+                  ? RowCraftTheme.primaryBlue
+                  : RowCraftTheme.subtleGrey.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: active ? RowCraftTheme.primaryBlue : Colors.white,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_drop_down,
+                size: 18,
+                color: active ? RowCraftTheme.primaryBlue : RowCraftTheme.subtleGrey,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -365,6 +482,7 @@ class _SortButton extends StatelessWidget {
   }
 }
 
+/// Workout card with duration as hero element.
 class _WorkoutCard extends StatelessWidget {
   final Workout workout;
 
@@ -373,6 +491,23 @@ class _WorkoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final totalDist = computeTotalDistance(workout.segments);
+    final totalTime = computeTotalTime(workout.segments);
+    final estimatedSecs = computeEstimatedTotalTime(workout.segments, kDefaultFtpWatts);
+    final dominantZone = computeDominantZone(workout.segments);
+
+    // Hero value: distance for distance workouts, time for everything else
+    final heroValue = workout.workoutType == WorkoutType.singleDistance
+        ? formatDistance(totalDist ?? 0)
+        : formatDuration(totalTime ?? estimatedSecs);
+
+    const zoneColors = {
+      1: RowCraftTheme.hrZone1,
+      2: RowCraftTheme.hrZone2,
+      3: RowCraftTheme.hrZone3,
+      4: RowCraftTheme.hrZone4,
+      5: RowCraftTheme.hrZone5,
+    };
 
     return Card(
       child: InkWell(
@@ -383,76 +518,109 @@ class _WorkoutCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Hero row: duration + type badge + zone
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: Text(
-                      workout.title,
-                      style: theme.textTheme.headlineSmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Text(
+                    heroValue,
+                    style: theme.textTheme.displaySmall,
                   ),
-                  DifficultyIndicator.fromSegments(
-                      segments: workout.segments, size: 14),
-                  const SizedBox(width: 8),
+                  const Spacer(),
                   WorkoutTypeBadge(type: workout.workoutType),
+                  if (dominantZone != null && zoneColors.containsKey(dominantZone)) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: zoneColors[dominantZone]!.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Z$dominantZone',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: zoneColors[dominantZone],
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-              if (workout.description.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  workout.description,
-                  style: theme.textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
               const SizedBox(height: 10),
 
               // Segment graph
-              WorkoutGraph(segments: workout.segments, height: 56),
+              WorkoutGraph(segments: workout.segments, height: 48),
 
               const SizedBox(height: 10),
+
+              // Title
+              Text(
+                workout.title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+
+              const SizedBox(height: 6),
+
+              // Metadata + tags
               Row(
                 children: [
-                  // Segment count
-                  const Icon(Icons.segment,
-                      size: 14, color: RowCraftTheme.subtleGrey),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${workout.segments.length} segments',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(width: 16),
-                  // Fork count
-                  if (workout.forkCount > 0) ...[
-                    const Icon(Icons.fork_right,
-                        size: 14, color: RowCraftTheme.subtleGrey),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${workout.forkCount}',
-                      style: theme.textTheme.bodySmall,
+                  // Tags
+                  Expanded(
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: workout.tags.take(3).map((tag) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: RowCraftTheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            tag,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: RowCraftTheme.subtleGrey,
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  ],
-                  const Spacer(),
+                  ),
+                  // Metadata
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.segment,
+                          size: 12, color: RowCraftTheme.subtleGrey),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${workout.segments.length}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                      ),
+                      if (workout.forkCount > 0) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.fork_right,
+                            size: 12, color: RowCraftTheme.subtleGrey),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${workout.forkCount}',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: RowCraftTheme.subtleGrey,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
-              // Tags
-              if (workout.tags.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: workout.tags.map((tag) {
-                    return Chip(
-                      label: Text(tag),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    );
-                  }).toList(),
-                ),
-              ],
             ],
           ),
         ),

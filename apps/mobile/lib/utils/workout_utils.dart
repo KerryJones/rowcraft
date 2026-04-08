@@ -172,6 +172,27 @@ String formatPace(int tenths) {
   return '$minutes:${secs.toString().padLeft(2, '0')}';
 }
 
+/// Compute the dominant HR zone (duration-weighted).
+/// Returns the zone number (1-5) with the most total duration, or null if no zones.
+int? computeDominantZone(List<WorkoutSegment> segments) {
+  final zoneDurations = <int, double>{};
+  for (final seg in segments) {
+    if (seg.targetHrZone == null) continue;
+    zoneDurations[seg.targetHrZone!] =
+        (zoneDurations[seg.targetHrZone!] ?? 0) + seg.durationValue;
+  }
+  if (zoneDurations.isEmpty) return null;
+  int? maxZone;
+  var maxDuration = 0.0;
+  for (final entry in zoneDurations.entries) {
+    if (entry.value > maxDuration) {
+      maxDuration = entry.value;
+      maxZone = entry.key;
+    }
+  }
+  return maxZone;
+}
+
 /// Format distance for display.
 /// e.g. 2000.0 → "2,000m", 500.0 → "500m"
 String formatDistance(double meters) {
