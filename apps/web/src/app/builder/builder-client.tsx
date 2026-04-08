@@ -9,7 +9,7 @@ import { intensityToHrZone } from '@/lib/utils/ftp';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
-import { BuilderSegmentItem } from '@/components/ui/builder-segment-item';
+import { BuilderSegmentItem, SEGMENT_GRID_COLS } from '@/components/ui/builder-segment-item';
 import { validateWorkout } from '@/lib/utils/builder-validation';
 import { Plus, Save, Loader2, Dumbbell } from 'lucide-react';
 
@@ -289,6 +289,24 @@ export default function BuilderPage() {
           {/* Segment list */}
           <div className="mb-4 space-y-1.5">
             <h2 className="mb-2 text-sm font-medium text-gray-400">Segments</h2>
+
+            {/* Column headers (desktop only) */}
+            <div className="hidden items-center pb-1 pl-3.5 text-[11px] font-medium uppercase tracking-wide text-gray-500 sm:flex">
+              <div
+                className="grid flex-1 items-center gap-1.5"
+                style={{ gridTemplateColumns: SEGMENT_GRID_COLS }}
+              >
+                <span>#</span>
+                <span>Type</span>
+                <span>Value</span>
+                <span>% FTP</span>
+                <span>SPM</span>
+                <span>Pace</span>
+              </div>
+              {/* Spacer matching the action button panel (4 × 32px + 3 × 2px gaps + 4px pr-1) */}
+              <div className="w-[138px] shrink-0" />
+            </div>
+
             {segments.map((seg, i) => (
               <BuilderSegmentItem
                 key={segmentKeys[i]}

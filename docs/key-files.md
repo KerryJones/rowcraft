@@ -25,8 +25,7 @@
 | `middleware.ts` | Auth token refresh on every request |
 | `instrumentation.ts` | Sentry server/edge initialization (Next.js instrumentation hook) |
 | `components/workout-graph.tsx` | Interactive workout visualization |
-| `components/ui/segment-editor.tsx` | Segment editor (pace, HR zones, cues) |
-| `components/ui/builder-segment-item.tsx` | Builder segment list row (colored bar, badges, move/duplicate actions) |
+| `components/ui/builder-segment-item.tsx` | Inline-editable builder segment row (CSS grid, color bar, duration/intensity/SPM inputs, pace preview, move/duplicate/remove actions) |
 | `components/ui/workout-card.tsx` | Workout card with MiniGraph |
 | `components/ui/segment-card.tsx` | Read-only segment display |
 | `components/ui/stats-bar.tsx` | Summary stats (time, distance, segments) |
