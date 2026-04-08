@@ -46,9 +46,6 @@ supabase/.branches/
 # Playwright MCP
 .playwright-mcp/
 
-# Screenshots (dev artifacts)
-*.png
-
 # Dev scripts
 apps/web/dev-verify.py
 apps/web/verify.sh
