@@ -165,3 +165,27 @@ export function estimateTotalMinutes(segments: WorkoutSegment[]): number {
 	const markers = computeCumulativeMinutes(segments);
 	return markers[markers.length - 1]?.minute ?? 0;
 }
+
+/**
+ * Compute the dominant HR zone (duration-weighted).
+ * Returns the zone number (1-5) with the most total duration, or null if no zones.
+ */
+export function computeDominantZone(segments: WorkoutSegment[]): number | null {
+	const zoneDurations: Record<number, number> = {};
+
+	for (const seg of segments) {
+		if (seg.target_hr_zone == null) continue;
+		zoneDurations[seg.target_hr_zone] = (zoneDurations[seg.target_hr_zone] ?? 0) + seg.duration_value;
+	}
+
+	let maxZone: number | null = null;
+	let maxDuration = 0;
+	for (const [zone, duration] of Object.entries(zoneDurations)) {
+		if (duration > maxDuration) {
+			maxDuration = duration;
+			maxZone = Number(zone);
+		}
+	}
+
+	return maxZone;
+}

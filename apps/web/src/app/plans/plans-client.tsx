@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import type { TrainingPlan, Difficulty } from '@/lib/types';
+import type { TrainingPlan } from '@/lib/types';
 import { PlanCard } from '@/components/ui/plan-card';
 import { Plus } from 'lucide-react';
-
-type DifficultyTab = 'all' | Difficulty;
 
 interface PlansClientProps {
   plans: TrainingPlan[];
@@ -16,22 +13,9 @@ interface PlansClientProps {
 
 export function PlansClient({ plans, userId }: PlansClientProps) {
   const router = useRouter();
-  const [tab, setTab] = useState<DifficultyTab>('all');
-
-  const filtered = useMemo(() => {
-    if (tab === 'all') return plans;
-    return plans.filter((p) => p.difficulty === tab);
-  }, [plans, tab]);
-
-  const tabs: { key: DifficultyTab; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'beginner', label: 'Beginner' },
-    { key: 'intermediate', label: 'Intermediate' },
-    { key: 'advanced', label: 'Advanced' },
-  ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-white">Training Plans</h1>
@@ -46,31 +30,14 @@ export function PlansClient({ plans, userId }: PlansClientProps) {
         )}
       </div>
 
-      {/* Difficulty tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg bg-gray-900 p-1">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              tab === t.key
-                ? 'bg-gray-800 text-white'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
       {/* Plan grid */}
-      {filtered.length === 0 ? (
+      {plans.length === 0 ? (
         <div className="py-16 text-center text-gray-500">
-          No training plans found for this difficulty level.
+          No training plans found.
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((plan) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {plans.map((plan) => (
             <PlanCard
               key={plan.id}
               plan={plan}

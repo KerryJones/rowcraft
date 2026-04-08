@@ -2,89 +2,72 @@
 
 import type { Workout } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
-import { formatWorkoutType, formatDuration, formatDistance, formatPace, formatDate, getWorkoutTypeBadgeColor } from '@/lib/utils/format';
-import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
-import { computeTotalTime, computeTotalDistance, computeSegmentCount } from '@/lib/utils/workout';
-import { GitFork } from 'lucide-react';
+import { formatWorkoutType, formatDuration, formatDistance, getWorkoutTypeBadgeColor } from '@/lib/utils/format';
+import { computeTotalTime, computeTotalDistance, computeSegmentCount, estimateTotalMinutes, computeDominantZone } from '@/lib/utils/workout';
+import { GitFork, Layers } from 'lucide-react';
 
-
+const ZONE_COLORS: Record<number, { text: string; bg: string }> = {
+  1: { text: 'text-green-400', bg: 'bg-green-500/20' },
+  2: { text: 'text-sky-400', bg: 'bg-sky-500/20' },
+  3: { text: 'text-amber-400', bg: 'bg-amber-500/20' },
+  4: { text: 'text-orange-400', bg: 'bg-orange-500/20' },
+  5: { text: 'text-red-400', bg: 'bg-red-500/20' },
+};
 
 interface WorkoutCardProps {
   workout: Workout;
-  authorName?: string;
   onClick: () => void;
   ftpWatts?: number | null;
 }
 
-export function WorkoutCard({ workout, authorName, onClick, ftpWatts }: WorkoutCardProps) {
-  const ftp = getEffectiveFtp(ftpWatts ?? null);
+export function WorkoutCard({ workout, onClick, ftpWatts }: WorkoutCardProps) {
   const totalTime = computeTotalTime(workout.segments);
   const totalDistance = computeTotalDistance(workout.segments);
   const segmentCount = computeSegmentCount(workout.segments);
+  const dominantZone = computeDominantZone(workout.segments);
+  const minutes = estimateTotalMinutes(workout.segments);
 
-  // Compute duration-weighted average pace from intensity targets
-  const workSegs = workout.segments.filter((s) => s.target_intensity != null);
-  const avgPace = (() => {
-    if (workSegs.length === 0) return null;
-    let totalWeight = 0;
-    let weightedSum = 0;
-    for (const s of workSegs) {
-      const weight = s.duration_value;
-      const pace = resolveIntensityToPace(s.target_intensity!, ftp);
-      weightedSum += pace * weight;
-      totalWeight += weight;
-    }
-    return totalWeight > 0 ? Math.round(weightedSum / totalWeight) : null;
-  })();
+  // Hero stat: show estimated minutes for time-based, distance for distance-based
+  const heroValue = totalDistance !== null
+    ? formatDistance(totalDistance)
+    : totalTime !== null
+      ? formatDuration(totalTime)
+      : `${Math.round(minutes)} min`;
 
-  const stats = [
-    totalTime !== null
-      ? { label: 'TIME', value: formatDuration(totalTime) }
-      : totalDistance !== null
-        ? { label: 'DISTANCE', value: formatDistance(totalDistance) }
-        : { label: 'TIME', value: '—' },
-    { label: 'SEGMENTS', value: String(segmentCount) },
-    { label: 'AVG PACE', value: avgPace !== null ? formatPace(avgPace) : '—' },
-    { label: 'FORKS', value: String(workout.fork_count) },
-  ];
+  const zoneStyle = dominantZone ? ZONE_COLORS[dominantZone] : null;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full cursor-pointer flex-col gap-3 rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors hover:border-gray-600"
+      className="flex w-full cursor-pointer flex-col gap-2.5 rounded-xl border border-gray-800 bg-gray-900 p-4 text-left transition-colors hover:border-gray-600"
     >
-      {/* Header row */}
+      {/* Top row: hero duration + type badge + zone */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getWorkoutTypeBadgeColor(workout.workout_type)}`}>
+        <span className="font-mono text-2xl font-bold text-white">
+          {heroValue}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getWorkoutTypeBadgeColor(workout.workout_type)}`}>
             {formatWorkoutType(workout.workout_type)}
           </span>
-          <h3 className="truncate font-bold text-white">{workout.title}</h3>
+          {zoneStyle && (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${zoneStyle.text} ${zoneStyle.bg}`}>
+              Z{dominantZone}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex gap-6">
-        {stats.map((stat) => (
-          <div key={stat.label} className="flex flex-col">
-            <span className="text-[10px] uppercase tracking-wider text-gray-500">{stat.label}</span>
-            <span className="font-mono text-lg font-bold text-white">{stat.value}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Graph */}
+      {/* Segment graph */}
       <div className="w-full">
         <WorkoutGraph segments={workout.segments} variant="card" ftpWatts={ftpWatts} />
       </div>
 
-      {/* Description */}
-      {workout.description && (
-        <p className="line-clamp-3 text-sm text-gray-400">{workout.description}</p>
-      )}
+      {/* Title */}
+      <h3 className="font-semibold text-white">{workout.title}</h3>
 
-      {/* Footer row */}
+      {/* Metadata + Tags row */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-wrap gap-1.5">
           {workout.tags.slice(0, 4).map((tag) => (
@@ -96,9 +79,18 @@ export function WorkoutCard({ workout, authorName, onClick, ftpWatts }: WorkoutC
             </span>
           ))}
         </div>
-        <span className="shrink-0 text-xs text-gray-500">
-          {authorName ? `by ${authorName} · ` : ''}{formatDate(workout.created_at)}
-        </span>
+        <div className="flex shrink-0 items-center gap-3 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <Layers className="h-3 w-3" />
+            {segmentCount}
+          </span>
+          {workout.fork_count > 0 && (
+            <span className="flex items-center gap-1">
+              <GitFork className="h-3 w-3" />
+              {workout.fork_count}
+            </span>
+          )}
+        </div>
       </div>
     </button>
   );

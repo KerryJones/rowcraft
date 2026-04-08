@@ -30,12 +30,14 @@ export function Header() {
   const navLinks = isLoggedIn
     ? [
         { href: '/workouts', label: 'Workouts' },
+        { href: '/workouts/wod', label: 'WOD' },
         { href: '/plans', label: 'Plans' },
         { href: '/builder', label: 'Builder' },
         { href: '/history', label: 'History' },
       ]
     : [
         { href: '/workouts', label: 'Workouts' },
+        { href: '/workouts/wod', label: 'WOD' },
         { href: '/plans', label: 'Plans' },
       ];
 
