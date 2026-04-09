@@ -51,6 +51,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 
 ### Tool Usage
 - Prefer Claude Code tools (Read, Edit, Write, Glob, Grep) over Bash equivalents.
+- **In worktree sessions, never use absolute paths that point at the main repo root.** The main repo root (`/Users/kerryjones/code/rowcraft/apps/...`) still exists alongside the worktree (`/Users/kerryjones/code/rowcraft/.claude/worktrees/<name>/apps/...`) and contains an identical tree, so an absolute path written from memory will silently edit the wrong copy — tests and analyze keep passing in the worktree because the worktree files are untouched. Use paths relative to the worktree cwd, or absolute paths anchored at the worktree root.
 - Allowlisted Bash: `make`, `git`, `flutter`, `npm`, `dart`, `npx`, `supabase`.
 - **No compound Bash commands** (pipes, `cd && ...`, chained commands) — they always prompt. Use `-C` flags (`git -C path`), `--prefix` (`npm --prefix path`), or separate Bash calls instead.
 - **No git commits/pushes without explicit user permission.** Read-only git (`diff`, `status`, `log`) is fine.
