@@ -43,6 +43,28 @@ final workoutLibraryProvider = FutureProvider<List<Workout>>((ref) async {
   return fresh ?? [];
 });
 
+/// Workouts for WOD selection. Network-first, falls back to cache on failure.
+/// Separate from workoutLibraryProvider so the WOD can wait for fresh data
+/// while the list renders instantly from cache.
+final wodWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
+  ref.watch(workoutRefreshTriggerProvider);
+  final repo = ref.watch(workoutRepositoryProvider);
+  // minInterval matches workoutLibraryProvider's background refresh window,
+  // so concurrent open of both providers does not duplicate network calls.
+  // refreshWorkouts already swallows network errors (returns null); the
+  // outer try/catch guards against local-cache read failures so the WOD
+  // slot never enters an error state — it degrades to an empty pool.
+  try {
+    final fresh = await repo.refreshWorkouts(
+      isPublic: true,
+      minInterval: const Duration(minutes: 5),
+    );
+    return fresh ?? await repo.getWorkouts(isPublic: true);
+  } catch (_) {
+    return const [];
+  }
+});
+
 /// Workouts authored by the current user.
 final myWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
   ref.watch(workoutRefreshTriggerProvider);

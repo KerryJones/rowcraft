@@ -149,6 +149,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       hrZone: _selectedZone,
       sort: _sortOrder,
     )));
+    // Watch at top of build so WOD fetch runs in parallel with the library
+    // list fetch, instead of only starting after the list resolves.
+    final wodAsync = ref.watch(wodWorkoutsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -233,9 +236,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   );
                 }
 
-                // WOD: only show when no filters active
-                final allWorkouts =
-                    ref.watch(workoutLibraryProvider).valueOrNull ?? [];
+                // WOD: only show when no filters active.
+                // wodAsync is watched at the top of build() so the fetch
+                // runs in parallel with the list fetch.
+                final showWodSlot = !_hasFilters;
 
                 const wodExcludeTags = {'ftp', 'ramp', 'test'};
                 final plans =
@@ -246,20 +250,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       for (final session in week.sessions)
                         session.workoutId,
                 };
-                final wodPool = allWorkouts
-                    .where((w) =>
-                        !w.tags.any(wodExcludeTags.contains) &&
-                        !planWorkoutIds.contains(w.id))
-                    .toList();
 
                 Workout? wodWorkout;
-                if (!_hasFilters && wodPool.isNotEmpty) {
-                  final wodIdx = getWodIndex(wodPool.length,
-                      shuffleOffset: _wodShuffleOffset);
-                  wodWorkout = wodPool[wodIdx];
+                // 0 means either loading (unknown) or empty pool — both cases
+                // guard `canShuffle` correctly because `wod` is null then.
+                int wodPoolLength = 0;
+                if (showWodSlot && wodAsync.hasValue) {
+                  final wodPool = wodAsync.value!
+                      .where((w) =>
+                          !w.tags.any(wodExcludeTags.contains) &&
+                          !planWorkoutIds.contains(w.id))
+                      .toList();
+                  wodPoolLength = wodPool.length;
+                  if (wodPool.isNotEmpty) {
+                    final wodIdx = getWodIndex(wodPool.length,
+                        shuffleOffset: _wodShuffleOffset);
+                    wodWorkout = wodPool[wodIdx];
+                  }
                 }
 
                 final wod = wodWorkout;
+                final showWodLoading = showWodSlot && wodAsync.isLoading;
+                final hasWodSlot = wod != null || showWodLoading;
                 final displayWorkouts = wod != null && workouts.length > 1
                     ? workouts
                         .where((w) => w.id != wod.id)
@@ -274,24 +286,26 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: displayWorkouts.length + (wod != null ? 1 : 0),
+                    itemCount: displayWorkouts.length + (hasWodSlot ? 1 : 0),
                     itemBuilder: (context, index) {
-                      if (wod != null && index == 0) {
+                      if (hasWodSlot && index == 0) {
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                          child: WodCard(
-                            workout: wod,
-                            canShuffle: wodPool.length > 1,
-                            onTap: () =>
-                                context.push('/workout/${wod.id}'),
-                            onShuffle: () {
-                              setState(() => _wodShuffleOffset++);
-                            },
-                          ),
+                          child: wod != null
+                              ? WodCard(
+                                  workout: wod,
+                                  canShuffle: wodPoolLength > 1,
+                                  onTap: () =>
+                                      context.push('/workout/${wod.id}'),
+                                  onShuffle: () {
+                                    setState(() => _wodShuffleOffset++);
+                                  },
+                                )
+                              : const _WodLoadingPlaceholder(),
                         );
                       }
                       final workoutIndex =
-                          wod != null ? index - 1 : index;
+                          hasWodSlot ? index - 1 : index;
                       return _WorkoutCard(
                           workout: displayWorkouts[workoutIndex]);
                     },
@@ -571,6 +585,41 @@ class _WorkoutCard extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Placeholder shown while the WOD is loading. Matches the approximate
+/// height of [WodCard] so the list doesn't shift when the WOD resolves.
+class _WodLoadingPlaceholder extends StatelessWidget {
+  const _WodLoadingPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Loading workout of the day',
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: RowCraftTheme.warningAmber.withValues(alpha: 0.3),
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              RowCraftTheme.warningAmber.withValues(alpha: 0.1),
+              RowCraftTheme.surfaceContainer,
+            ],
+          ),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            color: RowCraftTheme.warningAmber,
           ),
         ),
       ),
