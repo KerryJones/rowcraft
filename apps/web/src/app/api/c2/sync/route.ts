@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import truncate from 'lodash.truncate';
 import { createSupabaseServer } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
   // Fetch the workout result
   const { data: result, error: resultError } = await supabase
     .from('workout_results')
-    .select('*')
+    .select('*, workouts(title)')
     .eq('id', result_id)
     .eq('user_id', userId)
     .single();
@@ -104,6 +105,11 @@ export async function POST(request: NextRequest) {
   if (result.avg_heart_rate != null) {
     c2Payload.heart_rate = { average: result.avg_heart_rate };
   }
+  // C2 API doesn't document a max length for `comments`, so truncate conservatively.
+  const workoutTitle = (result.workouts as { title: string } | null)?.title;
+  c2Payload.comments = workoutTitle
+    ? truncate(`Rowed on RowCraft: ${workoutTitle}`, { length: 240, omission: '…' })
+    : 'Rowed on RowCraft';
 
   // Post result to C2 Logbook
   const c2Response = await fetch(

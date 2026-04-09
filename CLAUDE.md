@@ -29,6 +29,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 
 ### Dependencies
 - **Always upgrade, never downgrade** — when a dependency conflict or version mismatch occurs, upgrade to the latest stable version. Never downgrade a package or pin to an older version unless there is no other option, and then only with explicit user permission.
+- **Prefer stable libraries over rolling your own** — for solved problems (string truncation, date formatting, deep equality, debouncing, URL parsing, etc.), use a well-maintained library rather than writing it inline. Hand-rolled utilities accumulate bugs and edge cases that battle-tested libraries have already fixed.
 
 ### Code Style
 - **Dart**: Dart 3.3+, type hints, immutable models with `copyWith`, Riverpod for state
