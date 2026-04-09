@@ -239,13 +239,33 @@ class _SavedDeviceTile extends ConsumerWidget {
     final isConnecting = isPm5
         ? bleState.pm5ConnectionState == PM5ConnectionState.connecting
         : bleState.hrConnectionState == HrConnectionState.connecting;
+    // Per-device connection check: matches THIS specific saved device, not
+    // just "any device of this type". Drives the green border so that with
+    // multiple saved devices of the same type only the active one lights up.
+    final connectedDeviceId = isPm5
+        ? ref.watch(pm5ServiceProvider).connectedDeviceId
+        : ref.watch(hrServiceProvider).connectedDeviceId;
+    final isThisDeviceConnected =
+        isConnected && connectedDeviceId == device.deviceId;
     final isAvailable = discoveredDeviceIds.contains(device.deviceId);
     final showAvailability = bleState.hasScanned && !bleState.isScanning;
     final dimTile = !isConnected && !isConnecting && showAvailability && !isAvailable;
 
     return Opacity(
       opacity: dimTile ? 0.5 : 1.0,
-      child: Card(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: RowCraftTheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isThisDeviceConnected
+                ? RowCraftTheme.successGreen.withValues(alpha: 0.5)
+                : Colors.transparent,
+            width: 2,
+          ),
+        ),
         child: ListTile(
           leading: Icon(
             isPm5 ? Icons.rowing : Icons.favorite,
