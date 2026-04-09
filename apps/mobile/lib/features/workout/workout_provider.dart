@@ -295,9 +295,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       );
 
       _engineSub = _engine!.stateStream.listen((engineState) {
-        // Record start time on first transition out of ready/idle
+        // Record start time on first transition into an active phase
         if (_startedAt == null &&
-            engineState.phase == WorkoutPhase.rowing) {
+            (engineState.phase == WorkoutPhase.rowing ||
+             engineState.phase == WorkoutPhase.resting)) {
           _startedAt = DateTime.now();
         }
         state = state.copyWith(engineState: engineState);
@@ -366,8 +367,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     final data = state.pm5Data;
     final splits = _engine!.completedSplits;
 
-    // Don't save empty results (e.g. stopped during countdown or before rowing)
-    if (splits.isEmpty && data.distance == 0) return;
+    // Don't save empty results (stopped before any rowing at all)
+    if (splits.isEmpty && data.distance == 0 && data.elapsedTime == Duration.zero) return;
 
     // Use recorded start time (not back-computed from BLE frame)
     final startedAt = _startedAt ?? now.subtract(data.elapsedTime);

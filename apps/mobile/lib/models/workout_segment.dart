@@ -22,16 +22,19 @@ class WorkoutSegment {
   /// HR zone (1–5) derived from targetIntensity at build/save time. Read-only.
   final int? targetHrZone;
 
+  /// True when this segment is an explicit rest interval (set by the seed
+  /// builder, not inferred from targets). Free-row segments have no targets
+  /// but are NOT rest — they use WorkoutPhase.rowing like normal work segments.
+  final bool isRest;
+
   const WorkoutSegment({
     required this.durationType,
     required this.durationValue,
     this.targetIntensity,
     this.targetStrokeRate,
     this.targetHrZone,
+    this.isRest = false,
   });
-
-  /// True when this segment has no targets — pure rest/recovery time.
-  bool get isRest => targetIntensity == null && targetStrokeRate == null;
 
   WorkoutSegment copyWith({
     DurationType? durationType,
@@ -39,6 +42,7 @@ class WorkoutSegment {
     int? targetIntensity,
     int? targetStrokeRate,
     int? targetHrZone,
+    bool? isRest,
   }) {
     return WorkoutSegment(
       durationType: durationType ?? this.durationType,
@@ -46,6 +50,7 @@ class WorkoutSegment {
       targetIntensity: targetIntensity ?? this.targetIntensity,
       targetStrokeRate: targetStrokeRate ?? this.targetStrokeRate,
       targetHrZone: targetHrZone ?? this.targetHrZone,
+      isRest: isRest ?? this.isRest,
     );
   }
 
@@ -56,6 +61,7 @@ class WorkoutSegment {
       targetIntensity: (json['target_intensity'] as num?)?.toInt(),
       targetStrokeRate: (json['target_stroke_rate'] as num?)?.toInt(),
       targetHrZone: (json['target_hr_zone'] as num?)?.toInt(),
+      isRest: (json['is_rest'] as bool?) ?? false,
     );
   }
 
@@ -66,6 +72,7 @@ class WorkoutSegment {
       if (targetIntensity != null) 'target_intensity': targetIntensity,
       if (targetStrokeRate != null) 'target_stroke_rate': targetStrokeRate,
       if (targetHrZone != null) 'target_hr_zone': targetHrZone,
+      if (isRest) 'is_rest': true,
     };
   }
 
@@ -86,5 +93,5 @@ class WorkoutSegment {
 
   @override
   String toString() =>
-      'WorkoutSegment(${isRest ? 'rest' : 'active'}, $durationLabel)';
+      'WorkoutSegment(${isRest ? 'rest' : targetIntensity == null && targetStrokeRate == null ? 'free' : 'active'}, $durationLabel)';
 }

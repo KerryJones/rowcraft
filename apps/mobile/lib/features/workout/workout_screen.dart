@@ -1390,9 +1390,9 @@ class _WorkoutControls extends ConsumerWidget {
                 ],
               WorkoutPhase.finished => [
                   _ControlButton(
-                    icon: Icons.check,
-                    label: 'SAVE',
-                    color: RowCraftTheme.successGreen,
+                    icon: Icons.home,
+                    label: 'HOME',
+                    color: RowCraftTheme.subtleGrey,
                     onPressed: () => context.go('/'),
                     isLarge: true,
                   ),

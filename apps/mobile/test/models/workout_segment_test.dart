@@ -94,7 +94,7 @@ void main() {
       expect(json['target_hr_zone'], 4);
     });
 
-    test('omits null targets from JSON', () {
+    test('omits null targets and is_rest=false from JSON', () {
       const segment = WorkoutSegment(
         durationType: DurationType.time,
         durationValue: 120.0,
@@ -104,6 +104,18 @@ void main() {
       expect(json.containsKey('target_intensity'), isFalse);
       expect(json.containsKey('target_stroke_rate'), isFalse);
       expect(json.containsKey('target_hr_zone'), isFalse);
+      expect(json.containsKey('is_rest'), isFalse);
+    });
+
+    test('includes is_rest: true when explicit rest', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+        isRest: true,
+      );
+
+      final json = segment.toJson();
+      expect(json['is_rest'], isTrue);
     });
   });
 
@@ -146,10 +158,19 @@ void main() {
   });
 
   group('isRest', () {
-    test('segment with no targets is rest', () {
+    test('defaults to false (free-row segments with no targets are not rest)', () {
       const segment = WorkoutSegment(
         durationType: DurationType.time,
         durationValue: 60.0,
+      );
+      expect(segment.isRest, isFalse);
+    });
+
+    test('explicit isRest: true marks segment as rest', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+        isRest: true,
       );
       expect(segment.isRest, isTrue);
     });
@@ -224,6 +245,15 @@ void main() {
   });
 
   group('WorkoutSegment.copyWith', () {
+    test('can set isRest via copyWith', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+      );
+      expect(segment.copyWith(isRest: true).isRest, isTrue);
+      expect(segment.copyWith(isRest: false).isRest, isFalse);
+    });
+
     test('preserves unchanged fields', () {
       const original = WorkoutSegment(
         durationType: DurationType.distance,
@@ -254,10 +284,20 @@ void main() {
     expect(str, contains('1000m'));
   });
 
-  test('toString shows rest for segment without targets', () {
+  test('toString shows free for segment without targets but isRest=false', () {
     const segment = WorkoutSegment(
       durationType: DurationType.time,
       durationValue: 60.0,
+    );
+    final str = segment.toString();
+    expect(str, contains('free'));
+  });
+
+  test('toString shows rest for explicit rest segment', () {
+    const segment = WorkoutSegment(
+      durationType: DurationType.time,
+      durationValue: 60.0,
+      isRest: true,
     );
     final str = segment.toString();
     expect(str, contains('rest'));

@@ -16,12 +16,15 @@ export interface WorkoutSegment {
 	target_stroke_rate: number | null;
 	/** HR zone (1–5) derived from target_intensity at build/save time. Read-only. */
 	target_hr_zone: number | null;
+	/** True when this segment is an explicit rest interval. Free-row segments with no
+	 *  targets are NOT rest — only segments originating from an interval rest: block. */
+	is_rest?: boolean;
 	messages: SegmentMessage[] | null;
 }
 
-/** True when a segment has no targets — pure rest/recovery time. */
+/** True when a segment is an explicit rest interval. */
 export function isRestSegment(seg: WorkoutSegment): boolean {
-	return seg.target_intensity == null && seg.target_stroke_rate == null;
+	return seg.is_rest === true;
 }
 
 /** Default FTP for users who haven't taken an FTP test. 150W ≈ 2:14/500m. */

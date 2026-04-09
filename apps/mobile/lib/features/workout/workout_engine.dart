@@ -137,8 +137,12 @@ class WorkoutEngine {
 
   final _stateController = StreamController<WorkoutEngineState>.broadcast();
   StreamSubscription<PM5Data>? _pm5Subscription;
-  Timer? _countdownTimer;
   Timer? _restTimer;
+
+  /// Wall-clock ticker for rest segments — advances segmentProgress every
+  /// second independently of PM5 data (which may freeze when rower stops).
+  Timer? _restTickTimer;
+  DateTime? _restStartWallTime;
 
   /// The list of segments to execute.
   late final List<WorkoutSegment> _expandedSegments;
@@ -242,6 +246,8 @@ class WorkoutEngine {
     _pausedAt = DateTime.now();
     // Cancel timers so they don't fire while paused
     _restTimer?.cancel();
+    _restTickTimer?.cancel();
+    _restTickTimer = null;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
     _state = _state.copyWith(
@@ -269,15 +275,21 @@ class WorkoutEngine {
     if (restoredPhase == WorkoutPhase.rowing) {
       _lastActivityAt = null;
     }
-    // Restart rest timer if resuming into a rest segment
+    // Restart timers if resuming into a rest segment
     if (restoredPhase == WorkoutPhase.resting) {
       final segment = _state.currentSegment;
       if (segment != null && segment.durationType == DurationType.time) {
-        final elapsedRest =
-            (_state.latestData.elapsedTime - _segmentStartTime) -
-                _totalPausedDuration;
+        // Wall-clock elapsed = total since segment start minus all paused time.
+        // Use the tick-based elapsed from state (updated by _tickRest) if available,
+        // otherwise fall back to PM5 elapsed.
+        final wallElapsed = _restStartWallTime != null
+            ? (DateTime.now().difference(_restStartWallTime!) - _totalPausedDuration)
+            : ((_state.latestData.elapsedTime - _segmentStartTime) - _totalPausedDuration);
         final remainingSeconds =
-            segment.durationValue.toInt() - elapsedRest.inSeconds;
+            segment.durationValue.toInt() - wallElapsed.inSeconds;
+        // Restart the tick timer
+        _restTickTimer?.cancel();
+        _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickRest());
         if (remainingSeconds > 0) {
           _restTimer = Timer(
             Duration(seconds: remainingSeconds),
@@ -332,6 +344,26 @@ class WorkoutEngine {
     _emit();
   }
 
+  /// Tick handler called every second during a timed rest segment.
+  /// Advances segmentProgress from wall-clock time so the countdown display
+  /// updates even when the PM5 stops sending data.
+  void _tickRest() {
+    if (_state.phase != WorkoutPhase.resting) return;
+    final segment = _state.currentSegment;
+    if (segment == null || segment.durationType != DurationType.time) return;
+    if (_restStartWallTime == null) return;
+
+    final wallElapsed = DateTime.now().difference(_restStartWallTime!) - _totalPausedDuration;
+    final totalSec = segment.durationValue;
+    final elapsed = wallElapsed.isNegative ? Duration.zero : wallElapsed;
+    final progress = (elapsed.inSeconds / totalSec).clamp(0.0, 1.0);
+    _state = _state.copyWith(
+      segmentProgress: progress,
+      segmentElapsedTime: elapsed,
+    );
+    _emit();
+  }
+
   void _accumulatePausedDuration() {
     if (_pausedAt != null) {
       _totalPausedDuration += DateTime.now().difference(_pausedAt!);
@@ -382,6 +414,9 @@ class WorkoutEngine {
     _lastActivityAt = null;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
+    _restTickTimer?.cancel();
+    _restTickTimer = null;
+    _restStartWallTime = null;
     _pausedAt = null;
     _totalPausedDuration = Duration.zero;
     _prePausePhase = null;
@@ -404,8 +439,13 @@ class WorkoutEngine {
     _pm5Subscription?.cancel();
     _pm5Subscription = pm5Stream.listen(_onPM5Data);
 
-    // For rest segments with time duration, also set a timer
+    // For rest segments with time duration, use a wall-clock timer (authoritative
+    // advance) plus a 1Hz tick timer to keep the countdown display updated even
+    // when PM5 stops sending data while the rower rests.
     if (isRest && segment.durationType == DurationType.time) {
+      _restStartWallTime = DateTime.now();
+      _restTickTimer?.cancel();
+      _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickRest());
       _restTimer?.cancel();
       _restTimer = Timer(
         Duration(seconds: segment.durationValue.toInt()),
@@ -596,15 +636,17 @@ class WorkoutEngine {
   }
 
   void _finishCurrentSegment() {
-    if (_sampleCount == 0) return;
-
+    // Always record a split when advancing normally between segments so
+    // averages from zero-sample rest segments don't silently drop data.
+    // When sampleCount is 0 (e.g. resting with no PM5 frames), use safe
+    // zero/null values — a split with no data is better than a missing split.
     final split = SplitData(
       intervalIndex: _state.currentSegmentIndex,
       distance: _state.segmentElapsedDistance,
       time: _state.segmentElapsedTime,
-      avgPace: _paceSum ~/ _sampleCount,
-      avgStrokeRate: _strokeRateSum ~/ _sampleCount,
-      avgWatts: _wattsSum ~/ _sampleCount,
+      avgPace: _sampleCount > 0 ? _paceSum ~/ _sampleCount : 0,
+      avgStrokeRate: _sampleCount > 0 ? _strokeRateSum ~/ _sampleCount : 0,
+      avgWatts: _sampleCount > 0 ? _wattsSum ~/ _sampleCount : 0,
       avgHeartRate: _hrCount > 0 ? _hrSum ~/ _hrCount : null,
       calories: _state.latestData.calories - _segmentStartCalories,
     );
@@ -622,8 +664,9 @@ class WorkoutEngine {
 
   void _cleanup() {
     _pm5Subscription?.cancel();
-    _countdownTimer?.cancel();
     _restTimer?.cancel();
+    _restTickTimer?.cancel();
+    _restTickTimer = null;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
   }
