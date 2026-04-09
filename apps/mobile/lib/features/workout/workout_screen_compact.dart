@@ -1,0 +1,504 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../app/theme.dart';
+import '../../models/workout_segment.dart';
+import '../../services/local_db.dart';
+import '../../utils/pace_utils.dart';
+import 'workout_engine.dart';
+import 'workout_provider.dart';
+import 'workout_screen.dart';
+
+// ---------------------------------------------------------------------------
+// Display mode provider
+// ---------------------------------------------------------------------------
+
+enum WorkoutDisplayMode { classic, compact }
+
+const _displayModePrefKey = 'workout_display_mode';
+
+class WorkoutDisplayModeNotifier extends StateNotifier<WorkoutDisplayMode?> {
+  WorkoutDisplayModeNotifier(this._db) : super(null) {
+    _load();
+  }
+
+  final LocalDatabase _db;
+
+  Future<void> _load() async {
+    final raw = await _db.getSyncMeta(_displayModePrefKey);
+    if (raw == null) return; // leave null so UI can pick a size-aware default
+    state = WorkoutDisplayMode.values.firstWhere(
+      (m) => m.name == raw,
+      orElse: () => WorkoutDisplayMode.classic,
+    );
+  }
+
+  Future<void> setMode(WorkoutDisplayMode mode) async {
+    state = mode;
+    await _db.setSyncMeta(_displayModePrefKey, mode.name);
+  }
+}
+
+final workoutDisplayModeProvider =
+    StateNotifierProvider<WorkoutDisplayModeNotifier, WorkoutDisplayMode?>(
+        (ref) {
+  return WorkoutDisplayModeNotifier(ref.watch(localDatabaseProvider));
+});
+
+/// Resolve the effective display mode. If the user has no saved preference,
+/// default to compact on phones (shortest side < 600dp) and classic on tablets.
+WorkoutDisplayMode effectiveDisplayMode(
+  WorkoutDisplayMode? stored,
+  BuildContext context,
+) {
+  if (stored != null) return stored;
+  final shortest = MediaQuery.sizeOf(context).shortestSide;
+  return shortest < 600 ? WorkoutDisplayMode.compact : WorkoutDisplayMode.classic;
+}
+
+// ---------------------------------------------------------------------------
+// Compact body
+// ---------------------------------------------------------------------------
+
+class WorkoutScreenCompactBody extends ConsumerStatefulWidget {
+  final WorkoutSessionState session;
+  final VoidCallback onStart;
+  final VoidCallback onPause;
+  final VoidCallback onResume;
+  final VoidCallback onStop;
+  final bool isLocked;
+
+  const WorkoutScreenCompactBody({
+    super.key,
+    required this.session,
+    required this.onStart,
+    required this.onPause,
+    required this.onResume,
+    required this.onStop,
+    required this.isLocked,
+  });
+
+  @override
+  ConsumerState<WorkoutScreenCompactBody> createState() =>
+      _WorkoutScreenCompactBodyState();
+}
+
+class _WorkoutScreenCompactBodyState
+    extends ConsumerState<WorkoutScreenCompactBody> {
+  bool _segmentCountUp = false;
+  bool _totalShowRemaining = false;
+  bool _paceShowAvg = false;
+  bool _hrShowAvg = false;
+  bool _calShowDistance = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final session = widget.session;
+    final engineState = session.engineState;
+
+    return Column(
+      children: [
+        const BleStatusBar(),
+        // Top half: 3x2 stat grid
+        Expanded(
+          flex: 5,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SegmentTile(
+                          session: session,
+                          countUp: _segmentCountUp,
+                          onTap: () => setState(
+                              () => _segmentCountUp = !_segmentCountUp),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _TotalTile(
+                          session: session,
+                          showRemaining: _totalShowRemaining,
+                          onTap: () => setState(
+                              () => _totalShowRemaining = !_totalShowRemaining),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _TargetPaceTile(
+                          session: session,
+                          showAvg: _paceShowAvg,
+                          onTap: () =>
+                              setState(() => _paceShowAvg = !_paceShowAvg),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: _TargetSpmTile(session: session)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _HrTile(
+                          session: session,
+                          showAvg: _hrShowAvg,
+                          onTap: () =>
+                              setState(() => _hrShowAvg = !_hrShowAvg),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _CaloriesTile(
+                          session: session,
+                          showDistance: _calShowDistance,
+                          onTap: () => setState(
+                              () => _calShowDistance = !_calShowDistance),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Bottom half: existing hero visuals + segment graph
+        Expanded(
+          flex: 5,
+          child: Column(
+            children: [
+              Expanded(child: HeroSection(session: session)),
+              if (session.expandedSegments.isNotEmpty)
+                WorkoutProfileGraph(session: session),
+            ],
+          ),
+        ),
+
+        // Controls
+        IgnorePointer(
+          ignoring: widget.isLocked,
+          child: Opacity(
+            opacity: widget.isLocked ? 0.4 : 1.0,
+            child: WorkoutControls(
+              phase: engineState.phase,
+              onStart: widget.onStart,
+              onPause: widget.onPause,
+              onResume: widget.onResume,
+              onStop: widget.onStop,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stat tiles
+// ---------------------------------------------------------------------------
+
+class _StatTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const _StatTile({
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: RowCraftTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: RowCraftTheme.subtleGrey,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              if (trailing != null) ...[
+                const Spacer(),
+                trailing!,
+              ],
+            ],
+          ),
+          const SizedBox(height: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 40,
+                fontWeight: FontWeight.w700,
+                color: valueColor ?? RowCraftTheme.metricWhite,
+                height: 1.0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: content,
+    );
+  }
+}
+
+class _SegmentTile extends StatelessWidget {
+  final WorkoutSessionState session;
+  final bool countUp;
+  final VoidCallback onTap;
+
+  const _SegmentTile({
+    required this.session,
+    required this.countUp,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final engineState = session.engineState;
+    final segment = engineState.currentSegment ??
+        session.expandedSegments.firstOrNull;
+    if (segment == null) {
+      return const _StatTile(label: 'SEGMENT', value: '--:--');
+    }
+
+    final label = countUp ? 'SEGMENT ↑' : 'SEGMENT';
+    final value = countUp
+        ? _elapsedSegmentLabel(engineState)
+        : remainingSegmentLabel(engineState);
+
+    final total = session.expandedSegments.length;
+    final current = (engineState.currentSegmentIndex + 1).clamp(1, total);
+    return _StatTile(
+      label: label,
+      value: value,
+      onTap: onTap,
+      trailing: Text(
+        '$current/$total',
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: RowCraftTheme.subtleGrey,
+        ),
+      ),
+    );
+  }
+}
+
+String _elapsedSegmentLabel(WorkoutEngineState state) {
+  final segment = state.currentSegment;
+  if (segment == null) return '0:00';
+  switch (segment.durationType) {
+    case DurationType.time:
+      final totalSec = segment.durationValue.toInt();
+      final elapsed =
+          (totalSec * state.segmentProgress).round().clamp(0, totalSec);
+      final m = elapsed ~/ 60;
+      final s = elapsed % 60;
+      return '$m:${s.toString().padLeft(2, '0')}';
+    case DurationType.distance:
+      return '${state.segmentElapsedDistance.toInt()}m';
+    case DurationType.calories:
+      return '${state.segmentElapsedCalories.round()}cal';
+  }
+}
+
+class _TotalTile extends StatelessWidget {
+  final WorkoutSessionState session;
+  final bool showRemaining;
+  final VoidCallback onTap;
+
+  const _TotalTile({
+    required this.session,
+    required this.showRemaining,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = showRemaining ? 'REMAINING' : 'TOTAL';
+    final value = showRemaining
+        ? remainingWorkoutLabel(session)
+        : session.pm5Data.elapsedFormatted;
+    return _StatTile(label: label, value: value, onTap: onTap);
+  }
+}
+
+class _TargetPaceTile extends StatelessWidget {
+  final WorkoutSessionState session;
+  final bool showAvg;
+  final VoidCallback onTap;
+
+  const _TargetPaceTile({
+    required this.session,
+    required this.showAvg,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final segment = session.engineState.currentSegment ??
+        session.expandedSegments.firstOrNull;
+    final hasTarget = segment?.targetIntensity != null;
+
+    if (showAvg) {
+      final avgPace = session.engineState.avgPace;
+      return _StatTile(
+        label: 'AVG PACE',
+        value: avgPace > 0 ? formatPaceTenths(avgPace.toDouble()) : '--:--',
+        onTap: onTap,
+      );
+    }
+
+    final value = hasTarget
+        ? formatPaceTenths(
+            resolveIntensityToPace(
+              segment!.targetIntensity!,
+              session.ftpWatts,
+            ).toDouble(),
+          )
+        : '--:--';
+    return _StatTile(
+      label: 'TARGET PACE',
+      value: value,
+      valueColor: hasTarget ? RowCraftTheme.successGreen : null,
+      onTap: onTap,
+    );
+  }
+}
+
+class _TargetSpmTile extends StatelessWidget {
+  final WorkoutSessionState session;
+
+  const _TargetSpmTile({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final segment = session.engineState.currentSegment ??
+        session.expandedSegments.firstOrNull;
+    final target = segment?.targetStrokeRate;
+    return _StatTile(
+      label: 'TARGET SPM',
+      value: target != null ? '$target' : '--',
+      valueColor: target != null ? RowCraftTheme.successGreen : null,
+    );
+  }
+}
+
+class _HrTile extends StatelessWidget {
+  final WorkoutSessionState session;
+  final bool showAvg;
+  final VoidCallback onTap;
+
+  const _HrTile({
+    required this.session,
+    required this.showAvg,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (showAvg) {
+      final avgHr = session.engineState.avgHeartRate;
+      return _StatTile(
+        label: 'AVG HR',
+        value: (avgHr != null && avgHr > 0) ? '$avgHr' : '--',
+        onTap: onTap,
+      );
+    }
+
+    final hr = session.pm5Data.heartRate;
+    final hasHr = hr != null && hr > 0;
+    Color? valueColor;
+    Widget? trailing;
+    if (hasHr) {
+      final segment = session.engineState.currentSegment;
+      final zone = segment?.targetHrZone ??
+          estimateHrZone(hr, maxHr: session.maxHeartRate ?? 190);
+      final info = hrZoneInfo(zone);
+      valueColor = info.color;
+      trailing = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+        decoration: BoxDecoration(
+          color: info.color.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          'Z$zone',
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: info.color,
+          ),
+        ),
+      );
+    }
+    return _StatTile(
+      label: 'HR',
+      value: hasHr ? '$hr' : '--',
+      valueColor: valueColor,
+      trailing: trailing,
+      onTap: onTap,
+    );
+  }
+}
+
+class _CaloriesTile extends StatelessWidget {
+  final WorkoutSessionState session;
+  final bool showDistance;
+  final VoidCallback onTap;
+
+  const _CaloriesTile({
+    required this.session,
+    required this.showDistance,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final label = showDistance ? 'DISTANCE' : 'CALORIES';
+    final value = showDistance
+        ? session.pm5Data.distanceFormatted
+        : '${session.pm5Data.calories}';
+    return _StatTile(label: label, value: value, onTap: onTap);
+  }
+}

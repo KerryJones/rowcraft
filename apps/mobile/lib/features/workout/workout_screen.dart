@@ -16,6 +16,7 @@ import 'ftp_result_dialog.dart';
 import 'rowing_animation.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
+import 'workout_screen_compact.dart';
 import 'workout_summary_screen.dart';
 
 // ---------------------------------------------------------------------------
@@ -24,7 +25,7 @@ import 'workout_summary_screen.dart';
 
 
 /// Format pace tenths to M:SS
-String _formatPace(double tenths) {
+String formatPaceTenths(double tenths) {
   final total = tenths.toInt();
   if (total == 0) return '--:--';
   final m = total ~/ 600;
@@ -33,7 +34,7 @@ String _formatPace(double tenths) {
 }
 
 /// HR zone info: name, label, color.
-({String name, String label, Color color}) _hrZoneInfo(int zone) {
+({String name, String label, Color color}) hrZoneInfo(int zone) {
   return switch (zone) {
     1 => (name: 'ZONE 1', label: 'RECOVERY', color: RowCraftTheme.hrZone1),
     2 => (name: 'ZONE 2', label: 'ENDURANCE', color: RowCraftTheme.hrZone2),
@@ -51,8 +52,36 @@ String _formatPace(double tenths) {
   return (targetPace - tolerance, targetPace + tolerance);
 }
 
+/// Remaining workout time, formatted M:SS. Sums per-segment effective
+/// durations across the unfinished portion of the workout.
+String remainingWorkoutLabel(WorkoutSessionState session) {
+  final segments = session.expandedSegments;
+  if (segments.isEmpty) return '--:--';
+
+  final ftpWatts = session.ftpWatts;
+  final durations =
+      segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
+  final totalDuration = durations.fold<double>(0, (a, b) => a + b);
+  if (totalDuration <= 0) return '--:--';
+
+  final currentIndex = session.engineState.currentSegmentIndex;
+  var elapsed = 0.0;
+  for (var i = 0; i < currentIndex && i < durations.length; i++) {
+    elapsed += durations[i];
+  }
+  if (currentIndex < durations.length) {
+    elapsed += session.engineState.segmentProgress * durations[currentIndex];
+  }
+
+  final remainingSec =
+      ((totalDuration - elapsed).clamp(0, totalDuration)).round();
+  final m = remainingSec ~/ 60;
+  final s = remainingSec % 60;
+  return '$m:${s.toString().padLeft(2, '0')}';
+}
+
 /// HR zone estimate from BPM using percentage of max heart rate.
-int _estimateHrZone(int bpm, {int maxHr = 190}) {
+int estimateHrZone(int bpm, {int maxHr = 190}) {
   if (bpm < (maxHr * 0.6).round()) return 1;
   if (bpm < (maxHr * 0.7).round()) return 2;
   if (bpm < (maxHr * 0.8).round()) return 3;
@@ -181,6 +210,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         engineState.phase == WorkoutPhase.resting ||
         engineState.phase == WorkoutPhase.paused;
 
+    final storedDisplayMode = ref.watch(workoutDisplayModeProvider);
+    final displayMode = effectiveDisplayMode(storedDisplayMode, context);
+    final isCompactMode = displayMode == WorkoutDisplayMode.compact;
+
     return Scaffold(
       backgroundColor: RowCraftTheme.surfaceDark,
       appBar: AppBar(
@@ -193,6 +226,25 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         actions: [
           if (engineState.phase != WorkoutPhase.idle)
             _PhaseIndicator(phase: engineState.phase),
+          IconButton(
+            icon: Icon(
+              isCompactMode
+                  ? Icons.view_agenda_outlined
+                  : Icons.dashboard_outlined,
+              size: 20,
+              color: RowCraftTheme.subtleGrey,
+            ),
+            tooltip: isCompactMode ? 'Classic layout' : 'Compact layout',
+            onPressed: () {
+              ref.read(workoutDisplayModeProvider.notifier).setMode(
+                    isCompactMode
+                        ? WorkoutDisplayMode.classic
+                        : WorkoutDisplayMode.compact,
+                  );
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 40),
+          ),
           if (isActive)
             IconButton(
               icon: Icon(
@@ -215,20 +267,36 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             : Stack(
           children: [
             // Main layout
-            Column(
+            if (isCompactMode)
+              WorkoutScreenCompactBody(
+                session: session,
+                isLocked: _isLocked,
+                onStart: () =>
+                    ref.read(workoutSessionProvider.notifier).start(),
+                onPause: () =>
+                    ref.read(workoutSessionProvider.notifier).pause(),
+                onResume: () =>
+                    ref.read(workoutSessionProvider.notifier).resume(),
+                onStop: () => _confirmStop(
+                  context,
+                  () => ref.read(workoutSessionProvider.notifier).stop(),
+                ),
+              )
+            else
+              Column(
               children: [
                 // BLE status
-                const _BleStatusBar(),
+                const BleStatusBar(),
 
                 // Overall stats (time, distance, calories)
                 _OverallStatsBar(session: session),
 
                 // Workout profile graph
                 if (session.expandedSegments.isNotEmpty)
-                  _WorkoutProfileGraph(session: session),
+                  WorkoutProfileGraph(session: session),
 
                 // Hero section (pace, guide bar, stroke rate)
-                Expanded(child: _HeroSection(session: session)),
+                Expanded(child: HeroSection(session: session)),
 
                 // Current segment (merged target + progress)
                 _CurrentSegment(session: session),
@@ -241,7 +309,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                   ignoring: _isLocked,
                   child: Opacity(
                     opacity: _isLocked ? 0.4 : 1.0,
-                    child: _WorkoutControls(
+                    child: WorkoutControls(
                       phase: engineState.phase,
                       onStart: () =>
                           ref.read(workoutSessionProvider.notifier).start(),
@@ -333,8 +401,8 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 // BLE Status Bar (28px) — PM5 connection only
 // ---------------------------------------------------------------------------
 
-class _BleStatusBar extends ConsumerWidget {
-  const _BleStatusBar();
+class BleStatusBar extends ConsumerWidget {
+  const BleStatusBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -447,29 +515,7 @@ class _OverallStatsBar extends StatelessWidget {
     );
   }
 
-  String _remainingWorkout() {
-    final segments = session.expandedSegments;
-    if (segments.isEmpty) return '--:--';
-
-    final ftpWatts = session.ftpWatts;
-    final durations = segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
-    final totalDuration = durations.fold<double>(0, (a, b) => a + b);
-    if (totalDuration <= 0) return '--:--';
-
-    final currentIndex = session.engineState.currentSegmentIndex;
-    var elapsed = 0.0;
-    for (var i = 0; i < currentIndex && i < durations.length; i++) {
-      elapsed += durations[i];
-    }
-    if (currentIndex < durations.length) {
-      elapsed += session.engineState.segmentProgress * durations[currentIndex];
-    }
-
-    final remainingSec = ((totalDuration - elapsed).clamp(0, totalDuration)).round();
-    final m = remainingSec ~/ 60;
-    final s = remainingSec % 60;
-    return '$m:${s.toString().padLeft(2, '0')}';
-  }
+  String _remainingWorkout() => remainingWorkoutLabel(session);
 
   Widget _stat(BuildContext context, String label, String value) {
     return Expanded(
@@ -503,10 +549,10 @@ class _OverallStatsBar extends StatelessWidget {
 // Workout Profile Graph (64px) — CustomPaint
 // ---------------------------------------------------------------------------
 
-class _WorkoutProfileGraph extends StatelessWidget {
+class WorkoutProfileGraph extends StatelessWidget {
   final WorkoutSessionState session;
 
-  const _WorkoutProfileGraph({required this.session});
+  const WorkoutProfileGraph({super.key, required this.session});
 
   @override
   Widget build(BuildContext context) {
@@ -670,7 +716,7 @@ class _WorkoutProfilePainter extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 /// Remaining label for segment countdown.
-String _remainingLabel(WorkoutEngineState state) {
+String remainingSegmentLabel(WorkoutEngineState state) {
   final segment = state.currentSegment;
   if (segment == null) return '';
 
@@ -760,7 +806,7 @@ class _CurrentSegment extends StatelessWidget {
               const SizedBox(width: 8),
               if (isActive)
                 Text(
-                  _remainingLabel(engineState),
+                  remainingSegmentLabel(engineState),
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -785,7 +831,7 @@ class _CurrentSegment extends StatelessWidget {
               children: [
                 if (hasPaceTarget) ...[
                   Text(
-                    _formatPace(resolveIntensityToPace(
+                    formatPaceTenths(resolveIntensityToPace(
                       segment.targetIntensity!,
                       session.ftpWatts,
                     ).toDouble()),
@@ -820,9 +866,9 @@ class _CurrentSegment extends StatelessWidget {
                   Builder(builder: (_) {
                     final hr = data.heartRate!;
                     final zone = segment.targetHrZone ??
-                        _estimateHrZone(hr,
+                        estimateHrZone(hr,
                             maxHr: session.maxHeartRate ?? 190);
-                    final info = _hrZoneInfo(zone);
+                    final info = hrZoneInfo(zone);
                     final isEstimated = segment.targetHrZone == null;
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -871,10 +917,10 @@ class _CurrentSegment extends StatelessWidget {
 // Hero Section — pace, guide bar, stroke rate
 // ---------------------------------------------------------------------------
 
-class _HeroSection extends StatelessWidget {
+class HeroSection extends StatelessWidget {
   final WorkoutSessionState session;
 
-  const _HeroSection({required this.session});
+  const HeroSection({super.key, required this.session});
 
   @override
   Widget build(BuildContext context) {
@@ -1247,7 +1293,7 @@ class _UpNextPreview extends StatelessWidget {
           const SizedBox(width: 10),
           if (next.targetIntensity != null)
             Text(
-              '${_formatPace(resolveIntensityToPace(next.targetIntensity!, session.ftpWatts).toDouble())} /500',
+              '${formatPaceTenths(resolveIntensityToPace(next.targetIntensity!, session.ftpWatts).toDouble())} /500',
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -1295,14 +1341,15 @@ class _UpNextPreview extends StatelessWidget {
 // Workout Controls (80px)
 // ---------------------------------------------------------------------------
 
-class _WorkoutControls extends ConsumerWidget {
+class WorkoutControls extends ConsumerWidget {
   final WorkoutPhase phase;
   final VoidCallback onStart;
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onStop;
 
-  const _WorkoutControls({
+  const WorkoutControls({
+    super.key,
     required this.phase,
     required this.onStart,
     required this.onPause,
