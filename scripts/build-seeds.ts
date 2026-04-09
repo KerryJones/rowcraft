@@ -64,6 +64,7 @@ interface DbSegment {
   target_intensity: number | null;
   target_stroke_rate: number | null;
   target_hr_zone: number | null;
+  is_rest?: boolean;
   messages?: DbMessage[] | null;
 }
 
@@ -175,7 +176,7 @@ function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
     if (isIntervalSegment(seg)) {
       if (!seg.reps || !seg.work) throw new Error('interval segment requires reps and work');
       const workSeg = buildDbSegment(seg.work);
-      const restSeg = seg.rest ? buildDbSegment({ duration: seg.rest.duration }) : null;
+      const restSeg = seg.rest ? { ...buildDbSegment({ duration: seg.rest.duration }), is_rest: true } : null;
 
       for (let i = 0; i < seg.reps; i++) {
         result.push({ ...workSeg });

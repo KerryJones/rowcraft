@@ -228,6 +228,7 @@ void main() {
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 1,
+            isRest: true,
           ),
           const WorkoutSegment(
             durationType: DurationType.distance,
@@ -263,6 +264,65 @@ void main() {
       // Wait for rest to finish (1 second)
       await Future.delayed(const Duration(seconds: 2));
       expect(phases, contains(WorkoutPhase.rowing));
+    });
+
+    test('rest countdown advances via wall-clock without PM5 frames', () async {
+      // Bug fix: rest progress must tick even when PM5 stops sending data
+      // (rower stops → PM5 auto-pauses its internal clock).
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 50,
+            targetIntensity: 80,
+          ),
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 5,
+            isRest: true,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Trigger end of work segment — no further PM5 frames after this
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 15),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 30,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(engine.currentState.phase, WorkoutPhase.resting);
+
+      // Wait 2 seconds with no PM5 data — tick timer should advance progress
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Progress should be ~40% (2/5s), definitely > 0
+      expect(engine.currentState.segmentProgress, greaterThan(0.1));
+      expect(engine.currentState.phase, WorkoutPhase.resting);
+
+      // Pause — progress should stop advancing
+      engine.pause();
+      final progressAtPause = engine.currentState.segmentProgress;
+      await Future.delayed(const Duration(seconds: 1));
+      expect(engine.currentState.segmentProgress, closeTo(progressAtPause, 0.05));
+
+      // Resume — progress should continue
+      engine.resume();
+      await Future.delayed(const Duration(seconds: 1));
+      expect(
+        engine.currentState.segmentProgress,
+        greaterThan(progressAtPause + 0.05),
+      );
     });
 
     test('collects split data for completed segments', () async {
@@ -632,6 +692,7 @@ void main() {
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 30,
+            isRest: true,
           ),
         ]),
         pm5Stream: pm5Controller.stream,
@@ -1180,6 +1241,7 @@ void main() {
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 2,
+            isRest: true,
           ),
           const WorkoutSegment(
             durationType: DurationType.distance,
@@ -1222,9 +1284,9 @@ void main() {
       // Should still be paused — rest timer should NOT have fired
       expect(engine.currentState.phase, WorkoutPhase.paused);
 
-      // Resume — should go back to resting (or advance if rest expired)
+      // Resume — paused duration ≈ 3s but wall-clock elapsed ~0.1s before pause,
+      // so remaining rest ≈ (2 - (3.1 - 3.0)) ≈ 1.9s. Engine re-enters resting.
       engine.resume();
-      // The rest time has elapsed, so it should advance to next work segment
       expect(
         engine.currentState.phase,
         anyOf(WorkoutPhase.resting, WorkoutPhase.rowing),
@@ -1314,6 +1376,7 @@ void main() {
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 0,
+            isRest: true,
           ),
           const WorkoutSegment(
             durationType: DurationType.distance,
@@ -1527,6 +1590,7 @@ void main() {
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 60, // rest segment (no targetIntensity)
+            isRest: true,
           ),
         ]),
         pm5Stream: pm5Controller.stream,

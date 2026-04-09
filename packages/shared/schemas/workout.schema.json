@@ -37,7 +37,8 @@
             "maximum": 50,
             "description": "SPM target"
           },
-          "target_hr_zone": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 }
+          "target_hr_zone": { "type": ["integer", "null"], "minimum": 1, "maximum": 5 },
+          "is_rest": { "type": "boolean", "description": "True for explicit rest intervals (set by seed builder, not user-created segments)" }
         },
         "additionalProperties": false
       }
