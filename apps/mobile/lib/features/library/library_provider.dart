@@ -10,6 +10,18 @@ enum LibrarySortOrder { newest, duration, mostForked }
 
 enum DurationFilter { under30, from30to60, over60 }
 
+enum DistanceFilter { under2k, from2to5k, from5to10k, over10k }
+
+/// Collection key → tag set. Any-tag-overlap filters the workout in.
+/// Mirrors the web `COLLECTION_CATEGORIES` list in category-cards.tsx.
+const Map<String, Set<String>> kCollectionTags = {
+  'pete-plan': {'pete-plan'},
+  'ftp-builder': {'ftp-builder'},
+  '2k-race-prep': {'2k-race-prep'},
+  'wods': {'wod', 'challenge'},
+  'classics': {'classic', 'benchmark', 'test'},
+};
+
 /// Increment to force a library refresh (e.g. pull-to-refresh).
 final workoutRefreshTriggerProvider = StateProvider<int>((ref) => 0);
 
@@ -90,7 +102,8 @@ final myWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
   return fresh ?? [];
 });
 
-/// Filtered and sorted workouts based on search, type, tag, duration, zone, and sort order.
+/// Filtered and sorted workouts based on search, type, tag, duration, distance,
+/// zone, collection, mine, and sort order.
 final filteredWorkoutsProvider = FutureProvider.family<
     List<Workout>,
     ({
@@ -98,7 +111,10 @@ final filteredWorkoutsProvider = FutureProvider.family<
       WorkoutType? type,
       String? tag,
       DurationFilter? duration,
+      DistanceFilter? distance,
       int? hrZone,
+      String? collectionKey,
+      bool mine,
       LibrarySortOrder sort,
     })>((ref, filter) async {
   final allWorkouts = await ref.watch(workoutLibraryProvider.future);
@@ -113,6 +129,14 @@ final filteredWorkoutsProvider = FutureProvider.family<
                 w.id: computeEstimatedTotalTime(w.segments, kDefaultFtpWatts),
             }
           : null;
+
+  // Pre-compute total distance per workout when a distance filter is active.
+  // null means the workout has no distance-based segments.
+  final Map<String, double?>? distanceMap = filter.distance != null
+      ? {
+          for (final w in allWorkouts) w.id: computeTotalDistance(w.segments),
+        }
+      : null;
 
   // Filter by search query
   if (filter.search != null && filter.search!.isNotEmpty) {
@@ -146,11 +170,48 @@ final filteredWorkoutsProvider = FutureProvider.family<
     }).toList();
   }
 
+  // Filter by total distance. Time-only workouts (null total distance) are
+  // excluded when any distance bucket is active.
+  if (filter.distance != null) {
+    filtered = filtered.where((w) {
+      final meters = distanceMap![w.id];
+      if (meters == null) return false;
+      return switch (filter.distance!) {
+        DistanceFilter.under2k => meters < 2000,
+        DistanceFilter.from2to5k => meters >= 2000 && meters < 5000,
+        DistanceFilter.from5to10k => meters >= 5000 && meters < 10000,
+        DistanceFilter.over10k => meters >= 10000,
+      };
+    }).toList();
+  }
+
   // Filter by HR zone — workouts containing at least one segment in that zone
   if (filter.hrZone != null) {
     filtered = filtered
         .where((w) => w.segments.any((s) => s.targetHrZone == filter.hrZone))
         .toList();
+  }
+
+  // Filter by collection (tag-set overlap against kCollectionTags).
+  if (filter.collectionKey != null) {
+    final tags = kCollectionTags[filter.collectionKey!];
+    if (tags == null) {
+      filtered = const [];
+    } else {
+      filtered = filtered
+          .where((w) => w.tags.any(tags.contains))
+          .toList();
+    }
+  }
+
+  // Filter "My Workouts" — authored by the current user.
+  if (filter.mine) {
+    final userId = ref.watch(supabaseServiceProvider).currentUserId;
+    if (userId == null) {
+      filtered = const [];
+    } else {
+      filtered = filtered.where((w) => w.authorId == userId).toList();
+    }
   }
 
   // Sort

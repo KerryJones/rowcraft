@@ -6,9 +6,9 @@ import Link from 'next/link';
 import type { Workout } from '@/lib/types';
 import { WorkoutCard } from '@/components/ui/workout-card';
 import { CategoryCards, EMPTY_FILTERS, hasActiveFilters, getCollectionByKey } from '@/components/ui/category-cards';
-import type { CategoryFilters, DurationBucket } from '@/components/ui/category-cards';
+import type { CategoryFilters, DurationBucket, DistanceBucket } from '@/components/ui/category-cards';
 import { Pagination } from '@/components/ui/pagination';
-import { estimateTotalMinutes } from '@/lib/utils/workout';
+import { computeTotalDistance, estimateTotalMinutes } from '@/lib/utils/workout';
 import { Search, Plus, ArrowLeft } from 'lucide-react';
 
 type SortKey = 'newest' | 'most_forked' | 'duration';
@@ -21,6 +21,17 @@ function matchesDuration(workout: Workout, bucket: DurationBucket): boolean {
     case 'under30': return minutes < 30;
     case '30to60': return minutes >= 30 && minutes < 60;
     case 'over60': return minutes >= 60;
+  }
+}
+
+function matchesDistance(workout: Workout, bucket: DistanceBucket): boolean {
+  const meters = computeTotalDistance(workout.segments);
+  if (meters == null) return false; // exclude time-only workouts
+  switch (bucket) {
+    case 'under2k':  return meters < 2000;
+    case '2to5k':    return meters >= 2000 && meters < 5000;
+    case '5to10k':   return meters >= 5000 && meters < 10000;
+    case 'over10k':  return meters >= 10000;
   }
 }
 
@@ -55,6 +66,7 @@ export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientPro
       }
 
       if (filters.duration && !matchesDuration(w, filters.duration)) return false;
+      if (filters.distance && !matchesDistance(w, filters.distance)) return false;
 
       if (filters.zones.length > 0) {
         if (!filters.zones.some((z) => w.tags.includes(z))) return false;
