@@ -210,7 +210,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
-                  onPressed: pm5Connected ? () => context.go('/workouts') : null,
+                  onPressed: pm5Connected ? () => context.go('/') : null,
                   icon: const Icon(Icons.play_arrow, size: 28),
                   label: Text(
                     'CONTINUE',
@@ -237,7 +237,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
               ),
             ),
             TextButton(
-              onPressed: () => context.go('/workouts'),
+              onPressed: () => context.go('/'),
               child: Text('Skip for now',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: RowCraftTheme.subtleGrey)),

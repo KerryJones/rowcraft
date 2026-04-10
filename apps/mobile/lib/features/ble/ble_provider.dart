@@ -59,6 +59,9 @@ class BleState {
   final List<SavedDevice> savedDevices;
   final bool hasScanned;
   final String? _error;
+  // Which specific device ID is currently being connected to (null if not connecting).
+  final String? connectingPm5DeviceId;
+  final String? connectingHrDeviceId;
 
   const BleState({
     this.pm5ConnectionState = PM5ConnectionState.disconnected,
@@ -68,6 +71,8 @@ class BleState {
     this.savedDevices = const [],
     this.hasScanned = false,
     String? error,
+    this.connectingPm5DeviceId,
+    this.connectingHrDeviceId,
   }) : _error = error;
 
   String? get error => _error;
@@ -89,6 +94,8 @@ class BleState {
     List<SavedDevice>? savedDevices,
     bool? hasScanned,
     Object? error = _sentinel,
+    Object? connectingPm5DeviceId = _sentinel,
+    Object? connectingHrDeviceId = _sentinel,
   }) {
     return BleState(
       pm5ConnectionState: pm5ConnectionState ?? this.pm5ConnectionState,
@@ -98,6 +105,12 @@ class BleState {
       savedDevices: savedDevices ?? this.savedDevices,
       hasScanned: hasScanned ?? this.hasScanned,
       error: error == _sentinel ? _error : error as String?,
+      connectingPm5DeviceId: connectingPm5DeviceId == _sentinel
+          ? this.connectingPm5DeviceId
+          : connectingPm5DeviceId as String?,
+      connectingHrDeviceId: connectingHrDeviceId == _sentinel
+          ? this.connectingHrDeviceId
+          : connectingHrDeviceId as String?,
     );
   }
 }
@@ -283,16 +296,19 @@ class BleNotifier extends Notifier<BleState> {
     stopScan();
     state = state.copyWith(
       pm5ConnectionState: PM5ConnectionState.connecting,
+      connectingPm5DeviceId: deviceId,
       error: null,
     );
 
     try {
       await ref.read(pm5ServiceProvider).connect(deviceId);
       // Device saving happens in the connection state listener above
+      state = state.copyWith(connectingPm5DeviceId: null);
     } catch (e) {
       _pendingPm5Name = null;
       state = state.copyWith(
         pm5ConnectionState: PM5ConnectionState.error,
+        connectingPm5DeviceId: null,
         error: 'Rower connection failed: $e',
       );
     }
@@ -304,6 +320,7 @@ class BleNotifier extends Notifier<BleState> {
     stopScan();
     state = state.copyWith(
       hrConnectionState: HrConnectionState.connecting,
+      connectingHrDeviceId: deviceId,
       error: null,
     );
 
@@ -312,9 +329,11 @@ class BleNotifier extends Notifier<BleState> {
           .read(hrServiceProvider)
           .connect(deviceId, deviceName: deviceName);
       // Device saving happens via the onDeviceConnected callback
+      state = state.copyWith(connectingHrDeviceId: null);
     } catch (e) {
       state = state.copyWith(
         hrConnectionState: HrConnectionState.error,
+        connectingHrDeviceId: null,
         error: 'HR connection failed: $e',
       );
     }
@@ -325,6 +344,7 @@ class BleNotifier extends Notifier<BleState> {
     await ref.read(pm5ServiceProvider).disconnect();
     state = state.copyWith(
       pm5ConnectionState: PM5ConnectionState.disconnected,
+      connectingPm5DeviceId: null,
     );
   }
 
@@ -333,6 +353,7 @@ class BleNotifier extends Notifier<BleState> {
     await ref.read(hrServiceProvider).disconnect();
     state = state.copyWith(
       hrConnectionState: HrConnectionState.disconnected,
+      connectingHrDeviceId: null,
     );
   }
 

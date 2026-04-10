@@ -47,7 +47,7 @@ String formatPaceTenths(double tenths) {
 
 /// Pace acceptance range with 5% tolerance around target pace.
 /// Determines color feedback and TOO SLOW / TOO FAST warnings.
-(double, double) _paceAcceptanceRange(int targetPace) {
+(double, double) paceAcceptanceRange(int targetPace) {
   final tolerance = targetPace * 0.05;
   return (targetPace - tolerance, targetPace + tolerance);
 }
@@ -226,6 +226,8 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         actions: [
           if (engineState.phase != WorkoutPhase.idle)
             _PhaseIndicator(phase: engineState.phase),
+          // In compact mode show a BT icon replacing the inline BleStatusBar.
+          if (isCompactMode) const _BluetoothStatusIcon(),
           IconButton(
             icon: Icon(
               isCompactMode
@@ -483,6 +485,34 @@ class BleStatusBar extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Bluetooth Status Icon — compact AppBar indicator (replaces BleStatusBar)
+// ---------------------------------------------------------------------------
+
+class _BluetoothStatusIcon extends ConsumerWidget {
+  const _BluetoothStatusIcon();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connState = ref.watch(bleProvider).pm5ConnectionState;
+    final Color color;
+    if (connState == PM5ConnectionState.connected) {
+      color = RowCraftTheme.successGreen;
+    } else if (connState == PM5ConnectionState.connecting) {
+      color = RowCraftTheme.warningAmber;
+    } else {
+      color = RowCraftTheme.errorRose;
+    }
+    return IconButton(
+      icon: Icon(Icons.bluetooth, size: 20, color: color),
+      tooltip: 'Devices',
+      onPressed: () => GoRouter.of(context).push('/devices'),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 36),
     );
   }
 }
@@ -919,8 +949,10 @@ class _CurrentSegment extends StatelessWidget {
 
 class HeroSection extends StatelessWidget {
   final WorkoutSessionState session;
+  /// When true, inline the "/500m" suffix on the pace row to save vertical space.
+  final bool inlinePaceSuffix;
 
-  const HeroSection({super.key, required this.session});
+  const HeroSection({super.key, required this.session, this.inlinePaceSuffix = false});
 
   @override
   Widget build(BuildContext context) {
@@ -934,7 +966,7 @@ class HeroSection extends StatelessWidget {
         segment!.targetIntensity!,
         session.ftpWatts,
       );
-      final (acceptMin, acceptMax) = _paceAcceptanceRange(targetPace);
+      final (acceptMin, acceptMax) = paceAcceptanceRange(targetPace);
       final pace = data.pace.toDouble();
       if (pace >= acceptMin && pace <= acceptMax) {
         splitColor = RowCraftTheme.successGreen;
@@ -965,36 +997,68 @@ class HeroSection extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Scale down on small screens to prevent overflow
-        final isCompact = constraints.maxHeight < 200;
-        final paceFontSize = isCompact ? 60.0 : 80.0;
-        final srFontSize = isCompact ? 36.0 : 44.0;
-        final animHeight = isCompact ? 50.0 : 70.0;
+        // Three sizing tiers to prevent overflow on short phones.
+        final isTiny = constraints.maxHeight < 170;
+        final isSmall = constraints.maxHeight < 260;
+        final paceFontSize = isTiny ? 52.0 : isSmall ? 60.0 : 80.0;
+        final srFontSize = isTiny ? 30.0 : isSmall ? 36.0 : 44.0;
+        final animHeight = isTiny ? 40.0 : isSmall ? 50.0 : 70.0;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Hero pace
-              Text(
-                data.paceFormatted,
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: paceFontSize,
-                  fontWeight: FontWeight.w700,
-                  color: splitColor,
-                  letterSpacing: -2,
-                  height: 1.0,
+              // Hero pace — inline or stacked "/500m" suffix
+              if (inlinePaceSuffix)
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        data.paceFormatted,
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: paceFontSize,
+                          fontWeight: FontWeight.w700,
+                          color: splitColor,
+                          letterSpacing: -2,
+                          height: 1.0,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '/500m',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: RowCraftTheme.subtleGrey,
+                            ),
+                      ),
+                    ],
+                  ),
+                )
+              else ...[
+                Text(
+                  data.paceFormatted,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: paceFontSize,
+                    fontWeight: FontWeight.w700,
+                    color: splitColor,
+                    letterSpacing: -2,
+                    height: 1.0,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '/500m',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: RowCraftTheme.subtleGrey,
-                    ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  '/500m',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: RowCraftTheme.subtleGrey,
+                      ),
+                ),
+              ],
 
               // Pace guide bar
               if (segment?.targetIntensity != null) ...[
@@ -1084,7 +1148,7 @@ class _PaceGuideBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Derive acceptance window (5% tolerance) for both feedback and visual zone
-    final (acceptMin, acceptMax) = _paceAcceptanceRange(targetPace.toInt());
+    final (acceptMin, acceptMax) = paceAcceptanceRange(targetPace.toInt());
     final toleranceRange = acceptMax - acceptMin;
 
     // Display range is 4× the tolerance window centred on target

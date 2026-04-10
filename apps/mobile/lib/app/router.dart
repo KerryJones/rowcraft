@@ -145,10 +145,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, navigationShell) =>
             ShellScreen(navigationShell: navigationShell),
         branches: [
-          // Tab 0: Workouts
+          // Tab 0: Workouts (home — post-workout navigation lands here)
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/workouts',
+              path: '/',
               builder: (context, state) => const LibraryScreen(),
             ),
           ]),
@@ -173,7 +173,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Tab 2: Quick Start
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/',
+              path: '/quick-start',
               builder: (context, state) => const QuickStartScreen(),
             ),
           ]),

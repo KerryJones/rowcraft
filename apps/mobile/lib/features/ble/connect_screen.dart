@@ -233,23 +233,25 @@ class _SavedDeviceTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isPm5 = device.deviceType == 'pm5';
-    final isConnected = isPm5
-        ? bleState.pm5ConnectionState == PM5ConnectionState.connected
-        : bleState.hrConnectionState == HrConnectionState.connected;
-    final isConnecting = isPm5
-        ? bleState.pm5ConnectionState == PM5ConnectionState.connecting
-        : bleState.hrConnectionState == HrConnectionState.connecting;
-    // Per-device connection check: matches THIS specific saved device, not
-    // just "any device of this type". Drives the green border so that with
-    // multiple saved devices of the same type only the active one lights up.
+
+    // Per-device connection check: matches THIS specific saved device ID.
     final connectedDeviceId = isPm5
         ? ref.watch(pm5ServiceProvider).connectedDeviceId
         : ref.watch(hrServiceProvider).connectedDeviceId;
-    final isThisDeviceConnected =
-        isConnected && connectedDeviceId == device.deviceId;
+    final isThisDeviceConnected = connectedDeviceId == device.deviceId;
+
+    // Per-device connecting check: only show spinner for the specific device
+    // being connected to, not for every saved tile of the same type.
+    final isThisDeviceConnecting = isPm5
+        ? bleState.connectingPm5DeviceId == device.deviceId
+        : bleState.connectingHrDeviceId == device.deviceId;
+
     final isAvailable = discoveredDeviceIds.contains(device.deviceId);
     final showAvailability = bleState.hasScanned && !bleState.isScanning;
-    final dimTile = !isConnected && !isConnecting && showAvailability && !isAvailable;
+    final dimTile = !isThisDeviceConnected &&
+        !isThisDeviceConnecting &&
+        showAvailability &&
+        !isAvailable;
 
     return Opacity(
       opacity: dimTile ? 0.5 : 1.0,
@@ -269,7 +271,7 @@ class _SavedDeviceTile extends ConsumerWidget {
         child: ListTile(
           leading: Icon(
             isPm5 ? Icons.rowing : Icons.favorite,
-            color: isConnected
+            color: isThisDeviceConnected
                 ? RowCraftTheme.successGreen
                 : RowCraftTheme.subtleGrey,
           ),
@@ -282,7 +284,7 @@ class _SavedDeviceTile extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (!isConnected && !isConnecting && showAvailability) ...[
+              if (!isThisDeviceConnected && !isThisDeviceConnecting && showAvailability) ...[
                 const SizedBox(width: 8),
                 if (isAvailable) ...[
                   Container(
@@ -311,7 +313,7 @@ class _SavedDeviceTile extends ConsumerWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isConnected)
+              if (isThisDeviceConnected)
                 TextButton(
                   onPressed: () {
                     if (isPm5) {
@@ -322,13 +324,19 @@ class _SavedDeviceTile extends ConsumerWidget {
                   },
                   child: const Text('Disconnect'),
                 )
-              else if (isConnecting)
+              else if (isThisDeviceConnecting)
                 const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  width: 72,
+                  height: 36,
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
                 )
-              else
+              else ...[
                 TextButton(
                   onPressed: () {
                     if (isPm5) {
@@ -345,19 +353,46 @@ class _SavedDeviceTile extends ConsumerWidget {
                   },
                   child: const Text('Connect'),
                 ),
-              if (!isConnected && !isConnecting)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  onPressed: () {
-                    ref
-                        .read(bleProvider.notifier)
-                        .removeSavedDevice(device.deviceId);
-                  },
-                  visualDensity: VisualDensity.compact,
+                TextButton(
+                  onPressed: () => _confirmForget(context, ref),
+                  child: const Text(
+                    'Forget',
+                    style: TextStyle(color: RowCraftTheme.subtleGrey),
+                  ),
                 ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _confirmForget(BuildContext context, WidgetRef ref) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: RowCraftTheme.surfaceContainer,
+        title: const Text('Forget device?'),
+        content: Text(
+          'Forget "${device.deviceName}"? You\'ll need to pair it again next time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(bleProvider.notifier).removeSavedDevice(device.deviceId);
+            },
+            child: const Text(
+              'Forget',
+              style: TextStyle(color: RowCraftTheme.errorRose),
+            ),
+          ),
+        ],
       ),
     );
   }

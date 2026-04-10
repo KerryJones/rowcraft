@@ -120,10 +120,10 @@ void main() {
       await tester.pump();
 
       // Now count-up: 0:45 elapsed (25% of 180s)
-      expect(find.text('SEGMENT ↑'), findsOneWidget);
+      expect(find.text('ELAPSED'), findsOneWidget);
       expect(find.text('0:45'), findsOneWidget);
 
-      await tester.tap(find.text('SEGMENT ↑'));
+      await tester.tap(find.text('ELAPSED'));
       await tester.pump();
 
       // Back to countdown

@@ -95,7 +95,15 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
     final hasHrData = timeSamples != null &&
         timeSamples.any((s) => s.heartRate != null && s.heartRate! > 0);
 
-    // Auto-navigate only on full success (C2 synced or not linked)
+    // Cancel auto-nav if an error appears after the timer was scheduled.
+    if (_autoNavTimer != null &&
+        (session.syncError != null ||
+            session.saveProgress == SaveProgress.error)) {
+      _autoNavTimer?.cancel();
+      _autoNavTimer = null;
+    }
+
+    // Auto-navigate only on full success (C2 synced or not linked).
     final c2Ok = session.c2SyncStatus == C2SyncStatus.synced ||
         session.c2SyncStatus == C2SyncStatus.notLinked;
     if (session.saveProgress == SaveProgress.done &&

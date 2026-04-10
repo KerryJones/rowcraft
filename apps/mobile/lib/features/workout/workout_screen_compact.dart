@@ -99,10 +99,9 @@ class _WorkoutScreenCompactBodyState
 
     return Column(
       children: [
-        const BleStatusBar(),
         // Top half: 3x2 stat grid
         Expanded(
-          flex: 5,
+          flex: 6,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: Column(
@@ -181,7 +180,7 @@ class _WorkoutScreenCompactBodyState
           flex: 5,
           child: Column(
             children: [
-              Expanded(child: HeroSection(session: session)),
+              Expanded(child: HeroSection(session: session, inlinePaceSuffix: true)),
               if (session.expandedSegments.isNotEmpty)
                 WorkoutProfileGraph(session: session),
             ],
@@ -217,6 +216,15 @@ class _StatTile extends StatelessWidget {
   final Color? valueColor;
   final Widget? trailing;
   final VoidCallback? onTap;
+  /// Optional leading icon shown before the label text.
+  final IconData? icon;
+  /// Show pagination dots when this tile has multiple views. 0-based index.
+  final int? pageIndex;
+  final int? pageCount;
+  /// Optional unit suffix displayed after the value in smaller text.
+  final String? unitSuffix;
+  /// Optional trend arrow shown before the value: '▲' or '▼'.
+  final String? chevron;
 
   const _StatTile({
     required this.label,
@@ -224,10 +232,16 @@ class _StatTile extends StatelessWidget {
     this.valueColor,
     this.trailing,
     this.onTap,
+    this.icon,
+    this.pageIndex,
+    this.pageCount,
+    this.unitSuffix,
+    this.chevron,
   });
 
   @override
   Widget build(BuildContext context) {
+    final showDots = pageCount != null && pageCount! > 1 && pageIndex != null;
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -240,6 +254,10 @@ class _StatTile extends StatelessWidget {
         children: [
           Row(
             children: [
+              if (icon != null) ...[
+                Icon(icon, size: 11, color: RowCraftTheme.subtleGrey),
+                const SizedBox(width: 3),
+              ],
               Text(
                 label,
                 style: GoogleFonts.inter(
@@ -249,25 +267,63 @@ class _StatTile extends StatelessWidget {
                   letterSpacing: 0.8,
                 ),
               ),
-              if (trailing != null) ...[
-                const Spacer(),
-                trailing!,
+              const Spacer(),
+              if (trailing != null) trailing!,
+              if (showDots) ...[
+                if (trailing != null) const SizedBox(width: 4),
+                _PageDots(index: pageIndex!, count: pageCount!),
               ],
             ],
           ),
           const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 40,
-                fontWeight: FontWeight.w700,
-                color: valueColor ?? RowCraftTheme.metricWhite,
-                height: 1.0,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              if (chevron != null) ...[
+                Text(
+                  chevron!,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 18,
+                    color: valueColor ?? RowCraftTheme.metricWhite,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(width: 2),
+              ],
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        value,
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w700,
+                          color: valueColor ?? RowCraftTheme.metricWhite,
+                          height: 1.0,
+                        ),
+                      ),
+                      if (unitSuffix != null) ...[
+                        const SizedBox(width: 3),
+                        Text(
+                          unitSuffix!,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            color: RowCraftTheme.subtleGrey,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -277,6 +333,36 @@ class _StatTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: content,
+    );
+  }
+}
+
+/// Tiny pagination dots (●○○) shown in the top-right of tappable tiles.
+class _PageDots extends StatelessWidget {
+  final int index;
+  final int count;
+
+  const _PageDots({required this.index, required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(count, (i) {
+        return Padding(
+          padding: EdgeInsets.only(left: i == 0 ? 0 : 3),
+          child: Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i == index
+                  ? RowCraftTheme.subtleGrey
+                  : RowCraftTheme.subtleGrey.withValues(alpha: 0.3),
+            ),
+          ),
+        );
+      }),
     );
   }
 }
@@ -301,7 +387,7 @@ class _SegmentTile extends StatelessWidget {
       return const _StatTile(label: 'SEGMENT', value: '--:--');
     }
 
-    final label = countUp ? 'SEGMENT ↑' : 'SEGMENT';
+    final label = countUp ? 'ELAPSED' : 'SEGMENT';
     final value = countUp
         ? _elapsedSegmentLabel(engineState)
         : remainingSegmentLabel(engineState);
@@ -312,6 +398,8 @@ class _SegmentTile extends StatelessWidget {
       label: label,
       value: value,
       onTap: onTap,
+      pageIndex: countUp ? 1 : 0,
+      pageCount: 2,
       trailing: Text(
         '$current/$total',
         style: GoogleFonts.inter(
@@ -359,7 +447,13 @@ class _TotalTile extends StatelessWidget {
     final value = showRemaining
         ? remainingWorkoutLabel(session)
         : session.pm5Data.elapsedFormatted;
-    return _StatTile(label: label, value: value, onTap: onTap);
+    return _StatTile(
+      label: label,
+      value: value,
+      onTap: onTap,
+      pageIndex: showRemaining ? 1 : 0,
+      pageCount: 2,
+    );
   }
 }
 
@@ -385,7 +479,10 @@ class _TargetPaceTile extends StatelessWidget {
       return _StatTile(
         label: 'AVG PACE',
         value: avgPace > 0 ? formatPaceTenths(avgPace.toDouble()) : '--:--',
+        unitSuffix: avgPace > 0 ? '/500m' : null,
         onTap: onTap,
+        pageIndex: 1,
+        pageCount: 2,
       );
     }
 
@@ -397,11 +494,32 @@ class _TargetPaceTile extends StatelessWidget {
             ).toDouble(),
           )
         : '--:--';
+
+    // Show trend chevron based on current pace vs target.
+    String? chevron;
+    if (hasTarget && session.pm5Data.pace > 0) {
+      final targetPace = resolveIntensityToPace(
+        segment!.targetIntensity!,
+        session.ftpWatts,
+      );
+      final (acceptMin, acceptMax) = paceAcceptanceRange(targetPace);
+      final pace = session.pm5Data.pace.toDouble();
+      if (pace > acceptMax) {
+        chevron = '\u25B2'; // ▲ too slow (high pace number = slow)
+      } else if (pace < acceptMin) {
+        chevron = '\u25BC'; // ▼ too fast (low pace number = fast)
+      }
+    }
+
     return _StatTile(
       label: 'TARGET PACE',
       value: value,
       valueColor: hasTarget ? RowCraftTheme.successGreen : null,
+      unitSuffix: hasTarget ? '/500m' : null,
+      chevron: chevron,
       onTap: onTap,
+      pageIndex: 0,
+      pageCount: 2,
     );
   }
 }
@@ -442,7 +560,11 @@ class _HrTile extends StatelessWidget {
       return _StatTile(
         label: 'AVG HR',
         value: (avgHr != null && avgHr > 0) ? '$avgHr' : '--',
+        unitSuffix: (avgHr != null && avgHr > 0) ? 'bpm' : null,
+        icon: Icons.favorite,
         onTap: onTap,
+        pageIndex: 1,
+        pageCount: 2,
       );
     }
 
@@ -450,11 +572,14 @@ class _HrTile extends StatelessWidget {
     final hasHr = hr != null && hr > 0;
     Color? valueColor;
     Widget? trailing;
+    String? chevron;
     if (hasHr) {
       final segment = session.engineState.currentSegment;
-      final zone = segment?.targetHrZone ??
+      final currentZone =
           estimateHrZone(hr, maxHr: session.maxHeartRate ?? 190);
-      final info = hrZoneInfo(zone);
+      final targetZone = segment?.targetHrZone;
+      final displayZone = targetZone ?? currentZone;
+      final info = hrZoneInfo(displayZone);
       valueColor = info.color;
       trailing = Container(
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
@@ -463,7 +588,7 @@ class _HrTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
-          'Z$zone',
+          'Z$displayZone',
           style: GoogleFonts.inter(
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -471,13 +596,26 @@ class _HrTile extends StatelessWidget {
           ),
         ),
       );
+      // Chevron when HR zone is outside the target zone.
+      if (targetZone != null) {
+        if (currentZone < targetZone) {
+          chevron = '\u25B2'; // ▲ need to work harder
+        } else if (currentZone > targetZone) {
+          chevron = '\u25BC'; // ▼ ease off
+        }
+      }
     }
     return _StatTile(
       label: 'HR',
       value: hasHr ? '$hr' : '--',
       valueColor: valueColor,
+      unitSuffix: hasHr ? 'bpm' : null,
+      icon: Icons.favorite,
       trailing: trailing,
+      chevron: chevron,
       onTap: onTap,
+      pageIndex: 0,
+      pageCount: 2,
     );
   }
 }
@@ -499,6 +637,13 @@ class _CaloriesTile extends StatelessWidget {
     final value = showDistance
         ? session.pm5Data.distanceFormatted
         : '${session.pm5Data.calories}';
-    return _StatTile(label: label, value: value, onTap: onTap);
+    return _StatTile(
+      label: label,
+      value: value,
+      icon: showDistance ? Icons.straighten : Icons.local_fire_department,
+      onTap: onTap,
+      pageIndex: showDistance ? 1 : 0,
+      pageCount: 2,
+    );
   }
 }
