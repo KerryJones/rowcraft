@@ -198,7 +198,17 @@ export function computeDominantZone(segments: WorkoutSegment[]): number | null {
  * - Otherwise → variable_intervals
  */
 export function inferWorkoutType(segments: WorkoutSegment[]): WorkoutType {
-	const activeSegs = segments.filter((s) => !isRestSegment(s));
+	// For classification, treat a segment as rest if it's explicitly flagged
+	// OR if it's a time-based segment with no active targets (the common
+	// "60s recovery" pattern, saved without the explicit is_rest flag).
+	// Distance segments without targets are still treated as active work
+	// ("just row 5k") — rest is conventionally time-based.
+	const isEffectivelyRest = (s: WorkoutSegment): boolean =>
+		isRestSegment(s) ||
+		(s.duration_type === 'time' &&
+			s.target_intensity == null &&
+			s.target_stroke_rate == null);
+	const activeSegs = segments.filter((s) => !isEffectivelyRest(s));
 
 	if (activeSegs.length === 0) return 'single_time';
 
