@@ -225,7 +225,7 @@ void main() {
       expect(data.paceFormatted, '--:--');
     });
 
-    test('distanceFormatted shows km for >= 1000m', () {
+    test('distanceFormatted always shows meters', () {
       const data = PM5Data(
         elapsedTime: Duration.zero,
         distance: 2500,
@@ -236,7 +236,7 @@ void main() {
         strokeCount: 0,
         intervalCount: 0,
       );
-      expect(data.distanceFormatted, '2.5km');
+      expect(data.distanceFormatted, '2500m');
     });
 
     test('distanceFormatted shows m for < 1000m', () {

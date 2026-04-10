@@ -12,6 +12,7 @@ import '../../services/sync_service.dart';
 import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart';
 import '../ble/ble_provider.dart';
+import '../ble/csafe_commands.dart';
 import '../ble/hr_service.dart';
 import '../ble/pm5_service.dart';
 import 'ftp_calculator.dart';
@@ -254,6 +255,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     state = state.copyWith(pm5Data: data);
   }
 
+  /// Send CSAFE reset + goReady to the PM5 to clear any previous session.
+  Future<void> _resetPm5() async {
+    final pm5 = _ref.read(pm5ServiceProvider);
+    final deviceId = pm5.connectedDeviceId;
+    if (deviceId == null) return;
+    try {
+      await pm5.sendCsafeCommand(CsafeCommands.reset(), deviceId);
+      await Future.delayed(const Duration(milliseconds: 500));
+      await pm5.sendCsafeCommand(CsafeCommands.goReady(), deviceId);
+    } catch (_) {
+      // Non-critical — PM5 may not respond if not connected
+    }
+  }
+
   /// Load a workout definition and prepare the engine.
   Future<void> loadWorkout(
     String workoutId, {
@@ -285,8 +300,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         // Non-critical — fall back to defaults
       }
 
-      final isFtpTest = workout.tags.contains('ftp') ||
-          workout.tags.contains('test');
+      final isFtpTest = workout.tags.contains('ftp');
       _engine = WorkoutEngine(
         workout: workout,
         pm5Stream: _pm5Controller.stream,
@@ -320,6 +334,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         isLoading: false,
       );
 
+      // Reset PM5 to clear any previous session data
+      await _resetPm5();
+
       // Enter ready phase — workout starts when rower takes first stroke
       _engine!.ready();
     } catch (e) {
@@ -344,6 +361,23 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// Resume after pause.
   void resume() {
     _engine?.resume();
+  }
+
+  /// Continue with free row after structured workout completes.
+  void continueWithFreeRow() {
+    _engine?.continueWithFreeRow();
+    // Update expanded segments since a new one was appended
+    if (_engine != null) {
+      state = state.copyWith(
+        expandedSegments: _engine!.expandedSegments,
+      );
+    }
+  }
+
+  /// Finish from structuredComplete (user chose Save).
+  void finishFromStructuredComplete() {
+    _engine?.finishFromStructuredComplete();
+    _buildPendingResult();
   }
 
   /// Stop the workout and build a pending result (does NOT save).

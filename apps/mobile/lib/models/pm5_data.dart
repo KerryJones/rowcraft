@@ -64,7 +64,7 @@ class PM5Data {
       heartRate: heartRate ?? this.heartRate,
       strokeCount: strokeCount ?? this.strokeCount,
       intervalCount: intervalCount ?? this.intervalCount,
-      strokeRateUpdated: strokeRateUpdated ?? false,
+      strokeRateUpdated: strokeRateUpdated ?? this.strokeRateUpdated,
     );
   }
 
@@ -91,13 +91,8 @@ class PM5Data {
     return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
-  /// Format distance with appropriate unit
-  String get distanceFormatted {
-    if (distance >= 1000) {
-      return '${(distance / 1000).toStringAsFixed(1)}km';
-    }
-    return '${distance.toInt()}m';
-  }
+  /// Format distance — always in meters (no km conversion).
+  String get distanceFormatted => '${distance.toInt()}m';
 
   @override
   String toString() =>

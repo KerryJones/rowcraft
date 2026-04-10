@@ -204,7 +204,7 @@ class _ResultCard extends StatelessWidget {
                   // Stroke rate
                   _MetricCell(
                     value: '${result.avgStrokeRate}',
-                    label: 'spm',
+                    label: 's/m',
                   ),
                 ],
               ),

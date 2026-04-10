@@ -167,42 +167,6 @@ class WodCard extends StatelessWidget {
             // Segment graph
             WorkoutGraph(segments: workout.segments, height: 80),
 
-            // Description
-            if (workout.description.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                workout.description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: RowCraftTheme.subtleGrey,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-
-            // Tags
-            if (workout.tags.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: workout.tags.take(4).map((tag) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: RowCraftTheme.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      tag,
-                      style: const TextStyle(
-                          fontSize: 11, color: RowCraftTheme.subtleGrey),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
           ],
         ),
         ),

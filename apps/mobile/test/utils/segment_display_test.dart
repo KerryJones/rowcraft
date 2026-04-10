@@ -16,20 +16,21 @@ void main() {
       expect(segmentPaceLabel(segment, kDefaultFtpWatts), '$expectedPace/500m');
     });
 
-    test('segment without intensity returns Free', () {
+    test('segment without intensity returns Free row', () {
       const segment = WorkoutSegment(
         durationType: DurationType.time,
         durationValue: 300,
       );
-      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free');
+      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free row');
     });
 
-    test('rest segment (no targets) returns Free', () {
+    test('rest segment (isRest: true, no targets) returns Rest', () {
       const segment = WorkoutSegment(
         durationType: DurationType.time,
         durationValue: 60,
+        isRest: true,
       );
-      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free');
+      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Rest');
     });
 
     test('low intensity segment returns formatted pace', () {

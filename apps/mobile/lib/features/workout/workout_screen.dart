@@ -4,15 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
+import '../../services/audio_service.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
 import 'ftp_result_dialog.dart';
+import 'hr_zone_gauge.dart';
 import 'rowing_animation.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
@@ -33,17 +36,6 @@ String formatPaceTenths(double tenths) {
   return '$m:${(r ~/ 10).toString().padLeft(2, '0')}';
 }
 
-/// HR zone info: name, label, color.
-({String name, String label, Color color}) hrZoneInfo(int zone) {
-  return switch (zone) {
-    1 => (name: 'ZONE 1', label: 'RECOVERY', color: RowCraftTheme.hrZone1),
-    2 => (name: 'ZONE 2', label: 'ENDURANCE', color: RowCraftTheme.hrZone2),
-    3 => (name: 'ZONE 3', label: 'TEMPO', color: RowCraftTheme.hrZone3),
-    4 => (name: 'ZONE 4', label: 'THRESHOLD', color: RowCraftTheme.hrZone4),
-    5 => (name: 'ZONE 5', label: 'VO2 MAX', color: RowCraftTheme.hrZone5),
-    _ => (name: 'ZONE ?', label: '', color: RowCraftTheme.subtleGrey),
-  };
-}
 
 /// Pace acceptance range with 5% tolerance around target pace.
 /// Determines color feedback and TOO SLOW / TOO FAST warnings.
@@ -80,14 +72,6 @@ String remainingWorkoutLabel(WorkoutSessionState session) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-/// HR zone estimate from BPM using percentage of max heart rate.
-int estimateHrZone(int bpm, {int maxHr = 190}) {
-  if (bpm < (maxHr * 0.6).round()) return 1;
-  if (bpm < (maxHr * 0.7).round()) return 2;
-  if (bpm < (maxHr * 0.8).round()) return 3;
-  if (bpm < (maxHr * 0.9).round()) return 4;
-  return 5;
-}
 
 // ---------------------------------------------------------------------------
 // WorkoutScreen
@@ -114,6 +98,89 @@ class WorkoutScreen extends ConsumerStatefulWidget {
 class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   bool _ftpDialogShown = false;
   bool _isLocked = false;
+  bool _structuredCompleteShown = false;
+  int _lastBeepSecond = -1;
+  int _lastBeepSegmentIndex = -1;
+
+  void _showCompletionModal(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: RowCraftTheme.surfaceContainer,
+        title: Text(
+          'Workout Complete!',
+          style: GoogleFonts.inter(
+            color: RowCraftTheme.metricWhite,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'All segments finished. What would you like to do?',
+          style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(workoutSessionProvider.notifier).continueWithFreeRow();
+            },
+            child: const Text('Continue rowing'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              // Discard — finish then discard, go home
+              ref
+                  .read(workoutSessionProvider.notifier)
+                  .finishFromStructuredComplete();
+              ref.read(workoutSessionProvider.notifier).discardResult();
+              context.go('/');
+            },
+            child: const Text(
+              'Discard',
+              style: TextStyle(color: RowCraftTheme.errorRose),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref
+                  .read(workoutSessionProvider.notifier)
+                  .finishFromStructuredComplete();
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _checkCountdownBeep(WorkoutEngineState es) {
+    final seg = es.currentSegment;
+    if (seg == null) return;
+    final phase = es.phase;
+    if (phase != WorkoutPhase.rowing && phase != WorkoutPhase.resting) return;
+    if (seg.durationType != DurationType.time) return;
+
+    final remaining =
+        seg.durationValue.toInt() - es.segmentElapsedTime.inSeconds;
+    if (remaining > 3 || remaining < 0) {
+      // Reset when we enter a new segment or are far from transition.
+      if (es.currentSegmentIndex != _lastBeepSegmentIndex) {
+        _lastBeepSegmentIndex = es.currentSegmentIndex;
+        _lastBeepSecond = -1;
+      }
+      return;
+    }
+    if (remaining == _lastBeepSecond &&
+        es.currentSegmentIndex == _lastBeepSegmentIndex) {
+      return; // Already beeped for this second
+    }
+    _lastBeepSecond = remaining;
+    _lastBeepSegmentIndex = es.currentSegmentIndex;
+    AudioService.instance.playCountdownBeep(remaining);
+  }
 
   void _confirmStop(BuildContext ctx, VoidCallback onConfirmed) {
     showDialog(
@@ -160,6 +227,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   @override
   void initState() {
     super.initState();
+    WakelockPlus.enable();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(workoutSessionProvider.notifier).loadWorkout(
         widget.workoutId,
@@ -171,9 +239,31 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 
   @override
+  void dispose() {
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final session = ref.watch(workoutSessionProvider);
     final engineState = session.engineState;
+
+    // Segment transition countdown beeps (time-based segments only)
+    _checkCountdownBeep(engineState);
+
+    // Show completion modal when structured workout ends
+    if (engineState.phase == WorkoutPhase.structuredComplete &&
+        !_structuredCompleteShown) {
+      _structuredCompleteShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _showCompletionModal(context);
+      });
+    }
+    if (engineState.phase != WorkoutPhase.structuredComplete) {
+      _structuredCompleteShown = false;
+    }
 
     // Reset dialog guard when flag is cleared
     if (!session.showFtpDialog) {
@@ -225,7 +315,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         ),
         actions: [
           if (engineState.phase != WorkoutPhase.idle)
-            _PhaseIndicator(phase: engineState.phase),
+            _PhaseIndicator(
+              phase: engineState.phase,
+              segment: engineState.currentSegment,
+            ),
           // In compact mode show a BT icon replacing the inline BleStatusBar.
           if (isCompactMode) const _BluetoothStatusIcon(),
           IconButton(
@@ -707,7 +800,9 @@ class _WorkoutProfilePainter extends CustomPainter {
     }
 
     // Draw playhead line
-    if (phase != WorkoutPhase.idle && phase != WorkoutPhase.finished) {
+    if (phase != WorkoutPhase.idle &&
+        phase != WorkoutPhase.finished &&
+        phase != WorkoutPhase.structuredComplete) {
       final playheadPaint = Paint()
         ..color = RowCraftTheme.metricWhite
         ..style = PaintingStyle.stroke
@@ -811,7 +906,7 @@ class _CurrentSegment extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${segment.isRest ? 'REST' : segment.targetHrZone != null ? 'Z${segment.targetHrZone}' : ''} ${segment.durationLabel}'.trim(),
+                '${segment.isRest ? 'REST' : segment.targetHrZone != null ? 'Z${segment.targetHrZone}' : 'FREE ROW'} ${segment.durationLabel}'.trim(),
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -1009,56 +1104,44 @@ class HeroSection extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Hero pace — inline or stacked "/500m" suffix
-              if (inlinePaceSuffix)
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        data.paceFormatted,
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: paceFontSize,
-                          fontWeight: FontWeight.w700,
-                          color: splitColor,
-                          letterSpacing: -2,
-                          height: 1.0,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
+              // Hero pace — centered with /500m suffix offset to the right
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    // Invisible counterweight so pace number stays centered
+                    Opacity(
+                      opacity: 0,
+                      child: Text(
                         '/500m',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: RowCraftTheme.subtleGrey,
-                            ),
+                        style: Theme.of(context).textTheme.labelLarge,
                       ),
-                    ],
-                  ),
-                )
-              else ...[
-                Text(
-                  data.paceFormatted,
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: paceFontSize,
-                    fontWeight: FontWeight.w700,
-                    color: splitColor,
-                    letterSpacing: -2,
-                    height: 1.0,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '/500m',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: RowCraftTheme.subtleGrey,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      data.paceFormatted,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: paceFontSize,
+                        fontWeight: FontWeight.w700,
+                        color: splitColor,
+                        letterSpacing: -2,
+                        height: 1.0,
                       ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '/500m',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: RowCraftTheme.subtleGrey,
+                          ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
 
               // Pace guide bar
               if (segment?.targetIntensity != null) ...[
@@ -1299,32 +1382,56 @@ class _UpNextPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final segments = session.expandedSegments;
-    final isActive = session.engineState.phase == WorkoutPhase.rowing ||
-        session.engineState.phase == WorkoutPhase.resting ||
-        session.engineState.phase == WorkoutPhase.paused;
-    final currentIndex = isActive ? session.engineState.currentSegmentIndex : 0;
+    final es = session.engineState;
+    final isActive = es.phase == WorkoutPhase.rowing ||
+        es.phase == WorkoutPhase.resting ||
+        es.phase == WorkoutPhase.paused;
+    final currentIndex = isActive ? es.currentSegmentIndex : 0;
     final nextIndex = currentIndex + 1;
+
+    // Compute fade-in opacity: invisible when >60s remaining, fully visible
+    // in the last few seconds. For non-time segments, use progress.
+    double opacity = 0.0;
+    if (isActive) {
+      final seg = es.currentSegment;
+      if (seg != null && seg.durationType == DurationType.time) {
+        final remaining =
+            seg.durationValue - es.segmentElapsedTime.inSeconds;
+        if (remaining <= 60) {
+          opacity = ((60 - remaining) / 60).clamp(0.0, 1.0);
+        }
+      } else {
+        // Distance/calorie segments: fade in when progress > 0.85
+        if (es.segmentProgress > 0.85) {
+          opacity =
+              ((es.segmentProgress - 0.85) / 0.15).clamp(0.0, 1.0);
+        }
+      }
+    }
 
     // Last segment — show "FINAL SEGMENT" (only when active)
     if (nextIndex >= segments.length) {
       if (!isActive) return const SizedBox.shrink();
-      return Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: const BoxDecoration(
-          border: Border(
-            left: BorderSide(color: RowCraftTheme.subtleGrey, width: 3),
+      return Opacity(
+        opacity: opacity,
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: const BoxDecoration(
+            border: Border(
+              left: BorderSide(color: RowCraftTheme.subtleGrey, width: 3),
+            ),
+            color: Color(0x0DFFFFFF),
           ),
-          color: Color(0x0DFFFFFF),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'FINAL SEGMENT',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: RowCraftTheme.subtleGrey,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'FINAL SEGMENT',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: RowCraftTheme.subtleGrey,
+              ),
             ),
           ),
         ),
@@ -1334,41 +1441,63 @@ class _UpNextPreview extends StatelessWidget {
     final next = segments[nextIndex];
     final nextColor = segmentDisplayColor(next);
 
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: nextColor.withValues(alpha: 0.08),
-        border: Border(
-          left: BorderSide(color: nextColor, width: 3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Text(
-            'UP NEXT',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: RowCraftTheme.subtleGrey,
-              letterSpacing: 0.5,
-            ),
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: nextColor.withValues(alpha: 0.08),
+          border: Border(
+            left: BorderSide(color: nextColor, width: 3),
           ),
-          const SizedBox(width: 10),
-          if (next.targetIntensity != null)
+        ),
+        child: Row(
+          children: [
             Text(
-              '${formatPaceTenths(resolveIntensityToPace(next.targetIntensity!, session.ftpWatts).toDouble())} /500',
+              'UP NEXT',
               style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: nextColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: RowCraftTheme.subtleGrey,
+                letterSpacing: 0.5,
               ),
             ),
-          if (next.targetStrokeRate != null) ...[
+            const SizedBox(width: 10),
             if (next.targetIntensity != null)
-              const SizedBox(width: 8),
+              Text(
+                '${formatPaceTenths(resolveIntensityToPace(next.targetIntensity!, session.ftpWatts).toDouble())} /500m',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: nextColor,
+                ),
+              ),
+            if (next.targetStrokeRate != null) ...[
+              if (next.targetIntensity != null)
+                const SizedBox(width: 8),
+              Text(
+                '${next.targetStrokeRate!} s/m',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: nextColor,
+                ),
+              ),
+            ],
+            // Fallback: show label when no targets exist
+            if (next.isRest || (next.targetIntensity == null && next.targetStrokeRate == null))
+              Text(
+                next.isRest ? 'REST' : 'FREE ROW',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: nextColor,
+                ),
+              ),
+            const Spacer(),
             Text(
-              '${next.targetStrokeRate!} s/m',
+              next.durationLabel,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -1376,26 +1505,7 @@ class _UpNextPreview extends StatelessWidget {
               ),
             ),
           ],
-          // Fallback: show REST label when no targets exist
-          if (next.isRest)
-            Text(
-              'REST',
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: nextColor,
-              ),
-            ),
-          const Spacer(),
-          Text(
-            next.durationLabel,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: nextColor,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1499,6 +1609,7 @@ class WorkoutControls extends ConsumerWidget {
                     isLarge: true,
                   ),
                 ],
+              WorkoutPhase.structuredComplete ||
               WorkoutPhase.finished => [
                   _ControlButton(
                     icon: Icons.home,
@@ -1783,8 +1894,9 @@ class _AutoPauseBanner extends StatelessWidget {
 
 class _PhaseIndicator extends StatelessWidget {
   final WorkoutPhase phase;
+  final WorkoutSegment? segment;
 
-  const _PhaseIndicator({required this.phase});
+  const _PhaseIndicator({required this.phase, this.segment});
 
   @override
   Widget build(BuildContext context) {
@@ -1792,9 +1904,10 @@ class _PhaseIndicator extends StatelessWidget {
       WorkoutPhase.idle => ('IDLE', RowCraftTheme.subtleGrey),
       WorkoutPhase.ready => ('READY', RowCraftTheme.warningAmber),
       WorkoutPhase.countingDown => ('3...2...1', RowCraftTheme.warningAmber),
-      WorkoutPhase.rowing => ('ROWING', RowCraftTheme.successGreen),
+      WorkoutPhase.rowing => _rowingLabel(segment),
       WorkoutPhase.paused => ('PAUSED', RowCraftTheme.warningAmber),
       WorkoutPhase.resting => ('REST', RowCraftTheme.warningAmber),
+      WorkoutPhase.structuredComplete => ('DONE', RowCraftTheme.primaryBlue),
       WorkoutPhase.finished => ('DONE', RowCraftTheme.primaryBlue),
     };
 
@@ -1817,5 +1930,16 @@ class _PhaseIndicator extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Label for the rowing phase — show the segment zone or "FREE ROW".
+  static (String, Color) _rowingLabel(WorkoutSegment? seg) {
+    if (seg == null) return ('ROWING', RowCraftTheme.successGreen);
+    final zone = seg.targetHrZone;
+    if (zone != null) {
+      final color = segmentDisplayColor(seg);
+      return ('Z$zone', color);
+    }
+    return ('FREE ROW', RowCraftTheme.subtleGrey);
   }
 }

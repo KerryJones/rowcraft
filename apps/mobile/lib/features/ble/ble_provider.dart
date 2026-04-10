@@ -50,6 +50,18 @@ final connectedDeviceIdProvider = Provider<String?>((ref) {
   return ref.watch(pm5ServiceProvider).connectedDeviceId;
 });
 
+/// Pending device to remember — shown as a dialog prompt after connection.
+class PendingRememberDevice {
+  final String deviceId;
+  final String deviceName;
+  final String deviceType;
+  const PendingRememberDevice({
+    required this.deviceId,
+    required this.deviceName,
+    required this.deviceType,
+  });
+}
+
 /// State for the BLE scan/connect UI.
 class BleState {
   final PM5ConnectionState pm5ConnectionState;
@@ -62,6 +74,8 @@ class BleState {
   // Which specific device ID is currently being connected to (null if not connecting).
   final String? connectingPm5DeviceId;
   final String? connectingHrDeviceId;
+  /// Set when a device connects and hasn't been saved yet — UI should prompt.
+  final PendingRememberDevice? pendingRememberDevice;
 
   const BleState({
     this.pm5ConnectionState = PM5ConnectionState.disconnected,
@@ -73,6 +87,7 @@ class BleState {
     String? error,
     this.connectingPm5DeviceId,
     this.connectingHrDeviceId,
+    this.pendingRememberDevice,
   }) : _error = error;
 
   String? get error => _error;
@@ -96,6 +111,7 @@ class BleState {
     Object? error = _sentinel,
     Object? connectingPm5DeviceId = _sentinel,
     Object? connectingHrDeviceId = _sentinel,
+    Object? pendingRememberDevice = _sentinel,
   }) {
     return BleState(
       pm5ConnectionState: pm5ConnectionState ?? this.pm5ConnectionState,
@@ -111,6 +127,9 @@ class BleState {
       connectingHrDeviceId: connectingHrDeviceId == _sentinel
           ? this.connectingHrDeviceId
           : connectingHrDeviceId as String?,
+      pendingRememberDevice: pendingRememberDevice == _sentinel
+          ? this.pendingRememberDevice
+          : pendingRememberDevice as PendingRememberDevice?,
     );
   }
 }
@@ -135,15 +154,24 @@ class BleNotifier extends Notifier<BleState> {
     _pm5ConnectionSubscription?.cancel();
     _pm5ConnectionSubscription = pm5Service.connectionState.listen((s) {
       state = state.copyWith(pm5ConnectionState: s);
-      // Save PM5 device on confirmed connection
+      // Prompt to remember PM5 device on confirmed connection
       if (s == PM5ConnectionState.connected &&
           pm5Service.connectedDeviceId != null) {
-        _saveDevice(
-          pm5Service.connectedDeviceId!,
-          _pendingPm5Name ?? 'Rower',
-          'pm5',
-        );
-        _pendingPm5Name = null;
+        final deviceId = pm5Service.connectedDeviceId!;
+        final alreadySaved =
+            state.savedDevices.any((d) => d.deviceId == deviceId);
+        if (alreadySaved) {
+          _pendingPm5Name = null;
+        } else {
+          state = state.copyWith(
+            pendingRememberDevice: PendingRememberDevice(
+              deviceId: deviceId,
+              deviceName: _pendingPm5Name ?? 'Rower',
+              deviceType: 'pm5',
+            ),
+          );
+          _pendingPm5Name = null;
+        }
       } else if (s == PM5ConnectionState.error) {
         _pendingPm5Name = null;
       }
@@ -154,9 +182,19 @@ class BleNotifier extends Notifier<BleState> {
       state = state.copyWith(hrConnectionState: s);
     });
 
-    // Save HR device on confirmed connection (via callback)
+    // Prompt to remember HR device on confirmed connection (via callback)
     hrService.onDeviceConnected = (deviceId, deviceName) {
-      _saveDevice(deviceId, deviceName ?? 'HR Monitor', 'hr');
+      final alreadySaved =
+          state.savedDevices.any((d) => d.deviceId == deviceId);
+      if (!alreadySaved) {
+        state = state.copyWith(
+          pendingRememberDevice: PendingRememberDevice(
+            deviceId: deviceId,
+            deviceName: deviceName ?? 'HR Monitor',
+            deviceType: 'hr',
+          ),
+        );
+      }
     };
 
     ref.onDispose(() {
@@ -355,6 +393,19 @@ class BleNotifier extends Notifier<BleState> {
       hrConnectionState: HrConnectionState.disconnected,
       connectingHrDeviceId: null,
     );
+  }
+
+  /// Confirm saving the pending device to the database.
+  Future<void> confirmRememberDevice() async {
+    final pending = state.pendingRememberDevice;
+    if (pending == null) return;
+    await _saveDevice(pending.deviceId, pending.deviceName, pending.deviceType);
+    state = state.copyWith(pendingRememberDevice: null);
+  }
+
+  /// Dismiss the remember-device prompt without saving.
+  void dismissRememberDevice() {
+    state = state.copyWith(pendingRememberDevice: null);
   }
 
   /// Remove a saved device from the database.

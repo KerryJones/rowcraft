@@ -35,9 +35,20 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
     final bleState = ref.watch(bleProvider);
     final theme = Theme.of(context);
 
+    // Show "Remember this device?" dialog when a new device connects
+    ref.listen<BleState>(bleProvider, (prev, next) {
+      if (next.pendingRememberDevice != null &&
+          prev?.pendingRememberDevice == null &&
+          mounted) {
+        _showRememberDialog(context, next.pendingRememberDevice!);
+      }
+    });
+
     final savedIds = bleState.savedDevices.map((d) => d.deviceId).toSet();
-    final unseenPm5 = bleState.discoveredPm5Devices.where((d) => !savedIds.contains(d.id)).toList();
-    final unseenHr = bleState.discoveredHrDevices.where((d) => !savedIds.contains(d.id)).toList();
+    // Show all discovered devices, including saved ones (they appear in both
+    // the saved section and the nearby section so users can still forget them).
+    final nearbyPm5 = bleState.discoveredPm5Devices.where((d) => !savedIds.contains(d.id)).toList();
+    final nearbyHr = bleState.discoveredHrDevices.where((d) => !savedIds.contains(d.id)).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -87,10 +98,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           const SizedBox(height: 24),
 
           // PM5 devices (exclude already-saved)
-          if (unseenPm5.isNotEmpty) ...[
+          if (nearbyPm5.isNotEmpty) ...[
             Text('Rowers', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            ...unseenPm5
+            ...nearbyPm5
                 .map((d) => _DiscoveredDeviceTile(
                       device: d,
                       type: 'pm5',
@@ -101,10 +112,10 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
           ],
 
           // HR devices (exclude already-saved)
-          if (unseenHr.isNotEmpty) ...[
+          if (nearbyHr.isNotEmpty) ...[
             Text('Heart Rate Monitors', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
-            ...unseenHr
+            ...nearbyHr
                 .map((d) => _DiscoveredDeviceTile(
                       device: d,
                       type: 'hr',
@@ -150,6 +161,38 @@ class _ConnectScreenState extends ConsumerState<ConnectScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showRememberDialog(
+      BuildContext context, PendingRememberDevice device) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: RowCraftTheme.surfaceContainer,
+        title: const Text('Remember device?'),
+        content: Text(
+          'Remember "${device.deviceName}" for next time?\n\n'
+          'If you\'re at a gym, you may not want to save this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(bleProvider.notifier).dismissRememberDevice();
+            },
+            child: const Text('No thanks'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(bleProvider.notifier).confirmRememberDevice();
+            },
+            child: const Text('Remember'),
+          ),
         ],
       ),
     );

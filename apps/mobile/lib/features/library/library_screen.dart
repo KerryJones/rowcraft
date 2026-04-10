@@ -521,16 +521,6 @@ const _kAllTiles = <_TileDef>[
   // Collections
   _TileDef(
     type: _TileType.collection,
-    label: 'Pete Plan',
-    subtitle: 'Classic plan',
-    icon: Icons.assignment,
-    bgStart: Color(0xFF7C3AED),
-    bgEnd: Color(0xFF4C1D95),
-    ring: Color(0xFFA78BFA),
-    collectionKey: 'pete-plan',
-  ),
-  _TileDef(
-    type: _TileType.collection,
     label: 'FTP Builder',
     subtitle: 'Build power',
     icon: Icons.trending_up,
