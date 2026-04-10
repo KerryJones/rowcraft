@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/auth/auth_screen.dart';
-import '../features/ble/connect_screen.dart';
 import '../features/ble/connection_gate_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/quick_start/quick_start_screen.dart';
@@ -137,7 +136,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/devices',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ConnectScreen(),
+        builder: (context, state) =>
+            const ConnectionGateScreen(isManagement: true),
       ),
 
       // Bottom nav shell with 4 tabs

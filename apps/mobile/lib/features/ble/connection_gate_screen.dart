@@ -13,8 +13,13 @@ import 'pm5_service.dart';
 /// Connection gate shown on app launch before the main tab shell.
 /// Shows discovered devices as a selectable list — never auto-connects
 /// to discovered devices without user confirmation.
+///
+/// When [isManagement] is true the screen shows an AppBar with a back button
+/// and hides the Continue/Skip footer — used for the in-app /devices route.
 class ConnectionGateScreen extends ConsumerStatefulWidget {
-  const ConnectionGateScreen({super.key});
+  const ConnectionGateScreen({super.key, this.isManagement = false});
+
+  final bool isManagement;
 
   @override
   ConsumerState<ConnectionGateScreen> createState() =>
@@ -30,8 +35,13 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
       await notifier.autoReconnect();
       if (!mounted) return;
       final bleState = ref.read(bleProvider);
-      if (bleState.pm5ConnectionState != PM5ConnectionState.connected &&
-          !bleState.isScanning) {
+      final pm5Connected =
+          bleState.pm5ConnectionState == PM5ConnectionState.connected;
+      final hrConnected =
+          bleState.hrConnectionState == HrConnectionState.connected;
+      final fullyConnected = pm5Connected && hrConnected;
+      if (!bleState.isScanning &&
+          (widget.isManagement ? !fullyConnected : !pm5Connected)) {
         notifier.startScan();
       }
     });
@@ -60,6 +70,132 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
     final savedPm5Ids = savedPm5.map((d) => d.deviceId).toSet();
     final savedHrIds = savedHr.map((d) => d.deviceId).toSet();
 
+    void forgetDevice(SavedDevice device) {
+      ref.read(bleProvider.notifier).removeSavedDevice(device.deviceId);
+    }
+
+    final deviceList = ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      children: [
+        // PM5 section
+        _DeviceSection(
+          icon: Icons.rowing,
+          label: 'Rower',
+          badge: 'REQUIRED',
+          badgeColor: RowCraftTheme.errorRose,
+          connectedColor: RowCraftTheme.successGreen,
+          isConnected: pm5Connected,
+          isConnecting: bleState.pm5ConnectionState ==
+              PM5ConnectionState.connecting,
+          connectingDeviceId: bleState.connectingPm5DeviceId,
+          isScanning: bleState.isScanning,
+          connectedDeviceName: pm5Connected
+              ? _connectedName(savedPm5,
+                  ref.watch(pm5ServiceProvider).connectedDeviceId)
+              : null,
+          savedDevices: savedPm5,
+          discoveredDeviceIds: bleState.discoveredDeviceIds,
+          hasScanned: bleState.hasScanned,
+          discoveredDevices: bleState.discoveredPm5Devices
+              .where((d) => !savedPm5Ids.contains(d.id))
+              .toList(),
+          onConnectSaved: (device) {
+            ref.read(bleProvider.notifier).connectToPm5(
+                  device.deviceId,
+                  deviceName: device.deviceName,
+                );
+          },
+          onConnectDiscovered: (device) {
+            ref.read(bleProvider.notifier).connectToPm5(
+                  device.id,
+                  deviceName: device.name,
+                );
+          },
+          onDisconnect: () =>
+              ref.read(bleProvider.notifier).disconnectPm5(),
+          onForget: forgetDevice,
+          onScan: () => ref.read(bleProvider.notifier).startScan(),
+        ),
+        const SizedBox(height: 12),
+
+        // HR section
+        _DeviceSection(
+          icon: Icons.favorite,
+          label: 'Heart Rate',
+          badge: 'OPTIONAL',
+          badgeColor: RowCraftTheme.subtleGrey,
+          connectedColor: RowCraftTheme.successGreen,
+          isConnected:
+              bleState.hrConnectionState == HrConnectionState.connected,
+          isConnecting:
+              bleState.hrConnectionState == HrConnectionState.connecting,
+          connectingDeviceId: bleState.connectingHrDeviceId,
+          isScanning: bleState.isScanning,
+          connectedDeviceName: bleState.hrConnectionState ==
+                  HrConnectionState.connected
+              ? _connectedName(
+                  savedHr, ref.watch(hrServiceProvider).connectedDeviceId)
+              : null,
+          savedDevices: savedHr,
+          discoveredDeviceIds: bleState.discoveredDeviceIds,
+          hasScanned: bleState.hasScanned,
+          discoveredDevices: bleState.discoveredHrDevices
+              .where((d) => !savedHrIds.contains(d.id))
+              .toList(),
+          onConnectSaved: (device) {
+            ref.read(bleProvider.notifier).connectToHrDevice(
+                  device.deviceId,
+                  deviceName: device.deviceName,
+                );
+          },
+          onConnectDiscovered: (device) {
+            ref.read(bleProvider.notifier).connectToHrDevice(
+                  device.id,
+                  deviceName: device.name.isNotEmpty ? device.name : null,
+                );
+          },
+          onDisconnect: () =>
+              ref.read(bleProvider.notifier).disconnectHr(),
+          onForget: forgetDevice,
+          onScan: () => ref.read(bleProvider.notifier).startScan(),
+        ),
+      ],
+    );
+
+    if (widget.isManagement) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Devices'),
+          actions: [
+            if (bleState.isScanning)
+              const Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(child: deviceList),
+            if (bleState.error != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(
+                  bleState.error!,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: RowCraftTheme.errorRose),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: RowCraftTheme.surfaceDark,
       body: SafeArea(
@@ -73,8 +209,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SvgPicture.asset('assets/logo_gold.svg',
-                          height: 40),
+                      SvgPicture.asset('assets/logo_gold.svg', height: 40),
                       const SizedBox(width: 10),
                       Text('RowCraft',
                           style: theme.textTheme.headlineMedium
@@ -101,95 +236,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
             const SizedBox(height: 16),
 
             // Scrollable device sections
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: [
-                  // PM5 section
-                  _DeviceSection(
-                    icon: Icons.rowing,
-                    label: 'Rower',
-                    badge: 'REQUIRED',
-                    badgeColor: RowCraftTheme.errorRose,
-                    connectedColor: RowCraftTheme.successGreen,
-                    isConnected: pm5Connected,
-                    isConnecting: bleState.pm5ConnectionState ==
-                        PM5ConnectionState.connecting,
-                    isScanning: bleState.isScanning,
-                    connectedDeviceName: pm5Connected
-                        ? _connectedName(savedPm5,
-                            ref.watch(pm5ServiceProvider).connectedDeviceId)
-                        : null,
-                    savedDevices: savedPm5,
-                    discoveredDeviceIds: bleState.discoveredDeviceIds,
-                    hasScanned: bleState.hasScanned,
-                    discoveredDevices: bleState.discoveredPm5Devices
-                        .where((d) => !savedPm5Ids.contains(d.id))
-                        .toList(),
-                    onConnectSaved: (device) {
-                      ref.read(bleProvider.notifier).connectToPm5(
-                            device.deviceId,
-                            deviceName: device.deviceName,
-                          );
-                    },
-                    onConnectDiscovered: (device) {
-                      ref.read(bleProvider.notifier).connectToPm5(
-                            device.id,
-                            deviceName: device.name,
-                          );
-                    },
-                    onDisconnect: () =>
-                        ref.read(bleProvider.notifier).disconnectPm5(),
-                    onScan: () =>
-                        ref.read(bleProvider.notifier).startScan(),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // HR section
-                  _DeviceSection(
-                    icon: Icons.favorite,
-                    label: 'Heart Rate',
-                    badge: 'OPTIONAL',
-                    badgeColor: RowCraftTheme.subtleGrey,
-                    connectedColor: RowCraftTheme.successGreen,
-                    isConnected: bleState.hrConnectionState ==
-                        HrConnectionState.connected,
-                    isConnecting: bleState.hrConnectionState ==
-                        HrConnectionState.connecting,
-                    isScanning: bleState.isScanning,
-                    connectedDeviceName:
-                        bleState.hrConnectionState ==
-                                HrConnectionState.connected
-                            ? _connectedName(savedHr,
-                                ref.watch(hrServiceProvider).connectedDeviceId)
-                            : null,
-                    savedDevices: savedHr,
-                    discoveredDeviceIds: bleState.discoveredDeviceIds,
-                    hasScanned: bleState.hasScanned,
-                    discoveredDevices: bleState.discoveredHrDevices
-                        .where((d) => !savedHrIds.contains(d.id))
-                        .toList(),
-                    onConnectSaved: (device) {
-                      ref.read(bleProvider.notifier).connectToHrDevice(
-                            device.deviceId,
-                            deviceName: device.deviceName,
-                          );
-                    },
-                    onConnectDiscovered: (device) {
-                      ref.read(bleProvider.notifier).connectToHrDevice(
-                            device.id,
-                            deviceName:
-                                device.name.isNotEmpty ? device.name : null,
-                          );
-                    },
-                    onDisconnect: () =>
-                        ref.read(bleProvider.notifier).disconnectHr(),
-                    onScan: () =>
-                        ref.read(bleProvider.notifier).startScan(),
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: deviceList),
 
             // Error
             if (bleState.error != null)
@@ -229,8 +276,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
                         : RowCraftTheme.subtleGrey,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
-                    disabledBackgroundColor:
-                        RowCraftTheme.surfaceContainerHigh,
+                    disabledBackgroundColor: RowCraftTheme.surfaceContainerHigh,
                     disabledForegroundColor: RowCraftTheme.subtleGrey,
                   ),
                 ),
@@ -259,6 +305,8 @@ class _DeviceSection extends StatelessWidget {
   final Color connectedColor;
   final bool isConnected;
   final bool isConnecting;
+  /// ID of the specific device currently being connected to for this type.
+  final String? connectingDeviceId;
   final bool isScanning;
   final String? connectedDeviceName;
   final List<SavedDevice> savedDevices;
@@ -268,6 +316,7 @@ class _DeviceSection extends StatelessWidget {
   final void Function(SavedDevice) onConnectSaved;
   final void Function(DiscoveredDevice) onConnectDiscovered;
   final VoidCallback onDisconnect;
+  final void Function(SavedDevice) onForget;
   final VoidCallback onScan;
 
   const _DeviceSection({
@@ -278,6 +327,7 @@ class _DeviceSection extends StatelessWidget {
     required this.connectedColor,
     required this.isConnected,
     required this.isConnecting,
+    this.connectingDeviceId,
     required this.isScanning,
     required this.connectedDeviceName,
     required this.savedDevices,
@@ -287,6 +337,7 @@ class _DeviceSection extends StatelessWidget {
     required this.onConnectSaved,
     required this.onConnectDiscovered,
     required this.onDisconnect,
+    required this.onForget,
     required this.onScan,
   });
 
@@ -348,7 +399,10 @@ class _DeviceSection extends StatelessWidget {
                   onPressed: onDisconnect,
                   child: const Text('Disconnect'),
                 )
-              else if (isConnecting)
+              // Only show header spinner when connecting to a discovered device;
+              // saved device rows show their own per-row spinner.
+              else if (isConnecting &&
+                  !savedDevices.any((d) => d.deviceId == connectingDeviceId))
                 const SizedBox(
                   width: 20,
                   height: 20,
@@ -387,7 +441,6 @@ class _DeviceSection extends StatelessWidget {
 
           // Saved devices list
           if (!isConnected &&
-              !isConnecting &&
               savedDevices.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text('Saved',
@@ -404,13 +457,16 @@ class _DeviceSection extends StatelessWidget {
                 isAvailable: hasScanned && !isScanning
                     ? discoveredDeviceIds.contains(device.deviceId)
                     : null,
-                onTap: () => onConnectSaved(device),
+                isConnecting: connectingDeviceId == device.deviceId,
+                onTap: connectingDeviceId == device.deviceId
+                    ? null
+                    : () => onConnectSaved(device),
+                onForget: (name) => _confirmForget(context, name, device),
               ),
           ],
 
           // Discovered devices list
           if (!isConnected &&
-              !isConnecting &&
               discoveredDevices.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text('Nearby',
@@ -453,6 +509,36 @@ class _DeviceSection extends StatelessWidget {
       ),
     );
   }
+
+  void _confirmForget(
+      BuildContext context, String name, SavedDevice device) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: RowCraftTheme.surfaceContainer,
+        title: const Text('Forget device?'),
+        content: Text(
+          'Forget "$name"? You\'ll need to pair it again next time.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              onForget(device);
+            },
+            child: const Text(
+              'Forget',
+              style: TextStyle(color: RowCraftTheme.errorRose),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// A tappable device row in the discovery list.
@@ -460,13 +546,18 @@ class _DeviceRow extends StatelessWidget {
   final String name;
   final String? subtitle;
   final bool? isAvailable;
-  final VoidCallback onTap;
+  final bool isConnecting;
+  final VoidCallback? onTap;
+  /// When provided, a delete icon is shown that triggers a forget confirmation.
+  final void Function(String name)? onForget;
 
   const _DeviceRow({
     required this.name,
     required this.subtitle,
     this.isAvailable,
+    this.isConnecting = false,
     required this.onTap,
+    this.onForget,
   });
 
   @override
@@ -530,8 +621,24 @@ class _DeviceRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 20,
-                  color: RowCraftTheme.subtleGrey),
+              if (isConnecting)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else if (onForget != null)
+                IconButton(
+                  icon: const Icon(Icons.delete_outline,
+                      size: 18, color: RowCraftTheme.subtleGrey),
+                  onPressed: () => onForget!(name),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                )
+              else
+                const Icon(Icons.add, size: 20,
+                    color: RowCraftTheme.subtleGrey),
             ],
           ),
         ),
@@ -539,4 +646,3 @@ class _DeviceRow extends StatelessWidget {
     );
   }
 }
-
