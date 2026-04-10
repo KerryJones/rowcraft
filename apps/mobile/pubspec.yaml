@@ -29,6 +29,8 @@ dependencies:
   google_sign_in: ^6.2.1
   sentry_flutter: ^9.3.0
   flutter_native_splash: ^2.4.0
+  wakelock_plus: ^1.2.0
+  audioplayers: ^6.1.0
 
 dev_dependencies:
   flutter_test:

@@ -25,10 +25,10 @@ const _colorInactive = RowCraftTheme.subtleGrey; // everything when not rowing
 const _colorErg = RowCraftTheme.subtleGrey; // rail, seat
 
 // ── STROKE WIDTHS (virtual coordinate px) ───────────────────────────────────
-const _strokeLegs = 8.0;
-const _strokeTorso = 8.0;
-const _strokeNeck = 6.0;
-const _strokeArms = 7.0;
+const _strokeLegs = 12.0;
+const _strokeTorso = 12.0;
+const _strokeNeck = 9.0;
+const _strokeArms = 11.0;
 const _strokeRail = 2.5;
 
 // ── BODY SEGMENT LENGTHS (virtual px) ───────────────────────────────────────
@@ -382,8 +382,8 @@ class _RowingFigurePainter extends CustomPainter {
 
     // ── Erg machine ──
     final ergColor = isActive
-        ? _colorErg.withValues(alpha: 0.3)
-        : _colorInactive.withValues(alpha: 0.2);
+        ? _colorErg.withValues(alpha: 0.5)
+        : _colorInactive.withValues(alpha: 0.35);
 
     // Rail
     canvas.drawLine(

@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../services/local_db.dart';
 import '../../utils/pace_utils.dart';
+import 'hr_zone_gauge.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
 import 'workout_screen.dart';
@@ -90,7 +91,7 @@ class _WorkoutScreenCompactBodyState
   bool _totalShowRemaining = false;
   bool _paceShowAvg = false;
   bool _hrShowAvg = false;
-  bool _calShowDistance = false;
+  bool _calShowDistance = true;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +102,7 @@ class _WorkoutScreenCompactBodyState
       children: [
         // Top half: 3x2 stat grid
         Expanded(
-          flex: 6,
+          flex: 5,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: Column(
@@ -177,7 +178,7 @@ class _WorkoutScreenCompactBodyState
 
         // Bottom half: existing hero visuals + segment graph
         Expanded(
-          flex: 5,
+          flex: 6,
           child: Column(
             children: [
               Expanded(child: HeroSection(session: session, inlinePaceSuffix: true)),
@@ -218,6 +219,8 @@ class _StatTile extends StatelessWidget {
   final VoidCallback? onTap;
   /// Optional leading icon shown before the label text.
   final IconData? icon;
+  /// Optional color for the leading icon (defaults to subtleGrey).
+  final Color? iconColor;
   /// Show pagination dots when this tile has multiple views. 0-based index.
   final int? pageIndex;
   final int? pageCount;
@@ -233,6 +236,7 @@ class _StatTile extends StatelessWidget {
     this.trailing,
     this.onTap,
     this.icon,
+    this.iconColor,
     this.pageIndex,
     this.pageCount,
     this.unitSuffix,
@@ -243,7 +247,7 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final showDots = pageCount != null && pageCount! > 1 && pageIndex != null;
     final content = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: RowCraftTheme.surfaceContainer,
         borderRadius: BorderRadius.circular(12),
@@ -255,7 +259,7 @@ class _StatTile extends StatelessWidget {
           Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 11, color: RowCraftTheme.subtleGrey),
+                Icon(icon, size: 11, color: iconColor ?? RowCraftTheme.subtleGrey),
                 const SizedBox(width: 3),
               ],
               Text(
@@ -486,6 +490,9 @@ class _TargetPaceTile extends StatelessWidget {
       );
     }
 
+    final isFreeRow = segment != null &&
+        !segment.isRest &&
+        segment.targetIntensity == null;
     final value = hasTarget
         ? formatPaceTenths(
             resolveIntensityToPace(
@@ -493,7 +500,9 @@ class _TargetPaceTile extends StatelessWidget {
               session.ftpWatts,
             ).toDouble(),
           )
-        : '--:--';
+        : isFreeRow
+            ? 'Free'
+            : '--:--';
 
     // Show trend chevron based on current pace vs target.
     String? chevron;
@@ -534,9 +543,13 @@ class _TargetSpmTile extends StatelessWidget {
     final segment = session.engineState.currentSegment ??
         session.expandedSegments.firstOrNull;
     final target = segment?.targetStrokeRate;
+    final isFreeRow = segment != null &&
+        !segment.isRest &&
+        segment.targetIntensity == null &&
+        target == null;
     return _StatTile(
-      label: 'TARGET SPM',
-      value: target != null ? '$target' : '--',
+      label: 'TARGET S/M',
+      value: target != null ? '$target' : isFreeRow ? 'Free' : '--',
       valueColor: target != null ? RowCraftTheme.successGreen : null,
     );
   }
@@ -562,6 +575,7 @@ class _HrTile extends StatelessWidget {
         value: (avgHr != null && avgHr > 0) ? '$avgHr' : '--',
         unitSuffix: (avgHr != null && avgHr > 0) ? 'bpm' : null,
         icon: Icons.favorite,
+        iconColor: const Color(0xFFEF5350),
         onTap: onTap,
         pageIndex: 1,
         pageCount: 2,
@@ -570,52 +584,94 @@ class _HrTile extends StatelessWidget {
 
     final hr = session.pm5Data.heartRate;
     final hasHr = hr != null && hr > 0;
-    Color? valueColor;
-    Widget? trailing;
-    String? chevron;
-    if (hasHr) {
-      final segment = session.engineState.currentSegment;
-      final currentZone =
-          estimateHrZone(hr, maxHr: session.maxHeartRate ?? 190);
-      final targetZone = segment?.targetHrZone;
-      final displayZone = targetZone ?? currentZone;
-      final info = hrZoneInfo(displayZone);
-      valueColor = info.color;
-      trailing = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-        decoration: BoxDecoration(
-          color: info.color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          'Z$displayZone',
-          style: GoogleFonts.inter(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: info.color,
-          ),
-        ),
+    final maxHr = session.maxHeartRate ?? 190;
+
+    if (!hasHr) {
+      return _StatTile(
+        label: 'HR',
+        value: '--',
+        icon: Icons.favorite,
+        iconColor: const Color(0xFFEF5350),
+        onTap: onTap,
+        pageIndex: 0,
+        pageCount: 2,
       );
-      // Chevron when HR zone is outside the target zone.
-      if (targetZone != null) {
-        if (currentZone < targetZone) {
-          chevron = '\u25B2'; // ▲ need to work harder
-        } else if (currentZone > targetZone) {
-          chevron = '\u25BC'; // ▼ ease off
-        }
-      }
     }
-    return _StatTile(
-      label: 'HR',
-      value: hasHr ? '$hr' : '--',
-      valueColor: valueColor,
-      unitSuffix: hasHr ? 'bpm' : null,
-      icon: Icons.favorite,
-      trailing: trailing,
-      chevron: chevron,
+
+    // Color by ACTUAL zone, not target
+    final currentZone = estimateHrZone(hr, maxHr: maxHr);
+    final info = hrZoneInfo(currentZone);
+
+    return GestureDetector(
       onTap: onTap,
-      pageIndex: 0,
-      pageCount: 2,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: RowCraftTheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.favorite, size: 11, color: Color(0xFFEF5350)),
+                const SizedBox(width: 3),
+                Text(
+                  'HR',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: RowCraftTheme.subtleGrey,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: info.color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Z$currentZone',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: info.color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const _PageDots(index: 0, count: 2),
+              ],
+            ),
+            Expanded(
+              child: HrZoneGauge(bpm: hr, maxHr: maxHr),
+            ),
+            Center(
+              child: Text(
+                '$hr',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: info.color,
+                  height: 1.0,
+                ),
+              ),
+            ),
+            Center(
+              child: Text(
+                'bpm',
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: RowCraftTheme.subtleGrey,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -641,6 +697,7 @@ class _CaloriesTile extends StatelessWidget {
       label: label,
       value: value,
       icon: showDistance ? Icons.straighten : Icons.local_fire_department,
+      iconColor: showDistance ? null : const Color(0xFFFF9800),
       onTap: onTap,
       pageIndex: showDistance ? 1 : 0,
       pageCount: 2,

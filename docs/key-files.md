@@ -51,13 +51,16 @@
 | `features/ble/pm5_service.dart` | PM5 BLE connection + data streaming |
 | `features/ble/hr_service.dart` | HR monitor BLE connection |
 | `features/ble/ble_provider.dart` | Riverpod BLE state management |
-| `features/workout/workout_engine.dart` | Workout state machine (phases, segments, auto-pause) |
-| `features/workout/workout_provider.dart` | Workout session Riverpod notifier |
-| `features/workout/workout_screen.dart` | Active workout UI: overall stats bar, profile graph, hero split, pace guide bar, current segment (targets + HR), up-next preview, controls |
+| `features/workout/workout_engine.dart` | Workout state machine (phases: idle→ready→countingDown→rowing/resting→paused→structuredComplete→finished, auto-pause, pace-fail) |
+| `features/workout/workout_provider.dart` | Workout session Riverpod notifier; wraps engine, PM5 reset on load, continueWithFreeRow/finishFromStructuredComplete |
+| `features/workout/workout_screen.dart` | Active workout UI (classic mode): stats bar, hero pace, segment detail, up-next preview with fade, completion modal, countdown beeps |
+| `features/workout/workout_screen_compact.dart` | Active workout UI (compact mode): 3×2 stat tile grid, HR zone gauge tile |
+| `features/workout/hr_zone_gauge.dart` | Garmin-style HR arc gauge (CustomPainter): 5-zone 180° arc + position marker |
 | `features/workout/workout_summary_screen.dart` | Post-workout summary (stats grid, pace/HR charts, splits, save/discard) |
 | `models/workout_time_sample.dart` | Time-series data point (1/sec during workout, for summary charts) |
 | `features/workout/pre_workout_screen.dart` | PM5 connection gate before starting |
 | `features/workout/rowing_animation.dart` | Animated stick-figure rower (CustomPainter) |
+| `services/audio_service.dart` | Countdown beep playback; generates PCM WAV in-memory (sine wave + fade envelope) |
 | `services/supabase_service.dart` | Supabase queries |
 | `services/local_db.dart` | Drift ORM (pending results, cached workouts, saved devices) |
 | `services/sync_service.dart` | Async result sync to Supabase |

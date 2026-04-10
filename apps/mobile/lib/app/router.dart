@@ -267,7 +267,7 @@ class _ResultDetailContent extends StatelessWidget {
                       value: '${result.avgSplitFormatted}/500m',
                     ),
                     _MetricTile(
-                      label: 'Avg SPM',
+                      label: 'Avg S/M',
                       value: '${result.avgStrokeRate}',
                     ),
                   ],
@@ -327,7 +327,7 @@ class _ResultDetailContent extends StatelessWidget {
                       _TableHeader('#'),
                       _TableHeader('Dist'),
                       _TableHeader('Pace'),
-                      _TableHeader('SPM'),
+                      _TableHeader('S/M'),
                       _TableHeader('Watts'),
                     ],
                   ),

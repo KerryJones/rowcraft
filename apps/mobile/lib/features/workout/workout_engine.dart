@@ -15,6 +15,8 @@ enum WorkoutPhase {
   rowing,
   paused,
   resting,
+  /// All structured segments done — UI shows completion modal.
+  structuredComplete,
   finished,
 }
 
@@ -371,6 +373,30 @@ class WorkoutEngine {
     }
   }
 
+  /// Continue with a free-row segment after structured workout completes.
+  /// Appends a long free-row segment and re-enters rowing phase.
+  void continueWithFreeRow() {
+    if (_state.phase != WorkoutPhase.structuredComplete) return;
+    const freeSegment = WorkoutSegment(
+      durationType: DurationType.time,
+      durationValue: 7200, // 2 hours max
+      isRest: false,
+    );
+    _expandedSegments.add(freeSegment);
+    _beginSegment(_expandedSegments.length - 1);
+  }
+
+  /// Finalize the workout from structuredComplete state.
+  void finishFromStructuredComplete() {
+    if (_state.phase != WorkoutPhase.structuredComplete) return;
+    _state = _state.copyWith(
+      phase: WorkoutPhase.finished,
+      pausedDuration: _totalPausedDuration,
+    );
+    _emit();
+    _cleanup();
+  }
+
   /// Stop the workout and finalize results.
   void stop() {
     _accumulatePausedDuration();
@@ -386,13 +412,13 @@ class WorkoutEngine {
 
   void _beginSegment(int index) {
     if (index >= _expandedSegments.length) {
-      // All segments done
+      // All structured segments done — pause for user decision
       _state = _state.copyWith(
-        phase: WorkoutPhase.finished,
+        phase: WorkoutPhase.structuredComplete,
         finishReason: FinishReason.allSegmentsComplete,
       );
       _emit();
-      _cleanup();
+      // Don't cleanup yet — user may choose to continue
       return;
     }
 

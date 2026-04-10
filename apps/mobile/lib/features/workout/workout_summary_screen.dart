@@ -36,12 +36,7 @@ String _formatDuration(Duration d) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-String _formatDistance(double distance) {
-  if (distance >= 1000) {
-    return '${(distance / 1000).toStringAsFixed(1)}km';
-  }
-  return '${distance.toInt()}m';
-}
+String _formatDistance(double distance) => '${distance.toInt()}m';
 
 Color _hrZoneColor(int bpm, {int maxHr = 190}) {
   if (bpm < (maxHr * 0.6).round()) return RowCraftTheme.hrZone1;
@@ -308,7 +303,7 @@ class _StatsGrid extends StatelessWidget {
               Expanded(
                 child: _StatCell(
                   label: 'AVG PACE',
-                  value: _formatPaceTenths(avgPace),
+                  value: '${_formatPaceTenths(avgPace)}/500m',
                 ),
               ),
             ],
@@ -821,9 +816,10 @@ class _SplitsTable extends StatelessWidget {
                       width: 48,
                       child: Text(
                         () {
-                          if (seg == null || seg.isRest) return 'Rest';
+                          if (seg == null) return '--';
+                          if (seg.isRest) return 'Rest';
                           if (seg.targetHrZone != null) return 'Z${seg.targetHrZone}';
-                          return 'Act';
+                          return 'Free';
                         }(),
                         style: cellStyle.copyWith(
                           color: color,
@@ -845,7 +841,7 @@ class _SplitsTable extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        _formatPaceTenths(split.avgPace),
+                        '${_formatPaceTenths(split.avgPace)}/500m',
                         style: cellStyle,
                       ),
                     ),

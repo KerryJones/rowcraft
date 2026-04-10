@@ -85,17 +85,17 @@ void main() {
       expect(find.text('SEGMENT'), findsOneWidget);
       expect(find.text('TOTAL'), findsOneWidget);
       expect(find.text('TARGET PACE'), findsOneWidget);
-      expect(find.text('TARGET SPM'), findsOneWidget);
+      expect(find.text('TARGET S/M'), findsOneWidget);
       expect(find.text('HR'), findsOneWidget);
-      expect(find.text('CALORIES'), findsOneWidget);
+      expect(find.text('DISTANCE'), findsOneWidget);
 
       // segment countdown: 25% elapsed → 75% remaining of 180s = 135s = 2:15
       expect(find.text('2:15'), findsOneWidget);
       // target SPM appears in the tile (and again in the HeroSection
       // current-SPM display since the stub data has strokeRate == target).
       expect(find.text('28'), findsWidgets);
-      // calories
-      expect(find.text('42'), findsOneWidget);
+      // distance (default tile state)
+      expect(find.text('400m'), findsOneWidget);
     });
 
     testWidgets('tapping SEGMENT tile toggles countdown ↔ count-up',
@@ -199,14 +199,13 @@ void main() {
       expect(find.text('AVG HR'), findsOneWidget);
       expect(find.text('155'), findsOneWidget);
 
-      // CALORIES → DISTANCE
+      // DISTANCE → CALORIES (default is distance)
+      expect(find.text('DISTANCE'), findsOneWidget);
+      expect(find.text(session.pm5Data.distanceFormatted), findsOneWidget);
+      await tester.tap(find.text('DISTANCE'));
+      await tester.pump();
       expect(find.text('CALORIES'), findsOneWidget);
       expect(find.text('42'), findsOneWidget);
-      await tester.tap(find.text('CALORIES'));
-      await tester.pump();
-      expect(find.text('DISTANCE'), findsOneWidget);
-      // distanceFormatted on 412m
-      expect(find.text(session.pm5Data.distanceFormatted), findsOneWidget);
     });
   });
 

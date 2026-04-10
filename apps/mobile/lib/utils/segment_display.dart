@@ -1,10 +1,10 @@
 import '../models/workout_segment.dart';
 import 'pace_utils.dart';
 
-/// Returns the target pace label for a segment, e.g. "2:19/500" or "Free".
+/// Returns the target pace label for a segment, e.g. "2:19/500m" or "Free row".
 String segmentPaceLabel(WorkoutSegment segment, int ftpWatts) {
   final intensity = segment.targetIntensity;
-  if (intensity == null) return 'Free';
+  if (intensity == null) return segment.isRest ? 'Rest' : 'Free row';
   final tenths = intensityToPaceTenths(intensity, ftpWatts);
   return '${formatPace(tenths)}/500m';
 }

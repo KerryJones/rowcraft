@@ -195,7 +195,7 @@ void main() {
       ));
 
       await Future.delayed(const Duration(milliseconds: 100));
-      expect(phases, contains(WorkoutPhase.finished));
+      expect(phases, contains(WorkoutPhase.structuredComplete));
     });
 
     test('stop finalizes and moves to finished', () async {
@@ -947,7 +947,7 @@ void main() {
       ));
       await Future.delayed(const Duration(milliseconds: 100));
 
-      expect(phases, contains(WorkoutPhase.finished));
+      expect(phases, contains(WorkoutPhase.structuredComplete));
     });
 
     test('per-segment calories are deltas not cumulative', () async {
@@ -1361,7 +1361,7 @@ void main() {
       ));
       await Future.delayed(const Duration(milliseconds: 100));
 
-      expect(engine.currentState.phase, WorkoutPhase.finished);
+      expect(engine.currentState.phase, WorkoutPhase.structuredComplete);
       expect(engine.completedSplits.last.calories, 20);
     });
 
@@ -1512,6 +1512,142 @@ void main() {
 
       expect(engine.currentState.phase, WorkoutPhase.finished);
       expect(engine.currentState.finishReason, FinishReason.paceFailed);
+    });
+  });
+
+  group('structuredComplete flow', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    Workout makeWorkout(List<WorkoutSegment> segments) {
+      return Workout(
+        id: 'test',
+        authorId: 'user',
+        title: 'Test',
+        workoutType: WorkoutType.intervals,
+        segments: segments,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    test('finishFromStructuredComplete transitions to finished', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Complete the segment
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 30),
+        distance: 100,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 10,
+        strokeCount: 60,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(engine.currentState.phase, WorkoutPhase.structuredComplete);
+
+      engine.finishFromStructuredComplete();
+      expect(engine.currentState.phase, WorkoutPhase.finished);
+    });
+
+    test('continueWithFreeRow appends free segment and re-enters rowing', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      final phases = <WorkoutPhase>[];
+      engine.stateStream.listen((s) => phases.add(s.phase));
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Complete the segment
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 30),
+        distance: 100,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 10,
+        strokeCount: 60,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(engine.currentState.phase, WorkoutPhase.structuredComplete);
+
+      engine.continueWithFreeRow();
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+      // Verify a new free segment was added
+      expect(engine.expandedSegments.last.isRest, false);
+      expect(engine.expandedSegments.last.targetIntensity, isNull);
+    });
+
+    test('continueWithFreeRow is a no-op outside structuredComplete', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+
+      engine.continueWithFreeRow(); // no-op
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+    });
+
+    test('finishFromStructuredComplete is a no-op outside structuredComplete', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+
+      engine.finishFromStructuredComplete(); // no-op
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
     });
   });
 
