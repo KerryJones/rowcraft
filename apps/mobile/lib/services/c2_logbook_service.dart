@@ -69,17 +69,21 @@ class C2LogbookService {
   /// the OAuth redirect to Concept2's authorization server. After the user
   /// authorizes, the web app exchanges the code for tokens, stores them,
   /// and redirects back to the mobile app via deep link.
+  ///
+  /// Throws [StateError] if the user is not signed in or the URL cannot
+  /// be launched.
   Future<void> authenticate() async {
     final session = _client.auth.currentSession;
-    if (session == null) return;
+    if (session == null) throw StateError('Not signed in');
 
     final authUrl = Uri.parse(
       '$_webAppUrl/api/c2/auth?source=mobile&token=${session.accessToken}',
     );
 
-    if (await canLaunchUrl(authUrl)) {
-      await launchUrl(authUrl, mode: LaunchMode.externalApplication);
+    if (!await canLaunchUrl(authUrl)) {
+      throw StateError('Could not open authentication URL');
     }
+    await launchUrl(authUrl, mode: LaunchMode.externalApplication);
   }
 
   /// Sync a workout result to the C2 Online Logbook.

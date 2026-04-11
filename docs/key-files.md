@@ -60,10 +60,10 @@
 | `models/workout_time_sample.dart` | Time-series data point (1/sec during workout, for summary charts) |
 | `features/workout/pre_workout_screen.dart` | PM5 connection gate before starting |
 | `features/workout/rowing_animation.dart` | Animated stick-figure rower (CustomPainter) |
-| `services/audio_service.dart` | Countdown beep playback; generates PCM WAV in-memory (sine wave + fade envelope) |
+| `services/audio_service.dart` | Countdown beep playback; generates PCM WAV in-memory (sine wave + fade envelope); configures audio session to duck background music |
 | `services/supabase_service.dart` | Supabase queries |
 | `services/local_db.dart` | Drift ORM (pending results, cached workouts, saved devices) |
 | `services/sync_service.dart` | Async result sync to Supabase |
-| `services/c2_logbook_service.dart` | Concept2 Logbook OAuth + API |
+| `services/c2_logbook_service.dart` | Concept2 Logbook OAuth (throws on failure) + result sync API |
 | `app/router.dart` | GoRouter route definitions |
 | `app/theme.dart` | Dark theme colors + typography |

@@ -325,6 +325,71 @@ void main() {
       );
     });
 
+    test('PM5 frames during timed rest do not overwrite wall-clock segmentProgress', () async {
+      // Regression: _onPM5Data previously competed with _tickRest to set
+      // segmentProgress during rest, causing flickering when flywheel spin-down
+      // data arrived between tick intervals.
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 50,
+            targetIntensity: 80,
+          ),
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 10,
+            isRest: true,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Complete the work segment to enter rest
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 10),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+      expect(engine.currentState.phase, WorkoutPhase.resting);
+
+      // Let the wall-clock tick advance progress by ~3 seconds
+      await Future.delayed(const Duration(seconds: 3));
+      final progressAfterTick = engine.currentState.segmentProgress;
+      expect(progressAfterTick, greaterThan(0.1));
+
+      // Send a PM5 frame with stale elapsed time (flywheel spin-down scenario).
+      // PM5 elapsed hasn't advanced much — without the fix, this would reset
+      // segmentProgress to near 0, causing the countdown to jump backwards.
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 11), // only 1s past segment start
+        distance: 51,
+        pace: 0,
+        strokeRate: 0,
+        watts: 0,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Progress must not have regressed — PM5 frame must not have overwritten it
+      expect(
+        engine.currentState.segmentProgress,
+        greaterThanOrEqualTo(progressAfterTick - 0.05),
+      );
+    });
+
     test('collects split data for completed segments', () async {
       engine = WorkoutEngine(
         workout: makeWorkout([

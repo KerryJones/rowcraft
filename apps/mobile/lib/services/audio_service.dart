@@ -1,7 +1,8 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:audioplayers/audioplayers.dart' hide AVAudioSessionCategory;
 
 /// Service for playing workout audio cues (countdown beeps on segment transitions).
 class AudioService {
@@ -11,17 +12,37 @@ class AudioService {
   final _player = AudioPlayer();
   Uint8List? _beepLow;
   Uint8List? _beepHigh;
+  bool _initialized = false;
 
-  /// Initialize audio buffers. Call once at app startup or first use.
-  void init() {
+  /// Initialize audio buffers and configure audio session for ducking.
+  /// Safe to call multiple times — only configures once.
+  Future<void> init() async {
     _beepLow ??= _generateBeepWav(frequency: 880, durationMs: 100);
     _beepHigh ??= _generateBeepWav(frequency: 1320, durationMs: 200);
+    if (_initialized) return;
+    _initialized = true;
+
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.ambient,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.duckOthers,
+      avAudioSessionMode: AVAudioSessionMode.defaultMode,
+      avAudioSessionRouteSharingPolicy:
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.sonification,
+        usage: AndroidAudioUsage.notificationEvent,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
+      androidWillPauseWhenDucked: false,
+    ));
   }
 
   /// Play a countdown beep. [secondsLeft] = 3,2,1 plays a short beep;
   /// 0 plays a higher-pitched longer beep for segment start.
   Future<void> playCountdownBeep(int secondsLeft) async {
-    init();
+    await init();
     final bytes = secondsLeft > 0 ? _beepLow! : _beepHigh!;
     await _player.stop();
     await _player.play(BytesSource(bytes));

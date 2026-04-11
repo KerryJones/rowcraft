@@ -575,29 +575,44 @@ class WorkoutEngine {
     final elapsedTime = data.elapsedTime - _segmentStartTime;
     final elapsedCalories = data.calories - _segmentStartCalories;
 
-    double progress = 0;
-    switch (segment.durationType) {
-      case DurationType.distance:
-        progress = elapsedDistance / segment.durationValue;
-        break;
-      case DurationType.time:
-        // Subtract paused time so clock doesn't advance while paused
-        final adjustedElapsed = elapsedTime - _totalPausedDuration;
-        progress =
-            adjustedElapsed.inSeconds / segment.durationValue;
-        break;
-      case DurationType.calories:
-        progress = elapsedCalories / segment.durationValue;
-        break;
-    }
-    progress = progress.clamp(0.0, 1.0);
+    // For timed rest segments, _tickRest() owns segmentProgress/segmentElapsedTime
+    // via wall-clock tracking. Skip PM5-derived progress here to avoid flickering
+    // caused by competing writes (PM5 flywheel data vs wall-clock tick).
+    final isTimedRest = _state.phase == WorkoutPhase.resting &&
+        segment.durationType == DurationType.time;
 
-    _state = _state.copyWith(
-      segmentProgress: progress,
-      segmentElapsedDistance: elapsedDistance,
-      segmentElapsedTime: elapsedTime,
-      segmentElapsedCalories: elapsedCalories,
-    );
+    if (!isTimedRest) {
+      double progress = 0;
+      switch (segment.durationType) {
+        case DurationType.distance:
+          progress = elapsedDistance / segment.durationValue;
+          break;
+        case DurationType.time:
+          // Subtract paused time so clock doesn't advance while paused
+          final adjustedElapsed = elapsedTime - _totalPausedDuration;
+          progress =
+              adjustedElapsed.inSeconds / segment.durationValue;
+          break;
+        case DurationType.calories:
+          progress = elapsedCalories / segment.durationValue;
+          break;
+      }
+      progress = progress.clamp(0.0, 1.0);
+
+      _state = _state.copyWith(
+        segmentProgress: progress,
+        segmentElapsedDistance: elapsedDistance,
+        segmentElapsedTime: elapsedTime,
+        segmentElapsedCalories: elapsedCalories,
+      );
+    } else {
+      // Still track distance and calories during rest (e.g. for non-time rest types
+      // and sample accumulation), but leave segmentProgress/segmentElapsedTime to _tickRest.
+      _state = _state.copyWith(
+        segmentElapsedDistance: elapsedDistance,
+        segmentElapsedCalories: elapsedCalories,
+      );
+    }
 
     // ── Pace fail detection ────────────────────────────────────────────
     // For work segments with an intensity target, resolve to pace and
@@ -640,8 +655,9 @@ class WorkoutEngine {
 
     _emit();
 
-    // Check if segment is complete
-    if (progress >= 1.0) {
+    // Check if segment is complete. Timed rest segments are advanced by
+    // _restTimer, not by PM5 data — skip the check to avoid double-advance.
+    if (!isTimedRest && _state.segmentProgress >= 1.0) {
       _advanceToNextSegment();
     }
   }
