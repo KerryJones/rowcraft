@@ -244,9 +244,11 @@ class BleNotifier extends Notifier<BleState> {
     final pm5Devices = <DiscoveredDevice>[];
     final hrDevices = <DiscoveredDevice>[];
 
-    // Only reset connection state if not already connected
+    // Preserve connection state if already connected
+    final pm5AlreadyConnected =
+        state.pm5ConnectionState == PM5ConnectionState.connected;
     final newPm5State =
-        state.pm5ConnectionState == PM5ConnectionState.connected
+        pm5AlreadyConnected
             ? PM5ConnectionState.connected
             : PM5ConnectionState.scanning;
 
@@ -258,25 +260,26 @@ class BleNotifier extends Notifier<BleState> {
       error: null,
     );
 
-    // Scan for PM5 (only if not already connected)
-    if (state.pm5ConnectionState != PM5ConnectionState.connected) {
-      _pm5ScanSubscription?.cancel();
-      _pm5ScanSubscription = pm5Service.scanForPM5().listen(
-        (device) {
-          if (!pm5Devices.any((d) => d.id == device.id)) {
-            pm5Devices.add(device);
-            state =
-                state.copyWith(discoveredPm5Devices: List.from(pm5Devices));
-          }
-        },
-        onError: (e) {
+    // Always scan for PM5 — even when one is connected, the user may have
+    // multiple rowers saved and needs to see which are nearby.
+    _pm5ScanSubscription?.cancel();
+    _pm5ScanSubscription = pm5Service.scanForPM5().listen(
+      (device) {
+        if (!pm5Devices.any((d) => d.id == device.id)) {
+          pm5Devices.add(device);
+          state =
+              state.copyWith(discoveredPm5Devices: List.from(pm5Devices));
+        }
+      },
+      onError: (e) {
+        if (!pm5AlreadyConnected) {
           state = state.copyWith(
             error: 'Rower scan error: $e',
             pm5ConnectionState: PM5ConnectionState.error,
           );
-        },
-      );
-    }
+        }
+      },
+    );
 
     // Scan for HR monitors
     _hrScanSubscription?.cancel();
@@ -320,6 +323,10 @@ class BleNotifier extends Notifier<BleState> {
       state = state.copyWith(
           pm5ConnectionState: PM5ConnectionState.disconnected,
           hasScanned: true);
+    } else if (state.pm5ConnectionState == PM5ConnectionState.connected) {
+      // PM5 was already connected when scan started — still mark as scanned
+      // so saved device tiles show correct availability status.
+      state = state.copyWith(hasScanned: true);
     }
     if (state.hrConnectionState == HrConnectionState.scanning) {
       state = state.copyWith(

@@ -598,10 +598,6 @@ class _HrTile extends StatelessWidget {
       );
     }
 
-    // Color by ACTUAL zone, not target
-    final currentZone = estimateHrZone(hr, maxHr: maxHr);
-    final info = hrZoneInfo(currentZone);
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -627,47 +623,11 @@ class _HrTile extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: info.color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'Z$currentZone',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: info.color,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
                 const _PageDots(index: 0, count: 2),
               ],
             ),
             Expanded(
               child: HrZoneGauge(bpm: hr, maxHr: maxHr),
-            ),
-            Center(
-              child: Text(
-                '$hr',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: info.color,
-                  height: 1.0,
-                ),
-              ),
-            ),
-            Center(
-              child: Text(
-                'bpm',
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  color: RowCraftTheme.subtleGrey,
-                ),
-              ),
             ),
           ],
         ),

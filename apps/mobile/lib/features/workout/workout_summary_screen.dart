@@ -38,13 +38,6 @@ String _formatDuration(Duration d) {
 
 String _formatDistance(double distance) => '${distance.toInt()}m';
 
-Color _hrZoneColor(int bpm, {int maxHr = 190}) {
-  if (bpm < (maxHr * 0.6).round()) return RowCraftTheme.hrZone1;
-  if (bpm < (maxHr * 0.7).round()) return RowCraftTheme.hrZone2;
-  if (bpm < (maxHr * 0.8).round()) return RowCraftTheme.hrZone3;
-  if (bpm < (maxHr * 0.9).round()) return RowCraftTheme.hrZone4;
-  return RowCraftTheme.hrZone5;
-}
 
 // ---------------------------------------------------------------------------
 // WorkoutSummaryContent — shown inside WorkoutScreen when phase == finished
@@ -131,39 +124,40 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
 
               const SizedBox(height: 16),
 
-              // Pace chart
-              const _SectionHeader(title: 'PACE'),
+              // Combined timeline chart (pace bars + HR line overlay)
+              const _SectionHeader(title: 'TIMELINE'),
               if (timeSamples != null && timeSamples.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: SizedBox(
-                    height: 160,
+                    height: 200,
                     child: CustomPaint(
-                      size: const Size(double.infinity, 160),
-                      painter: _PaceChartPainter(
+                      size: const Size(double.infinity, 200),
+                      painter: _CombinedChartPainter(
                         samples: timeSamples,
                         segments: segments,
+                        maxHr: maxHr,
+                        hasHrData: hasHrData,
                       ),
                     ),
                   ),
                 )
               else
-                const _NoDataPlaceholder(label: 'No pace data'),
+                const _NoDataPlaceholder(label: 'No data'),
 
               const SizedBox(height: 20),
 
-              // HR chart (only if HR data exists)
+              // HR zone distribution bar (time spent in each zone)
               if (hasHrData) ...[
-                const _SectionHeader(title: 'HEART RATE'),
+                const _SectionHeader(title: 'HR ZONE DISTRIBUTION'),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: SizedBox(
-                    height: 160,
+                    height: 48,
                     child: CustomPaint(
-                      size: const Size(double.infinity, 160),
-                      painter: _HrChartPainter(
+                      size: const Size(double.infinity, 48),
+                      painter: _HrZoneDistributionPainter(
                         samples: timeSamples,
-                        segments: segments,
                         maxHr: maxHr,
                       ),
                     ),
@@ -437,21 +431,28 @@ class _NoDataPlaceholder extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Pace Chart (CustomPaint)
+// Combined Chart: pace bars (colored by segment zone) + HR line overlay
 // ---------------------------------------------------------------------------
 
-class _PaceChartPainter extends CustomPainter {
+class _CombinedChartPainter extends CustomPainter {
   final List<WorkoutTimeSample> samples;
   final List<WorkoutSegment> segments;
+  final int maxHr;
+  final bool hasHrData;
 
-  _PaceChartPainter({required this.samples, required this.segments});
+  _CombinedChartPainter({
+    required this.samples,
+    required this.segments,
+    required this.maxHr,
+    required this.hasHrData,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (samples.isEmpty) return;
 
     const leftPad = 44.0;
-    const rightPad = 8.0;
+    final rightPad = hasHrData ? 36.0 : 8.0;
     const topPad = 8.0;
     const bottomPad = 20.0;
     final chartWidth = size.width - leftPad - rightPad;
@@ -460,117 +461,85 @@ class _PaceChartPainter extends CustomPainter {
     final maxTime = samples.last.timestamp.inSeconds.toDouble();
     if (maxTime <= 0) return;
 
-    // Compute pace range (inverted: lower pace = higher on chart)
+    // Pace range (inverted: lower pace = higher on chart)
     final paces = samples.where((s) => s.pace > 0).map((s) => s.pace);
     if (paces.isEmpty) return;
     final minPace = paces.reduce(math.min).toDouble();
     final maxPace = paces.reduce(math.max).toDouble();
     final paceRange = maxPace - minPace;
     final padAmount = paceRange == 0 ? 200.0 : paceRange * 0.15;
-    final displayMin = minPace - padAmount;
-    final displayMax = maxPace + padAmount;
-    final displayRange = displayMax - displayMin;
+    final displayMinPace = minPace - padAmount;
+    final displayMaxPace = maxPace + padAmount;
+    final displayPaceRange = displayMaxPace - displayMinPace;
 
-    // Draw background
-    final bgPaint = Paint()..color = RowCraftTheme.surfaceContainer;
+    // Background
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, size.width, size.height),
         const Radius.circular(10),
       ),
-      bgPaint,
+      Paint()..color = RowCraftTheme.surfaceContainer,
     );
 
-    // Draw segment boundary lines
-    _drawSegmentBoundaries(
-        canvas, size, leftPad, topPad, chartWidth, chartHeight, maxTime);
-
-    // Draw Y-axis labels (pace values)
-    _drawYAxisLabels(
-        canvas, leftPad, topPad, chartHeight, displayMin, displayMax);
-
-    // Draw X-axis labels (time)
-    _drawXAxisLabels(
-        canvas, size, leftPad, topPad, chartWidth, chartHeight, maxTime);
-
-    // Draw pace line
-    final path = Path();
-    var started = false;
+    // Draw pace as colored vertical bars (like Zwift's bar chart style)
+    final barWidth = math.max(1.0, chartWidth / samples.length);
     for (final sample in samples) {
       if (sample.pace <= 0) continue;
-      final x =
-          leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
-      // Inverted: lower pace (faster) = higher on chart
-      final yNorm = 1.0 - (sample.pace - displayMin) / displayRange;
+      final x = leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
+      final yNorm = 1.0 - (sample.pace - displayMinPace) / displayPaceRange;
       final y = topPad + yNorm * chartHeight;
-      if (!started) {
-        path.moveTo(x, y);
-        started = true;
-      } else {
-        path.lineTo(x, y);
-      }
+      final barBottom = topPad + chartHeight;
+
+      // Color by segment zone
+      final seg = sample.segmentIndex < segments.length
+          ? segments[sample.segmentIndex]
+          : null;
+      final color = seg != null
+          ? segmentDisplayColor(seg)
+          : RowCraftTheme.primaryBlue;
+
+      canvas.drawRect(
+        Rect.fromLTRB(x, y, x + barWidth, barBottom),
+        Paint()..color = color.withValues(alpha: 0.6),
+      );
     }
 
-    final linePaint = Paint()
-      ..color = RowCraftTheme.primaryBlue
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(path, linePaint);
-  }
-
-  void _drawSegmentBoundaries(Canvas canvas, Size size, double leftPad,
-      double topPad, double chartWidth, double chartHeight, double maxTime) {
-    // Build cumulative segment durations to find boundaries
+    // Segment boundary lines
     int prevSegIndex = -1;
     for (final sample in samples) {
       if (sample.segmentIndex != prevSegIndex && prevSegIndex >= 0) {
-        final x =
-            leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
-        final segColor = prevSegIndex < segments.length
-            ? segmentDisplayColor(segments[prevSegIndex])
-            : RowCraftTheme.subtleGrey;
-        final paint = Paint()
-          ..color = segColor.withValues(alpha: 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
+        final x = leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
         canvas.drawLine(
           Offset(x, topPad),
           Offset(x, topPad + chartHeight),
-          paint,
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.3)
+            ..strokeWidth = 1,
         );
       }
       prevSegIndex = sample.segmentIndex;
     }
-  }
 
-  void _drawYAxisLabels(Canvas canvas, double leftPad, double topPad,
-      double chartHeight, double displayMin, double displayMax) {
+    // Y-axis labels (pace, left side)
     final labelStyle = GoogleFonts.jetBrainsMono(
       fontSize: 9,
       color: RowCraftTheme.subtleGrey,
     );
-    // Show 3 labels: top (fast/low pace), middle, bottom (slow/high pace)
     for (var i = 0; i < 3; i++) {
       final frac = i / 2.0;
-      // Top = low pace (fast), bottom = high pace (slow)
-      final pace = displayMax - frac * (displayMax - displayMin);
+      final pace = displayMaxPace - frac * displayPaceRange;
       final y = topPad + frac * chartHeight;
       final tp = TextPainter(
-        text: TextSpan(text: _formatPaceTenths(pace.round().clamp(1, 9999)), style: labelStyle),
+        text: TextSpan(
+          text: _formatPaceTenths(pace.round().clamp(1, 9999)),
+          style: labelStyle,
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(2, y - tp.height / 2));
     }
-  }
 
-  void _drawXAxisLabels(Canvas canvas, Size size, double leftPad,
-      double topPad, double chartWidth, double chartHeight, double maxTime) {
-    final labelStyle = GoogleFonts.jetBrainsMono(
-      fontSize: 9,
-      color: RowCraftTheme.subtleGrey,
-    );
-    // Show labels at 0, mid, end
+    // X-axis labels (time)
     for (var i = 0; i < 3; i++) {
       final frac = i / 2.0;
       final sec = (maxTime * frac).round();
@@ -582,26 +551,92 @@ class _PaceChartPainter extends CustomPainter {
       )..layout();
       tp.paint(canvas, Offset(x - tp.width / 2, topPad + chartHeight + 4));
     }
+
+    // HR line overlay (red line on top of pace bars)
+    if (hasHrData) {
+      final hrSamples = samples
+          .where((s) => s.heartRate != null && s.heartRate! > 0)
+          .toList();
+      if (hrSamples.isNotEmpty) {
+        final hrValues = hrSamples.map((s) => s.heartRate!);
+        final minHr = hrValues.reduce(math.min).toDouble();
+        final maxHrVal = hrValues.reduce(math.max).toDouble();
+        final hrRange = maxHrVal - minHr;
+        final hrPad = hrRange == 0 ? 20.0 : hrRange * 0.15;
+        final displayMinHr = (minHr - hrPad).clamp(0.0, double.infinity);
+        final displayMaxHr = maxHrVal + hrPad;
+        final displayHrRange = displayMaxHr - displayMinHr;
+
+        // HR line
+        final hrPath = Path();
+        var started = false;
+        for (final sample in hrSamples) {
+          final x =
+              leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
+          final yNorm =
+              1.0 - (sample.heartRate! - displayMinHr) / displayHrRange;
+          final y = topPad + yNorm * chartHeight;
+          if (!started) {
+            hrPath.moveTo(x, y);
+            started = true;
+          } else {
+            hrPath.lineTo(x, y);
+          }
+        }
+
+        canvas.drawPath(
+          hrPath,
+          Paint()
+            ..color = const Color(0xFFEF5350)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..strokeJoin = StrokeJoin.round,
+        );
+
+        // HR Y-axis labels (right side)
+        final hrLabelStyle = GoogleFonts.jetBrainsMono(
+          fontSize: 9,
+          color: const Color(0xFFEF5350).withValues(alpha: 0.7),
+        );
+        for (var i = 0; i < 3; i++) {
+          final frac = i / 2.0;
+          final bpm = displayMinHr + frac * displayHrRange;
+          final y = topPad + (1.0 - frac) * chartHeight;
+          final tp = TextPainter(
+            text: TextSpan(text: '${bpm.round()}', style: hrLabelStyle),
+            textDirection: TextDirection.ltr,
+          )..layout();
+          tp.paint(canvas, Offset(size.width - tp.width - 2, y - tp.height / 2));
+        }
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(_PaceChartPainter old) => old.samples != samples;
+  bool shouldRepaint(_CombinedChartPainter old) =>
+      old.samples != samples ||
+      old.hasHrData != hasHrData ||
+      old.segments != segments ||
+      old.maxHr != maxHr;
 }
 
 // ---------------------------------------------------------------------------
-// HR Chart (CustomPaint)
+// HR Zone Distribution Bar (Zwift-style colored band)
 // ---------------------------------------------------------------------------
 
-class _HrChartPainter extends CustomPainter {
+class _HrZoneDistributionPainter extends CustomPainter {
   final List<WorkoutTimeSample> samples;
-  final List<WorkoutSegment> segments;
   final int maxHr;
 
-  _HrChartPainter({
-    required this.samples,
-    required this.segments,
-    required this.maxHr,
-  });
+  static const _zoneColors = [
+    RowCraftTheme.hrZone1,
+    RowCraftTheme.hrZone2,
+    RowCraftTheme.hrZone3,
+    RowCraftTheme.hrZone4,
+    RowCraftTheme.hrZone5,
+  ];
+
+  _HrZoneDistributionPainter({required this.samples, required this.maxHr});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -609,116 +644,105 @@ class _HrChartPainter extends CustomPainter {
         samples.where((s) => s.heartRate != null && s.heartRate! > 0).toList();
     if (hrSamples.isEmpty) return;
 
-    const leftPad = 36.0;
-    const rightPad = 8.0;
-    const topPad = 8.0;
-    const bottomPad = 20.0;
-    final chartWidth = size.width - leftPad - rightPad;
-    final chartHeight = size.height - topPad - bottomPad;
+    // Count time in each zone (1-5)
+    final zoneCounts = List.filled(5, 0);
+    for (final s in hrSamples) {
+      final pct = s.heartRate! / maxHr;
+      final zone = pct < 0.6
+          ? 0
+          : pct < 0.7
+              ? 1
+              : pct < 0.8
+                  ? 2
+                  : pct < 0.9
+                      ? 3
+                      : 4;
+      zoneCounts[zone]++;
+    }
+    final total = hrSamples.length.toDouble();
 
-    final maxTime = samples.last.timestamp.inSeconds.toDouble();
-    if (maxTime <= 0) return;
+    // Draw colored zone bands
+    const barHeight = 28.0;
+    const barTop = 0.0;
+    const radius = 8.0;
 
-    final hrValues = hrSamples.map((s) => s.heartRate!);
-    final minHr = hrValues.reduce(math.min).toDouble();
-    final maxHrVal = hrValues.reduce(math.max).toDouble();
-    final hrRange = maxHrVal - minHr;
-    final padAmount = hrRange == 0 ? 20.0 : hrRange * 0.15;
-    final displayMin = (minHr - padAmount).clamp(0.0, double.infinity);
-    final displayMax = maxHrVal + padAmount;
-    final displayRange = displayMax - displayMin;
-
-    // Draw background
-    final bgPaint = Paint()..color = RowCraftTheme.surfaceContainer;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(10),
-      ),
-      bgPaint,
-    );
-
-    // Draw segment boundaries
-    int prevSegIndex = -1;
-    for (final sample in samples) {
-      if (sample.segmentIndex != prevSegIndex && prevSegIndex >= 0) {
-        final x =
-            leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
-        final segColor = prevSegIndex < segments.length
-            ? segmentDisplayColor(segments[prevSegIndex])
-            : RowCraftTheme.subtleGrey;
-        final paint = Paint()
-          ..color = segColor.withValues(alpha: 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-        canvas.drawLine(
-          Offset(x, topPad),
-          Offset(x, topPad + chartHeight),
-          paint,
-        );
+    // Find last zone with data for rounded corner detection
+    var lastNonZeroZone = 4;
+    for (var i = 4; i >= 0; i--) {
+      if (zoneCounts[i] > 0) {
+        lastNonZeroZone = i;
+        break;
       }
-      prevSegIndex = sample.segmentIndex;
     }
 
-    // Draw Y-axis labels (BPM)
-    final labelStyle = GoogleFonts.jetBrainsMono(
+    var x = 0.0;
+    for (var i = 0; i < 5; i++) {
+      final width = (zoneCounts[i] / total) * size.width;
+      if (width <= 0) continue;
+
+      final isFirst = x == 0;
+      final isLast = i == lastNonZeroZone;
+
+      final rrect = RRect.fromRectAndCorners(
+        Rect.fromLTWH(x, barTop, width, barHeight),
+        topLeft: isFirst ? const Radius.circular(radius) : Radius.zero,
+        bottomLeft: isFirst ? const Radius.circular(radius) : Radius.zero,
+        topRight: isLast ? const Radius.circular(radius) : Radius.zero,
+        bottomRight: isLast ? const Radius.circular(radius) : Radius.zero,
+      );
+      canvas.drawRRect(rrect, Paint()..color = _zoneColors[i]);
+
+      // Zone label inside the band (if wide enough)
+      if (width > 30) {
+        final label = 'Z${i + 1}';
+        final tp = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(
+          canvas,
+          Offset(x + (width - tp.width) / 2, barTop + (barHeight - tp.height) / 2),
+        );
+      }
+
+      x += width;
+    }
+
+    // Zone legend below the bar
+    final legendStyle = GoogleFonts.inter(
       fontSize: 9,
       color: RowCraftTheme.subtleGrey,
     );
-    for (var i = 0; i < 3; i++) {
-      final frac = i / 2.0;
-      final bpm = displayMin + frac * displayRange;
-      final y = topPad + (1.0 - frac) * chartHeight;
-      final tp = TextPainter(
-        text: TextSpan(text: '${bpm.round()}', style: labelStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(2, y - tp.height / 2));
-    }
+    x = 0;
+    for (var i = 0; i < 5; i++) {
+      final width = (zoneCounts[i] / total) * size.width;
+      if (width <= 0) continue;
 
-    // Draw X-axis labels
-    for (var i = 0; i < 3; i++) {
-      final frac = i / 2.0;
-      final sec = (maxTime * frac).round();
-      final x = leftPad + frac * chartWidth;
-      final label = _formatDuration(Duration(seconds: sec));
-      final tp = TextPainter(
-        text: TextSpan(text: label, style: labelStyle),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      tp.paint(canvas, Offset(x - tp.width / 2, topPad + chartHeight + 4));
-    }
-
-    // Draw HR line with zone coloring — draw segments between consecutive points
-    for (var i = 1; i < hrSamples.length; i++) {
-      final prev = hrSamples[i - 1];
-      final curr = hrSamples[i];
-
-      final x1 =
-          leftPad + (prev.timestamp.inSeconds / maxTime) * chartWidth;
-      final y1 = topPad +
-          (1.0 - (prev.heartRate! - displayMin) / displayRange) *
-              chartHeight;
-      final x2 =
-          leftPad + (curr.timestamp.inSeconds / maxTime) * chartWidth;
-      final y2 = topPad +
-          (1.0 - (curr.heartRate! - displayMin) / displayRange) *
-              chartHeight;
-
-      final avgBpm = ((prev.heartRate! + curr.heartRate!) / 2).round();
-      final color = _hrZoneColor(avgBpm, maxHr: maxHr);
-
-      final paint = Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..strokeJoin = StrokeJoin.round;
-      canvas.drawLine(Offset(x1, y1), Offset(x2, y2), paint);
+      final pct = (zoneCounts[i] / total * 100).round();
+      if (width > 24) {
+        final tp = TextPainter(
+          text: TextSpan(text: '$pct%', style: legendStyle),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(
+          canvas,
+          Offset(x + (width - tp.width) / 2, barHeight + 4),
+        );
+      }
+      x += width;
     }
   }
 
   @override
-  bool shouldRepaint(_HrChartPainter old) => old.samples != samples;
+  bool shouldRepaint(_HrZoneDistributionPainter old) =>
+      old.samples != samples || old.maxHr != maxHr;
 }
 
 // ---------------------------------------------------------------------------

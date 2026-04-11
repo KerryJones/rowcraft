@@ -356,7 +356,7 @@ class _SavedDeviceTile extends ConsumerWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (isThisDeviceConnected)
+              if (isThisDeviceConnected) ...[
                 TextButton(
                   onPressed: () {
                     if (isPm5) {
@@ -366,8 +366,15 @@ class _SavedDeviceTile extends ConsumerWidget {
                     }
                   },
                   child: const Text('Disconnect'),
-                )
-              else if (isThisDeviceConnecting)
+                ),
+                TextButton(
+                  onPressed: () => _confirmForget(context, ref),
+                  child: const Text(
+                    'Forget',
+                    style: TextStyle(color: RowCraftTheme.subtleGrey),
+                  ),
+                ),
+              ] else if (isThisDeviceConnecting)
                 const SizedBox(
                   width: 72,
                   height: 36,
@@ -428,7 +435,16 @@ class _SavedDeviceTile extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.of(ctx).pop();
-              ref.read(bleProvider.notifier).removeSavedDevice(device.deviceId);
+              // Disconnect first if this device is currently connected
+              final notifier = ref.read(bleProvider.notifier);
+              final pm5Id = ref.read(pm5ServiceProvider).connectedDeviceId;
+              final hrId = ref.read(hrServiceProvider).connectedDeviceId;
+              if (device.deviceId == pm5Id) {
+                notifier.disconnectPm5();
+              } else if (device.deviceId == hrId) {
+                notifier.disconnectHr();
+              }
+              notifier.removeSavedDevice(device.deviceId);
             },
             child: const Text(
               'Forget',

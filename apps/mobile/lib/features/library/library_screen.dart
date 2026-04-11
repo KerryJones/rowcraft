@@ -11,8 +11,8 @@ import '../../utils/workout_utils.dart';
 import '../../widgets/ble_status_button.dart';
 import '../../widgets/wod_card.dart';
 import '../../widgets/workout_graph.dart';
-import '../../widgets/workout_type_badge.dart';
 import '../plans/plans_provider.dart';
+import '../profile/profile_screen.dart' show profileProvider;
 import 'library_provider.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
@@ -112,6 +112,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       mine: _mine,
       sort: _sortOrder,
     )));
+    final userFtp = ref.watch(profileProvider).valueOrNull?.currentFtpWatts ?? kDefaultFtpWatts;
     // Watch at top of build so WOD fetch runs in parallel with the library
     // list fetch, instead of only starting after the list resolves.
     final wodAsync = ref.watch(wodWorkoutsProvider);
@@ -166,6 +167,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               child: WodCard(
                 workout: wod,
                 canShuffle: wodPoolLength > 1,
+                ftpWatts: userFtp,
                 onTap: () => context.push('/workout/${wod.id}'),
                 onShuffle: () {
                   setState(() => _wodShuffleOffset++);
@@ -208,6 +210,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     theme,
                     workoutsAsync,
                     _mine ? null : wod,
+                    userFtp,
                   )
                 : _buildTilesGrid(context, userId),
           ),
@@ -247,6 +250,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     ThemeData theme,
     AsyncValue<List<Workout>> workoutsAsync,
     Workout? wod,
+    int ftpWatts,
   ) {
     return workoutsAsync.when(
       data: (workouts) {
@@ -324,7 +328,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         padding: const EdgeInsets.only(bottom: 80),
                         itemCount: displayWorkouts.length,
                         itemBuilder: (context, index) =>
-                            _WorkoutCard(workout: displayWorkouts[index]),
+                            _WorkoutCard(workout: displayWorkouts[index], ftpWatts: ftpWatts),
                       ),
               ),
             ),
@@ -688,15 +692,16 @@ class _SortButton extends StatelessWidget {
 /// Workout card with duration as hero element.
 class _WorkoutCard extends StatelessWidget {
   final Workout workout;
+  final int ftpWatts;
 
-  const _WorkoutCard({required this.workout});
+  const _WorkoutCard({required this.workout, this.ftpWatts = kDefaultFtpWatts});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totalDist = computeTotalDistance(workout.segments);
     final totalTime = computeTotalTime(workout.segments);
-    final estimatedSecs = computeEstimatedTotalTime(workout.segments, kDefaultFtpWatts);
+    final estimatedSecs = computeEstimatedTotalTime(workout.segments, ftpWatts);
     final dominantZone = computeDominantZone(workout.segments);
 
     // Hero value: distance for distance workouts, time for everything else
@@ -730,9 +735,7 @@ class _WorkoutCard extends StatelessWidget {
                     style: theme.textTheme.displaySmall,
                   ),
                   const Spacer(),
-                  WorkoutTypeBadge(type: workout.workoutType),
                   if (dominantZone != null && zoneColors.containsKey(dominantZone)) ...[
-                    const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(

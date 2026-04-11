@@ -80,9 +80,6 @@ class C2LogbookService {
       '$_webAppUrl/api/c2/auth?source=mobile&token=${session.accessToken}',
     );
 
-    if (!await canLaunchUrl(authUrl)) {
-      throw StateError('Could not open authentication URL');
-    }
     await launchUrl(authUrl, mode: LaunchMode.externalApplication);
   }
 

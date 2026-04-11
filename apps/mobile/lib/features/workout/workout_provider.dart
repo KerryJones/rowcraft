@@ -255,14 +255,19 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     state = state.copyWith(pm5Data: data);
   }
 
-  /// Send CSAFE reset + goReady to the PM5 to clear any previous session.
+  /// Send CSAFE commands to fully reset the PM5 and clear any previous session.
+  /// Uses the full state transition: goFinished → goIdle → reset → goReady.
   Future<void> _resetPm5() async {
     final pm5 = _ref.read(pm5ServiceProvider);
     final deviceId = pm5.connectedDeviceId;
     if (deviceId == null) return;
     try {
+      await pm5.sendCsafeCommand(CsafeCommands.goFinished(), deviceId);
+      await Future.delayed(const Duration(milliseconds: 300));
+      await pm5.sendCsafeCommand(CsafeCommands.goIdle(), deviceId);
+      await Future.delayed(const Duration(milliseconds: 300));
       await pm5.sendCsafeCommand(CsafeCommands.reset(), deviceId);
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 800));
       await pm5.sendCsafeCommand(CsafeCommands.goReady(), deviceId);
     } catch (_) {
       // Non-critical — PM5 may not respond if not connected

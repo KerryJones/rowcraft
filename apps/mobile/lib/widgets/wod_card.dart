@@ -13,6 +13,7 @@ class WodCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onShuffle;
   final bool canShuffle;
+  final int ftpWatts;
 
   const WodCard({
     super.key,
@@ -20,17 +21,18 @@ class WodCard extends StatelessWidget {
     required this.onTap,
     required this.onShuffle,
     this.canShuffle = true,
+    this.ftpWatts = kDefaultFtpWatts,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totalTime = wu.computeEstimatedTotalTime(
-        workout.segments, kDefaultFtpWatts);
+        workout.segments, ftpWatts);
     final segmentCount = wu.computeSegmentCount(workout.segments);
     final avgIntensity = wu.computeAvgIntensity(workout.segments);
     final avgPace = avgIntensity != null
-        ? intensityToPaceTenths(avgIntensity, kDefaultFtpWatts)
+        ? intensityToPaceTenths(avgIntensity, ftpWatts)
         : null;
 
     return Material(
@@ -110,37 +112,14 @@ class WodCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // Type badge + title
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: RowCraftTheme.warningAmber.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    workout.workoutType.displayName,
-                    style: const TextStyle(
-                      color: RowCraftTheme.warningAmber,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    workout.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            // Title
+            Text(
+              workout.title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 12),
 

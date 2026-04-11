@@ -8,6 +8,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
+import '../../models/workout_time_sample.dart';
 import '../../services/audio_service.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
@@ -314,11 +315,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          if (engineState.phase != WorkoutPhase.idle)
-            _PhaseIndicator(
-              phase: engineState.phase,
-              segment: engineState.currentSegment,
-            ),
           // In compact mode show a BT icon replacing the inline BleStatusBar.
           if (isCompactMode) const _BluetoothStatusIcon(),
           IconButton(
@@ -690,6 +686,7 @@ class WorkoutProfileGraph extends StatelessWidget {
           segmentProgress: session.engineState.segmentProgress,
           phase: session.engineState.phase,
           ftpWatts: session.ftpWatts,
+          timeSamples: session.timeSamples,
         ),
       ),
     );
@@ -702,6 +699,7 @@ class _WorkoutProfilePainter extends CustomPainter {
   final double segmentProgress;
   final WorkoutPhase phase;
   final int ftpWatts;
+  final List<WorkoutTimeSample>? timeSamples;
 
   _WorkoutProfilePainter({
     required this.segments,
@@ -709,6 +707,7 @@ class _WorkoutProfilePainter extends CustomPainter {
     required this.segmentProgress,
     required this.phase,
     required this.ftpWatts,
+    this.timeSamples,
   });
 
   @override
@@ -799,6 +798,98 @@ class _WorkoutProfilePainter extends CustomPainter {
       x += barWidth + barGap;
     }
 
+    // Draw pace tracking line (white polyline showing actual pace vs target)
+    if (timeSamples != null && timeSamples!.isNotEmpty) {
+      // Build segment X-position lookup: for each segment, store its start X and width.
+      final segStarts = <double>[];
+      final segWidths = <double>[];
+      var sx = 0.0;
+      for (var i = 0; i < segments.length; i++) {
+        segStarts.add(sx);
+        final w = math.max(2.0, (durations[i] / totalDuration) * availableWidth);
+        segWidths.add(w);
+        sx += w + barGap;
+      }
+
+      // Build actual timestamp ranges per segment from samples (not from
+      // effectiveDuration, which is an estimate for distance/calorie segments).
+      final segFirstTs = List<double>.filled(segments.length, 0);
+      final segLastTs = List<double>.filled(segments.length, 0);
+      final segSeen = List<bool>.filled(segments.length, false);
+      for (final sample in timeSamples!) {
+        final si = sample.segmentIndex;
+        if (si < 0 || si >= segments.length) continue;
+        final ts = sample.timestamp.inSeconds.toDouble();
+        if (!segSeen[si]) {
+          segFirstTs[si] = ts;
+          segLastTs[si] = ts;
+          segSeen[si] = true;
+        } else {
+          segLastTs[si] = ts;
+        }
+      }
+
+      final pacePath = Path();
+      var started = false;
+      final paceRange = paceMax - paceMin;
+
+      for (final sample in timeSamples!) {
+        if (sample.pace <= 0) continue;
+        final si = sample.segmentIndex;
+        if (si < 0 || si >= segments.length) continue;
+        // Skip rest segments
+        if (segments[si].isRest) {
+          started = false;
+          continue;
+        }
+
+        // Skip segments with no target — no reference to plot against
+        final seg = segments[si];
+        if (seg.targetIntensity == null) {
+          started = false;
+          continue;
+        }
+
+        // X: position within the segment bar using actual timestamps
+        final segDurActual = segLastTs[si] - segFirstTs[si];
+        final double segFrac;
+        if (segDurActual > 0) {
+          segFrac = ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurActual).clamp(0.0, 1.0);
+        } else {
+          segFrac = 0.5;
+        }
+        final px = segStarts[si] + segFrac * segWidths[si];
+
+        // Y: map actual pace on the same scale as the bars
+        double py;
+        if (paceRange > 0) {
+          final normalized = 1 - (sample.pace - paceMin) / paceRange;
+          final heightFrac = minHeightFraction + normalized * (1 - minHeightFraction);
+          py = size.height - heightFrac * size.height;
+        } else {
+          py = size.height * 0.5;
+        }
+
+        py = py.clamp(0.0, size.height);
+
+        if (!started) {
+          pacePath.moveTo(px, py);
+          started = true;
+        } else {
+          pacePath.lineTo(px, py);
+        }
+      }
+
+      canvas.drawPath(
+        pacePath,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..strokeJoin = StrokeJoin.round,
+      );
+    }
+
     // Draw playhead line
     if (phase != WorkoutPhase.idle &&
         phase != WorkoutPhase.finished &&
@@ -832,7 +923,8 @@ class _WorkoutProfilePainter extends CustomPainter {
         old.currentIndex != currentIndex ||
         (old.segmentProgress - segmentProgress).abs() > 0.005 ||
         old.phase != phase ||
-        old.ftpWatts != ftpWatts;
+        old.ftpWatts != ftpWatts ||
+        old.timeSamples != timeSamples;
   }
 }
 
@@ -1170,41 +1262,55 @@ class HeroSection extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Stroke rate
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (srChevron != null)
+              // Stroke rate — centered with invisible counterweight
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    // Invisible counterweight so number stays centered
+                    Opacity(
+                      opacity: 0,
+                      child: Text(
+                        's/m',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    if (srChevron != null)
+                      Text(
+                        srChevron,
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: srFontSize * 0.5,
+                          color: srColor,
+                          height: 1.0,
+                        ),
+                      ),
+                    if (srChevron != null) const SizedBox(width: 4),
                     Text(
-                      srChevron,
+                      '${data.strokeRate}',
                       style: GoogleFonts.jetBrainsMono(
-                        fontSize: srFontSize * 0.5,
+                        fontSize: srFontSize,
+                        fontWeight: FontWeight.w600,
                         color: srColor,
                         height: 1.0,
                       ),
                     ),
-                  if (srChevron != null) const SizedBox(width: 4),
-                  Text(
-                    '${data.strokeRate}',
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: srFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: srColor,
-                      height: 1.0,
+                    const SizedBox(width: 6),
+                    Text(
+                      's/m',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(
+                            color: RowCraftTheme.subtleGrey,
+                          ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    's/m',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelLarge
-                        ?.copyWith(
-                          color: RowCraftTheme.subtleGrey,
-                        ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               // Target s/m now shown in _CurrentSegment below
             ],
@@ -1888,58 +1994,3 @@ class _AutoPauseBanner extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Phase Indicator badge
-// ---------------------------------------------------------------------------
-
-class _PhaseIndicator extends StatelessWidget {
-  final WorkoutPhase phase;
-  final WorkoutSegment? segment;
-
-  const _PhaseIndicator({required this.phase, this.segment});
-
-  @override
-  Widget build(BuildContext context) {
-    final (label, color) = switch (phase) {
-      WorkoutPhase.idle => ('IDLE', RowCraftTheme.subtleGrey),
-      WorkoutPhase.ready => ('READY', RowCraftTheme.warningAmber),
-      WorkoutPhase.countingDown => ('3...2...1', RowCraftTheme.warningAmber),
-      WorkoutPhase.rowing => _rowingLabel(segment),
-      WorkoutPhase.paused => ('PAUSED', RowCraftTheme.warningAmber),
-      WorkoutPhase.resting => ('REST', RowCraftTheme.warningAmber),
-      WorkoutPhase.structuredComplete => ('DONE', RowCraftTheme.primaryBlue),
-      WorkoutPhase.finished => ('DONE', RowCraftTheme.primaryBlue),
-    };
-
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Label for the rowing phase — show the segment zone or "FREE ROW".
-  static (String, Color) _rowingLabel(WorkoutSegment? seg) {
-    if (seg == null) return ('ROWING', RowCraftTheme.successGreen);
-    final zone = seg.targetHrZone;
-    if (zone != null) {
-      final color = segmentDisplayColor(seg);
-      return ('Z$zone', color);
-    }
-    return ('FREE ROW', RowCraftTheme.subtleGrey);
-  }
-}

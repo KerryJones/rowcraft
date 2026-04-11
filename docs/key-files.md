@@ -55,8 +55,8 @@
 | `features/workout/workout_provider.dart` | Workout session Riverpod notifier; wraps engine, PM5 reset on load, continueWithFreeRow/finishFromStructuredComplete |
 | `features/workout/workout_screen.dart` | Active workout UI (classic mode): stats bar, hero pace, segment detail, up-next preview with fade, completion modal, countdown beeps |
 | `features/workout/workout_screen_compact.dart` | Active workout UI (compact mode): 3×2 stat tile grid, HR zone gauge tile |
-| `features/workout/hr_zone_gauge.dart` | Garmin-style HR arc gauge (CustomPainter): 5-zone 180° arc + position marker |
-| `features/workout/workout_summary_screen.dart` | Post-workout summary (stats grid, pace/HR charts, splits, save/discard) |
+| `features/workout/hr_zone_gauge.dart` | Garmin-style HR zone gauge (CustomPainter): 270° arc with 5 thick colored zone bands, active zone highlighted, BPM + zone name centered inside |
+| `features/workout/workout_summary_screen.dart` | Post-workout summary (stats grid, combined pace+HR timeline chart, HR zone distribution bar, splits, save/discard) |
 | `models/workout_time_sample.dart` | Time-series data point (1/sec during workout, for summary charts) |
 | `features/workout/pre_workout_screen.dart` | PM5 connection gate before starting |
 | `features/workout/rowing_animation.dart` | Animated stick-figure rower (CustomPainter) |

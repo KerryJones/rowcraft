@@ -13,10 +13,10 @@ import '../../utils/workout_utils.dart';
 import '../../widgets/connection_required_dialog.dart';
 import '../../widgets/difficulty_indicator.dart';
 import '../../widgets/workout_graph.dart';
-import '../../widgets/workout_type_badge.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
 import '../library/library_provider.dart';
+import '../profile/profile_screen.dart' show profileProvider;
 
 /// Pre-workout screen showing workout details with a "Begin Workout" CTA.
 /// Hardware connection is handled via modal if PM5 is not connected.
@@ -153,7 +153,10 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  _WorkoutDetailBody(workout: workout),
+                  _WorkoutDetailBody(
+                    workout: workout,
+                    ftpWatts: ref.watch(profileProvider).valueOrNull?.currentFtpWatts ?? kDefaultFtpWatts,
+                  ),
                   const SizedBox(height: 24),
                   _SimilarWorkoutsSection(workout: workout),
                 ],
@@ -199,20 +202,24 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
 
 class _WorkoutDetailBody extends StatelessWidget {
   final Workout workout;
+  final int ftpWatts;
 
-  const _WorkoutDetailBody({required this.workout});
+  const _WorkoutDetailBody({
+    required this.workout,
+    this.ftpWatts = kDefaultFtpWatts,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final segments = workout.segments;
 
-    final totalTime = computeEstimatedTotalTime(segments, kDefaultFtpWatts);
+    final totalTime = computeEstimatedTotalTime(segments, ftpWatts);
     final totalDist = computeTotalDistance(segments);
     final segCount = computeSegmentCount(segments);
     final avgIntensity = computeAvgIntensity(segments);
     final avgPace = avgIntensity != null
-        ? intensityToPaceTenths(avgIntensity, kDefaultFtpWatts)
+        ? intensityToPaceTenths(avgIntensity, ftpWatts)
         : null;
 
     // Collect HR zones from segments
@@ -228,14 +235,8 @@ class _WorkoutDetailBody extends StatelessWidget {
         Text(workout.title, style: theme.textTheme.headlineLarge),
         const SizedBox(height: 8),
 
-        // Difficulty + type badge
-        Row(
-          children: [
-            DifficultyIndicator.fromSegments(segments: segments),
-            const SizedBox(width: 12),
-            WorkoutTypeBadge(type: workout.workoutType),
-          ],
-        ),
+        // Difficulty
+        DifficultyIndicator.fromSegments(segments: segments),
 
         // Description
         if (workout.description.isNotEmpty) ...[
@@ -530,14 +531,8 @@ class _SimilarWorkoutCard extends StatelessWidget {
             const Spacer(),
             WorkoutGraph(segments: workout.segments, height: 32),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                DifficultyIndicator.fromSegments(
-                    segments: workout.segments, size: 12),
-                const SizedBox(width: 8),
-                WorkoutTypeBadge(type: workout.workoutType),
-              ],
-            ),
+            DifficultyIndicator.fromSegments(
+                segments: workout.segments, size: 12),
           ],
         ),
       ),
