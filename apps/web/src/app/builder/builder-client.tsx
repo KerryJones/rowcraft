@@ -121,6 +121,21 @@ export default function BuilderPage() {
     setHasEdited(true);
   }
 
+  function addRestSegment() {
+    const seg: WorkoutSegment = {
+      duration_type: 'time',
+      duration_value: 60,
+      target_intensity: null,
+      target_stroke_rate: null,
+      target_hr_zone: null,
+      is_rest: true,
+      messages: null,
+    };
+    setSegments((prev) => [...prev, seg]);
+    setSegmentKeys((prev) => [...prev, makeKey()]);
+    setHasEdited(true);
+  }
+
   function updateSegment(index: number, segment: WorkoutSegment) {
     setSegments((prev) => prev.map((s, i) => (i === index ? segment : s)));
     setHasEdited(true);
@@ -223,14 +238,24 @@ export default function BuilderPage() {
   }
 
   const addSegmentButton = (
-    <button
-      type="button"
-      onClick={() => addSegment()}
-      className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
-    >
-      <Plus className="h-4 w-4" />
-      Add Segment
-    </button>
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={() => addSegment()}
+        className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500"
+      >
+        <Plus className="h-4 w-4" />
+        Add Segment
+      </button>
+      <button
+        type="button"
+        onClick={() => addRestSegment()}
+        className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-gray-700 px-3 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-gray-600"
+      >
+        <Plus className="h-4 w-4" />
+        Add Rest
+      </button>
+    </div>
   );
 
   return (
@@ -294,6 +319,7 @@ export default function BuilderPage() {
                 style={{ gridTemplateColumns: SEGMENT_GRID_COLS }}
               >
                 <span>#</span>
+                <span>Rest</span>
                 <span>Type</span>
                 <span>Value</span>
                 <span>% FTP</span>
