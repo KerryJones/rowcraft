@@ -54,6 +54,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (BuildContext context, GoRouterState state) {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
+
+      // C2 OAuth callback deep link — stay on profile tab.
+      // Custom-scheme URIs parse host='login-callback' with empty path.
+      final isLoginCallback = state.uri.path == '/login-callback' ||
+          state.uri.host == 'login-callback';
+      if (isLoginCallback) {
+        return isLoggedIn ? '/profile' : '/auth';
+      }
+
       final isAuthRoute = state.matchedLocation == '/auth';
 
       if (!isLoggedIn && !isAuthRoute) {
