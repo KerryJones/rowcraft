@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,11 +32,92 @@ final c2LinkedProvider = FutureProvider<bool>((ref) async {
   return service.isLinked();
 });
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
+  static void showManualFtpDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _ManualFtpDialog(ref: ref),
+    );
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with WidgetsBindingObserver {
+  bool _c2Linking = false;
+  bool _waitingForC2Auth = false;
+  StreamSubscription<Uri>? _deepLinkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _listenForDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _deepLinkSub?.cancel();
+    super.dispose();
+  }
+
+  void _listenForDeepLinks() {
+    final appLinks = AppLinks();
+    _deepLinkSub = appLinks.uriLinkStream.listen((uri) {
+      if (!mounted) return;
+      if (uri.scheme == 'com.rowcraft.app' && uri.host == 'login-callback') {
+        _waitingForC2Auth = false;
+        ref.invalidate(c2LinkedProvider);
+        if (uri.queryParameters['success'] == 'true') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Concept2 Logbook connected!')),
+          );
+        } else {
+          final error = uri.queryParameters['error'] ?? 'Connection failed';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('C2 connection failed: $error')),
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh C2 status when returning from the browser OAuth flow,
+    // as a fallback in case the deep link doesn't fire. Only fires when
+    // we actually sent the user to the browser for C2 auth.
+    if (state == AppLifecycleState.resumed && _waitingForC2Auth) {
+      _waitingForC2Auth = false;
+      ref.invalidate(c2LinkedProvider);
+    }
+  }
+
+  Future<void> _linkC2() async {
+    setState(() => _c2Linking = true);
+    try {
+      final service = ref.read(c2LogbookServiceProvider);
+      await service.authenticate();
+      // Mark that we launched the browser — resume will refresh C2 status.
+      _waitingForC2Auth = true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _c2Linking = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final profileAsync = ref.watch(profileProvider);
     final c2LinkedAsync = ref.watch(c2LinkedProvider);
@@ -155,14 +239,16 @@ class ProfileScreen extends ConsumerWidget {
                         },
                         child: const Text('Disconnect'),
                       )
-                    : ElevatedButton(
-                        onPressed: () async {
-                          final service =
-                              ref.read(c2LogbookServiceProvider);
-                          await service.authenticate();
-                        },
-                        child: const Text('Link'),
-                      ),
+                    : _c2Linking
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : ElevatedButton(
+                            onPressed: _linkC2,
+                            child: const Text('Link'),
+                          ),
               ),
               loading: () => const ListTile(
                 leading: SizedBox(
@@ -191,12 +277,6 @@ class ProfileScreen extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Edit Display Name'),
-                  onTap: () => _showEditNameDialog(context, ref),
-                ),
-                const Divider(height: 1),
                 profileAsync.when(
                   data: (profile) => ListTile(
                     leading: const Icon(Icons.monitor_weight_outlined),
@@ -282,20 +362,6 @@ class ProfileScreen extends ConsumerWidget {
         fontWeight: FontWeight.w700,
         color: Colors.white,
       ),
-    );
-  }
-
-  static void _showManualFtpDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => _ManualFtpDialog(ref: ref),
-    );
-  }
-
-  void _showEditNameDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => _EditNameDialog(ref: ref),
     );
   }
 
@@ -397,7 +463,7 @@ class _FtpCard extends ConsumerWidget {
                 Text('FTP', style: theme.textTheme.titleMedium),
                 TextButton(
                   onPressed: () {
-                    ProfileScreen._showManualFtpDialog(context, ref);
+                    ProfileScreen.showManualFtpDialog(context, ref);
                   },
                   child: const Text('Set Manually'),
                 ),
@@ -599,67 +665,6 @@ class _ManualFtpDialogState extends State<_ManualFtpDialog> {
                 await service.updateProfileFtp(_parsedWatts!);
                 widget.ref.invalidate(profileProvider);
                 widget.ref.invalidate(ftpHistoryProvider);
-              }
-            }
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
-          },
-          child: const Text('Save'),
-        ),
-      ],
-    );
-  }
-}
-
-/// Stateful dialog for editing display name — properly disposes its controller.
-class _EditNameDialog extends StatefulWidget {
-  final WidgetRef ref;
-  const _EditNameDialog({required this.ref});
-
-  @override
-  State<_EditNameDialog> createState() => _EditNameDialogState();
-}
-
-class _EditNameDialogState extends State<_EditNameDialog> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Edit Display Name'),
-      content: TextField(
-        controller: _controller,
-        decoration: const InputDecoration(
-          hintText: 'Enter your display name',
-        ),
-        autofocus: true,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            final name = _controller.text.trim();
-            if (name.isNotEmpty) {
-              final service = widget.ref.read(supabaseServiceProvider);
-              final profile = await service.getProfile();
-              await service.updateProfile(
-                profile.copyWith(displayName: name),
-              );
-              widget.ref.invalidate(profileProvider);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Display name updated')),
-                );
               }
             }
             if (context.mounted) {

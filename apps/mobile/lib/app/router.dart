@@ -18,6 +18,7 @@ import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
 import '../models/workout_result.dart';
+import '../services/c2_logbook_service.dart';
 import '../app/theme.dart';
 import 'shell_screen.dart';
 
@@ -217,14 +218,63 @@ class HistoryDetailScreen extends ConsumerWidget {
   }
 }
 
-class _ResultDetailContent extends StatelessWidget {
+class _ResultDetailContent extends ConsumerStatefulWidget {
   final WorkoutResult result;
 
   const _ResultDetailContent({required this.result});
 
   @override
+  ConsumerState<_ResultDetailContent> createState() =>
+      _ResultDetailContentState();
+}
+
+class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
+  bool _syncing = false;
+  late bool _syncedToC2;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncedToC2 = widget.result.syncedToC2;
+  }
+
+  Future<void> _syncToC2() async {
+    setState(() => _syncing = true);
+    try {
+      final service = ref.read(c2LogbookServiceProvider);
+      final outcome = await service.syncResult(widget.result);
+      if (!mounted) return;
+      if (outcome.success) {
+        setState(() => _syncedToC2 = true);
+        ref.invalidate(workoutHistoryProvider);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Synced to Concept2 Logbook')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(outcome.error ?? 'Sync failed')),
+        );
+      }
+    } on C2ActionableException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sync failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final result = widget.result;
     final theme = Theme.of(context);
+    final c2LinkedAsync = ref.watch(c2LinkedProvider);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -295,11 +345,39 @@ class _ResultDetailContent extends StatelessWidget {
                       ),
                       _MetricTile(
                         label: 'C2 Synced',
-                        value: result.syncedToC2 ? 'Yes' : 'No',
+                        value: _syncedToC2 ? 'Yes' : 'No',
                       ),
                     ],
                   ),
                 ],
+                // Retroactive C2 sync: show when not synced and user is linked
+                if (!_syncedToC2)
+                  c2LinkedAsync.maybeWhen(
+                    data: (isLinked) => isLinked
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: _syncing
+                                  ? const Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      ),
+                                    )
+                                  : OutlinedButton.icon(
+                                      onPressed: _syncToC2,
+                                      icon: const Icon(Icons.sync, size: 18),
+                                      label:
+                                          const Text('Sync to Concept2'),
+                                    ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                    orElse: () => const SizedBox.shrink(),
+                  ),
               ],
             ),
           ),
