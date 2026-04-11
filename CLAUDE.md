@@ -35,6 +35,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - **Dart**: Dart 3.3+, type hints, immutable models with `copyWith`, Riverpod for state
 - **TypeScript**: Strict mode, Next.js App Router (Server Components default, `'use client'` for interactive)
 - **SQL**: Lowercase keywords, snake_case columns, always add indexes on foreign keys
+- **Web UI**: Use shadcn components (`npx shadcn@latest add <component>`) before building custom controls. The web app uses shadcn v4 with base-nova style and Base UI primitives.
 
 ### Communication
 - **No sycophancy** — don't soften, hedge, or flatter. State what you think directly.

@@ -5,6 +5,7 @@ import type { WorkoutSegment, DurationType } from '@/lib/types';
 import { formatPace } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp, intensityToHrZone } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
+import { Switch } from '@/components/ui/switch';
 
 export const SEGMENT_GRID_COLS = '2rem 2.5rem 4.5rem 8rem 9rem 3.5rem';
 
@@ -56,12 +57,11 @@ export function BuilderSegmentItem({
 		onChange(updated);
 	}
 
-	function toggleRest() {
-		const isRest = !segment.is_rest;
+	function toggleRest(checked: boolean) {
 		onChange({
 			...segment,
-			is_rest: isRest,
-			...(isRest && {
+			is_rest: checked,
+			...(checked && {
 				duration_type: 'time',
 				target_intensity: null,
 				target_stroke_rate: null,
@@ -91,13 +91,11 @@ export function BuilderSegmentItem({
 
 				{/* Rest toggle */}
 				<div className="flex items-center justify-center">
-					<input
-						type="checkbox"
-						id={`rest-toggle-${index}`}
+					<Switch
+						size="sm"
 						checked={!!segment.is_rest}
-						onChange={toggleRest}
+						onCheckedChange={toggleRest}
 						aria-label={`Toggle rest for segment ${index + 1}`}
-						className="h-3.5 w-3.5 cursor-pointer accent-gray-400"
 					/>
 				</div>
 
