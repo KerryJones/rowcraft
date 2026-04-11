@@ -61,7 +61,12 @@ export function BuilderSegmentItem({
 		onChange({
 			...segment,
 			is_rest: isRest,
-			...(isRest && { target_intensity: null, target_stroke_rate: null, target_hr_zone: null }),
+			...(isRest && {
+				duration_type: 'time',
+				target_intensity: null,
+				target_stroke_rate: null,
+				target_hr_zone: null,
+			}),
 		});
 	}
 
@@ -85,34 +90,36 @@ export function BuilderSegmentItem({
 				</span>
 
 				{/* Rest toggle */}
-				<button
-					type="button"
-					onClick={toggleRest}
-					title={segment.is_rest ? 'Mark as work segment' : 'Mark as rest segment'}
-					aria-label={`Toggle rest for segment ${index + 1}`}
-					aria-pressed={!!segment.is_rest}
-					className={`flex h-5 w-full items-center justify-center rounded border text-[10px] font-semibold tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/50 ${
-						segment.is_rest
-							? 'border-gray-500 bg-gray-600 text-gray-200 hover:bg-gray-500'
-							: 'border-gray-700 bg-transparent text-gray-500 hover:border-gray-500 hover:text-gray-300'
-					}`}
-				>
-					R
-				</button>
+				<div className="flex items-center justify-center">
+					<input
+						type="checkbox"
+						id={`rest-toggle-${index}`}
+						checked={!!segment.is_rest}
+						onChange={toggleRest}
+						aria-label={`Toggle rest for segment ${index + 1}`}
+						className="h-3.5 w-3.5 cursor-pointer accent-gray-400"
+					/>
+				</div>
 
 				{/* Type */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] text-gray-500 sm:hidden">Type</span>
-					<select
-						value={segment.duration_type}
-						onChange={(e) => updateField('duration_type', e.target.value as DurationType)}
-						aria-label={`Segment ${index + 1} duration type`}
-						className="rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 sm:w-full"
-					>
-						{DURATION_TYPE_OPTIONS.map((t) => (
-							<option key={t.value} value={t.value}>{t.label}</option>
-						))}
-					</select>
+					{segment.is_rest ? (
+						<span className="rounded border border-gray-700/50 bg-gray-800/40 px-1.5 py-1 text-xs text-gray-500">
+							Time
+						</span>
+					) : (
+						<select
+							value={segment.duration_type}
+							onChange={(e) => updateField('duration_type', e.target.value as DurationType)}
+							aria-label={`Segment ${index + 1} duration type`}
+							className="rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50 sm:w-full"
+						>
+							{DURATION_TYPE_OPTIONS.map((t) => (
+								<option key={t.value} value={t.value}>{t.label}</option>
+							))}
+						</select>
+					)}
 				</div>
 
 				{/* Value + unit suffix */}
