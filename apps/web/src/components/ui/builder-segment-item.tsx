@@ -6,7 +6,7 @@ import { formatPace } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp, intensityToHrZone } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 
-export const SEGMENT_GRID_COLS = '2rem 4.5rem 8rem 9rem 3.5rem';
+export const SEGMENT_GRID_COLS = '2rem 2.5rem 4.5rem 8rem 9rem 3.5rem';
 
 const DURATION_UNIT_LABELS: Record<DurationType, string> = {
 	time: 's',
@@ -56,6 +56,15 @@ export function BuilderSegmentItem({
 		onChange(updated);
 	}
 
+	function toggleRest() {
+		const isRest = !segment.is_rest;
+		onChange({
+			...segment,
+			is_rest: isRest,
+			...(isRest && { target_intensity: null, target_stroke_rate: null, target_hr_zone: null }),
+		});
+	}
+
 	const preview = segment.target_intensity
 		? formatPace(resolveIntensityToPace(segment.target_intensity, ftp))
 		: null;
@@ -74,6 +83,22 @@ export function BuilderSegmentItem({
 				<span className="w-5 shrink-0 text-center text-xs text-gray-600 sm:w-auto">
 					{index + 1}
 				</span>
+
+				{/* Rest toggle */}
+				<button
+					type="button"
+					onClick={toggleRest}
+					title={segment.is_rest ? 'Mark as work segment' : 'Mark as rest segment'}
+					aria-label={`Toggle rest for segment ${index + 1}`}
+					aria-pressed={!!segment.is_rest}
+					className={`flex h-5 w-full items-center justify-center rounded border text-[10px] font-semibold tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/50 ${
+						segment.is_rest
+							? 'border-gray-500 bg-gray-600 text-gray-200 hover:bg-gray-500'
+							: 'border-gray-700 bg-transparent text-gray-500 hover:border-gray-500 hover:text-gray-300'
+					}`}
+				>
+					R
+				</button>
 
 				{/* Type */}
 				<div className="flex flex-col gap-0.5">
@@ -111,51 +136,57 @@ export function BuilderSegmentItem({
 				{/* % FTP + inline pace */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] text-gray-500 sm:hidden">% FTP</span>
-					<div className="flex items-center gap-1.5">
-						<input
-							type="number"
-							min={0}
-							max={200}
-							placeholder="—"
-							value={segment.target_intensity ?? ''}
-							onChange={(e) => {
-								const val = parseInt(e.target.value, 10);
-								updateField('target_intensity', !isNaN(val) && val > 0 ? val : null);
-							}}
-							aria-label={`Segment ${index + 1} intensity percent FTP`}
-							className="w-14 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-						/>
-						<span className={`whitespace-nowrap text-[11px] ${preview ? 'text-gray-500' : 'text-gray-700'}`}>
-							{preview ? `${preview}/500m` : '—'}
-						</span>
-					</div>
+					{segment.is_rest ? (
+						<span className="py-1 text-xs text-gray-700">—</span>
+					) : (
+						<div className="flex items-center gap-1.5">
+							<input
+								type="number"
+								min={0}
+								max={200}
+								placeholder="—"
+								value={segment.target_intensity ?? ''}
+								onChange={(e) => {
+									const val = parseInt(e.target.value, 10);
+									updateField('target_intensity', !isNaN(val) && val > 0 ? val : null);
+								}}
+								aria-label={`Segment ${index + 1} intensity percent FTP`}
+								className="w-14 rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+							/>
+							<span className={`whitespace-nowrap text-[11px] ${preview ? 'text-gray-500' : 'text-gray-700'}`}>
+								{preview ? `${preview}/500m` : '—'}
+							</span>
+						</div>
+					)}
 				</div>
 
 				{/* SPM */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] text-gray-500 sm:hidden">SPM</span>
-					<input
-						type="number"
-						min={0}
-						max={50}
-						placeholder="—"
-						value={segment.target_stroke_rate ?? ''}
-						onChange={(e) => {
-							const val = parseInt(e.target.value, 10);
-							updateField('target_stroke_rate', !isNaN(val) && val > 0 ? val : null);
-						}}
-						aria-label={`Segment ${index + 1} stroke rate`}
-						className="w-full rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-					/>
+					{segment.is_rest ? (
+						<span className="py-1 text-xs text-gray-700">—</span>
+					) : (
+						<input
+							type="number"
+							min={0}
+							max={50}
+							placeholder="—"
+							value={segment.target_stroke_rate ?? ''}
+							onChange={(e) => {
+								const val = parseInt(e.target.value, 10);
+								updateField('target_stroke_rate', !isNaN(val) && val > 0 ? val : null);
+							}}
+							aria-label={`Segment ${index + 1} stroke rate`}
+							className="w-full rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+						/>
+					)}
 				</div>
 			</div>
 
 			{/* Action buttons (hover/focus-reveal) */}
-			{/* TODO: tabIndex={-1} on buttons means keyboard users can't reach them — remove tabIndex to fix */}
 			<div className="flex shrink-0 items-center gap-0.5 pr-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
 				<button
 					type="button"
-					tabIndex={-1}
 					onClick={onDuplicate}
 					title="Duplicate"
 					aria-label={`Duplicate segment ${index + 1}`}
@@ -165,7 +196,6 @@ export function BuilderSegmentItem({
 				</button>
 				<button
 					type="button"
-					tabIndex={-1}
 					onClick={onMoveUp}
 					disabled={isFirst}
 					title="Move up"
@@ -176,7 +206,6 @@ export function BuilderSegmentItem({
 				</button>
 				<button
 					type="button"
-					tabIndex={-1}
 					onClick={onMoveDown}
 					disabled={isLast}
 					title="Move down"
@@ -187,7 +216,6 @@ export function BuilderSegmentItem({
 				</button>
 				<button
 					type="button"
-					tabIndex={-1}
 					onClick={onRemove}
 					title="Remove"
 					aria-label={`Remove segment ${index + 1}`}
