@@ -8,10 +8,10 @@ import '../../app/theme.dart';
 
 /// Garmin-style HR zone arc gauge using Syncfusion SfRadialGauge.
 ///
-/// Renders a 270° arc with 5 colored zone segments. The active zone is fully
-/// opaque and thicker; inactive zones are dimmed. A circle marker shows the
-/// exact BPM position. The BPM value, zone name, and a heart icon are
-/// centered inside the arc.
+/// Renders a 270° arc with 5 equally-sized colored zone segments. The active
+/// zone is fully opaque and thicker; inactive zones are dimmed. A circle marker
+/// shows the exact BPM position within its zone. The BPM value, zone name, and
+/// a heart icon are centered inside the arc.
 class HrZoneGauge extends StatelessWidget {
   final int bpm;
   final int maxHr;
@@ -30,22 +30,47 @@ class HrZoneGauge extends StatelessWidget {
     RowCraftTheme.hrZone5,
   ];
 
+  // Zone boundaries as fractions of max HR.
+  static const _zoneFractions = [0.0, 0.6, 0.7, 0.8, 0.9, 1.05];
+
+  // Small inset between adjacent zones to create visible gaps.
+  static const _gap = 0.04;
+
+  /// Maps a real BPM value into the abstract 0–5 gauge scale where each
+  /// integer boundary represents a zone transition. Within each zone, the
+  /// position is linearly interpolated based on where the BPM falls in that
+  /// zone's real HR range. The returned value is clamped to the rendered
+  /// segment bounds so the marker never lands in a gap.
+  static double _bpmToGaugeValue(int bpmVal, int maxHrVal) {
+    if (maxHrVal <= 0) return 0.0;
+    final bpmFraction = bpmVal / maxHrVal;
+
+    // No HR reading
+    if (bpmFraction <= 0) return 0.0;
+    // Above zone 5 ceiling (105% of max HR)
+    if (bpmFraction >= _zoneFractions[5]) return 5.0;
+
+    for (var i = 0; i < 5; i++) {
+      final zoneStart = _zoneFractions[i];
+      final zoneEnd = _zoneFractions[i + 1];
+      if (bpmFraction < zoneEnd || i == 4) {
+        final fraction =
+            (bpmFraction - zoneStart) / (zoneEnd - zoneStart);
+        final raw = i + fraction.clamp(0.0, 1.0);
+        // Clamp to rendered segment bounds so marker stays on the arc
+        final segStart = i + (i == 0 ? 0.0 : _gap);
+        final segEnd = (i + 1) - (i == 4 ? 0.0 : _gap);
+        return raw.clamp(segStart, segEnd);
+      }
+    }
+    return 5.0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final zone = estimateHrZone(bpm, maxHr: maxHr);
     final info = hrZoneInfo(zone);
-    final maxValue = maxHr * 1.05;
-    final clampedBpm = bpm.toDouble().clamp(0.0, maxValue);
-
-    // Zone boundary values in BPM
-    final zoneBounds = [
-      0.0,
-      maxHr * 0.6,
-      maxHr * 0.7,
-      maxHr * 0.8,
-      maxHr * 0.9,
-      maxValue,
-    ];
+    final gaugeValue = _bpmToGaugeValue(bpm, maxHr);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -60,17 +85,17 @@ class HrZoneGauge extends StatelessWidget {
                 startAngle: 135,
                 endAngle: 45,
                 minimum: 0,
-                maximum: maxValue,
+                maximum: 5,
                 showLabels: false,
                 showTicks: false,
                 showAxisLine: false,
-                radiusFactor: 0.85,
+                radiusFactor: 0.95,
                 canScaleToFit: false,
                 ranges: <GaugeRange>[
                   for (var i = 0; i < 5; i++)
                     GaugeRange(
-                      startValue: zoneBounds[i],
-                      endValue: zoneBounds[i + 1],
+                      startValue: i + (i == 0 ? 0 : _gap),
+                      endValue: (i + 1) - (i == 4 ? 0 : _gap),
                       color: (zone - 1) == i
                           ? _zoneColors[i]
                           : _zoneColors[i].withValues(alpha: 0.25),
@@ -80,7 +105,7 @@ class HrZoneGauge extends StatelessWidget {
                 ],
                 pointers: <GaugePointer>[
                   MarkerPointer(
-                    value: clampedBpm,
+                    value: gaugeValue,
                     markerType: MarkerType.circle,
                     markerHeight: 16,
                     markerWidth: 16,
