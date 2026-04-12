@@ -195,11 +195,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _subscribeToBle();
   }
 
+  /// When true, incoming BLE data is ignored (during PM5 reset sequence).
+  bool _suppressBleData = false;
+
   /// Subscribe to BLE PM5 data, standalone HR, and HR connection state.
   void _subscribeToBle() {
     // Listen to PM5 BLE data
     final pm5Stream = _ref.read(pm5ServiceProvider).pm5DataStream;
     _pm5BleSubscription = pm5Stream.listen((pm5Data) {
+      // Ignore stale data while PM5 is being reset
+      if (_suppressBleData) return;
+
       // Merge standalone HR — prefer chest strap (more accurate)
       PM5Data merged = pm5Data;
       if (_lastStandaloneHr != null) {
@@ -339,8 +345,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         isLoading: false,
       );
 
-      // Reset PM5 to clear any previous session data and zero out display
-      await _resetPm5();
+      // Reset PM5 to clear any previous session data and zero out display.
+      // Suppress incoming BLE data during reset so old values don't overwrite.
+      _suppressBleData = true;
+      try {
+        await _resetPm5();
+      } finally {
+        _suppressBleData = false;
+      }
       state = state.copyWith(pm5Data: const PM5Data.zero());
 
       // Enter ready phase — workout starts when rower takes first stroke

@@ -493,6 +493,14 @@ class WorkoutEngine {
       return;
     }
 
+    // ── Structured complete / finished — update display data only ──
+    if (_state.phase == WorkoutPhase.structuredComplete ||
+        _state.phase == WorkoutPhase.finished) {
+      _state = _state.copyWith(latestData: data);
+      _emit();
+      return;
+    }
+
     final segment = _state.currentSegment;
     if (segment == null) return;
 

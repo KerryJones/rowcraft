@@ -349,12 +349,16 @@ class _StatCell extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
-            value,
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: RowCraftTheme.metricWhite,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: RowCraftTheme.metricWhite,
+              ),
+              maxLines: 1,
             ),
           ),
           const SizedBox(height: 4),

@@ -314,12 +314,13 @@ class _StatTile extends StatelessWidget {
                         ),
                       ),
                       if (unitSuffix != null) ...[
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 2),
                         Text(
                           unitSuffix!,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: RowCraftTheme.subtleGrey,
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w500,
+                            color: RowCraftTheme.metricWhite,
                           ),
                         ),
                       ],

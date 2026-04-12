@@ -121,48 +121,81 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
         ),
         actions: [
-          Row(
+          Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: OutlinedButton(
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.of(ctx).pop();
                     ref.read(workoutSessionProvider.notifier).continueWithFreeRow();
                   },
-                  child: const Text('Continue', style: TextStyle(fontSize: 13)),
+                  icon: const Icon(Icons.rowing, size: 24),
+                  label: Text(
+                    'Keep Rowing',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RowCraftTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    ref
+                        .read(workoutSessionProvider.notifier)
+                        .finishFromStructuredComplete();
+                  },
+                  icon: const Icon(Icons.save, size: 24),
+                  label: Text(
+                    'Save Workout',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RowCraftTheme.successGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(ctx).pop();
                     ref
                         .read(workoutSessionProvider.notifier)
                         .finishFromStructuredComplete();
                     ref.read(workoutSessionProvider.notifier).discardResult();
-                    context.go('/');
+                    if (context.mounted) context.go('/');
                   },
+                  icon: const Icon(Icons.delete_outline, size: 24),
+                  label: Text(
+                    'Discard',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: RowCraftTheme.errorRose,
-                    side: const BorderSide(color: RowCraftTheme.errorRose),
+                    side: const BorderSide(color: RowCraftTheme.errorRose, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                  child: const Text('Discard', style: TextStyle(fontSize: 13)),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    ref
-                        .read(workoutSessionProvider.notifier)
-                        .finishFromStructuredComplete();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: RowCraftTheme.successGreen,
-                  ),
-                  child: const Text('Save', style: TextStyle(fontSize: 13)),
                 ),
               ),
             ],
@@ -859,13 +892,6 @@ class _WorkoutProfilePainter extends CustomPainter {
           continue;
         }
 
-        // Skip segments with no target — no reference to plot against
-        final seg = segments[si];
-        if (seg.targetIntensity == null) {
-          started = false;
-          continue;
-        }
-
         // X: position within the segment bar using actual timestamps
         final segDurActual = segLastTs[si] - segFirstTs[si];
         final double segFrac;
@@ -902,7 +928,7 @@ class _WorkoutProfilePainter extends CustomPainter {
         Paint()
           ..color = Colors.white.withValues(alpha: 0.85)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
+          ..strokeWidth = 2.5
           ..strokeJoin = StrokeJoin.round,
       );
 
