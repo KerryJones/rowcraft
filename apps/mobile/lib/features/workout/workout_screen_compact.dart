@@ -392,7 +392,7 @@ class _SegmentTile extends StatelessWidget {
     }
 
     final label = countUp ? 'ELAPSED' : 'SEGMENT';
-    final value = countUp
+    final (value, suffix) = countUp
         ? _elapsedSegmentLabel(engineState)
         : remainingSegmentLabel(engineState);
 
@@ -401,6 +401,7 @@ class _SegmentTile extends StatelessWidget {
     return _StatTile(
       label: label,
       value: value,
+      unitSuffix: suffix,
       onTap: onTap,
       pageIndex: countUp ? 1 : 0,
       pageCount: 2,
@@ -416,9 +417,9 @@ class _SegmentTile extends StatelessWidget {
   }
 }
 
-String _elapsedSegmentLabel(WorkoutEngineState state) {
+(String, String?) _elapsedSegmentLabel(WorkoutEngineState state) {
   final segment = state.currentSegment;
-  if (segment == null) return '0:00';
+  if (segment == null) return ('0:00', null);
   switch (segment.durationType) {
     case DurationType.time:
       final totalSec = segment.durationValue.toInt();
@@ -426,11 +427,11 @@ String _elapsedSegmentLabel(WorkoutEngineState state) {
           (totalSec * state.segmentProgress).round().clamp(0, totalSec);
       final m = elapsed ~/ 60;
       final s = elapsed % 60;
-      return '$m:${s.toString().padLeft(2, '0')}';
+      return ('$m:${s.toString().padLeft(2, '0')}', null);
     case DurationType.distance:
-      return '${state.segmentElapsedDistance.toInt()}m';
+      return ('${state.segmentElapsedDistance.toInt()}', 'm');
     case DurationType.calories:
-      return '${state.segmentElapsedCalories.round()}cal';
+      return ('${state.segmentElapsedCalories.round()}', 'cal');
   }
 }
 
@@ -490,19 +491,22 @@ class _TargetPaceTile extends StatelessWidget {
       );
     }
 
+    final isResting = session.engineState.phase == WorkoutPhase.resting;
     final isFreeRow = segment != null &&
         !segment.isRest &&
         segment.targetIntensity == null;
-    final value = hasTarget
-        ? formatPaceTenths(
-            resolveIntensityToPace(
-              segment!.targetIntensity!,
-              session.ftpWatts,
-            ).toDouble(),
-          )
-        : isFreeRow
-            ? 'Free'
-            : '--:--';
+    final value = isResting
+        ? 'REST'
+        : hasTarget
+            ? formatPaceTenths(
+                resolveIntensityToPace(
+                  segment!.targetIntensity!,
+                  session.ftpWatts,
+                ).toDouble(),
+              )
+            : isFreeRow
+                ? 'Free'
+                : '--:--';
 
     // Show trend chevron based on current pace vs target.
     String? chevron;
@@ -523,9 +527,9 @@ class _TargetPaceTile extends StatelessWidget {
     return _StatTile(
       label: 'TARGET PACE',
       value: value,
-      valueColor: hasTarget ? RowCraftTheme.successGreen : null,
-      unitSuffix: hasTarget ? '/500m' : null,
-      chevron: chevron,
+      valueColor: isResting ? RowCraftTheme.subtleGrey : hasTarget ? RowCraftTheme.successGreen : null,
+      unitSuffix: hasTarget && !isResting ? '/500m' : null,
+      chevron: isResting ? null : chevron,
       onTap: onTap,
       pageIndex: 0,
       pageCount: 2,
@@ -543,14 +547,15 @@ class _TargetSpmTile extends StatelessWidget {
     final segment = session.engineState.currentSegment ??
         session.expandedSegments.firstOrNull;
     final target = segment?.targetStrokeRate;
+    final isResting = session.engineState.phase == WorkoutPhase.resting;
     final isFreeRow = segment != null &&
         !segment.isRest &&
         segment.targetIntensity == null &&
         target == null;
     return _StatTile(
       label: 'TARGET S/M',
-      value: target != null ? '$target' : isFreeRow ? 'Free' : '--',
-      valueColor: target != null ? RowCraftTheme.successGreen : null,
+      value: isResting ? 'REST' : target != null ? '$target' : isFreeRow ? 'Free' : '--',
+      valueColor: isResting ? RowCraftTheme.subtleGrey : target != null ? RowCraftTheme.successGreen : null,
     );
   }
 }

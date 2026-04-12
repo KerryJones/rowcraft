@@ -339,8 +339,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         isLoading: false,
       );
 
-      // Reset PM5 to clear any previous session data
+      // Reset PM5 to clear any previous session data and zero out display
       await _resetPm5();
+      state = state.copyWith(pm5Data: const PM5Data.zero());
 
       // Enter ready phase — workout starts when rower takes first stroke
       _engine!.ready();

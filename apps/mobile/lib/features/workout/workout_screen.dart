@@ -121,36 +121,51 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(workoutSessionProvider.notifier).continueWithFreeRow();
-            },
-            child: const Text('Continue rowing'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              // Discard — finish then discard, go home
-              ref
-                  .read(workoutSessionProvider.notifier)
-                  .finishFromStructuredComplete();
-              ref.read(workoutSessionProvider.notifier).discardResult();
-              context.go('/');
-            },
-            child: const Text(
-              'Discard',
-              style: TextStyle(color: RowCraftTheme.errorRose),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref
-                  .read(workoutSessionProvider.notifier)
-                  .finishFromStructuredComplete();
-            },
-            child: const Text('Save'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    ref.read(workoutSessionProvider.notifier).continueWithFreeRow();
+                  },
+                  child: const Text('Continue', style: TextStyle(fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    ref
+                        .read(workoutSessionProvider.notifier)
+                        .finishFromStructuredComplete();
+                    ref.read(workoutSessionProvider.notifier).discardResult();
+                    context.go('/');
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: RowCraftTheme.errorRose,
+                    side: const BorderSide(color: RowCraftTheme.errorRose),
+                  ),
+                  child: const Text('Discard', style: TextStyle(fontSize: 13)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    ref
+                        .read(workoutSessionProvider.notifier)
+                        .finishFromStructuredComplete();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RowCraftTheme.successGreen,
+                  ),
+                  child: const Text('Save', style: TextStyle(fontSize: 13)),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -832,6 +847,7 @@ class _WorkoutProfilePainter extends CustomPainter {
       final pacePath = Path();
       var started = false;
       final paceRange = paceMax - paceMin;
+      Offset? lastPacePoint;
 
       for (final sample in timeSamples!) {
         if (sample.pace <= 0) continue;
@@ -878,6 +894,7 @@ class _WorkoutProfilePainter extends CustomPainter {
         } else {
           pacePath.lineTo(px, py);
         }
+        lastPacePoint = Offset(px, py);
       }
 
       canvas.drawPath(
@@ -888,30 +905,41 @@ class _WorkoutProfilePainter extends CustomPainter {
           ..strokeWidth = 1.5
           ..strokeJoin = StrokeJoin.round,
       );
+
+      // Draw playhead dot at the last pace point (Zwift-style)
+      if (lastPacePoint != null &&
+          phase != WorkoutPhase.idle &&
+          phase != WorkoutPhase.finished &&
+          phase != WorkoutPhase.structuredComplete) {
+        // Subtle glow
+        canvas.drawCircle(
+          lastPacePoint,
+          8,
+          Paint()..color = Colors.white.withValues(alpha: 0.15),
+        );
+        // White dot
+        canvas.drawCircle(
+          lastPacePoint,
+          4,
+          Paint()..color = RowCraftTheme.metricWhite,
+        );
+      }
     }
 
-    // Draw playhead line
-    if (phase != WorkoutPhase.idle &&
+    // Draw playhead dot (fallback when no pace data yet)
+    if ((timeSamples == null || timeSamples!.isEmpty) &&
+        phase != WorkoutPhase.idle &&
         phase != WorkoutPhase.finished &&
         phase != WorkoutPhase.structuredComplete) {
-      final playheadPaint = Paint()
-        ..color = RowCraftTheme.metricWhite
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawLine(
-        Offset(playheadX, 0),
-        Offset(playheadX, size.height),
-        playheadPaint,
+      final fallback = Offset(playheadX, size.height * 0.5);
+      canvas.drawCircle(
+        fallback,
+        8,
+        Paint()..color = Colors.white.withValues(alpha: 0.15),
       );
-
-      // Small triangle at top of playhead
-      final trianglePath = Path()
-        ..moveTo(playheadX - 4, 0)
-        ..lineTo(playheadX + 4, 0)
-        ..lineTo(playheadX, 5)
-        ..close();
-      canvas.drawPath(
-        trianglePath,
+      canvas.drawCircle(
+        fallback,
+        4,
         Paint()..color = RowCraftTheme.metricWhite,
       );
     }
@@ -933,9 +961,10 @@ class _WorkoutProfilePainter extends CustomPainter {
 // ---------------------------------------------------------------------------
 
 /// Remaining label for segment countdown.
-String remainingSegmentLabel(WorkoutEngineState state) {
+/// Returns (value, unitSuffix) so the unit can be styled separately.
+(String, String?) remainingSegmentLabel(WorkoutEngineState state) {
   final segment = state.currentSegment;
-  if (segment == null) return '';
+  if (segment == null) return ('', null);
 
   switch (segment.durationType) {
     case DurationType.time:
@@ -944,18 +973,18 @@ String remainingSegmentLabel(WorkoutEngineState state) {
           (totalSec * (1 - state.segmentProgress)).round().clamp(0, totalSec);
       final min = remaining ~/ 60;
       final sec = remaining % 60;
-      return '$min:${sec.toString().padLeft(2, '0')}';
+      return ('$min:${sec.toString().padLeft(2, '0')}', null);
     case DurationType.distance:
       final totalM = segment.durationValue;
       final remaining =
           (totalM - state.segmentElapsedDistance).clamp(0.0, totalM).toInt();
-      return '${remaining}m';
+      return ('$remaining', 'm');
     case DurationType.calories:
       final totalCal = segment.durationValue;
       final remaining = (totalCal - state.segmentElapsedCalories)
           .clamp(0.0, totalCal)
           .round();
-      return '${remaining}cal';
+      return ('$remaining', 'cal');
   }
 }
 
@@ -1021,15 +1050,29 @@ class _CurrentSegment extends StatelessWidget {
                 ),
               if (!isActive) const Spacer(),
               const SizedBox(width: 8),
-              if (isActive)
-                Text(
-                  remainingSegmentLabel(engineState),
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: RowCraftTheme.subtleGrey,
-                  ),
-                ),
+              if (isActive) ...[
+                Builder(builder: (_) {
+                  final (val, suffix) = remainingSegmentLabel(engineState);
+                  return Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: val),
+                      if (suffix != null)
+                        TextSpan(
+                          text: suffix,
+                          style: GoogleFonts.inter(
+                            fontSize: 10,
+                            color: RowCraftTheme.subtleGrey,
+                          ),
+                        ),
+                    ]),
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: RowCraftTheme.subtleGrey,
+                    ),
+                  );
+                }),
+              ],
               const SizedBox(width: 8),
               Text(
                 '${(currentIndex + 1).clamp(1, segments.length)}/${segments.length}',

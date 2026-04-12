@@ -244,16 +244,16 @@ class BleNotifier extends Notifier<BleState> {
     final pm5Devices = <DiscoveredDevice>[];
     final hrDevices = <DiscoveredDevice>[];
 
-    // Preserve connection state if already connected
-    final pm5AlreadyConnected =
+    final pm5Connected =
         state.pm5ConnectionState == PM5ConnectionState.connected;
-    final newPm5State =
-        pm5AlreadyConnected
-            ? PM5ConnectionState.connected
-            : PM5ConnectionState.scanning;
+    final hrConnected =
+        state.hrConnectionState == HrConnectionState.connected;
 
     state = state.copyWith(
-      pm5ConnectionState: newPm5State,
+      pm5ConnectionState:
+          pm5Connected ? PM5ConnectionState.connected : PM5ConnectionState.scanning,
+      hrConnectionState:
+          hrConnected ? HrConnectionState.connected : HrConnectionState.scanning,
       discoveredPm5Devices: [],
       discoveredHrDevices: [],
       hasScanned: false,
@@ -272,7 +272,7 @@ class BleNotifier extends Notifier<BleState> {
         }
       },
       onError: (e) {
-        if (!pm5AlreadyConnected) {
+        if (!pm5Connected) {
           state = state.copyWith(
             error: 'Rower scan error: $e',
             pm5ConnectionState: PM5ConnectionState.error,
@@ -319,20 +319,15 @@ class BleNotifier extends Notifier<BleState> {
     ref.read(pm5ServiceProvider).stopScan();
     ref.read(hrServiceProvider).stopScan();
 
-    if (state.pm5ConnectionState == PM5ConnectionState.scanning) {
-      state = state.copyWith(
-          pm5ConnectionState: PM5ConnectionState.disconnected,
-          hasScanned: true);
-    } else if (state.pm5ConnectionState == PM5ConnectionState.connected) {
-      // PM5 was already connected when scan started — still mark as scanned
-      // so saved device tiles show correct availability status.
-      state = state.copyWith(hasScanned: true);
-    }
-    if (state.hrConnectionState == HrConnectionState.scanning) {
-      state = state.copyWith(
-          hrConnectionState: HrConnectionState.disconnected,
-          hasScanned: true);
-    }
+    state = state.copyWith(
+      hasScanned: true,
+      pm5ConnectionState: state.pm5ConnectionState == PM5ConnectionState.scanning
+          ? PM5ConnectionState.disconnected
+          : null,
+      hrConnectionState: state.hrConnectionState == HrConnectionState.scanning
+          ? HrConnectionState.disconnected
+          : null,
+    );
   }
 
   /// Connect to a PM5 device. Device is saved to DB only on confirmed connection.

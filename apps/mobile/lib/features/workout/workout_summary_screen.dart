@@ -486,7 +486,7 @@ class _CombinedChartPainter extends CustomPainter {
     for (final sample in samples) {
       if (sample.pace <= 0) continue;
       final x = leftPad + (sample.timestamp.inSeconds / maxTime) * chartWidth;
-      final yNorm = 1.0 - (sample.pace - displayMinPace) / displayPaceRange;
+      final yNorm = (sample.pace - displayMinPace) / displayPaceRange;
       final y = topPad + yNorm * chartHeight;
       final barBottom = topPad + chartHeight;
 
@@ -527,7 +527,7 @@ class _CombinedChartPainter extends CustomPainter {
     );
     for (var i = 0; i < 3; i++) {
       final frac = i / 2.0;
-      final pace = displayMaxPace - frac * displayPaceRange;
+      final pace = displayMinPace + frac * displayPaceRange;
       final y = topPad + frac * chartHeight;
       final tp = TextPainter(
         text: TextSpan(
