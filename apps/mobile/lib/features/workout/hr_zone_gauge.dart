@@ -9,9 +9,9 @@ import '../../app/theme.dart';
 /// Garmin-style HR zone arc gauge using Syncfusion SfRadialGauge.
 ///
 /// Renders a 270° arc with 5 equally-sized colored zone segments. The active
-/// zone is fully opaque and thicker; inactive zones are dimmed. A circle marker
-/// shows the exact BPM position within its zone. The BPM value, zone name, and
-/// a heart icon are centered inside the arc.
+/// zone is fully opaque and thicker; inactive zones are dimmed. A thin white
+/// rectangle tick shows the exact BPM position within its zone. The BPM value
+/// is centered inside the arc in the active zone's color.
 class HrZoneGauge extends StatelessWidget {
   final int bpm;
   final int maxHr;
@@ -42,20 +42,23 @@ class HrZoneGauge extends StatelessWidget {
   /// zone's real HR range. The returned value is clamped to the rendered
   /// segment bounds so the marker never lands in a gap.
   static double _bpmToGaugeValue(int bpmVal, int maxHrVal) {
-    if (maxHrVal <= 0) return 0.0;
-    final bpmFraction = bpmVal / maxHrVal;
+    if (maxHrVal <= 0 || bpmVal <= 0) return 0.0;
 
-    // No HR reading
-    if (bpmFraction <= 0) return 0.0;
-    // Above zone 5 ceiling (105% of max HR)
-    if (bpmFraction >= _zoneFractions[5]) return 5.0;
+    // Use rounded BPM boundaries to match estimateHrZone().
+    final zoneBpm = [
+      0.0,
+      for (var f in _zoneFractions.skip(1).take(4))
+        (maxHrVal * f).roundToDouble(),
+      maxHrVal * _zoneFractions[5],
+    ];
+
+    final bpm = bpmVal.toDouble();
+    if (bpm >= zoneBpm[5]) return 5.0;
 
     for (var i = 0; i < 5; i++) {
-      final zoneStart = _zoneFractions[i];
-      final zoneEnd = _zoneFractions[i + 1];
-      if (bpmFraction < zoneEnd || i == 4) {
-        final fraction =
-            (bpmFraction - zoneStart) / (zoneEnd - zoneStart);
+      if (bpm < zoneBpm[i + 1]) {
+        final range = zoneBpm[i + 1] - zoneBpm[i];
+        final fraction = range > 0 ? (bpm - zoneBpm[i]) / range : 0.0;
         final raw = i + fraction.clamp(0.0, 1.0);
         // Clamp to rendered segment bounds so marker stays on the arc
         final segStart = i + (i == 0 ? 0.0 : _gap);
@@ -68,8 +71,10 @@ class HrZoneGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasHr = bpm > 0;
     final zone = estimateHrZone(bpm, maxHr: maxHr);
     final info = hrZoneInfo(zone);
+    final displayColor = hasHr ? info.color : RowCraftTheme.subtleGrey;
     final gaugeValue = _bpmToGaugeValue(bpm, maxHr);
 
     return LayoutBuilder(
@@ -96,58 +101,38 @@ class HrZoneGauge extends StatelessWidget {
                     GaugeRange(
                       startValue: i + (i == 0 ? 0 : _gap),
                       endValue: (i + 1) - (i == 4 ? 0 : _gap),
-                      color: (zone - 1) == i
+                      color: hasHr && (zone - 1) == i
                           ? _zoneColors[i]
                           : _zoneColors[i].withValues(alpha: 0.25),
-                      startWidth: (zone - 1) == i ? 18 : 14,
-                      endWidth: (zone - 1) == i ? 18 : 14,
+                      startWidth: hasHr && (zone - 1) == i ? 18 : 14,
+                      endWidth: hasHr && (zone - 1) == i ? 18 : 14,
                     ),
                 ],
                 pointers: <GaugePointer>[
-                  MarkerPointer(
-                    value: gaugeValue,
-                    markerType: MarkerType.circle,
-                    markerHeight: 16,
-                    markerWidth: 16,
-                    color: info.color,
-                    borderColor: Colors.white,
-                    borderWidth: 3,
-                    enableAnimation: bpm > 0,
-                    animationDuration: 300,
-                    animationType: AnimationType.ease,
-                  ),
+                  if (hasHr)
+                    MarkerPointer(
+                      value: gaugeValue,
+                      markerType: MarkerType.rectangle,
+                      markerHeight: 22,
+                      markerWidth: 3,
+                      color: Colors.white,
+                      enableAnimation: true,
+                      animationDuration: 300,
+                      animationType: AnimationType.ease,
+                    ),
                 ],
                 annotations: <GaugeAnnotation>[
                   GaugeAnnotation(
                     angle: 90,
                     positionFactor: 0,
-                    widget: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          info.label,
-                          style: GoogleFonts.inter(
-                            fontSize: size * 0.075,
-                            fontWeight: FontWeight.w600,
-                            color: info.color,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                        Text(
-                          '$bpm',
-                          style: GoogleFonts.jetBrainsMono(
-                            fontSize: size * 0.22,
-                            fontWeight: FontWeight.w700,
-                            color: info.color,
-                            height: 1.1,
-                          ),
-                        ),
-                        Icon(
-                          Icons.favorite,
-                          size: size * 0.09,
-                          color: info.color,
-                        ),
-                      ],
+                    widget: Text(
+                      hasHr ? '$bpm' : '--',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: size * 0.26,
+                        fontWeight: FontWeight.w700,
+                        color: displayColor,
+                        height: 1.0,
+                      ),
                     ),
                   ),
                 ],
