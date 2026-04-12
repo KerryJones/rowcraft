@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
 import '../../utils/pace_utils.dart';
@@ -93,29 +94,65 @@ class _FtpResultDialogState extends State<FtpResultDialog> {
         ],
       ),
       actions: [
-        TextButton(
-          onPressed: widget.onSkip,
-          child: const Text(
-            'Skip',
-            style: TextStyle(color: RowCraftTheme.subtleGrey),
-          ),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            int watts;
-            if (_userEdited) {
-              final tenths = parsePace(_controller.text);
-              watts = tenths != null
-                  ? paceTenthsToWatts(tenths)
-                  : widget.calculatedFtp;
-            } else {
-              watts = widget.calculatedFtp;
-            }
-            if (watts > 0) {
-              widget.onSave(watts);
-            }
-          },
-          child: const Text('Save FTP'),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  int watts;
+                  if (_userEdited) {
+                    final tenths = parsePace(_controller.text);
+                    watts = tenths != null
+                        ? paceTenthsToWatts(tenths)
+                        : widget.calculatedFtp;
+                  } else {
+                    watts = widget.calculatedFtp;
+                  }
+                  if (watts > 0) {
+                    widget.onSave(watts);
+                  }
+                },
+                icon: const Icon(Icons.save, size: 24),
+                label: Text(
+                  'Save FTP',
+                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: RowCraftTheme.successGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: OutlinedButton(
+                onPressed: widget.onSkip,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: RowCraftTheme.subtleGrey,
+                  side: const BorderSide(color: RowCraftTheme.subtleGrey, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  'Skip',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: RowCraftTheme.subtleGrey,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

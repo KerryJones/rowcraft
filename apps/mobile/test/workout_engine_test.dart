@@ -1936,4 +1936,99 @@ void main() {
       expect(indices.length, greaterThanOrEqualTo(2));
     });
   });
+
+  group('structuredComplete does not accumulate extra splits', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    Workout makeWorkout(List<WorkoutSegment> segments) {
+      return Workout(
+        id: 'test',
+        authorId: 'user',
+        title: 'Test',
+        workoutType: WorkoutType.intervals,
+        segments: segments,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
+
+    test('PM5 data after calorie segment completion does not create extra splits', () async {
+      engine = WorkoutEngine(
+        workout: makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.calories,
+            durationValue: 5,
+            targetIntensity: 70,
+            targetHrZone: 2,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Simulate rowing: first stroke starts the workout
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 5,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 0,
+        strokeCount: 1,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Row until 5 calories — segment should complete
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 30),
+        distance: 200,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 30,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.structuredComplete);
+      final splitsAtComplete = engine.completedSplits.length;
+      expect(splitsAtComplete, 1);
+
+      // More PM5 data arrives after completion — should NOT create new splits
+      for (var i = 0; i < 10; i++) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: 31 + i),
+          distance: 210.0 + i * 5,
+          pace: 1200,
+          strokeRate: 24,
+          strokeRateUpdated: true,
+          watts: 180,
+          calories: 6 + i,
+          strokeCount: 31 + i,
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      // Splits count should NOT have increased
+      expect(engine.completedSplits.length, splitsAtComplete);
+    });
+  });
 }

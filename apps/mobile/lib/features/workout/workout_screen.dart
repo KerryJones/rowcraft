@@ -178,9 +178,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(ctx).pop();
-                    ref
-                        .read(workoutSessionProvider.notifier)
-                        .finishFromStructuredComplete();
                     ref.read(workoutSessionProvider.notifier).discardResult();
                     if (context.mounted) context.go('/');
                   },
@@ -248,25 +245,52 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
           style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(),
-            child: Text(
-              'Keep Going',
-              style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogCtx).pop();
-              onConfirmed();
-            },
-            child: Text(
-              'End Workout',
-              style: GoogleFonts.inter(
-                color: RowCraftTheme.errorRose,
-                fontWeight: FontWeight.w600,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  icon: const Icon(Icons.rowing, size: 24),
+                  label: Text(
+                    'Keep Going',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RowCraftTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(dialogCtx).pop();
+                    onConfirmed();
+                  },
+                  icon: const Icon(Icons.stop, size: 24),
+                  label: Text(
+                    'End Workout',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: RowCraftTheme.errorRose,
+                    side: const BorderSide(color: RowCraftTheme.errorRose, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

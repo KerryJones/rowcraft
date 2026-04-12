@@ -20,6 +20,9 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 ### Research Before Guessing
 - **Never fabricate or guess external information** — if a task references external products, APIs, UI patterns, or industry standards, research them first (WebSearch, WebFetch, docs). Guessing and presenting it as informed analysis is a critical failure, not a minor shortcut.
 
+### Consistency is #1
+**Consistency is the highest-priority principle across everything** — code patterns, UI design, interactions, naming, spacing, button styles, error handling, dialog layouts. When adding or changing anything, find the existing pattern and match it exactly. Inconsistency is a bug. If you build a new dialog, find the most recent dialog and match its structure. If you style a button, find the established button style and use it. This applies universally, not just to code.
+
 ### Coding Principles
 **CONSISTENT > CANONICAL > SIMPLE**
 1. **Consistent** — match existing patterns in the codebase first

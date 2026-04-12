@@ -224,26 +224,53 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
           style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              ref.read(workoutSessionProvider.notifier).discardResult();
-              context.go('/');
-            },
-            child: Text(
-              'Discard',
-              style: GoogleFonts.inter(
-                color: RowCraftTheme.errorRose,
-                fontWeight: FontWeight.w600,
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  icon: const Icon(Icons.arrow_back, size: 24),
+                  label: Text(
+                    'Cancel',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: RowCraftTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    ref.read(workoutSessionProvider.notifier).discardResult();
+                    if (context.mounted) context.go('/');
+                  },
+                  icon: const Icon(Icons.delete_outline, size: 24),
+                  label: Text(
+                    'Discard',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: RowCraftTheme.errorRose,
+                    side: const BorderSide(color: RowCraftTheme.errorRose, width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -920,41 +947,45 @@ class _SaveDiscardBar extends StatelessWidget {
           top: BorderSide(color: RowCraftTheme.surfaceContainerHigh),
         ),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Discard (text button)
-          TextButton(
-            onPressed: onDiscard,
-            child: Text(
-              'Discard',
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: RowCraftTheme.errorRose,
-              ),
-            ),
-          ),
-          const Spacer(),
-          // Save Workout (prominent green)
           SizedBox(
-            height: 48,
+            width: double.infinity,
+            height: 56,
             child: ElevatedButton.icon(
               onPressed: onSave,
-              icon: const Icon(Icons.save, size: 20),
+              icon: const Icon(Icons.save, size: 24),
               label: Text(
                 'Save Workout',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: RowCraftTheme.successGreen,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton.icon(
+              onPressed: onDiscard,
+              icon: const Icon(Icons.delete_outline, size: 24),
+              label: Text(
+                'Discard',
+                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: RowCraftTheme.errorRose,
+                side: const BorderSide(color: RowCraftTheme.errorRose, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),

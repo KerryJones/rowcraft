@@ -79,7 +79,12 @@ class PM5Service {
 
   /// Scan for nearby PM5 devices.
   Stream<DiscoveredDevice> scanForPM5() {
-    _connectionStateController.add(PM5ConnectionState.scanning);
+    // Only emit scanning state if not already connected — scanning while
+    // connected is valid (to discover other nearby devices) and must not
+    // overwrite the connected state.
+    if (_connectedDeviceId == null) {
+      _connectionStateController.add(PM5ConnectionState.scanning);
+    }
 
     final controller = StreamController<DiscoveredDevice>.broadcast();
 

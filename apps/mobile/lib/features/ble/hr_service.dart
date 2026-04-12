@@ -59,7 +59,9 @@ class HrService {
 
   /// Scan for BLE devices advertising the Heart Rate service.
   Stream<DiscoveredDevice> scanForHrDevices() {
-    _connectionStateController.add(HrConnectionState.scanning);
+    if (_connectedDeviceId == null) {
+      _connectionStateController.add(HrConnectionState.scanning);
+    }
 
     _scanResultController?.close();
     _scanResultController = StreamController<DiscoveredDevice>.broadcast();
