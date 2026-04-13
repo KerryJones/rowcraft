@@ -782,6 +782,13 @@ class _WorkoutProfilePainter extends CustomPainter {
 
     const barGap = 1.5;
     const minHeightFraction = 0.15;
+    const leftPad = 44.0;
+    final hasHrData = timeSamples?.any((s) {
+      if (s.heartRate == null || s.heartRate! <= 0) return false;
+      final si = s.segmentIndex;
+      return si >= 0 && si < segments.length && !segments[si].isRest;
+    }) ?? false;
+    final rightPad = hasHrData ? 36.0 : 8.0;
 
     final durations = segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
     final totalDuration = durations.fold<double>(0, (a, b) => a + b);
@@ -801,10 +808,10 @@ class _WorkoutProfilePainter extends CustomPainter {
     }
 
     final totalGapWidth = barGap * (segments.length - 1);
-    final availableWidth = size.width - totalGapWidth;
+    final availableWidth = size.width - leftPad - rightPad - totalGapWidth;
 
     // Draw bars
-    var x = 0.0;
+    var x = leftPad;
     double playheadX = 0;
 
     for (var i = 0; i < segments.length; i++) {
@@ -857,39 +864,74 @@ class _WorkoutProfilePainter extends CustomPainter {
       x += barWidth + barGap;
     }
 
-    // Y-axis pace reference lines (faint grid for context)
+    // Y-axis pace reference lines and labels (matching summary chart style)
     {
       final gridPaint = Paint()
         ..color = RowCraftTheme.subtleGrey.withValues(alpha: 0.15)
         ..strokeWidth = 0.5;
       final paceRange = paceMax - paceMin;
+      final labelStyle = GoogleFonts.jetBrainsMono(
+        fontSize: 9,
+        color: RowCraftTheme.subtleGrey,
+      );
       if (paceRange > 0) {
-        // Draw lines at ~30s/500m intervals within the pace range
-        const intervalTenths = 300; // 30 seconds in tenths
-        final startPace = ((paceMin / intervalTenths).ceil() * intervalTenths).toInt();
-        for (var pace = startPace; pace <= paceMax; pace += intervalTenths) {
+        // Draw 3 evenly spaced labels (matching summary chart)
+        for (var i = 0; i < 3; i++) {
+          final frac = i / 2.0;
+          final pace = paceMin + frac * paceRange;
           final normalized = 1 - (pace - paceMin) / paceRange;
           final heightFrac = minHeightFraction + normalized * (1 - minHeightFraction);
           final y = size.height - heightFrac * size.height;
+          // Grid line across chart area
           canvas.drawLine(
-            Offset(0, y),
-            Offset(size.width, y),
+            Offset(leftPad, y),
+            Offset(size.width - rightPad, y),
             gridPaint,
           );
-          // Pace label (skip if it would clip above canvas)
+          // Pace label on left
           final tp = TextPainter(
             text: TextSpan(
-              text: formatPaceTenths(pace.toDouble()),
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 8,
-                color: RowCraftTheme.subtleGrey.withValues(alpha: 0.4),
-              ),
+              text: formatPaceTenths(pace.round().clamp(1, 9999).toDouble()),
+              style: labelStyle,
             ),
             textDirection: TextDirection.ltr,
           )..layout();
-          final labelY = y - tp.height - 1;
-          if (labelY >= 0) {
-            tp.paint(canvas, Offset(1, labelY));
+          tp.paint(canvas, Offset(2, (y - tp.height / 2).clamp(0.0, size.height - tp.height)));
+        }
+      }
+
+      // HR Y-axis labels on right side (using same coordinate space as pace bars)
+      if (hasHrData && timeSamples != null) {
+        int minHr = 999, maxHr = 0;
+        for (final s in timeSamples!) {
+          if (s.heartRate == null || s.heartRate! <= 0) continue;
+          final si = s.segmentIndex;
+          if (si < 0 || si >= segments.length || segments[si].isRest) continue;
+          if (s.heartRate! < minHr) minHr = s.heartRate!;
+          if (s.heartRate! > maxHr) maxHr = s.heartRate!;
+        }
+        if (maxHr > minHr) {
+          final hrLabelStyle = GoogleFonts.jetBrainsMono(
+            fontSize: 9,
+            color: const Color(0xFFEF5350).withValues(alpha: 0.7),
+          );
+          for (var i = 0; i < 3; i++) {
+            final frac = i / 2.0;
+            final bpm = maxHr - frac * (maxHr - minHr);
+            // Map to same coordinate space as pace bars (minHeightFraction → 1.0)
+            final hrNorm = (maxHr - minHr) > 0
+                ? (bpm - minHr) / (maxHr - minHr) // 1.0 at maxHr, 0.0 at minHr
+                : 0.5;
+            final heightFrac = minHeightFraction + hrNorm * (1 - minHeightFraction);
+            final y = size.height - heightFrac * size.height;
+            final tp = TextPainter(
+              text: TextSpan(
+                text: '${bpm.round()}',
+                style: hrLabelStyle,
+              ),
+              textDirection: TextDirection.ltr,
+            )..layout();
+            tp.paint(canvas, Offset(size.width - tp.width - 2, (y - tp.height / 2).clamp(0.0, size.height - tp.height)));
           }
         }
       }
@@ -900,7 +942,7 @@ class _WorkoutProfilePainter extends CustomPainter {
       // Build segment X-position lookup: for each segment, store its start X and width.
       final segStarts = <double>[];
       final segWidths = <double>[];
-      var sx = 0.0;
+      var sx = leftPad;
       for (var i = 0; i < segments.length; i++) {
         segStarts.add(sx);
         final w = math.max(2.0, (durations[i] / totalDuration) * availableWidth);
@@ -981,6 +1023,57 @@ class _WorkoutProfilePainter extends CustomPainter {
           ..strokeJoin = StrokeJoin.round,
       );
 
+      // Draw HR polyline overlay (red line, matching summary chart)
+      if (hasHrData) {
+        int minHr = 999, maxHr = 0;
+        for (final s in timeSamples!) {
+          if (s.heartRate == null || s.heartRate! <= 0) continue;
+          final si = s.segmentIndex;
+          if (si < 0 || si >= segments.length || segments[si].isRest) continue;
+          if (s.heartRate! < minHr) minHr = s.heartRate!;
+          if (s.heartRate! > maxHr) maxHr = s.heartRate!;
+        }
+        if (maxHr > minHr) {
+          final hrPath = Path();
+          var hrStarted = false;
+          for (final sample in timeSamples!) {
+            if (sample.heartRate == null || sample.heartRate! <= 0) continue;
+            final si = sample.segmentIndex;
+            if (si < 0 || si >= segments.length) continue;
+            if (!segSeen[si]) continue;
+            if (segments[si].isRest) {
+              hrStarted = false;
+              continue;
+            }
+
+            final segDurActual = segLastTs[si] - segFirstTs[si];
+            final segFrac = segDurActual > 0
+                ? ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurActual).clamp(0.0, 1.0)
+                : 0.5;
+            final hx = segStarts[si] + segFrac * segWidths[si];
+
+            final hrNorm = (sample.heartRate! - minHr) / (maxHr - minHr);
+            final heightFrac = minHeightFraction + hrNorm * (1 - minHeightFraction);
+            final hy = (size.height - heightFrac * size.height).clamp(0.0, size.height);
+
+            if (!hrStarted) {
+              hrPath.moveTo(hx, hy);
+              hrStarted = true;
+            } else {
+              hrPath.lineTo(hx, hy);
+            }
+          }
+          canvas.drawPath(
+            hrPath,
+            Paint()
+              ..color = const Color(0xFFEF5350).withValues(alpha: 0.7)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5
+              ..strokeJoin = StrokeJoin.round,
+          );
+        }
+      }
+
       // Draw playhead dot at the last pace point (Zwift-style)
       if (lastPacePoint != null &&
           phase != WorkoutPhase.idle &&
@@ -1006,7 +1099,7 @@ class _WorkoutProfilePainter extends CustomPainter {
         phase != WorkoutPhase.idle &&
         phase != WorkoutPhase.finished &&
         phase != WorkoutPhase.structuredComplete) {
-      final fallback = Offset(playheadX, size.height * 0.5);
+      final fallback = Offset(math.max(playheadX, leftPad), size.height * 0.5);
       canvas.drawCircle(
         fallback,
         8,

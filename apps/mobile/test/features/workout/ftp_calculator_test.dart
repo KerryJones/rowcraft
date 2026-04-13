@@ -102,20 +102,20 @@ void main() {
   group('FtpCalculator.calculate20MinFtp', () {
     test('returns 95% of duration-weighted average watts', () {
       final splits = [
-        SplitData(
+        const SplitData(
           intervalIndex: 0,
           distance: 2000,
-          time: const Duration(minutes: 10),
+          time: Duration(minutes: 10),
           avgPace: 1200,
           avgStrokeRate: 26,
           avgWatts: 200,
           avgHeartRate: 165,
           calories: 100,
         ),
-        SplitData(
+        const SplitData(
           intervalIndex: 1,
           distance: 2000,
-          time: const Duration(minutes: 10),
+          time: Duration(minutes: 10),
           avgPace: 1200,
           avgStrokeRate: 26,
           avgWatts: 200,
@@ -134,20 +134,20 @@ void main() {
 
     test('weights by duration', () {
       final splits = [
-        SplitData(
+        const SplitData(
           intervalIndex: 0,
           distance: 1000,
-          time: const Duration(minutes: 5),
+          time: Duration(minutes: 5),
           avgPace: 1200,
           avgStrokeRate: 26,
           avgWatts: 100, // low watts, short duration
           avgHeartRate: 140,
           calories: 50,
         ),
-        SplitData(
+        const SplitData(
           intervalIndex: 1,
           distance: 3000,
-          time: const Duration(minutes: 15),
+          time: Duration(minutes: 15),
           avgPace: 1200,
           avgStrokeRate: 28,
           avgWatts: 200, // high watts, long duration
