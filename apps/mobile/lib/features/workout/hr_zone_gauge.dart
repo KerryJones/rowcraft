@@ -112,7 +112,7 @@ class HrZoneGauge extends StatelessWidget {
                       markerType: MarkerType.rectangle,
                       markerHeight: 2,
                       markerWidth: 22,
-                      markerOffset: -3,
+                      markerOffset: 3,
                       color: Colors.white,
                       enableAnimation: true,
                       animationDuration: 300,
