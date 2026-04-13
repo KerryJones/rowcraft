@@ -874,7 +874,7 @@ class _SplitsTable extends StatelessWidget {
                           if (seg == null) return '--';
                           if (seg.isRest) return 'Rest';
                           if (seg.targetHrZone != null) return 'Z${seg.targetHrZone}';
-                          return 'Free';
+                          return seg.durationType == DurationType.time ? 'Free' : 'Row';
                         }(),
                         style: cellStyle.copyWith(
                           color: color,

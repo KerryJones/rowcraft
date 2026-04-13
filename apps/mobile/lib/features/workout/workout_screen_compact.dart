@@ -493,9 +493,10 @@ class _TargetPaceTile extends StatelessWidget {
     }
 
     final isResting = session.engineState.phase == WorkoutPhase.resting;
-    final isFreeRow = segment != null &&
+    final isNoTarget = segment != null &&
         !segment.isRest &&
         segment.targetIntensity == null;
+    final noTargetLabel = isNoTarget && segment.durationType == DurationType.time ? 'Free' : 'Row';
     final value = isResting
         ? 'REST'
         : hasTarget
@@ -505,8 +506,8 @@ class _TargetPaceTile extends StatelessWidget {
                   session.ftpWatts,
                 ).toDouble(),
               )
-            : isFreeRow
-                ? 'Free'
+            : isNoTarget
+                ? noTargetLabel
                 : '--:--';
 
     // Show trend chevron based on current pace vs target.
@@ -549,13 +550,9 @@ class _TargetSpmTile extends StatelessWidget {
         session.expandedSegments.firstOrNull;
     final target = segment?.targetStrokeRate;
     final isResting = session.engineState.phase == WorkoutPhase.resting;
-    final isFreeRow = segment != null &&
-        !segment.isRest &&
-        segment.targetIntensity == null &&
-        target == null;
     return _StatTile(
       label: 'TARGET S/M',
-      value: isResting ? 'REST' : target != null ? '$target' : isFreeRow ? 'Free' : '--',
+      value: isResting ? 'REST' : target != null ? '$target' : '--',
       valueColor: isResting ? RowCraftTheme.subtleGrey : target != null ? RowCraftTheme.successGreen : null,
     );
   }

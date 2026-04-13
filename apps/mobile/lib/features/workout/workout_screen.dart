@@ -870,6 +870,44 @@ class _WorkoutProfilePainter extends CustomPainter {
       x += barWidth + barGap;
     }
 
+    // Y-axis pace reference lines (faint grid for context)
+    {
+      final gridPaint = Paint()
+        ..color = RowCraftTheme.subtleGrey.withValues(alpha: 0.15)
+        ..strokeWidth = 0.5;
+      final paceRange = paceMax - paceMin;
+      if (paceRange > 0) {
+        // Draw lines at ~30s/500m intervals within the pace range
+        const intervalTenths = 300; // 30 seconds in tenths
+        final startPace = ((paceMin / intervalTenths).ceil() * intervalTenths).toInt();
+        for (var pace = startPace; pace <= paceMax; pace += intervalTenths) {
+          final normalized = 1 - (pace - paceMin) / paceRange;
+          final heightFrac = minHeightFraction + normalized * (1 - minHeightFraction);
+          final y = size.height - heightFrac * size.height;
+          canvas.drawLine(
+            Offset(0, y),
+            Offset(size.width, y),
+            gridPaint,
+          );
+          // Pace label (skip if it would clip above canvas)
+          final tp = TextPainter(
+            text: TextSpan(
+              text: formatPaceTenths(pace.toDouble()),
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 8,
+                color: RowCraftTheme.subtleGrey.withValues(alpha: 0.4),
+              ),
+            ),
+            textDirection: TextDirection.ltr,
+          )..layout();
+          final labelY = y - tp.height - 1;
+          if (labelY >= 0) {
+            tp.paint(canvas, Offset(1, labelY));
+          }
+        }
+      }
+    }
+
     // Draw pace tracking line (white polyline showing actual pace vs target)
     if (timeSamples != null && timeSamples!.isNotEmpty) {
       // Build segment X-position lookup: for each segment, store its start X and width.

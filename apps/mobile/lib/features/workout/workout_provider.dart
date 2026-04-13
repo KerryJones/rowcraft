@@ -183,6 +183,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// Recorded when start() is called — used for accurate startedAt.
   DateTime? _startedAt;
 
+  /// Generation counter to guard against concurrent loadWorkout calls.
+  int _loadGeneration = 0;
+
   /// BLE data stream controller — feeds into the workout engine.
   final _pm5Controller = StreamController<PM5Data>.broadcast();
 
@@ -287,9 +290,19 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     int? planWeek,
     int? planSession,
   }) async {
-    state = state.copyWith(
+    // Clean up previous engine before resetting state — prevents the old
+    // engine's listener from overwriting the fresh state during async gaps.
+    _engineSub?.cancel();
+    _engineSub = null;
+    _engine?.dispose();
+    _engine = null;
+    _startedAt = null;
+    _loadGeneration++;
+    final myGen = _loadGeneration;
+
+    // Reset all state immediately so old workout data doesn't flash on screen.
+    state = const WorkoutSessionState().copyWith(
       isLoading: true,
-      error: null,
       planId: planId,
       planWeek: planWeek,
       planSession: planSession,
@@ -297,6 +310,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     try {
       final workout = await _workoutRepository.getWorkout(workoutId);
+      if (_loadGeneration != myGen) return; // Superseded by a newer load
 
       // Fetch user's profile for max HR and FTP (non-blocking on failure)
       int? maxHr;
@@ -310,6 +324,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       } catch (_) {
         // Non-critical — fall back to defaults
       }
+      if (_loadGeneration != myGen) return; // Superseded by a newer load
 
       final isFtpTest = workout.tags.contains('ftp');
       _engine = WorkoutEngine(
@@ -320,13 +335,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       );
 
       _engineSub = _engine!.stateStream.listen((engineState) {
+        final engine = _engine;
+        if (engine == null) return;
         // Record start time on first transition into an active phase
         if (_startedAt == null &&
             (engineState.phase == WorkoutPhase.rowing ||
              engineState.phase == WorkoutPhase.resting)) {
           _startedAt = DateTime.now();
         }
-        state = state.copyWith(engineState: engineState);
+        state = state.copyWith(
+          engineState: engineState,
+          timeSamples: engine.timeSamples,
+        );
 
         // When engine finishes on its own (all segments complete or pace fail),
         // build the pending result so the summary screen appears.
@@ -353,11 +373,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       } finally {
         _suppressBleData = false;
       }
+      if (_loadGeneration != myGen) return; // Superseded during PM5 reset
       state = state.copyWith(pm5Data: const PM5Data.zero());
 
       // Enter ready phase — workout starts when rower takes first stroke
-      _engine!.ready();
+      _engine?.ready();
     } catch (e) {
+      if (_loadGeneration != myGen) return;
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load workout: $e',

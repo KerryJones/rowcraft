@@ -24,6 +24,22 @@ void main() {
       expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Free row');
     });
 
+    test('distance segment without intensity returns Row', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.distance,
+        durationValue: 500,
+      );
+      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Row');
+    });
+
+    test('calorie segment without intensity returns Row', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.calories,
+        durationValue: 50,
+      );
+      expect(segmentPaceLabel(segment, kDefaultFtpWatts), 'Row');
+    });
+
     test('rest segment (isRest: true, no targets) returns Rest', () {
       const segment = WorkoutSegment(
         durationType: DurationType.time,
