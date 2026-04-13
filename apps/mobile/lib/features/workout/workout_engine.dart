@@ -50,6 +50,10 @@ class WorkoutEngineState {
   /// compute the countdown display.
   final int paceFailThreshold;
 
+  /// Seconds remaining before auto-pause triggers workout finish.
+  /// 0 = not counting down. Used by ramp FTP tests.
+  final int autoPauseCountdown;
+
   /// If the workout finished, why.
   final FinishReason? finishReason;
 
@@ -71,6 +75,7 @@ class WorkoutEngineState {
     this.segmentElapsedCalories = 0,
     this.secondsOutOfRange = 0,
     this.paceFailThreshold = 10,
+    this.autoPauseCountdown = 0,
     this.finishReason,
     this.avgPace = 0,
     this.avgHeartRate,
@@ -90,6 +95,7 @@ class WorkoutEngineState {
     int? segmentElapsedCalories,
     int? secondsOutOfRange,
     int? paceFailThreshold,
+    int? autoPauseCountdown,
     FinishReason? finishReason,
     int? avgPace,
     int? avgHeartRate,
@@ -110,6 +116,7 @@ class WorkoutEngineState {
           segmentElapsedCalories ?? this.segmentElapsedCalories,
       secondsOutOfRange: secondsOutOfRange ?? this.secondsOutOfRange,
       paceFailThreshold: paceFailThreshold ?? this.paceFailThreshold,
+      autoPauseCountdown: autoPauseCountdown ?? this.autoPauseCountdown,
       finishReason: finishReason ?? this.finishReason,
       avgPace: avgPace ?? this.avgPace,
       avgHeartRate: avgHeartRate ?? this.avgHeartRate,
@@ -136,6 +143,11 @@ class WorkoutEngine {
   /// How many consecutive seconds outside target pace before auto-stop.
   /// Default: 10 seconds. Set to 0 to disable pace fail detection.
   final int paceFailThreshold;
+
+  /// How many seconds of auto-pause before auto-finishing the workout.
+  /// 0 = disabled. Used by ramp FTP tests (15s) so stopping rowing
+  /// triggers test completion.
+  final int autoPauseFinishSeconds;
 
   final _stateController = StreamController<WorkoutEngineState>.broadcast();
   StreamSubscription<PM5Data>? _pm5Subscription;
@@ -184,6 +196,9 @@ class WorkoutEngine {
   int _segmentStartCalories = 0;
   static const _autoPauseDelaySeconds = 5;
 
+  // Auto-pause finish timer (ramp FTP tests)
+  Timer? _autoPauseFinishTimer;
+
   final List<SplitData> _completedSplits = [];
 
   WorkoutEngine({
@@ -191,6 +206,7 @@ class WorkoutEngine {
     required this.pm5Stream,
     this.ftpWatts = kDefaultFtpWatts,
     this.paceFailThreshold = 10,
+    this.autoPauseFinishSeconds = 0,
   }) {
     _expandedSegments = List.from(workout.segments);
   }
@@ -262,6 +278,7 @@ class WorkoutEngine {
   /// Resume after pause.
   void resume() {
     if (_state.phase != WorkoutPhase.paused) return;
+    _cancelAutoPauseFinishTimer();
     _accumulatePausedDuration();
     final restoredPhase = _prePausePhase ?? WorkoutPhase.rowing;
     _state = _state.copyWith(
@@ -324,10 +341,60 @@ class WorkoutEngine {
       isAutoPaused: true,
     );
     _emit();
+
+    // Start auto-finish countdown for ramp FTP tests
+    if (autoPauseFinishSeconds > 0) {
+      _startAutoPauseFinishTimer();
+    }
+  }
+
+  void _startAutoPauseFinishTimer() {
+    _autoPauseFinishTimer?.cancel();
+    var remaining = autoPauseFinishSeconds;
+    _state = _state.copyWith(autoPauseCountdown: remaining);
+    _emit();
+    _autoPauseFinishTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) {
+        // Guard: if resumed before this tick fires, don't finish.
+        if (_state.phase != WorkoutPhase.paused) {
+          _autoPauseFinishTimer?.cancel();
+          _autoPauseFinishTimer = null;
+          return;
+        }
+        remaining--;
+        if (remaining <= 0) {
+          _autoPauseFinishTimer?.cancel();
+          _autoPauseFinishTimer = null;
+          // Auto-finish the workout
+          _finishCurrentSegment();
+          _state = _state.copyWith(
+            phase: WorkoutPhase.finished,
+            finishReason: FinishReason.paceFailed,
+            autoPauseCountdown: 0,
+          );
+          _emit();
+          _cleanup();
+        } else {
+          _state = _state.copyWith(autoPauseCountdown: remaining);
+          _emit();
+        }
+      },
+    );
+  }
+
+  void _cancelAutoPauseFinishTimer() {
+    _autoPauseFinishTimer?.cancel();
+    _autoPauseFinishTimer = null;
+    if (_state.autoPauseCountdown > 0) {
+      _state = _state.copyWith(autoPauseCountdown: 0);
+      _emit();
+    }
   }
 
   void _autoResume() {
     if (_state.phase != WorkoutPhase.paused) return;
+    _cancelAutoPauseFinishTimer();
     _accumulatePausedDuration();
     _lastActivityAt = DateTime.now();
     _state = _state.copyWith(
@@ -623,18 +690,16 @@ class WorkoutEngine {
     }
 
     // ── Pace fail detection ────────────────────────────────────────────
-    // For work segments with an intensity target, resolve to pace and
+    // For work segments with a pace target (intensity% or absolute watts),
     // check if the rower's pace exceeds the slowest acceptable pace.
     // Higher pace number = slower rowing.
     // After [paceFailThreshold] consecutive seconds outside range,
     // auto-finish the workout (used for ramp/FTP tests).
+    final segmentTargetPace = resolveSegmentTargetPace(segment, ftpWatts);
     if (paceFailThreshold > 0 &&
-        segment.targetIntensity != null &&
+        segmentTargetPace > 0 &&
         data.pace > 0) {
-      final targetPace = resolveIntensityToPace(
-        segment.targetIntensity!,
-        ftpWatts,
-      );
+      final targetPace = segmentTargetPace;
 
       if (data.pace > targetPace) {
         // Rower is too slow — start or continue the fail timer
@@ -719,6 +784,8 @@ class WorkoutEngine {
     _restTickTimer = null;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
+    _autoPauseFinishTimer?.cancel();
+    _autoPauseFinishTimer = null;
   }
 
   /// Dispose all resources.

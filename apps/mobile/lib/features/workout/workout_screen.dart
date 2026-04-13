@@ -15,7 +15,7 @@ import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
-import 'ftp_result_dialog.dart';
+import 'ftp_result_screen.dart';
 import 'hr_zone_gauge.dart';
 import 'rowing_animation.dart';
 import 'workout_engine.dart';
@@ -97,7 +97,6 @@ class WorkoutScreen extends ConsumerStatefulWidget {
 }
 
 class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
-  bool _ftpDialogShown = false;
   bool _isLocked = false;
   bool _structuredCompleteShown = false;
   int _lastBeepSecond = -1;
@@ -301,48 +300,25 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     // Segment transition countdown beeps (time-based segments only)
     _checkCountdownBeep(engineState);
 
-    // Show completion modal when structured workout ends
+    // Show completion modal when structured workout ends.
+    // For FTP tests, skip the modal and auto-finish to go straight to results.
     if (engineState.phase == WorkoutPhase.structuredComplete &&
         !_structuredCompleteShown) {
       _structuredCompleteShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _showCompletionModal(context);
-      });
+      if (session.workoutTags.contains('ftp')) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(workoutSessionProvider.notifier).finishFromStructuredComplete();
+        });
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _showCompletionModal(context);
+        });
+      }
     }
     if (engineState.phase != WorkoutPhase.structuredComplete) {
       _structuredCompleteShown = false;
-    }
-
-    // Reset dialog guard when flag is cleared
-    if (!session.showFtpDialog) {
-      _ftpDialogShown = false;
-    }
-
-    // Show FTP dialog once when workout completes with FTP data
-    if (session.showFtpDialog &&
-        session.calculatedFtp != null &&
-        !_ftpDialogShown) {
-      _ftpDialogShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => FtpResultDialog(
-            calculatedFtp: session.calculatedFtp!,
-            calculationBasis: session.ftpCalculationBasis ?? '',
-            onSave: (watts) {
-              ref.read(workoutSessionProvider.notifier).saveFtp(watts);
-              Navigator.of(context).pop();
-            },
-            onSkip: () {
-              ref.read(workoutSessionProvider.notifier).dismissFtpDialog();
-              Navigator.of(context).pop();
-            },
-          ),
-        );
-      });
     }
 
     final isActive = engineState.phase == WorkoutPhase.rowing ||
@@ -402,7 +378,23 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       body: SafeArea(
         child: engineState.phase == WorkoutPhase.finished &&
                 session.pendingResult != null
-            ? const WorkoutSummaryContent()
+            ? (session.showFtpDialog && session.calculatedFtp != null
+                ? FtpResultScreen(
+                    calculatedFtp: session.calculatedFtp!,
+                    calculationBasis: session.ftpCalculationBasis ?? '',
+                    previousFtpWatts: session.previousFtpWatts,
+                    isRamp: session.workoutTags.contains('ramp'),
+                    rampStagesCompleted: session.rampStagesCompleted,
+                    rampTotalStages: session.rampTotalStages,
+                    rampPeakWatts: session.rampPeakWatts,
+                    onSave: (watts) {
+                      ref.read(workoutSessionProvider.notifier).saveFtp(watts);
+                    },
+                    onSkip: () {
+                      ref.read(workoutSessionProvider.notifier).dismissFtpDialog();
+                    },
+                  )
+                : const WorkoutSummaryContent())
             : Stack(
           children: [
             // Main layout
@@ -481,11 +473,13 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             // Overlay banners (don't push layout)
             if (engineState.phase == WorkoutPhase.paused &&
                 engineState.isAutoPaused)
-              const Positioned(
+              Positioned(
                 top: 36,
                 left: 0,
                 right: 0,
-                child: _AutoPauseBanner(),
+                child: _AutoPauseBanner(
+                  countdown: engineState.autoPauseCountdown,
+                ),
               ),
             if (!engineState.isAutoPaused &&
                 engineState.secondsOutOfRange > 0 &&
@@ -793,15 +787,8 @@ class _WorkoutProfilePainter extends CustomPainter {
       final seg = segments[i];
       final widthFraction = durations[i] / totalDuration;
       final barWidth = math.max(2.0, widthFraction * availableWidth);
-      final double? avgPace;
-      if (seg.targetIntensity != null) {
-        avgPace = resolveIntensityToPace(
-          seg.targetIntensity!,
-          ftpWatts,
-        ).toDouble();
-      } else {
-        avgPace = null;
-      }
+      final resolved = resolveSegmentTargetPace(seg, ftpWatts);
+      final double? avgPace = resolved > 0 ? resolved.toDouble() : null;
       final heightFraction = paceToHeight(avgPace);
       final barHeight = heightFraction * size.height;
       final barY = size.height - barHeight;
@@ -1035,7 +1022,7 @@ class _CurrentSegment extends StatelessWidget {
     final segments = session.expandedSegments;
     final currentIndex = isActive ? engineState.currentSegmentIndex : 0;
 
-    final hasPaceTarget = segment.targetIntensity != null;
+    final hasPaceTarget = segment.hasTarget;
     final hasSpmTarget = segment.targetStrokeRate != null;
     final data = session.pm5Data;
 
@@ -1117,8 +1104,8 @@ class _CurrentSegment extends StatelessWidget {
               children: [
                 if (hasPaceTarget) ...[
                   Text(
-                    formatPaceTenths(resolveIntensityToPace(
-                      segment.targetIntensity!,
+                    formatPaceTenths(resolveSegmentTargetPace(
+                      segment,
                       session.ftpWatts,
                     ).toDouble()),
                     style: GoogleFonts.jetBrainsMono(
@@ -1217,11 +1204,11 @@ class HeroSection extends StatelessWidget {
 
     // Pace color based on target — uses 5% tolerance range for feedback
     Color splitColor = RowCraftTheme.metricWhite;
-    if (segment?.targetIntensity != null && data.pace > 0) {
-      final targetPace = resolveIntensityToPace(
-        segment!.targetIntensity!,
-        session.ftpWatts,
-      );
+    final paceTarget = segment != null
+        ? resolveSegmentTargetPace(segment, session.ftpWatts)
+        : 0;
+    if (paceTarget > 0 && data.pace > 0) {
+      final targetPace = paceTarget;
       final (acceptMin, acceptMax) = paceAcceptanceRange(targetPace);
       final pace = data.pace.toDouble();
       if (pace >= acceptMin && pace <= acceptMax) {
@@ -1305,11 +1292,11 @@ class HeroSection extends StatelessWidget {
               ),
 
               // Pace guide bar
-              if (segment?.targetIntensity != null) ...[
+              if (segment != null && segment.hasTarget) ...[
                 const SizedBox(height: 10),
                 Builder(builder: (_) {
-                  final targetPace = resolveIntensityToPace(
-                    segment!.targetIntensity!,
+                  final targetPace = resolveSegmentTargetPace(
+                    segment,
                     session.ftpWatts,
                   ).toDouble();
                   return _PaceGuideBar(
@@ -1639,9 +1626,9 @@ class _UpNextPreview extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            if (next.targetIntensity != null)
+            if (next.hasTarget)
               Text(
-                '${formatPaceTenths(resolveIntensityToPace(next.targetIntensity!, session.ftpWatts).toDouble())} /500m',
+                '${formatPaceTenths(resolveSegmentTargetPace(next, session.ftpWatts).toDouble())} /500m',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -1649,7 +1636,7 @@ class _UpNextPreview extends StatelessWidget {
                 ),
               ),
             if (next.targetStrokeRate != null) ...[
-              if (next.targetIntensity != null)
+              if (next.hasTarget)
                 const SizedBox(width: 8),
               Text(
                 '${next.targetStrokeRate!} s/m',
@@ -1661,7 +1648,7 @@ class _UpNextPreview extends StatelessWidget {
               ),
             ],
             // Fallback: show label when no targets exist
-            if (next.isRest || (next.targetIntensity == null && next.targetStrokeRate == null))
+            if (next.isRest || (!next.hasTarget && next.targetStrokeRate == null))
               Text(
                 next.isRest ? 'REST' : 'FREE ROW',
                 style: GoogleFonts.inter(
@@ -2032,27 +2019,38 @@ class _PaceFailWarning extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _AutoPauseBanner extends StatelessWidget {
-  const _AutoPauseBanner();
+  final int countdown;
+  const _AutoPauseBanner({this.countdown = 0});
 
   @override
   Widget build(BuildContext context) {
+    final message = countdown > 0
+        ? 'Test ending in ${countdown}s — row to continue'
+        : 'Paused — start rowing to resume';
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: RowCraftTheme.warningAmber.withValues(alpha: 0.9),
+        color: countdown > 0
+            ? RowCraftTheme.errorRose.withValues(alpha: 0.9)
+            : RowCraftTheme.warningAmber.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          const Icon(Icons.pause_circle_outline,
-              color: Colors.black87, size: 24),
+          Icon(
+            countdown > 0
+                ? Icons.timer_outlined
+                : Icons.pause_circle_outline,
+            color: Colors.white,
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Paused — start rowing to resume',
+              message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.black87,
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
             ),

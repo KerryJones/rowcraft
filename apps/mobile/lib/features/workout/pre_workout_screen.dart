@@ -385,7 +385,7 @@ class _SegmentRow extends StatelessWidget {
                       Text(
                         paceLabel,
                         style: TextStyle(
-                          color: segment.targetIntensity == null
+                          color: !segment.hasTarget
                               ? RowCraftTheme.subtleGrey
                               : Colors.white,
                           fontSize: 14,

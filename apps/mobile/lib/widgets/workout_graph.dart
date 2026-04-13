@@ -62,12 +62,8 @@ class _GraphPainter extends CustomPainter {
     for (var i = 0; i < segments.length; i++) {
       final seg = segments[i];
       final barWidth = max(2.0, (durations[i] / totalDuration) * availableWidth);
-      final double? pace;
-      if (seg.targetIntensity != null) {
-        pace = resolveIntensityToPace(seg.targetIntensity!, ftpWatts).toDouble();
-      } else {
-        pace = null;
-      }
+      final resolved = resolveSegmentTargetPace(seg, ftpWatts);
+      final double? pace = resolved > 0 ? resolved.toDouble() : null;
       final heightFraction = _paceToHeight(pace, paceMin, paceMax);
       final barHeight = max(4.0, heightFraction * size.height);
 

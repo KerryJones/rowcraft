@@ -24,16 +24,8 @@ double effectiveDuration(WorkoutSegment seg, int ftpWatts) {
     case DurationType.time:
       return seg.durationValue;
     case DurationType.distance:
-      final double? targetPace;
-      if (seg.targetIntensity != null) {
-        targetPace = resolveIntensityToPace(
-          seg.targetIntensity!,
-          ftpWatts,
-        ).toDouble();
-      } else {
-        targetPace = null;
-      }
-      final pacePerMeter = targetPace != null ? (targetPace / 10) / 500 : 0.24;
+      final resolved = resolveSegmentTargetPace(seg, ftpWatts);
+      final pacePerMeter = resolved > 0 ? (resolved / 10) / 500 : 0.24;
       return seg.durationValue * pacePerMeter;
     case DurationType.calories:
       return (seg.durationValue / 15) * 60;
@@ -70,6 +62,7 @@ int computeSegmentCount(List<WorkoutSegment> segments) {
 }
 
 /// Compute weighted average target intensity (FTP %) across active segments.
+/// Segments with [targetWatts] are skipped (no FTP% equivalent).
 /// Returns null if no segments have intensity targets.
 int? computeAvgIntensity(List<WorkoutSegment> segments) {
   final workSegs = segments
@@ -87,18 +80,24 @@ int? computeAvgIntensity(List<WorkoutSegment> segments) {
 
 /// Compute workout intensity score (0.00 - 1.00+).
 /// Weighted average of segment intensity against 100% FTP reference.
-/// Higher = harder. Duration-weighted by segment duration value.
-/// Returns null if no segments have intensity targets.
-double? computeIntensity(List<WorkoutSegment> segments) {
-  final workSegs = segments
-      .where((s) => s.targetIntensity != null);
+/// For segments with [targetWatts], converts to FTP% using [ftpWatts].
+/// Falls back to [targetIntensity] for percentage-based segments.
+/// Returns null if no segments have targets.
+double? computeIntensity(List<WorkoutSegment> segments, {int ftpWatts = kDefaultFtpWatts}) {
+  final workSegs = segments.where((s) => s.hasTarget);
   if (workSegs.isEmpty) return null;
   var totalWeight = 0.0;
   var weightedSum = 0.0;
 
   for (final s in workSegs) {
     final duration = s.durationValue;
-    weightedSum += (s.targetIntensity! / 100.0) * duration;
+    final double intensityFraction;
+    if (s.targetWatts != null) {
+      intensityFraction = s.targetWatts! / ftpWatts.toDouble();
+    } else {
+      intensityFraction = s.targetIntensity! / 100.0;
+    }
+    weightedSum += intensityFraction * duration;
     totalWeight += duration;
   }
 

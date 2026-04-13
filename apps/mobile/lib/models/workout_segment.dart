@@ -16,6 +16,10 @@ class WorkoutSegment {
   /// FTP percentage target (0–200). Higher % = more watts = faster pace.
   final int? targetIntensity;
 
+  /// Absolute watt target. When set, takes precedence over [targetIntensity]
+  /// for pace resolution (used by ramp FTP test with fixed 20W increments).
+  final int? targetWatts;
+
   /// Strokes per minute target (10–50).
   final int? targetStrokeRate;
 
@@ -31,6 +35,7 @@ class WorkoutSegment {
     required this.durationType,
     required this.durationValue,
     this.targetIntensity,
+    this.targetWatts,
     this.targetStrokeRate,
     this.targetHrZone,
     this.isRest = false,
@@ -40,6 +45,7 @@ class WorkoutSegment {
     DurationType? durationType,
     double? durationValue,
     int? targetIntensity,
+    int? targetWatts,
     int? targetStrokeRate,
     int? targetHrZone,
     bool? isRest,
@@ -48,6 +54,7 @@ class WorkoutSegment {
       durationType: durationType ?? this.durationType,
       durationValue: durationValue ?? this.durationValue,
       targetIntensity: targetIntensity ?? this.targetIntensity,
+      targetWatts: targetWatts ?? this.targetWatts,
       targetStrokeRate: targetStrokeRate ?? this.targetStrokeRate,
       targetHrZone: targetHrZone ?? this.targetHrZone,
       isRest: isRest ?? this.isRest,
@@ -59,6 +66,7 @@ class WorkoutSegment {
       durationType: DurationType.fromJson(json['duration_type'] as String),
       durationValue: (json['duration_value'] as num).toDouble(),
       targetIntensity: (json['target_intensity'] as num?)?.toInt(),
+      targetWatts: (json['target_watts'] as num?)?.toInt(),
       targetStrokeRate: (json['target_stroke_rate'] as num?)?.toInt(),
       targetHrZone: (json['target_hr_zone'] as num?)?.toInt(),
       isRest: (json['is_rest'] as bool?) ?? false,
@@ -70,6 +78,7 @@ class WorkoutSegment {
       'duration_type': durationType.toJson(),
       'duration_value': durationValue,
       if (targetIntensity != null) 'target_intensity': targetIntensity,
+      if (targetWatts != null) 'target_watts': targetWatts,
       if (targetStrokeRate != null) 'target_stroke_rate': targetStrokeRate,
       if (targetHrZone != null) 'target_hr_zone': targetHrZone,
       if (isRest) 'is_rest': true,
@@ -91,7 +100,10 @@ class WorkoutSegment {
     }
   }
 
+  /// Whether this segment has a pace target (either FTP% or absolute watts).
+  bool get hasTarget => targetIntensity != null || targetWatts != null;
+
   @override
   String toString() =>
-      'WorkoutSegment(${isRest ? 'rest' : targetIntensity == null && targetStrokeRate == null ? 'free' : 'active'}, $durationLabel)';
+      'WorkoutSegment(${isRest ? 'rest' : !hasTarget && targetStrokeRate == null ? 'free' : 'active'}, $durationLabel)';
 }
