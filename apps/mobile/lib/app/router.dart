@@ -296,7 +296,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  result.workoutId != null ? 'Structured Workout' : 'Free Row',
+                  result.displayName,
                   style: theme.textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 4),

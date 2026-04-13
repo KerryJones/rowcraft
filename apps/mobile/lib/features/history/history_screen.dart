@@ -174,6 +174,11 @@ class _ResultCard extends StatelessWidget {
                     ),
                 ],
               ),
+              const SizedBox(height: 4),
+              Text(
+                result.displayName,
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
 
               // Main metrics row

@@ -15,6 +15,8 @@ import '../ble/ble_provider.dart';
 import '../ble/csafe_commands.dart';
 import '../ble/hr_service.dart';
 import '../ble/pm5_service.dart';
+import '../history/history_provider.dart';
+import '../plans/plans_provider.dart';
 import 'ftp_calculator.dart';
 import 'workout_engine.dart';
 
@@ -512,6 +514,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       id: '', // Let Supabase generate
       userId: userId,
       workoutId: _engine!.workout.id,
+      workoutName: state.workoutTitle.isNotEmpty ? state.workoutTitle : null,
       startedAt: startedAt,
       finishedAt: now,
       totalDistance: data.distance,
@@ -603,12 +606,15 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
             state.planSession!,
             null,
           );
+          _ref.invalidate(planProgressProvider(state.planId!));
+          _ref.invalidate(userPlanProgressProvider);
         } catch (_) {
           // Non-critical — don't block workout completion
         }
       }
 
       _savedResultId = outcome.resultId;
+      _ref.invalidate(workoutHistoryProvider);
 
       // Cloud status from actual sync outcome
       if (outcome.savedToSupabase) {

@@ -293,7 +293,7 @@ class SupabaseService {
     try {
       final response = await _client
           .from('workout_results')
-          .select()
+          .select('*, workouts(title)')
           .eq('user_id', userId)
           .order('started_at', ascending: false);
       return (response as List<dynamic>)
@@ -305,6 +305,8 @@ class SupabaseService {
     }
   }
 
+  // Note: returned WorkoutResult will have workoutName == null (no join here).
+  // callers that need workoutName should use getResults() instead.
   Future<WorkoutResult> saveResult(WorkoutResult result) async {
     try {
       final data = result.toJson();

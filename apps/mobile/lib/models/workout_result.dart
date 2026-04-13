@@ -58,6 +58,7 @@ class WorkoutResult {
   final String id;
   final String userId;
   final String? workoutId;
+  final String? workoutName;
   final DateTime startedAt;
   final DateTime finishedAt;
   final double totalDistance;
@@ -74,6 +75,7 @@ class WorkoutResult {
     required this.id,
     required this.userId,
     this.workoutId,
+    this.workoutName,
     required this.startedAt,
     required this.finishedAt,
     required this.totalDistance,
@@ -91,6 +93,7 @@ class WorkoutResult {
     String? id,
     String? userId,
     String? workoutId,
+    String? workoutName,
     DateTime? startedAt,
     DateTime? finishedAt,
     double? totalDistance,
@@ -107,6 +110,7 @@ class WorkoutResult {
       id: id ?? this.id,
       userId: userId ?? this.userId,
       workoutId: workoutId ?? this.workoutId,
+      workoutName: workoutName ?? this.workoutName,
       startedAt: startedAt ?? this.startedAt,
       finishedAt: finishedAt ?? this.finishedAt,
       totalDistance: totalDistance ?? this.totalDistance,
@@ -120,6 +124,10 @@ class WorkoutResult {
       syncedToC2: syncedToC2 ?? this.syncedToC2,
     );
   }
+
+  /// Display name: actual workout name, or a generic fallback.
+  String get displayName =>
+      workoutName ?? (workoutId != null ? 'Structured Workout' : 'Free Row');
 
   /// Format average split as M:SS
   String get avgSplitFormatted {
@@ -158,6 +166,7 @@ class WorkoutResult {
       id: (json['id'] as String?) ?? '',
       userId: json['user_id'] as String,
       workoutId: json['workout_id'] as String?,
+      workoutName: (json['workouts'] as Map<String, dynamic>?)?['title'] as String?,
       startedAt: DateTime.parse(json['started_at'] as String),
       finishedAt: DateTime.parse(json['finished_at'] as String),
       totalDistance: (json['total_distance'] as num).toDouble(),
