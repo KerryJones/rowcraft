@@ -9,9 +9,9 @@ import '../../app/theme.dart';
 /// Garmin-style HR zone arc gauge using Syncfusion SfRadialGauge.
 ///
 /// Renders a 270° arc with 5 equally-sized colored zone segments. The active
-/// zone is fully opaque and thicker; inactive zones are dimmed. A thin white
-/// rectangle tick shows the exact BPM position within its zone. The BPM value
-/// is centered inside the arc in the active zone's color.
+/// zone is fully opaque and thicker; inactive zones are dimmed. A white radial
+/// needle shows the exact BPM position within its zone. The BPM value is
+/// centered inside the arc in the active zone's color.
 class HrZoneGauge extends StatelessWidget {
   final int bpm;
   final int maxHr;
@@ -110,12 +110,14 @@ class HrZoneGauge extends StatelessWidget {
                 ],
                 pointers: <GaugePointer>[
                   if (hasHr)
-                    MarkerPointer(
+                    NeedlePointer(
                       value: gaugeValue,
-                      markerType: MarkerType.rectangle,
-                      markerHeight: 22,
-                      markerWidth: 3,
-                      color: Colors.white,
+                      needleLength: 0.95,
+                      lengthUnit: GaugeSizeUnit.factor,
+                      needleStartWidth: 0,
+                      needleEndWidth: 4,
+                      needleColor: Colors.white,
+                      knobStyle: const KnobStyle(knobRadius: 0),
                       enableAnimation: true,
                       animationDuration: 300,
                       animationType: AnimationType.ease,
