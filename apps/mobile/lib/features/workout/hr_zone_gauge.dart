@@ -110,8 +110,9 @@ class HrZoneGauge extends StatelessWidget {
                     MarkerPointer(
                       value: gaugeValue,
                       markerType: MarkerType.rectangle,
-                      markerHeight: 3,
-                      markerWidth: 24,
+                      markerHeight: 2,
+                      markerWidth: 22,
+                      markerOffset: -3,
                       color: Colors.white,
                       enableAnimation: true,
                       animationDuration: 300,

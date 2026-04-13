@@ -632,7 +632,7 @@ class _HrTile extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Transform.translate(
-                  offset: const Offset(0, -4),
+                  offset: const Offset(0, -6),
                   child: HrZoneGauge(bpm: hr, maxHr: maxHr),
                 ),
               ),
