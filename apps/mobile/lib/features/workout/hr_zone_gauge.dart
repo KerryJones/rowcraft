@@ -9,8 +9,8 @@ import '../../app/theme.dart';
 /// Garmin-style HR zone arc gauge using Syncfusion SfRadialGauge.
 ///
 /// Renders a 270° arc with 5 equally-sized colored zone segments. The active
-/// zone is fully opaque and thicker; inactive zones are dimmed. A white radial
-/// needle shows the exact BPM position within its zone. The BPM value is
+/// zone is fully opaque and thicker; inactive zones are dimmed. A short white
+/// radial bar shows the exact BPM position on the arc. The BPM value is
 /// centered inside the arc in the active zone's color.
 class HrZoneGauge extends StatelessWidget {
   final int bpm;
@@ -81,10 +81,7 @@ class HrZoneGauge extends StatelessWidget {
       builder: (context, constraints) {
         final size = min(constraints.maxWidth, constraints.maxHeight);
 
-        return SizedBox(
-          width: size,
-          height: size,
-          child: SfRadialGauge(
+        return SfRadialGauge(
             axes: <RadialAxis>[
               RadialAxis(
                 startAngle: 135,
@@ -95,7 +92,7 @@ class HrZoneGauge extends StatelessWidget {
                 showTicks: false,
                 showAxisLine: false,
                 radiusFactor: 0.95,
-                canScaleToFit: false,
+                canScaleToFit: true,
                 ranges: <GaugeRange>[
                   for (var i = 0; i < 5; i++)
                     GaugeRange(
@@ -112,9 +109,9 @@ class HrZoneGauge extends StatelessWidget {
                   if (hasHr)
                     NeedlePointer(
                       value: gaugeValue,
-                      needleLength: 0.95,
+                      needleLength: 0.2,
                       lengthUnit: GaugeSizeUnit.factor,
-                      needleStartWidth: 0,
+                      needleStartWidth: 4,
                       needleEndWidth: 4,
                       needleColor: Colors.white,
                       knobStyle: const KnobStyle(knobRadius: 0),
@@ -140,8 +137,7 @@ class HrZoneGauge extends StatelessWidget {
                 ],
               ),
             ],
-          ),
-        );
+          );
       },
     );
   }
