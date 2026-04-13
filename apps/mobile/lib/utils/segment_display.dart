@@ -3,14 +3,11 @@ import 'pace_utils.dart';
 
 /// Returns the target pace label for a segment, e.g. "2:19/500m" or "Free row".
 String segmentPaceLabel(WorkoutSegment segment, int ftpWatts) {
-  final intensity = segment.targetIntensity;
-  if (intensity == null) {
+  final tenths = resolveSegmentTargetPace(segment, ftpWatts);
+  if (tenths <= 0) {
     if (segment.isRest) return 'Rest';
-    // Only time-based segments without targets are truly "free row".
-    // Distance/calorie segments have a completion goal — label as "Row".
     return segment.durationType == DurationType.time ? 'Free row' : 'Row';
   }
-  final tenths = intensityToPaceTenths(intensity, ftpWatts);
   return '${formatPace(tenths)}/500m';
 }
 

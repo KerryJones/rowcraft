@@ -58,6 +58,12 @@ class WorkoutSessionState {
   final int? calculatedFtp;
   final String? ftpCalculationBasis;
 
+  /// FTP test metadata for the result screen
+  final int? previousFtpWatts;
+  final int? rampStagesCompleted;
+  final int? rampTotalStages;
+  final int? rampPeakWatts;
+
   /// Plan context (set when launched from a training plan)
   final String? planId;
   final int? planWeek;
@@ -97,6 +103,10 @@ class WorkoutSessionState {
     this.showFtpDialog = false,
     this.calculatedFtp,
     this.ftpCalculationBasis,
+    this.previousFtpWatts,
+    this.rampStagesCompleted,
+    this.rampTotalStages,
+    this.rampPeakWatts,
     this.planId,
     this.planWeek,
     this.planSession,
@@ -120,6 +130,10 @@ class WorkoutSessionState {
     bool? showFtpDialog,
     int? calculatedFtp,
     String? ftpCalculationBasis,
+    Object? previousFtpWatts = _sentinel,
+    Object? rampStagesCompleted = _sentinel,
+    Object? rampTotalStages = _sentinel,
+    Object? rampPeakWatts = _sentinel,
     Object? planId = _sentinel,
     Object? planWeek = _sentinel,
     Object? planSession = _sentinel,
@@ -142,6 +156,14 @@ class WorkoutSessionState {
       showFtpDialog: showFtpDialog ?? this.showFtpDialog,
       calculatedFtp: calculatedFtp ?? this.calculatedFtp,
       ftpCalculationBasis: ftpCalculationBasis ?? this.ftpCalculationBasis,
+      previousFtpWatts:
+          previousFtpWatts == _sentinel ? this.previousFtpWatts : previousFtpWatts as int?,
+      rampStagesCompleted:
+          rampStagesCompleted == _sentinel ? this.rampStagesCompleted : rampStagesCompleted as int?,
+      rampTotalStages:
+          rampTotalStages == _sentinel ? this.rampTotalStages : rampTotalStages as int?,
+      rampPeakWatts:
+          rampPeakWatts == _sentinel ? this.rampPeakWatts : rampPeakWatts as int?,
       planId: planId == _sentinel ? this.planId : planId as String?,
       planWeek: planWeek == _sentinel ? this.planWeek : planWeek as int?,
       planSession:
@@ -327,11 +349,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       if (_loadGeneration != myGen) return; // Superseded by a newer load
 
       final isFtpTest = workout.tags.contains('ftp');
+      final isRampTest = workout.tags.contains('ramp');
       _engine = WorkoutEngine(
         workout: workout,
         pm5Stream: _pm5Controller.stream,
         ftpWatts: ftpWatts,
         paceFailThreshold: isFtpTest ? 10 : 0,
+        autoPauseFinishSeconds: isRampTest ? 15 : 0,
       );
 
       _engineSub = _engine!.stateStream.listen((engineState) {
@@ -494,18 +518,23 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       final isRamp = tags.contains('ramp');
       int ftp;
       String basis;
+      final segments = _engine!.expandedSegments;
+
+      int? rampStagesCompleted;
+      int? rampTotalStages;
+      int? rampPeakWatts;
 
       if (isRamp) {
-        ftp = FtpCalculator.calculateRampFtp(
-          splits,
-          _engine!.expandedSegments,
-        );
-        // Find peak watts for display
-        int peak = 0;
-        for (final s in splits) {
-          if (s.avgWatts > peak) peak = s.avgWatts;
-        }
-        basis = '65% of peak ${peak}W';
+        final rampResult = FtpCalculator.calculateRampFtp(splits, segments);
+        ftp = rampResult.ftp;
+        basis = '65% of ${rampResult.lastStageWatts}W stage';
+
+        // Total work stages: 60s segments with a target (excludes 120s warmup).
+        rampTotalStages = segments
+            .where((s) => s.hasTarget && s.durationValue == 60)
+            .length;
+        rampStagesCompleted = rampResult.stagesCompleted;
+        rampPeakWatts = rampResult.lastStageWatts;
       } else {
         ftp = FtpCalculator.calculate20MinFtp(splits);
         // Compute duration-weighted avg for display
@@ -524,6 +553,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           showFtpDialog: true,
           calculatedFtp: ftp,
           ftpCalculationBasis: basis,
+          previousFtpWatts: state.ftpWatts,
+          rampStagesCompleted: rampStagesCompleted,
+          rampTotalStages: rampTotalStages,
+          rampPeakWatts: rampPeakWatts,
         );
       }
     }

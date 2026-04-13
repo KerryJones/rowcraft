@@ -478,7 +478,7 @@ class _TargetPaceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final segment = session.engineState.currentSegment ??
         session.expandedSegments.firstOrNull;
-    final hasTarget = segment?.targetIntensity != null;
+    final hasTarget = segment != null && segment.hasTarget;
 
     if (showAvg) {
       final avgPace = session.engineState.avgPace;
@@ -495,14 +495,14 @@ class _TargetPaceTile extends StatelessWidget {
     final isResting = session.engineState.phase == WorkoutPhase.resting;
     final isNoTarget = segment != null &&
         !segment.isRest &&
-        segment.targetIntensity == null;
+        !segment.hasTarget;
     final noTargetLabel = isNoTarget && segment.durationType == DurationType.time ? 'Free' : 'Row';
     final value = isResting
         ? 'REST'
         : hasTarget
             ? formatPaceTenths(
-                resolveIntensityToPace(
-                  segment!.targetIntensity!,
+                resolveSegmentTargetPace(
+                  segment,
                   session.ftpWatts,
                 ).toDouble(),
               )
@@ -513,8 +513,8 @@ class _TargetPaceTile extends StatelessWidget {
     // Show trend chevron based on current pace vs target.
     String? chevron;
     if (hasTarget && session.pm5Data.pace > 0) {
-      final targetPace = resolveIntensityToPace(
-        segment!.targetIntensity!,
+      final targetPace = resolveSegmentTargetPace(
+        segment,
         session.ftpWatts,
       );
       final (acceptMin, acceptMax) = paceAcceptanceRange(targetPace);

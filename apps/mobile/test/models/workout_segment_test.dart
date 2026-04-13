@@ -302,4 +302,95 @@ void main() {
     final str = segment.toString();
     expect(str, contains('rest'));
   });
+
+  group('targetWatts', () {
+    test('fromJson parses target_watts', () {
+      final json = {
+        'duration_type': 'time',
+        'duration_value': 60.0,
+        'target_watts': 200,
+      };
+      final segment = WorkoutSegment.fromJson(json);
+      expect(segment.targetWatts, 200);
+      expect(segment.targetIntensity, isNull);
+    });
+
+    test('toJson includes target_watts when set', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+        targetWatts: 200,
+      );
+      final json = segment.toJson();
+      expect(json['target_watts'], 200);
+      expect(json.containsKey('target_intensity'), isFalse);
+    });
+
+    test('toJson omits target_watts when null', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+      );
+      expect(segment.toJson().containsKey('target_watts'), isFalse);
+    });
+
+    test('roundtrip preserves target_watts', () {
+      final original = {
+        'duration_type': 'time',
+        'duration_value': 60.0,
+        'target_watts': 260,
+        'target_stroke_rate': 28,
+      };
+      final segment = WorkoutSegment.fromJson(original);
+      final json = segment.toJson();
+      expect(json['target_watts'], 260);
+      expect(json['target_stroke_rate'], 28);
+    });
+
+    test('copyWith sets targetWatts', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+      );
+      final copied = segment.copyWith(targetWatts: 180);
+      expect(copied.targetWatts, 180);
+    });
+  });
+
+  group('hasTarget', () {
+    test('true when targetIntensity is set', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+        targetIntensity: 80,
+      );
+      expect(segment.hasTarget, isTrue);
+    });
+
+    test('true when targetWatts is set', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+        targetWatts: 200,
+      );
+      expect(segment.hasTarget, isTrue);
+    });
+
+    test('false when neither is set', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+      );
+      expect(segment.hasTarget, isFalse);
+    });
+
+    test('toString shows active for targetWatts segment', () {
+      const segment = WorkoutSegment(
+        durationType: DurationType.time,
+        durationValue: 60.0,
+        targetWatts: 200,
+      );
+      expect(segment.toString(), contains('active'));
+    });
+  });
 }

@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../models/workout_segment.dart';
+
 /// Convert watts to pace in tenths of a second per 500m.
 ///
 /// Uses the standard Concept2 formula: watts = 2.80 / pace_per_meter³
@@ -86,4 +88,17 @@ int intensityToPaceTenths(int intensityPct, int ftpWatts) {
 /// Higher intensity % → more watts → faster pace (lower number).
 int resolveIntensityToPace(int intensityPct, int ftpWatts) {
   return intensityToPaceTenths(intensityPct, ftpWatts);
+}
+
+/// Resolve a segment's target pace, checking [targetWatts] first
+/// (absolute watts, used by ramp FTP test), then falling back to
+/// [targetIntensity] × FTP. Returns 0 if the segment has no target.
+int resolveSegmentTargetPace(WorkoutSegment segment, int ftpWatts) {
+  if (segment.targetWatts != null) {
+    return wattsToPaceTenths(segment.targetWatts!);
+  }
+  if (segment.targetIntensity != null) {
+    return resolveIntensityToPace(segment.targetIntensity!, ftpWatts);
+  }
+  return 0;
 }
