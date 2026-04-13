@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import '../../models/pm5_data.dart';
 import '../../models/workout.dart';
@@ -645,10 +646,10 @@ class WorkoutEngine {
       }
     }
 
-    // Calculate segment progress
-    final elapsedDistance = data.distance - _segmentStartDistance;
+    // Calculate segment progress (clamp to >= 0 in case PM5 resets mid-segment)
+    final elapsedDistance = math.max(0.0, data.distance - _segmentStartDistance);
     final elapsedTime = data.elapsedTime - _segmentStartTime;
-    final elapsedCalories = data.calories - _segmentStartCalories;
+    final elapsedCalories = math.max(0, data.calories - _segmentStartCalories);
 
     // For timed rest segments, _tickRest() owns segmentProgress/segmentElapsedTime
     // via wall-clock tracking. Skip PM5-derived progress here to avoid flickering
@@ -757,13 +758,13 @@ class WorkoutEngine {
     // zero/null values — a split with no data is better than a missing split.
     final split = SplitData(
       intervalIndex: _state.currentSegmentIndex,
-      distance: _state.segmentElapsedDistance,
+      distance: math.max(0.0, _state.segmentElapsedDistance),
       time: _state.segmentElapsedTime,
       avgPace: _sampleCount > 0 ? _paceSum ~/ _sampleCount : 0,
       avgStrokeRate: _sampleCount > 0 ? _strokeRateSum ~/ _sampleCount : 0,
       avgWatts: _sampleCount > 0 ? _wattsSum ~/ _sampleCount : 0,
       avgHeartRate: _hrCount > 0 ? _hrSum ~/ _hrCount : null,
-      calories: _state.latestData.calories - _segmentStartCalories,
+      calories: math.max(0, _state.latestData.calories - _segmentStartCalories),
     );
     _completedSplits.add(split);
   }

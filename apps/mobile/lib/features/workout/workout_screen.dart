@@ -950,21 +950,18 @@ class _WorkoutProfilePainter extends CustomPainter {
         sx += w + barGap;
       }
 
-      // Build actual timestamp ranges per segment from samples (not from
-      // effectiveDuration, which is an estimate for distance/calorie segments).
+      // Build first-timestamp per segment for X positioning.
+      // Use planned duration (not actual timestamp range) as the X denominator
+      // so the dot moves proportionally through each bar as time elapses,
+      // instead of jumping to the right edge and backfilling.
       final segFirstTs = List<double>.filled(segments.length, 0);
-      final segLastTs = List<double>.filled(segments.length, 0);
       final segSeen = List<bool>.filled(segments.length, false);
       for (final sample in timeSamples!) {
         final si = sample.segmentIndex;
         if (si < 0 || si >= segments.length) continue;
-        final ts = sample.timestamp.inSeconds.toDouble();
         if (!segSeen[si]) {
-          segFirstTs[si] = ts;
-          segLastTs[si] = ts;
+          segFirstTs[si] = sample.timestamp.inSeconds.toDouble();
           segSeen[si] = true;
-        } else {
-          segLastTs[si] = ts;
         }
       }
 
@@ -983,11 +980,11 @@ class _WorkoutProfilePainter extends CustomPainter {
           continue;
         }
 
-        // X: position within the segment bar using actual timestamps
-        final segDurActual = segLastTs[si] - segFirstTs[si];
+        // X: position within the segment bar using planned duration
+        final segDurPlanned = durations[si];
         final double segFrac;
-        if (segDurActual > 0) {
-          segFrac = ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurActual).clamp(0.0, 1.0);
+        if (segDurPlanned > 0) {
+          segFrac = ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurPlanned).clamp(0.0, 1.0);
         } else {
           segFrac = 0.5;
         }
@@ -1046,9 +1043,9 @@ class _WorkoutProfilePainter extends CustomPainter {
               continue;
             }
 
-            final segDurActual = segLastTs[si] - segFirstTs[si];
-            final segFrac = segDurActual > 0
-                ? ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurActual).clamp(0.0, 1.0)
+            final segDurPlanned = durations[si];
+            final segFrac = segDurPlanned > 0
+                ? ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurPlanned).clamp(0.0, 1.0)
                 : 0.5;
             final hx = segStarts[si] + segFrac * segWidths[si];
 
