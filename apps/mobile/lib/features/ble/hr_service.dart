@@ -42,9 +42,15 @@ class HrService {
   StreamController<DiscoveredDevice>? _scanResultController;
   StreamSubscription<ConnectionStateUpdate>? _connectionSubscription;
   StreamSubscription<List<int>>? _notifySubscription;
+  Timer? _dataTimeoutTimer;
 
   String? _connectedDeviceId;
   String? _connectedDeviceName;
+
+  /// True when disconnect was initiated by the user or app (not a BLE drop).
+  /// Consumers can check this to decide whether to auto-reconnect.
+  bool _intentionalDisconnect = false;
+  bool get intentionalDisconnect => _intentionalDisconnect;
 
   /// Called when the device actually connects (for saving to DB).
   HrDeviceConnectedCallback? onDeviceConnected;
@@ -130,11 +136,17 @@ class HrService {
                 onDeviceConnected?.call(deviceId, deviceName);
                 break;
               case DeviceConnectionState.disconnected:
-                _connectedDeviceId = null;
-                _connectedDeviceName = null;
-                _connectionStateController
-                    .add(HrConnectionState.disconnected);
-                _notifySubscription?.cancel();
+                // Only emit if not already disconnected (disconnect() may
+                // have already handled this).
+                if (_connectedDeviceId != null) {
+                  _intentionalDisconnect = false; // BLE drop is never intentional
+                  _connectedDeviceId = null;
+                  _connectedDeviceName = null;
+                  _dataTimeoutTimer?.cancel();
+                  _notifySubscription?.cancel();
+                  _connectionStateController
+                      .add(HrConnectionState.disconnected);
+                }
                 break;
               default:
                 break;
@@ -153,8 +165,10 @@ class HrService {
       deviceId: deviceId,
     );
 
+    _resetDataTimeout();
     _notifySubscription = _ble.subscribeToCharacteristic(char).listen(
       (data) {
+        _resetDataTimeout();
         final hr = HrParser.parse(Uint8List.fromList(data));
         // Reject values outside physiological range (30-250 BPM)
         if (hr != null && hr >= 30 && hr <= 250) {
@@ -167,19 +181,38 @@ class HrService {
     );
   }
 
+  /// Reset the data timeout timer. If no HR notification arrives within
+  /// 15 seconds, the connection is considered dead and we disconnect.
+  /// Uses 15s to accommodate slow-to-start straps on initial connection.
+  void _resetDataTimeout() {
+    _dataTimeoutTimer?.cancel();
+    _dataTimeoutTimer = Timer(const Duration(seconds: 15), () {
+      if (_connectedDeviceId != null) {
+        disconnect(intentional: false);
+      }
+    });
+  }
+
   /// Disconnect from the current HR monitor.
-  Future<void> disconnect() async {
+  Future<void> disconnect({bool intentional = true}) async {
+    _intentionalDisconnect = intentional;
+    _dataTimeoutTimer?.cancel();
+    _dataTimeoutTimer = null;
     _notifySubscription?.cancel();
     _notifySubscription = null;
     _connectionSubscription?.cancel();
     _connectionSubscription = null;
+    final wasConnected = _connectedDeviceId != null;
     _connectedDeviceId = null;
     _connectedDeviceName = null;
-    _connectionStateController.add(HrConnectionState.disconnected);
+    if (wasConnected) {
+      _connectionStateController.add(HrConnectionState.disconnected);
+    }
   }
 
   void dispose() {
     stopScan();
+    _dataTimeoutTimer?.cancel();
     _notifySubscription?.cancel();
     _connectionSubscription?.cancel();
     _connectionStateController.close();

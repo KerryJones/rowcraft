@@ -64,6 +64,10 @@ class PM5Service {
   String? _connectedDeviceId;
   PM5Data _latestData = const PM5Data.zero();
 
+  /// True when disconnect was initiated by the user or app (not a BLE drop).
+  bool _intentionalDisconnect = false;
+  bool get intentionalDisconnect => _intentionalDisconnect;
+
   /// Stream of connection state changes.
   Stream<PM5ConnectionState> get connectionState =>
       _connectionStateController.stream;
@@ -135,10 +139,13 @@ class PM5Service {
                 await _subscribeToCharacteristics(deviceId);
                 break;
               case DeviceConnectionState.disconnected:
-                _connectedDeviceId = null;
-                _connectionStateController
-                    .add(PM5ConnectionState.disconnected);
-                _cancelNotifySubscriptions();
+                if (_connectedDeviceId != null) {
+                  _intentionalDisconnect = false; // BLE drop is never intentional
+                  _connectedDeviceId = null;
+                  _connectionStateController
+                      .add(PM5ConnectionState.disconnected);
+                  _cancelNotifySubscriptions();
+                }
                 break;
               default:
                 break;
@@ -151,12 +158,16 @@ class PM5Service {
   }
 
   /// Disconnect from the current PM5.
-  Future<void> disconnect() async {
+  Future<void> disconnect({bool intentional = true}) async {
+    _intentionalDisconnect = intentional;
     _cancelNotifySubscriptions();
     _connectionSubscription?.cancel();
     _connectionSubscription = null;
+    final wasConnected = _connectedDeviceId != null;
     _connectedDeviceId = null;
-    _connectionStateController.add(PM5ConnectionState.disconnected);
+    if (wasConnected) {
+      _connectionStateController.add(PM5ConnectionState.disconnected);
+    }
   }
 
   /// Subscribe to PM5 rowing data characteristics (notifications only).

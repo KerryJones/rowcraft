@@ -197,7 +197,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   StreamSubscription<int>? _hrBleSubscription;
   StreamSubscription<HrConnectionState>? _hrConnectionSub;
   StreamSubscription<PM5ConnectionState>? _pm5ConnectionSub;
-  DateTime? _lastReconnectAttempt;
+  DateTime? _lastPm5ReconnectAttempt;
+  DateTime? _lastHrReconnectAttempt;
 
   /// The latest standalone HR value for merging with PM5 data.
   int? _lastStandaloneHr;
@@ -256,26 +257,42 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
     });
 
-    // Clear stale HR when the HR monitor disconnects
+    // Clear stale HR and auto-reconnect when the HR monitor disconnects
     final hrService = _ref.read(hrServiceProvider);
     _hrConnectionSub = hrService.connectionState.listen((connState) {
       if (connState == HrConnectionState.disconnected) {
         _lastStandaloneHr = null;
+        // Only auto-reconnect on unexpected drops, not intentional disconnects.
+        // Delay to let BleNotifier process the event first (subscription ordering).
+        if (!hrService.intentionalDisconnect) {
+          Future.microtask(() {
+            final now = DateTime.now();
+            final cooldown = _lastHrReconnectAttempt == null ||
+                now.difference(_lastHrReconnectAttempt!).inSeconds >= 10;
+            if (cooldown) {
+              _lastHrReconnectAttempt = now;
+              _ref.read(bleProvider.notifier).autoReconnect();
+            }
+          });
+        }
       }
     });
 
-    // Auto-reconnect PM5 if it disconnects mid-workout (with cooldown)
+    // Auto-reconnect PM5 if it disconnects mid-workout (with cooldown).
+    // Delay to let BleNotifier process the event first (subscription ordering).
     final pm5Service = _ref.read(pm5ServiceProvider);
     _pm5ConnectionSub = pm5Service.connectionState.listen((connState) {
       if (connState == PM5ConnectionState.disconnected &&
-          pm5Service.connectedDeviceId == null) {
-        final now = DateTime.now();
-        final cooldown = _lastReconnectAttempt == null ||
-            now.difference(_lastReconnectAttempt!).inSeconds >= 10;
-        if (cooldown) {
-          _lastReconnectAttempt = now;
-          _ref.read(bleProvider.notifier).autoReconnect();
-        }
+          !pm5Service.intentionalDisconnect) {
+        Future.microtask(() {
+          final now = DateTime.now();
+          final cooldown = _lastPm5ReconnectAttempt == null ||
+              now.difference(_lastPm5ReconnectAttempt!).inSeconds >= 10;
+          if (cooldown) {
+            _lastPm5ReconnectAttempt = now;
+            _ref.read(bleProvider.notifier).autoReconnect();
+          }
+        });
       }
     });
   }
