@@ -107,14 +107,12 @@ class HrZoneGauge extends StatelessWidget {
                 ],
                 pointers: <GaugePointer>[
                   if (hasHr)
-                    NeedlePointer(
+                    MarkerPointer(
                       value: gaugeValue,
-                      needleLength: 0.2,
-                      lengthUnit: GaugeSizeUnit.factor,
-                      needleStartWidth: 4,
-                      needleEndWidth: 4,
-                      needleColor: Colors.white,
-                      knobStyle: const KnobStyle(knobRadius: 0),
+                      markerType: MarkerType.rectangle,
+                      markerHeight: 24,
+                      markerWidth: 3,
+                      color: Colors.white,
                       enableAnimation: true,
                       animationDuration: 300,
                       animationType: AnimationType.ease,
