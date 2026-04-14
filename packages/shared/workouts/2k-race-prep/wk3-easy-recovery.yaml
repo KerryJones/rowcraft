@@ -6,11 +6,11 @@ tags: [2k-race-prep, recovery, week-3]
 estimated_duration_minutes: 26
 segments:
   - duration: "3:00"
-    intensity: 60%
+    intensity: 50%
     stroke_rate: 20
   - duration: "20:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "3:00"
-    intensity: 60%
+    intensity: 50%
     stroke_rate: 20
