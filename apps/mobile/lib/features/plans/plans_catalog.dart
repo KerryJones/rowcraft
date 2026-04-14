@@ -85,10 +85,10 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
                   child: ListView.builder(
                     padding: const EdgeInsets.only(bottom: 80),
                     itemCount: plans.length +
-                        (continueAsync.valueOrNull != null ? 1 : 0),
+                        (continueAsync.value != null ? 1 : 0),
                     itemBuilder: (context, index) {
                       // Continue banner at top
-                      if (continueAsync.valueOrNull != null && index == 0) {
+                      if (continueAsync.value != null && index == 0) {
                         final data = continueAsync.value!;
                         return _ContinueBanner(
                           plan: data.plan,
@@ -97,7 +97,7 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
                       }
 
                       final planIndex =
-                          continueAsync.valueOrNull != null ? index - 1 : index;
+                          continueAsync.value != null ? index - 1 : index;
                       final plan = plans[planIndex];
                       return _PlanCard(
                         plan: plan,

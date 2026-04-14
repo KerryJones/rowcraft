@@ -18,7 +18,7 @@ rowcraft/
 
 | Layer | Technology |
 |-------|-----------|
-| Mobile | Flutter 3.x + Riverpod + flutter_reactive_ble + Drift (SQLite) |
+| Mobile | Flutter 3.32+ (Dart 3.8+) + Riverpod 3 + flutter_reactive_ble + Drift 2.32 (SQLite) |
 | Web | Next.js 15 (App Router) + React 19 + Tailwind CSS 4 |
 | Backend | Supabase (Postgres + Auth) |
 | Hosting | Vercel (web), Google Play (mobile) |
@@ -26,9 +26,10 @@ rowcraft/
 ## First-Time Setup
 
 ### Prerequisites
-- Flutter 3.x SDK
+- Flutter 3.32+ SDK (Dart 3.8+)
 - Node.js 20+
 - Supabase CLI
+- Android SDK with NDK and cmdline-tools installed
 
 ### Quick Setup
 ```bash

@@ -112,7 +112,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       mine: _mine,
       sort: _sortOrder,
     )));
-    final userFtp = ref.watch(profileProvider).valueOrNull?.currentFtpWatts ?? kDefaultFtpWatts;
+    final userFtp = ref.watch(profileProvider).value?.currentFtpWatts ?? kDefaultFtpWatts;
     // Watch at top of build so WOD fetch runs in parallel with the library
     // list fetch, instead of only starting after the list resolves.
     final wodAsync = ref.watch(wodWorkoutsProvider);
@@ -121,7 +121,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     // Resolve the WOD unconditionally — it is pinned at the top of the screen
     // in both the landing (tiles) and browsing (list) states.
     const wodExcludeTags = {'ftp', 'ramp', 'test'};
-    final plans = plansAsync.valueOrNull ?? [];
+    final plans = plansAsync.value ?? [];
     final planWorkoutIds = <String>{
       for (final plan in plans)
         for (final week in plan.weeks)

@@ -8,7 +8,7 @@ RowCraft is a full-stack platform for structured Concept2 rowing workouts. The w
 
 | Layer | Technology |
 |-------|-----------|
-| Mobile | Flutter 3.x, Riverpod, flutter_reactive_ble, Drift (SQLite) |
+| Mobile | Flutter 3.32+ (Dart 3.8+), Riverpod 3, flutter_reactive_ble, Drift 2.32 (SQLite) |
 | Web | Next.js 15 (App Router), React 19, Tailwind CSS 4 |
 | Backend | Supabase (Postgres + Auth) |
 | Hosting | Any Node.js host via Docker (standalone output), App Store + Google Play (mobile) |

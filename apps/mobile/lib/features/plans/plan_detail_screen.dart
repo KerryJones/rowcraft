@@ -51,7 +51,7 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
           if (plan == null) {
             return const Center(child: Text('Plan not found'));
           }
-          final progress = progressAsync.valueOrNull;
+          final progress = progressAsync.value;
           return _PlanDetailContent(plan: plan, progress: progress);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -198,7 +198,7 @@ class _WeekSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final workoutsAsync = ref.watch(_planWorkoutsProvider(planId));
-    final workouts = workoutsAsync.valueOrNull ?? {};
+    final workouts = workoutsAsync.value ?? {};
 
     // Count completed sessions in this week
     int completedInWeek = 0;

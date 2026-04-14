@@ -33,18 +33,14 @@ final googleSignInProvider = FutureProvider<AuthResponse>((ref) async {
     );
   }
 
-  final googleSignIn = GoogleSignIn(serverClientId: clientId);
-  final googleUser = await googleSignIn.signIn();
-  if (googleUser == null) throw Exception('Sign-in cancelled');
+  final account = await GoogleSignIn.instance.authenticate();
 
-  final googleAuth = await googleUser.authentication;
-  final idToken = googleAuth.idToken;
+  final idToken = account.authentication.idToken;
   if (idToken == null) throw Exception('No ID token');
 
   return Supabase.instance.client.auth.signInWithIdToken(
     provider: OAuthProvider.google,
     idToken: idToken,
-    accessToken: googleAuth.accessToken,
   );
 });
 

@@ -155,7 +155,7 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
                 children: [
                   _WorkoutDetailBody(
                     workout: workout,
-                    ftpWatts: ref.watch(profileProvider).valueOrNull?.currentFtpWatts ?? kDefaultFtpWatts,
+                    ftpWatts: ref.watch(profileProvider).value?.currentFtpWatts ?? kDefaultFtpWatts,
                   ),
                   const SizedBox(height: 24),
                   _SimilarWorkoutsSection(workout: workout),
@@ -484,7 +484,7 @@ class _SimilarWorkoutsSection extends ConsumerWidget {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: similar.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   return _SimilarWorkoutCard(workout: similar[index]);
                 },
@@ -494,7 +494,7 @@ class _SimilarWorkoutsSection extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

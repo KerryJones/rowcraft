@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
@@ -272,7 +273,7 @@ class _StatTile extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (trailing != null) trailing!,
+              ?trailing,
               if (showDots) ...[
                 if (trailing != null) const SizedBox(width: 4),
                 _PageDots(index: pageIndex!, count: pageCount!),

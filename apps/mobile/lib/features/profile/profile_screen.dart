@@ -153,7 +153,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         strokeWidth: 2,
                         color: Colors.white,
                       ),
-                      error: (_, __) => const Icon(
+                      error: (_, _) => const Icon(
                         Icons.person,
                         size: 40,
                         color: Colors.white,
@@ -169,7 +169,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       style: theme.textTheme.headlineMedium,
                     ),
                     loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
+                    error: (_, _) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 4),
 
@@ -262,7 +262,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 title: Text('Concept2 Logbook'),
                 subtitle: Text('Checking...'),
               ),
-              error: (_, __) => const ListTile(
+              error: (_, _) => const ListTile(
                 leading: Icon(Icons.error_outline,
                     color: RowCraftTheme.errorRose),
                 title: Text('Concept2 Logbook'),
@@ -288,7 +288,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   )
                 : const SizedBox.shrink(),
             loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
           ),
 
           // FTP card
@@ -315,7 +315,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     title: Text('Weight'),
                     subtitle: Text('Loading...'),
                   ),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, _) => const SizedBox.shrink(),
                 ),
                 const Divider(height: 1),
                 ListTile(
@@ -556,7 +556,7 @@ class _FtpCard extends ConsumerWidget {
                 width: 32,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              error: (_, __) => Text(
+              error: (_, _) => Text(
                 'Error',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: RowCraftTheme.errorRose,
@@ -615,7 +615,7 @@ class _FtpCard extends ConsumerWidget {
                 );
               },
               loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
             ),
           ],
         ),
@@ -755,7 +755,7 @@ class _EditWeightDialogState extends State<_EditWeightDialog> {
   @override
   void initState() {
     super.initState();
-    final profile = widget.ref.read(profileProvider).valueOrNull;
+    final profile = widget.ref.read(profileProvider).value;
     _storedKg = profile?.weightKg;
     if (_storedKg != null) {
       _controller.text = (_storedKg! * 2.20462).round().toString();
