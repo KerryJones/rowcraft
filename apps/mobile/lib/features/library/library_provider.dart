@@ -138,13 +138,22 @@ final filteredWorkoutsProvider = FutureProvider.family<
         }
       : null;
 
-  // Filter by search query
+  // Filter by search query with relevance scoring.
+  // Tag matches rank highest, then title, then description.
+  Map<String, int>? searchScores;
   if (filter.search != null && filter.search!.isNotEmpty) {
     final query = filter.search!.toLowerCase();
+    searchScores = {};
     filtered = filtered.where((w) {
-      return w.title.toLowerCase().contains(query) ||
-          w.description.toLowerCase().contains(query) ||
-          w.tags.any((t) => t.toLowerCase().contains(query));
+      var score = 0;
+      if (w.tags.any((t) => t.toLowerCase().contains(query))) score += 3;
+      if (w.title.toLowerCase().contains(query)) score += 2;
+      if (w.description.toLowerCase().contains(query)) score += 1;
+      if (score > 0) {
+        searchScores![w.id] = score;
+        return true;
+      }
+      return false;
     }).toList();
   }
 
@@ -214,15 +223,30 @@ final filteredWorkoutsProvider = FutureProvider.family<
     }
   }
 
-  // Sort
+  // Sort — by relevance when searching, otherwise by chosen order.
   final result = List.of(filtered);
-  switch (filter.sort) {
-    case LibrarySortOrder.newest:
-      result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    case LibrarySortOrder.duration:
-      result.sort((a, b) => durationMap![a.id]!.compareTo(durationMap[b.id]!));
-    case LibrarySortOrder.mostForked:
-      result.sort((a, b) => b.forkCount.compareTo(a.forkCount));
+  if (searchScores != null) {
+    // Primary: relevance score descending. Secondary: current sort order.
+    result.sort((a, b) {
+      final cmp = searchScores![b.id]!.compareTo(searchScores[a.id]!);
+      if (cmp != 0) return cmp;
+      return switch (filter.sort) {
+        LibrarySortOrder.newest => b.createdAt.compareTo(a.createdAt),
+        LibrarySortOrder.duration =>
+          durationMap![a.id]!.compareTo(durationMap[b.id]!),
+        LibrarySortOrder.mostForked => b.forkCount.compareTo(a.forkCount),
+      };
+    });
+  } else {
+    switch (filter.sort) {
+      case LibrarySortOrder.newest:
+        result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      case LibrarySortOrder.duration:
+        result.sort(
+            (a, b) => durationMap![a.id]!.compareTo(durationMap[b.id]!));
+      case LibrarySortOrder.mostForked:
+        result.sort((a, b) => b.forkCount.compareTo(a.forkCount));
+    }
   }
 
   return result;
