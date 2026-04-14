@@ -338,6 +338,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _engine?.dispose();
     _engine = null;
     _startedAt = null;
+    _suppressBleData = true;
+    _lastStandaloneHr = null;
     _loadGeneration++;
     final myGen = _loadGeneration;
 
@@ -409,8 +411,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       );
 
       // Reset PM5 to clear any previous session data and zero out display.
-      // Suppress incoming BLE data during reset so old values don't overwrite.
-      _suppressBleData = true;
+      // BLE data has been suppressed since the top of loadWorkout().
       try {
         await _resetPm5();
       } finally {
@@ -423,6 +424,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       _engine?.ready();
     } catch (e) {
       if (_loadGeneration != myGen) return;
+      _suppressBleData = false;
       state = state.copyWith(
         isLoading: false,
         error: 'Failed to load workout: $e',

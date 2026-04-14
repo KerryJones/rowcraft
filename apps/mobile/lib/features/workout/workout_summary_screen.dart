@@ -106,7 +106,7 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
     return Stack(
       children: [
         SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 100),
+          padding: const EdgeInsets.only(bottom: 160),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

@@ -18,6 +18,12 @@ final plexoServiceProvider = Provider<PlexoService>((ref) {
   return PlexoService();
 });
 
+/// Whether Plexo sync is enabled for the current user.
+final plexoEnabledProvider = FutureProvider<bool>((ref) async {
+  final service = ref.watch(plexoServiceProvider);
+  return service.isEnabled();
+});
+
 /// Service for syncing workout results to the Plexo health platform.
 ///
 /// Sends completed rowing workouts to Plexo's exercise endpoint
@@ -31,10 +37,16 @@ class PlexoService {
   /// Requires all three: API key configured, user ID configured,
   /// and the current user's display_name matches the allowlist.
   Future<bool> isEnabled() async {
-    if (_plexoApiKey.isEmpty || _plexoUserId.isEmpty) return false;
+    if (_plexoApiKey.isEmpty || _plexoUserId.isEmpty) {
+      debugPrint('Plexo disabled: API key or user ID not configured');
+      return false;
+    }
 
     final userId = _client.auth.currentUser?.id;
-    if (userId == null) return false;
+    if (userId == null) {
+      debugPrint('Plexo disabled: no authenticated user');
+      return false;
+    }
 
     try {
       final response = await _client
@@ -43,9 +55,15 @@ class PlexoService {
           .eq('id', userId)
           .single();
 
+      final displayName = response['display_name'];
       // Gated to Kerry's account until Plexo integration is broadly enabled.
-      return response['display_name'] == 'kerryjones21';
-    } catch (_) {
+      if (displayName != 'kerryjones21') {
+        debugPrint('Plexo disabled: display_name "$displayName" not in allowlist');
+        return false;
+      }
+      return true;
+    } catch (e) {
+      debugPrint('Plexo disabled: error checking profile: $e');
       return false;
     }
   }

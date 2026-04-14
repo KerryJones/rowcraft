@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../app/theme.dart';
 import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
+import '../../services/plexo_service.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
 import '../ble/ble_provider.dart';
@@ -270,6 +271,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
           ),
           const SizedBox(height: 16),
+
+          // Plexo sync status — only visible when enabled
+          ref.watch(plexoEnabledProvider).when(
+            data: (isEnabled) => isEnabled
+                ? const Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: Card(
+                      child: ListTile(
+                        leading: Icon(Icons.sync,
+                            color: RowCraftTheme.successGreen),
+                        title: Text('Plexo'),
+                        subtitle: Text('Enabled'),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
 
           // FTP card
           _FtpCard(),
