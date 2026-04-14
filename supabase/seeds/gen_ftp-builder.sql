@@ -6,7 +6,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'FTP Builder Wk1 Recovery',
   'Week 1: Easy 20-minute recovery row at Z1.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,recovery,week-1}',
   true
 );
@@ -166,7 +166,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'FTP Builder Wk6 Recovery',
   'Week 6: Easy 20-minute recovery row at Z1.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,recovery,week-6}',
   true
 );
