@@ -12,6 +12,8 @@ import '../../services/c2_logbook_service.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
 import '../ble/ble_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../ble/pm5_service.dart';
 
 /// Provider for the user's profile data.
@@ -308,6 +310,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       applicationLegalese:
                           'Structured rowing workouts for Concept2',
                     );
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('Privacy Policy'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () async {
+                    final ok = await launchUrl(
+                      Uri.parse('https://rowcraft.app/privacy'),
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Could not open link')),
+                      );
+                    }
+                  },
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: const Text('Terms of Service'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () async {
+                    final ok = await launchUrl(
+                      Uri.parse('https://rowcraft.app/terms'),
+                      mode: LaunchMode.externalApplication,
+                    );
+                    if (!ok && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Could not open link')),
+                      );
+                    }
                   },
                 ),
               ],

@@ -8,7 +8,7 @@ export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <h1 className="mb-2 text-3xl font-bold text-white">Privacy Policy</h1>
-      <p className="mb-8 text-sm text-gray-500">Last updated: April 5, 2026</p>
+      <p className="mb-8 text-sm text-gray-500">Last updated: April 14, 2026</p>
 
       <div className="prose prose-invert prose-gray max-w-none space-y-6 text-sm leading-relaxed text-gray-300">
         <section>
@@ -123,10 +123,16 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white">9. Third-Party Services</h2>
           <p>
-            We may in the future offer integration with third-party services such as the Concept2 Logbook for syncing
-            workout results. If and when such integrations are available, any data you choose to sync will be
-            transmitted directly to the third party and will be subject to their privacy policy. We will update this
-            section when third-party integrations become available.
+            The Service offers optional integration with the Concept2 Logbook for syncing workout results. When you
+            link your Concept2 account and sync a workout, your workout data (distance, time, split times, stroke
+            rate) is transmitted to Concept2 and is subject to their privacy policy. You can disconnect your Concept2
+            account at any time from your profile settings.
+          </p>
+          <p>
+            We use Sentry for crash and error reporting. When the app encounters an error, Sentry may receive
+            diagnostic data such as the error message, stack trace, and device type. This data is used solely to
+            identify and fix bugs. Sentry does not receive your workout data, email address, or any personally
+            identifiable information.
           </p>
         </section>
 

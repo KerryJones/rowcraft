@@ -53,11 +53,11 @@ jobs:
       - name: Generate code
         working-directory: apps/mobile
         run: dart run build_runner build --delete-conflicting-outputs
-      - name: Build APK
+      - name: Build AAB
         working-directory: apps/mobile
-        run: flutter build apk --release --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+        run: flutter build appbundle --release --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
       - uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          name: android-aab
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
 
