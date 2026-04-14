@@ -102,7 +102,10 @@ dev-mobile-cloud:
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(SUPABASE_PUBLISHABLE_KEY) \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
 		--dart-define=SENTRY_DSN=$(SENTRY_DSN) \
-		--dart-define=WEB_APP_URL=$(WEB_APP_URL)
+		--dart-define=WEB_APP_URL=$(WEB_APP_URL) \
+		--dart-define=PLEXO_API_URL=$(PLEXO_API_URL) \
+		--dart-define=PLEXO_API_KEY=$(PLEXO_API_KEY) \
+		--dart-define=PLEXO_USER_ID=$(PLEXO_USER_ID)
 
 dev-web:
 	cd apps/web && npm run dev
@@ -163,5 +166,8 @@ build-apk:
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(SUPABASE_PUBLISHABLE_KEY) \
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
 		--dart-define=SENTRY_DSN=$(SENTRY_DSN) \
-		--dart-define=WEB_APP_URL=$(WEB_APP_URL)
+		--dart-define=WEB_APP_URL=$(WEB_APP_URL) \
+		--dart-define=PLEXO_API_URL=$(PLEXO_API_URL) \
+		--dart-define=PLEXO_API_KEY=$(PLEXO_API_KEY) \
+		--dart-define=PLEXO_USER_ID=$(PLEXO_USER_ID)
 	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"
