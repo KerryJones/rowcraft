@@ -6,7 +6,7 @@ tags: [recovery, breathing]
 estimated_duration_minutes: 27
 segments:
   - duration: "3:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20
   - type: interval
     reps: 3
@@ -17,5 +17,5 @@ segments:
     rest:
       duration: "2:00"
   - duration: "3:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20

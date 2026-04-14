@@ -6,11 +6,11 @@ tags: [return-to-rowing, recovery, week-1]
 estimated_duration_minutes: 19
 segments:
   - duration: "2:00"
-    intensity: 60%
+    intensity: 50%
     stroke_rate: 20
   - duration: "15:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "2:00"
-    intensity: 60%
+    intensity: 50%
     stroke_rate: 20

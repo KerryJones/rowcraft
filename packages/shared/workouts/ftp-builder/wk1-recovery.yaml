@@ -6,11 +6,11 @@ tags: [ftp-builder, recovery, week-1]
 estimated_duration_minutes: 26
 segments:
   - duration: "3:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20
   - duration: "20:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "3:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20

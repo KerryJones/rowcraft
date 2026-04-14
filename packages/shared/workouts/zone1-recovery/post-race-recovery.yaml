@@ -6,11 +6,11 @@ tags: [recovery, post-race]
 estimated_duration_minutes: 25
 segments:
   - duration: "5:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20
   - duration: "15:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "5:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20

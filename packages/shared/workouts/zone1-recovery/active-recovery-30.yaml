@@ -6,7 +6,7 @@ tags: [recovery, 30-min]
 estimated_duration_minutes: 30
 segments:
   - duration: "3:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20
   - duration: "6:00"
     intensity: 55%
@@ -21,5 +21,5 @@ segments:
     intensity: 55%
     stroke_rate: 18
   - duration: "3:00"
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20

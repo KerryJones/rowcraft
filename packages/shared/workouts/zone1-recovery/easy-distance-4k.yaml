@@ -6,11 +6,11 @@ tags: [recovery, distance]
 estimated_duration_minutes: 16
 segments:
   - duration: 500m
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20
   - duration: 3000m
     intensity: 55%
     stroke_rate: 20
   - duration: 500m
-    intensity: 55%
+    intensity: 50%
     stroke_rate: 20
