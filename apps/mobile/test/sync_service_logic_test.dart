@@ -20,6 +20,7 @@ class FakeRow {
   String resultJson;
   bool syncedToSupabase;
   bool syncedToC2;
+  bool syncedToPlexo;
   int attempts;
 
   FakeRow({
@@ -27,6 +28,7 @@ class FakeRow {
     required this.resultJson,
     this.syncedToSupabase = false,
     this.syncedToC2 = false,
+    this.syncedToPlexo = false,
     this.attempts = 0,
   });
 }
@@ -44,13 +46,13 @@ class FakeLocalDb {
 
   Future<List<FakeRow>> getPendingResults() async {
     return _rows
-        .where((r) => !r.syncedToSupabase || !r.syncedToC2)
+        .where((r) => !r.syncedToSupabase || !r.syncedToC2 || !r.syncedToPlexo)
         .toList();
   }
 
   Future<int> getPendingCount() async {
     return _rows
-        .where((r) => !r.syncedToSupabase || !r.syncedToC2)
+        .where((r) => !r.syncedToSupabase || !r.syncedToC2 || !r.syncedToPlexo)
         .length;
   }
 
@@ -60,6 +62,10 @@ class FakeLocalDb {
 
   Future<void> markSyncedToC2(int id) async {
     _rows.firstWhere((r) => r.id == id).syncedToC2 = true;
+  }
+
+  Future<void> markSyncedToPlexo(int id) async {
+    _rows.firstWhere((r) => r.id == id).syncedToPlexo = true;
   }
 
   Future<void> updateResultJson(int id, String resultJson) async {
@@ -72,7 +78,7 @@ class FakeLocalDb {
 
   Future<int> cleanupSynced() async {
     final before = _rows.length;
-    _rows.removeWhere((r) => r.syncedToSupabase && r.syncedToC2);
+    _rows.removeWhere((r) => r.syncedToSupabase && r.syncedToC2 && r.syncedToPlexo);
     return before - _rows.length;
   }
 
@@ -117,6 +123,20 @@ class FakeC2LogbookService {
   }
 }
 
+class FakePlexoService {
+  bool enabled = false;
+  bool syncSuccess = true;
+  int syncCallCount = 0;
+
+  Future<bool> isEnabled() async => enabled;
+
+  Future<({bool success, String? error})> syncResult(WorkoutResult result) async {
+    syncCallCount++;
+    if (syncSuccess) return (success: true, error: null);
+    return (success: false, error: 'Plexo sync failed');
+  }
+}
+
 // ── Adapter that wraps fakes into the interface SyncService expects ────
 
 /// Since SyncService depends on concrete types (LocalDatabase, SupabaseService,
@@ -126,6 +146,7 @@ class TestableSyncService {
   final FakeLocalDb db;
   final FakeSupabaseService supabaseService;
   final FakeC2LogbookService c2LogbookService;
+  final FakePlexoService plexoService;
 
   bool _syncing = false;
   String? lastError;
@@ -137,6 +158,7 @@ class TestableSyncService {
     required this.db,
     required this.supabaseService,
     required this.c2LogbookService,
+    required this.plexoService,
   });
 
   Future<int> get pendingCount => db.getPendingCount();
@@ -154,10 +176,11 @@ class TestableSyncService {
     final row = rows.where((r) => r.id == rowId).firstOrNull;
 
     if (row == null) {
-      // Row cleaned up → both synced. Surface actionable error if any.
+      // Row cleaned up → all synced. Surface actionable error if any.
       return SyncOutcome(
         savedToSupabase: true,
         savedToC2: true,
+        savedToPlexo: true,
         error: rowError,
       );
     }
@@ -167,11 +190,14 @@ class TestableSyncService {
       error = rowError ?? 'Cloud sync failed — will retry';
     } else if (!row.syncedToC2) {
       error = rowError ?? 'C2 Logbook sync failed — will retry';
+    } else if (!row.syncedToPlexo) {
+      error = rowError ?? 'Plexo sync failed — will retry';
     }
 
     return SyncOutcome(
       savedToSupabase: row.syncedToSupabase,
       savedToC2: row.syncedToC2,
+      savedToPlexo: row.syncedToPlexo,
       error: error,
     );
   }
@@ -208,28 +234,52 @@ class TestableSyncService {
       }
 
       if (!row.syncedToC2) {
-        final isLinked = await c2LogbookService.isLinked();
-        if (isLinked) {
-          if (result.id.isEmpty) {
-            _rowErrors[row.id] = 'Missing result ID — will retry';
-            return;
-          }
-          final synced = await c2LogbookService.syncResult(result);
-          if (synced) {
-            await db.markSyncedToC2(row.id);
+        try {
+          final isLinked = await c2LogbookService.isLinked();
+          if (isLinked) {
+            if (result.id.isEmpty) {
+              _rowErrors[row.id] = 'Missing result ID — will retry';
+              return;
+            }
+            final synced = await c2LogbookService.syncResult(result);
+            if (synced) {
+              await db.markSyncedToC2(row.id);
+            } else {
+              const msg = 'C2 Logbook sync failed — will retry';
+              lastError = msg;
+              _rowErrors[row.id] = msg;
+            }
           } else {
-            const msg = 'C2 Logbook sync failed — will retry';
-            lastError = msg;
-            _rowErrors[row.id] = msg;
+            await db.markSyncedToC2(row.id);
           }
-        } else {
+        } on C2ActionableException catch (e) {
+          lastError = '$e';
+          _rowErrors[row.id] = '$e';
           await db.markSyncedToC2(row.id);
         }
       }
-    } on C2ActionableException catch (e) {
-      lastError = '$e';
-      _rowErrors[row.id] = '$e';
-      await db.markSyncedToC2(row.id);
+
+      if (!row.syncedToPlexo) {
+        try {
+          final isEnabled = await plexoService.isEnabled();
+          if (isEnabled) {
+            final plexoResult = await plexoService.syncResult(result);
+            if (plexoResult.success) {
+              await db.markSyncedToPlexo(row.id);
+            } else {
+              final msg = 'Plexo sync failed: ${plexoResult.error}';
+              lastError = msg;
+              _rowErrors[row.id] = msg;
+            }
+          } else {
+            await db.markSyncedToPlexo(row.id);
+          }
+        } catch (e) {
+          final msg = 'Plexo sync error: $e';
+          lastError = msg;
+          _rowErrors[row.id] = msg;
+        }
+      }
     } catch (e) {
       final msg = 'Sync failed for row ${row.id}: $e';
       lastError = msg;
@@ -263,11 +313,13 @@ TestableSyncService _buildService({
   FakeLocalDb? db,
   FakeSupabaseService? supabase,
   FakeC2LogbookService? c2,
+  FakePlexoService? plexo,
 }) {
   return TestableSyncService(
     db: db ?? FakeLocalDb(),
     supabaseService: supabase ?? FakeSupabaseService(),
     c2LogbookService: c2 ?? FakeC2LogbookService(),
+    plexoService: plexo ?? FakePlexoService(),
   );
 }
 
@@ -275,12 +327,13 @@ TestableSyncService _buildService({
 
 void main() {
   group('SyncOutcome reporting', () {
-    test('full success: both flags true, no error', () async {
+    test('full success: all flags true, no error', () async {
       final service = _buildService();
       final outcome = await service.queueResult(_makeResult());
 
       expect(outcome.savedToSupabase, isTrue);
       expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isTrue);
       expect(outcome.error, isNull);
     });
 
@@ -311,6 +364,7 @@ void main() {
 
       expect(outcome.savedToSupabase, isTrue);
       expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isTrue);
       expect(outcome.error, isNull);
     });
   });
@@ -379,6 +433,7 @@ void main() {
       // Supabase succeeded, C2 marked as done (stop retrying)
       expect(outcome.savedToSupabase, isTrue);
       expect(outcome.savedToC2, isTrue); // marked done to stop retries
+      expect(outcome.savedToPlexo, isTrue);
       // Error surfaces in outcome even though row was cleaned up
       expect(outcome.error, contains('Weight not set'));
     });
@@ -407,6 +462,7 @@ void main() {
         resultJson: '{}',
         syncedToSupabase: true,
         syncedToC2: false,
+        syncedToPlexo: true,
       ));
 
       final count = await db.getPendingCount();
@@ -420,6 +476,7 @@ void main() {
         resultJson: '{}',
         syncedToSupabase: false,
         syncedToC2: true,
+        syncedToPlexo: true,
       ));
 
       final count = await db.getPendingCount();
@@ -433,10 +490,63 @@ void main() {
         resultJson: '{}',
         syncedToSupabase: true,
         syncedToC2: true,
+        syncedToPlexo: true,
       ));
 
       final count = await db.getPendingCount();
       expect(count, 0);
+    });
+  });
+
+  group('Plexo sync', () {
+    test('Plexo enabled + sync succeeds: row cleaned up', () async {
+      final plexo = FakePlexoService()..enabled = true;
+      final service = _buildService(plexo: plexo);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToSupabase, isTrue);
+      expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isTrue);
+      expect(outcome.error, isNull);
+      expect(plexo.syncCallCount, 1);
+    });
+
+    test('Plexo enabled + sync fails: error surfaces', () async {
+      final plexo = FakePlexoService()
+        ..enabled = true
+        ..syncSuccess = false;
+      final service = _buildService(plexo: plexo);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToSupabase, isTrue);
+      expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isFalse);
+      expect(outcome.error, contains('Plexo'));
+    });
+
+    test('Plexo disabled: marked as done without calling sync', () async {
+      final plexo = FakePlexoService()..enabled = false;
+      final service = _buildService(plexo: plexo);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToPlexo, isTrue);
+      expect(plexo.syncCallCount, 0);
+    });
+  });
+
+  group('getPendingCount correctness', () {
+    test('counts rows where only Plexo is unsynced', () async {
+      final db = FakeLocalDb();
+      db._rows.add(FakeRow(
+        id: 99,
+        resultJson: '{}',
+        syncedToSupabase: true,
+        syncedToC2: true,
+        syncedToPlexo: false,
+      ));
+
+      final count = await db.getPendingCount();
+      expect(count, 1, reason: 'Should count Plexo-unsynced rows too');
     });
   });
 
@@ -458,6 +568,7 @@ void main() {
       // The new result should succeed despite the old row failing
       expect(outcome.savedToSupabase, isTrue);
       expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isTrue);
       expect(outcome.error, isNull);
     });
   });

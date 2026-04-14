@@ -28,6 +28,10 @@ class PendingResults extends Table {
   /// Whether this result has been synced to C2 Logbook.
   BoolColumn get syncedToC2 =>
       boolean().withDefault(const Constant(false))();
+
+  /// Whether this result has been synced to Plexo.
+  BoolColumn get syncedToPlexo =>
+      boolean().withDefault(const Constant(false))();
 }
 
 /// Saved BLE devices for auto-reconnect.
@@ -66,7 +70,7 @@ class LocalDatabase extends _$LocalDatabase {
   LocalDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -77,6 +81,13 @@ class LocalDatabase extends _$LocalDatabase {
           }
           if (from < 3) {
             await m.createTable(syncMetadata);
+          }
+          if (from < 4) {
+            await m.addColumn(pendingResults, pendingResults.syncedToPlexo);
+            // Existing rows skip Plexo sync — they predate this integration.
+            await customStatement(
+              'UPDATE pending_results SET synced_to_plexo = 1',
+            );
           }
         },
       );
@@ -95,7 +106,8 @@ class LocalDatabase extends _$LocalDatabase {
     return (select(pendingResults)
           ..where((r) =>
               r.syncedToSupabase.equals(false) |
-              r.syncedToC2.equals(false))
+              r.syncedToC2.equals(false) |
+              r.syncedToPlexo.equals(false))
           ..orderBy([(r) => OrderingTerm.asc(r.queuedAt)]))
         .get();
   }
@@ -105,7 +117,8 @@ class LocalDatabase extends _$LocalDatabase {
     final count = countAll();
     final query = selectOnly(pendingResults)
       ..where(pendingResults.syncedToSupabase.equals(false) |
-              pendingResults.syncedToC2.equals(false))
+              pendingResults.syncedToC2.equals(false) |
+              pendingResults.syncedToPlexo.equals(false))
       ..addColumns([count]);
     final result = await query.getSingle();
     return result.read(count) ?? 0;
@@ -127,6 +140,14 @@ class LocalDatabase extends _$LocalDatabase {
     ));
   }
 
+  /// Mark a pending result as synced to Plexo.
+  Future<void> markSyncedToPlexo(int id) {
+    return (update(pendingResults)..where((r) => r.id.equals(id)))
+        .write(const PendingResultsCompanion(
+      syncedToPlexo: Value(true),
+    ));
+  }
+
   /// Update the stored JSON for a pending result (e.g. after Supabase assigns an ID).
   Future<void> updateResultJson(int id, String resultJson) {
     return (update(pendingResults)..where((r) => r.id.equals(id)))
@@ -144,12 +165,13 @@ class LocalDatabase extends _$LocalDatabase {
     ));
   }
 
-  /// Remove fully synced results (both Supabase and C2).
+  /// Remove fully synced results (Supabase, C2, and Plexo).
   Future<int> cleanupSynced() {
     return (delete(pendingResults)
           ..where((r) =>
               r.syncedToSupabase.equals(true) &
-              r.syncedToC2.equals(true)))
+              r.syncedToC2.equals(true) &
+              r.syncedToPlexo.equals(true)))
         .go();
   }
 

@@ -7,12 +7,14 @@ import '../models/workout_result.dart';
 import 'local_db.dart';
 import 'supabase_service.dart';
 import 'c2_logbook_service.dart';
+import 'plexo_service.dart';
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   return SyncService(
     db: ref.watch(localDatabaseProvider),
     supabaseService: ref.watch(supabaseServiceProvider),
     c2LogbookService: ref.watch(c2LogbookServiceProvider),
+    plexoService: ref.watch(plexoServiceProvider),
   );
 });
 
@@ -20,6 +22,7 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 class SyncOutcome {
   final bool savedToSupabase;
   final bool savedToC2;
+  final bool savedToPlexo;
   final String? error;
 
   /// The Supabase-generated result ID, if the save succeeded.
@@ -28,6 +31,7 @@ class SyncOutcome {
   const SyncOutcome({
     required this.savedToSupabase,
     required this.savedToC2,
+    required this.savedToPlexo,
     this.error,
     this.resultId,
   });
@@ -43,6 +47,7 @@ class SyncService {
   final LocalDatabase db;
   final SupabaseService supabaseService;
   final C2LogbookService c2LogbookService;
+  final PlexoService plexoService;
 
   bool _syncing = false;
 
@@ -59,6 +64,7 @@ class SyncService {
     required this.db,
     required this.supabaseService,
     required this.c2LogbookService,
+    required this.plexoService,
   });
 
   /// Number of results waiting to be synced.
@@ -92,10 +98,11 @@ class SyncService {
     final row = rows.where((r) => r.id == rowId).firstOrNull;
 
     if (row == null) {
-      // Row cleaned up → both synced. Surface actionable error if any.
+      // Row cleaned up → all synced. Surface actionable error if any.
       return SyncOutcome(
         savedToSupabase: true,
         savedToC2: true,
+        savedToPlexo: true,
         error: rowError,
         resultId: resultId,
       );
@@ -106,11 +113,14 @@ class SyncService {
       error = rowError ?? 'Cloud sync failed — will retry';
     } else if (!row.syncedToC2) {
       error = rowError ?? 'C2 Logbook sync failed — will retry';
+    } else if (!row.syncedToPlexo) {
+      error = rowError ?? 'Plexo sync failed — will retry';
     }
 
     return SyncOutcome(
       savedToSupabase: row.syncedToSupabase,
       savedToC2: row.syncedToC2,
+      savedToPlexo: row.syncedToPlexo,
       error: error,
       resultId: resultId,
     );
@@ -167,34 +177,62 @@ class SyncService {
 
       // Step 2: Sync to C2 Logbook if linked and not yet done
       if (!row.syncedToC2) {
-        final isLinked = await c2LogbookService.isLinked();
-        if (isLinked) {
-          if (result.id.isEmpty) {
-            const msg = 'Missing result ID — will retry';
-            _rowErrors[row.id] = msg;
-            return;
-          }
-          final c2Result = await c2LogbookService.syncResult(result);
-          if (c2Result.success) {
-            await db.markSyncedToC2(row.id);
+        try {
+          final isLinked = await c2LogbookService.isLinked();
+          if (isLinked) {
+            if (result.id.isEmpty) {
+              const msg = 'Missing result ID — will retry';
+              _rowErrors[row.id] = msg;
+              return;
+            }
+            final c2Result = await c2LogbookService.syncResult(result);
+            if (c2Result.success) {
+              await db.markSyncedToC2(row.id);
+            } else {
+              final msg = 'C2 sync failed: ${c2Result.error}';
+              lastError = msg;
+              _rowErrors[row.id] = msg;
+              debugPrint(msg);
+            }
           } else {
-            final msg = 'C2 sync failed: ${c2Result.error}';
-            lastError = msg;
-            _rowErrors[row.id] = msg;
-            debugPrint(msg);
+            // Not linked to C2 — mark as "synced" so it gets cleaned up
+            await db.markSyncedToC2(row.id);
           }
-        } else {
-          // Not linked to C2 — mark as "synced" so it gets cleaned up
+        } on C2ActionableException catch (e) {
+          // User-fixable error (e.g. weight not set) — surface message,
+          // mark C2 as done to stop retrying.
+          lastError = '$e';
+          _rowErrors[row.id] = '$e';
+          debugPrint('C2 actionable error for row ${row.id}: $e');
           await db.markSyncedToC2(row.id);
         }
       }
-    } on C2ActionableException catch (e) {
-      // User-fixable error (e.g. weight not set) — surface message,
-      // mark C2 as done to stop retrying (Supabase sync is already complete).
-      lastError = '$e';
-      _rowErrors[row.id] = '$e';
-      debugPrint('C2 actionable error for row ${row.id}: $e');
-      await db.markSyncedToC2(row.id);
+
+      // Step 3: Sync to Plexo if enabled and not yet done
+      if (!row.syncedToPlexo) {
+        try {
+          final isEnabled = await plexoService.isEnabled();
+          if (isEnabled) {
+            final plexoResult = await plexoService.syncResult(result);
+            if (plexoResult.success) {
+              await db.markSyncedToPlexo(row.id);
+            } else {
+              final msg = 'Plexo sync failed: ${plexoResult.error}';
+              lastError = msg;
+              _rowErrors[row.id] = msg;
+              debugPrint(msg);
+            }
+          } else {
+            // Not enabled — mark as done so cleanup proceeds
+            await db.markSyncedToPlexo(row.id);
+          }
+        } catch (e) {
+          final msg = 'Plexo sync error: $e';
+          lastError = msg;
+          _rowErrors[row.id] = msg;
+          debugPrint(msg);
+        }
+      }
     } catch (e) {
       final msg = 'Sync failed for row ${row.id}: $e';
       lastError = msg;
