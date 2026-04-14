@@ -90,6 +90,7 @@ dev-supabase:
 
 dev-mobile:
 	@echo "Starting Flutter app (local IP: $(LOCAL_IP))..."
+	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
 	$(eval PUB_KEY := $(shell supabase status -o env 2>/dev/null | grep ANON_KEY | cut -d= -f2))
 	cd apps/mobile && flutter run \
 		--dart-define=SUPABASE_URL=$(LOCAL_SUPABASE_URL) \
@@ -98,6 +99,7 @@ dev-mobile:
 		--dart-define=WEB_APP_URL=http://$(LOCAL_IP):3000
 
 dev-mobile-cloud:
+	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
 	cd apps/mobile && flutter run \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(SUPABASE_PUBLISHABLE_KEY) \
