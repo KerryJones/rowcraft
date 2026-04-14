@@ -175,7 +175,14 @@ build-apk:
 		--dart-define=PLEXO_USER_ID=$(PLEXO_USER_ID)
 	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"
 
-release:
+bump-version:
+	@cd apps/mobile && \
+	CURRENT=$$(grep '^version:' pubspec.yaml | sed 's/.*+//') && \
+	NEXT=$$((CURRENT + 1)) && \
+	sed -i '' "s/+$$CURRENT/+$$NEXT/" pubspec.yaml && \
+	echo "versionCode: $$CURRENT → $$NEXT"
+
+release: bump-version
 	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
 	cd apps/mobile && flutter build appbundle --release \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \

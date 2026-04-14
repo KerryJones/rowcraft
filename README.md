@@ -7,11 +7,11 @@ Structured rowing workouts for Concept2 PM5. Build, follow, and share workouts.
 ```
 rowcraft/
 ├── apps/
-│   ├── mobile/        Flutter (iOS + Android) — BLE connect, real-time display, workout execution
-│   └── web/           SvelteKit — workout builder, library browser, history
+│   ├── mobile/        Flutter (Android) — BLE connect, real-time display, workout execution
+│   └── web/           Next.js 15 — workout builder, library browser, history
 ├── packages/
 │   └── shared/        Workout JSON schemas, pre-built workout library
-└── supabase/          Migrations, RLS policies, Edge Functions
+└── supabase/          Migrations, RLS policies
 ```
 
 ## Tech Stack
@@ -19,9 +19,9 @@ rowcraft/
 | Layer | Technology |
 |-------|-----------|
 | Mobile | Flutter 3.x + Riverpod + flutter_reactive_ble + Drift (SQLite) |
-| Web | SvelteKit 2 + Svelte 5 + Tailwind CSS 4 |
-| Backend | Supabase (Postgres + Auth + Edge Functions) |
-| Hosting | Vercel (web), App Store + Google Play (mobile) |
+| Web | Next.js 15 (App Router) + React 19 + Tailwind CSS 4 |
+| Backend | Supabase (Postgres + Auth) |
+| Hosting | Vercel (web), Google Play (mobile) |
 
 ## First-Time Setup
 
@@ -30,56 +30,72 @@ rowcraft/
 - Node.js 20+
 - Supabase CLI
 
-### 1. Mobile App
+### Quick Setup
+```bash
+make setup    # sets up supabase + mobile + web
+make dev      # starts supabase, shows instructions
+```
+
+### Manual Setup
+
+#### Mobile
 ```bash
 cd apps/mobile
-flutter create . --org com.rowcraft      # generates ios/ and android/ dirs
+flutter create . --org com.rowcraft --platforms android
 flutter pub get
-dart run build_runner build               # generates Drift DB code (*.g.dart)
-flutter test                              # verify tests pass
-```
-
-### 2. Web App
-```bash
-cd apps/web
-npm install
-cp .env.example .env                      # fill in Supabase credentials
-npm run dev                               # http://localhost:5173
-```
-
-### 3. Supabase
-```bash
-supabase start                            # local Postgres + Auth + Studio
-supabase db reset                         # applies migrations + seeds workout library
-```
-
-## Running Tests
-
-### Mobile
-```bash
-cd apps/mobile
+dart run build_runner build --delete-conflicting-outputs
 flutter test
 ```
 
-### Web
+#### Web
 ```bash
 cd apps/web
-npx vitest run
+npm install
+cp .env.example .env    # fill in Supabase credentials
+npm run dev             # http://localhost:3000
+```
+
+#### Supabase
+```bash
+supabase start
+supabase db reset       # applies migrations + seeds workout library
+```
+
+## Development
+
+```bash
+make dev-mobile-cloud   # Flutter on device with cloud Supabase
+make dev-mobile         # Flutter with local Supabase
+make dev-web            # Next.js at http://localhost:3000
+make list               # show all available make commands
+```
+
+## Testing
+
+```bash
+make test               # run all tests (mobile + web)
+make test-mobile        # flutter test
+make test-web           # vitest
+make check              # typescript type check (web)
+```
+
+## Building
+
+```bash
+make release            # auto-bump versionCode, build signed AAB for Play Store
+make build-apk          # build APK (for testing)
+make build-seeds        # regenerate SQL seeds from YAML workout definitions
 ```
 
 ## Key Design Decisions
 
-- **Dark theme default** — rowers are in gyms/garages, dark UI reduces glare
+- **Dark theme only** — rowers are in gyms/garages, dark UI reduces glare
 - **Offline-first** — workouts persist to SQLite via Drift, sync when online
 - **No Web Bluetooth** — web is for building/browsing only, BLE is mobile-only
 - **Split times in tenths of seconds** — matches Concept2 convention (2:00.0 = 1200)
 - **PM5 data via notifications only** — never use BLE reads on PM5 (returns junk)
-- **Segment colors** — consistent across platforms: work=blue, rest=gray, warmup=green, cooldown=yellow
+- **Android-only for now** — iOS directory not yet configured
 
 ## Pre-Built Workout Library
 
-9 workouts ship in `packages/shared/workouts/`:
-- **Classics**: 2K Test, 5K Test, 30min Steady State, 10x500m
-- **Pete Plan**: Week 1 (Mon/Wed/Fri)
-- **Wolverine Plan**: WOD 1
-- **British Rowing**: Beginner Session 1
+~133 workouts ship in `packages/shared/workouts/`, organized by category. Includes classics (2K Test, 5K Test, 30min Steady State), Pete Plan, Wolverine Plan, and British Rowing sessions.

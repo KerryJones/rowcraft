@@ -301,12 +301,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: const Text('About RowCraft'),
-                  subtitle: const Text('Version 1.0.0'),
+                  subtitle: const Text('Version 0.1.0'),
                   onTap: () {
                     showAboutDialog(
                       context: context,
                       applicationName: 'RowCraft',
-                      applicationVersion: '1.0.0',
+                      applicationVersion: '0.1.0',
                       applicationLegalese:
                           'Structured rowing workouts for Concept2',
                     );

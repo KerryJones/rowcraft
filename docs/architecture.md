@@ -27,7 +27,7 @@ rowcraft/
 │       ├── components/  # shared UI components
 │       └── lib/         # supabase clients (server/client), utils, types
 ├── packages/shared/     # JSON schemas, pre-built workouts
-└── supabase/migrations/ # 12 SQL migrations
+└── supabase/migrations/ # 13 SQL migrations
 ```
 
 ## Data Flows
@@ -42,7 +42,7 @@ Select workout → pair PM5 via BLE → receive real-time data via notifications
 `workoutLibraryProvider` → `WorkoutRepository.getWorkouts()` reads from `CachedWorkouts` SQLite table (instant). If cache is non-empty, a background `refreshWorkouts()` call updates it silently. If empty (first launch), waits for network. Pull-to-refresh forces an explicit refresh then re-reads cache.
 
 ### Result Sync
-Completed workout → `PendingResults` table (Drift SQLite) → `sync_service` uploads to Supabase → optionally pushes to C2 Logbook API.
+Completed workout → `PendingResults` table (Drift SQLite) → `sync_service` uploads to Supabase → optionally pushes to C2 Logbook API → optionally syncs to Plexo.
 
 ### Training Plans
 Browse plans → start plan → complete sessions → track progress in `user_plan_progress` JSONB.
