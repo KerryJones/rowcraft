@@ -193,4 +193,7 @@ release: bump-version
 		--dart-define=PLEXO_API_URL=$(PLEXO_API_URL) \
 		--dart-define=PLEXO_API_KEY=$(PLEXO_API_KEY) \
 		--dart-define=PLEXO_USER_ID=$(PLEXO_USER_ID)
-	@echo "AAB at apps/mobile/build/app/outputs/bundle/release/app-release.aab"
+	@mkdir -p releases
+	@VERSION=$$(grep '^version:' apps/mobile/pubspec.yaml | sed 's/version: //') && \
+	cp apps/mobile/build/app/outputs/bundle/release/app-release.aab "releases/rowcraft-$$VERSION.aab" && \
+	echo "AAB at releases/rowcraft-$$VERSION.aab"
