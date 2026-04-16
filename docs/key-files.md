@@ -37,7 +37,9 @@
 | `app/workouts/[id]/page.tsx` | Workout detail with hero graph + OG meta |
 | `app/plans/builder/` | Training plan builder |
 | `app/profile/page.tsx` | Profile page (server component, requires auth) |
-| `app/profile/profile-client.tsx` | Profile client component (FTP, C2 link) |
+| `app/profile/profile-client.tsx` | Profile client component (FTP, C2 link, delete account link) |
+| `app/delete-account/page.tsx` | Account deletion page (server component, shows form if authed) |
+| `app/delete-account/delete-form.tsx` | Delete confirmation form (type "delete all my data", calls `delete_user_account` RPC) |
 | `app/auth/callback/page.tsx` | Google OAuth callback (server-side token exchange) |
 | `app/api/c2/` | C2 Logbook OAuth + sync (server-side) |
 
@@ -57,6 +59,10 @@
 | `features/workout/workout_screen_compact.dart` | Active workout UI (compact mode): 3×2 stat tile grid, HR zone gauge tile |
 | `features/workout/hr_zone_gauge.dart` | Garmin-style HR zone gauge (Syncfusion SfRadialGauge): 270° arc with 5 colored zone ranges, active zone highlighted, marker pointer, BPM + zone name centered inside |
 | `features/workout/workout_summary_screen.dart` | Post-workout summary (stats grid, combined pace+HR timeline chart, HR zone distribution bar, splits, save/discard) |
+| `features/workout/ftp_result_screen.dart` | FTP test result screen (save FTP toggle, combined workout save/discard, save progress overlay) |
+| `features/workout/save_auto_nav_mixin.dart` | Mixin for save progress overlay auto-navigation (shared by FTP result + summary screens) |
+| `widgets/discard_workout_dialog.dart` | Shared discard workout confirmation dialog |
+| `widgets/save_discard_buttons.dart` | Shared Save Workout + Discard button pair |
 | `models/workout_time_sample.dart` | Time-series data point (1/sec during workout, for summary charts) |
 | `features/workout/pre_workout_screen.dart` | PM5 connection gate before starting |
 | `features/workout/rowing_animation.dart` | Animated stick-figure rower (CustomPainter) |
