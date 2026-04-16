@@ -5,6 +5,7 @@ node_modules/
 
 # Build outputs
 build/
+releases/
 .svelte-kit/
 .next/
 .vercel/
