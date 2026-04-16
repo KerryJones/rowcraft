@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
 import '../../services/audio_service.dart';
 import '../../utils/pace_utils.dart';
+import '../../widgets/discard_workout_dialog.dart';
+import '../../widgets/save_discard_buttons.dart';
+import 'save_auto_nav_mixin.dart';
+import 'workout_provider.dart';
+import 'workout_summary_screen.dart' show SaveProgressOverlay;
 
 /// Full-screen FTP test result, shown inline in the workout screen
-/// after an FTP test completes (replaces the summary until save/skip).
-class FtpResultScreen extends StatefulWidget {
+/// after an FTP test completes. Handles both FTP saving and workout
+/// save/discard — the user never sees WorkoutSummaryContent for FTP tests.
+class FtpResultScreen extends ConsumerStatefulWidget {
   final int calculatedFtp;
   final String calculationBasis;
   final int? previousFtpWatts;
@@ -15,15 +22,11 @@ class FtpResultScreen extends StatefulWidget {
   final int? rampStagesCompleted;
   final int? rampTotalStages;
   final int? rampPeakWatts;
-  final void Function(int watts) onSave;
-  final VoidCallback onSkip;
 
   const FtpResultScreen({
     super.key,
     required this.calculatedFtp,
     required this.calculationBasis,
-    required this.onSave,
-    required this.onSkip,
     this.previousFtpWatts,
     this.isRamp = false,
     this.rampStagesCompleted,
@@ -32,16 +35,17 @@ class FtpResultScreen extends StatefulWidget {
   });
 
   @override
-  State<FtpResultScreen> createState() => _FtpResultScreenState();
+  ConsumerState<FtpResultScreen> createState() => _FtpResultScreenState();
 }
 
-class _FtpResultScreenState extends State<FtpResultScreen>
-    with TickerProviderStateMixin {
+class _FtpResultScreenState extends ConsumerState<FtpResultScreen>
+    with TickerProviderStateMixin, SaveAutoNavMixin {
   late final AnimationController _trophyController;
   late final AnimationController _revealController;
-  late final TextEditingController _overrideController;
-  bool _showOverride = false;
-  bool _userEdited = false;
+  late final Animation<double> _trophyScale;
+  late final Animation<double> _revealOpacity;
+  late final Animation<double> _revealScale;
+  bool _saveFtp = true;
 
   @override
   void initState() {
@@ -56,8 +60,16 @@ class _FtpResultScreenState extends State<FtpResultScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _overrideController = TextEditingController(
-      text: formatPaceNoTenths(wattsToPaceTenths(widget.calculatedFtp)),
+    _trophyScale = CurvedAnimation(
+      parent: _trophyController,
+      curve: Curves.elasticOut,
+    );
+    _revealOpacity = CurvedAnimation(
+      parent: _revealController,
+      curve: Curves.easeOut,
+    );
+    _revealScale = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _revealController, curve: Curves.easeOut),
     );
 
     // Start animations
@@ -74,20 +86,22 @@ class _FtpResultScreenState extends State<FtpResultScreen>
   void dispose() {
     _trophyController.dispose();
     _revealController.dispose();
-    _overrideController.dispose();
+    cancelAutoNavTimer();
     super.dispose();
   }
 
-  int _resolveWatts() {
-    if (_userEdited) {
-      final tenths = parsePace(_overrideController.text);
-      return tenths != null ? paceTenthsToWatts(tenths) : widget.calculatedFtp;
-    }
-    return widget.calculatedFtp;
+  void _onSaveWorkout() {
+    startSaveOverlay();
+    ref.read(workoutSessionProvider.notifier).saveResult(
+          ftpWatts: _saveFtp ? widget.calculatedFtp : null,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(workoutSessionProvider);
+    ref.listen(workoutSessionProvider, handleSaveProgressChange);
+
     final ftpPaceTenths = wattsToPaceTenths(widget.calculatedFtp);
 
     final hasPrevious = widget.previousFtpWatts != null &&
@@ -109,18 +123,17 @@ class _FtpResultScreenState extends State<FtpResultScreen>
                 : RowCraftTheme.warningAmber)
         : null;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
 
               // Trophy icon with scale animation
               ScaleTransition(
-                scale: CurvedAnimation(
-                  parent: _trophyController,
-                  curve: Curves.elasticOut,
-                ),
+                scale: _trophyScale,
                 child: const Icon(
                   Icons.emoji_events,
                   size: 72,
@@ -185,17 +198,9 @@ class _FtpResultScreenState extends State<FtpResultScreen>
 
               // FTP pace with fade-in + scale reveal
               FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: _revealController,
-                  curve: Curves.easeOut,
-                ),
+                opacity: _revealOpacity,
                 child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                    CurvedAnimation(
-                      parent: _revealController,
-                      curve: Curves.easeOut,
-                    ),
-                  ),
+                  scale: _revealScale,
                   child: Text(
                     formatPaceNoTenths(ftpPaceTenths),
                     style: GoogleFonts.jetBrainsMono(
@@ -265,92 +270,63 @@ class _FtpResultScreenState extends State<FtpResultScreen>
               ],
 
               const SizedBox(height: 32),
+              _divider(),
+              const SizedBox(height: 24),
 
-              // Override field (expandable)
-              GestureDetector(
-                onTap: () => setState(() => _showOverride = !_showOverride),
+              // "Save new FTP?" toggle
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: RowCraftTheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      _showOverride
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      size: 18,
-                      color: RowCraftTheme.subtleGrey,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      'Override FTP',
+                      'Save new FTP?',
                       style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: RowCraftTheme.subtleGrey,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: RowCraftTheme.metricWhite,
                       ),
+                    ),
+                    Switch(
+                      value: _saveFtp,
+                      onChanged: (v) => setState(() => _saveFtp = v),
+                      activeTrackColor: RowCraftTheme.successGreen,
                     ),
                   ],
                 ),
               ),
-              if (_showOverride) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: 180,
-                  child: TextField(
-                    controller: _overrideController,
-                    keyboardType: TextInputType.text,
-                    textAlign: TextAlign.center,
-                    onChanged: (_) => setState(() => _userEdited = true),
-                    decoration: const InputDecoration(
-                      labelText: 'FTP pace (m:ss)',
-                      suffixText: '/500m',
-                    ),
-                  ),
-                ),
-              ],
 
-              const SizedBox(height: 36),
+              const SizedBox(height: 32),
 
-              // Save button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    final watts = _resolveWatts();
-                    if (watts > 0) widget.onSave(watts);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: RowCraftTheme.successGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    'Save FTP',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Skip button
-              TextButton(
-                onPressed: widget.onSkip,
-                child: Text(
-                  'Skip',
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: RowCraftTheme.subtleGrey,
-                  ),
-                ),
+              SaveDiscardButtons(
+                onSave: _onSaveWorkout,
+                onDiscard: () => showDiscardWorkoutDialog(context, ref),
               ),
 
-          const SizedBox(height: 24),
-        ],
-      ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+
+        // Save progress overlay
+        if (showSaveOverlay)
+          Positioned.fill(
+            child: SaveProgressOverlay(
+              saveProgress: session.saveProgress,
+              syncError: session.syncError,
+              onRetry: () {
+                ref.read(workoutSessionProvider.notifier).saveResult(
+                      ftpWatts: _saveFtp ? widget.calculatedFtp : null,
+                    );
+              },
+            ),
+          ),
+      ],
     );
   }
 

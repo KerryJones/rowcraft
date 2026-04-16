@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -12,6 +11,9 @@ import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
 import '../../utils/segment_color.dart';
 import '../../models/workout_time_sample.dart';
+import '../../widgets/discard_workout_dialog.dart';
+import '../../widgets/save_discard_buttons.dart';
+import 'save_auto_nav_mixin.dart';
 import 'workout_provider.dart';
 
 // ---------------------------------------------------------------------------
@@ -51,19 +53,19 @@ class WorkoutSummaryContent extends ConsumerStatefulWidget {
       _WorkoutSummaryContentState();
 }
 
-class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
-  bool _showSaveOverlay = false;
-  Timer? _autoNavTimer;
-
+class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent>
+    with SaveAutoNavMixin {
   @override
   void dispose() {
-    _autoNavTimer?.cancel();
+    cancelAutoNavTimer();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(workoutSessionProvider);
+    ref.listen(workoutSessionProvider, handleSaveProgressChange);
+
     final result = session.pendingResult;
     final pm5 = session.pm5Data;
     final timeSamples = session.timeSamples;
@@ -82,26 +84,6 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
     // Check if HR data exists in time samples
     final hasHrData = timeSamples != null &&
         timeSamples.any((s) => s.heartRate != null && s.heartRate! > 0);
-
-    // Cancel auto-nav if an error appears after the timer was scheduled.
-    if (_autoNavTimer != null &&
-        (session.syncError != null ||
-            session.saveProgress == SaveProgress.error)) {
-      _autoNavTimer?.cancel();
-      _autoNavTimer = null;
-    }
-
-    // Auto-navigate only on full success (C2 synced or not linked).
-    final c2Ok = session.c2SyncStatus == C2SyncStatus.synced ||
-        session.c2SyncStatus == C2SyncStatus.notLinked;
-    if (session.saveProgress == SaveProgress.done &&
-        session.syncError == null &&
-        c2Ok &&
-        _autoNavTimer == null) {
-      _autoNavTimer = Timer(const Duration(seconds: 5), () {
-        if (mounted) context.go('/');
-      });
-    }
 
     return Stack(
       children: [
@@ -178,14 +160,14 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
         ),
 
         // Save/discard buttons at the bottom
-        if (!_showSaveOverlay)
+        if (!showSaveOverlay)
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
             child: _SaveDiscardBar(
               onSave: () {
-                setState(() => _showSaveOverlay = true);
+                startSaveOverlay();
                 ref.read(workoutSessionProvider.notifier).saveResult();
               },
               onDiscard: () => _showDiscardConfirmation(context),
@@ -193,9 +175,9 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
           ),
 
         // Save progress overlay
-        if (_showSaveOverlay)
+        if (showSaveOverlay)
           Positioned.fill(
-            child: _SaveProgressOverlay(
+            child: SaveProgressOverlay(
               saveProgress: session.saveProgress,
               syncError: session.syncError,
               onRetry: () {
@@ -208,73 +190,7 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent> {
   }
 
   void _showDiscardConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: RowCraftTheme.surfaceContainer,
-        title: Text(
-          'Discard workout?',
-          style: GoogleFonts.inter(
-            color: RowCraftTheme.metricWhite,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'This workout result will be permanently deleted.',
-          style: GoogleFonts.inter(color: RowCraftTheme.subtleGrey),
-        ),
-        actions: [
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  icon: const Icon(Icons.arrow_back, size: 24),
-                  label: Text(
-                    'Cancel',
-                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: RowCraftTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    ref.read(workoutSessionProvider.notifier).discardResult();
-                    if (context.mounted) context.go('/');
-                  },
-                  icon: const Icon(Icons.delete_outline, size: 24),
-                  label: Text(
-                    'Discard',
-                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: RowCraftTheme.errorRose,
-                    side: const BorderSide(color: RowCraftTheme.errorRose, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    showDiscardWorkoutDialog(context, ref);
   }
 }
 
@@ -947,50 +863,7 @@ class _SaveDiscardBar extends StatelessWidget {
           top: BorderSide(color: RowCraftTheme.surfaceContainerHigh),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton.icon(
-              onPressed: onSave,
-              icon: const Icon(Icons.save, size: 24),
-              label: Text(
-                'Save Workout',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: RowCraftTheme.successGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: OutlinedButton.icon(
-              onPressed: onDiscard,
-              icon: const Icon(Icons.delete_outline, size: 24),
-              label: Text(
-                'Discard',
-                style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: RowCraftTheme.errorRose,
-                side: const BorderSide(color: RowCraftTheme.errorRose, width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: SaveDiscardButtons(onSave: onSave, onDiscard: onDiscard),
     );
   }
 }
@@ -999,12 +872,13 @@ class _SaveDiscardBar extends StatelessWidget {
 // Save Progress Overlay
 // ---------------------------------------------------------------------------
 
-class _SaveProgressOverlay extends ConsumerWidget {
+class SaveProgressOverlay extends ConsumerWidget {
   final SaveProgress saveProgress;
   final String? syncError;
   final VoidCallback onRetry;
 
-  const _SaveProgressOverlay({
+  const SaveProgressOverlay({
+    super.key,
     required this.saveProgress,
     this.syncError,
     required this.onRetry,

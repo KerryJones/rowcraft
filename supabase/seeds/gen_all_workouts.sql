@@ -68,7 +68,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   '2K Prep Wk3 Easy Recovery',
   'Week 3: 20-minute easy recovery row at Z1.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,recovery,week-3}',
   true
 );
@@ -139,8 +139,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000005',
   '20-Minute FTP Test',
   'Functional Threshold Power test. Row the hardest pace you can sustain for 20 minutes.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":null,"target_stroke_rate":26,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  'single_time',
+  '[{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
   '{ftp,test,benchmark,threshold}',
   true
 );
@@ -201,7 +201,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'FTP Builder Wk1 Recovery',
   'Week 1: Easy 20-minute recovery row at Z1.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,recovery,week-1}',
   true
 );
@@ -361,7 +361,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'FTP Builder Wk6 Recovery',
   'Week 6: Easy 20-minute recovery row at Z1.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,recovery,week-6}',
   true
 );
@@ -563,7 +563,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk1 Day1',
   'Week 1 Day 1: Easy 10 minutes at recovery pace to get back on the erg.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{return-to-rowing,recovery,week-1}',
   true
 );
@@ -583,7 +583,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk1 Day3',
   'Week 1 Day 3: Easy 15 minutes at recovery pace.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{return-to-rowing,recovery,week-1}',
   true
 );
@@ -866,7 +866,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Active Recovery 30',
   '30 minutes with gentle rate progression. Easy aerobic flush.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":16,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":16,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":360,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,30-min}',
   true
 );
@@ -876,7 +876,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Easy Distance 4K',
   '4K at easy pace. Short and light.',
   'variable_intervals',
-  '[{"duration_type":"distance","duration_value":500,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":3000,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":500,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"distance","duration_value":500,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":3000,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":500,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,distance}',
   true
 );
@@ -886,7 +886,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Easy Spin',
   '20 minutes of easy spinning. No pressure, just move.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,easy,beginner-friendly}',
   true
 );
@@ -896,7 +896,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Flush Row',
   'Quick 20-minute flush. Perfect for active rest days.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,short,flush}',
   true
 );
@@ -905,8 +905,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   '10000000-0000-0000-0000-000000000004',
   'Light Intervals',
   'Gentle intervals with rest. Keep it conversational.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,intervals}',
   true
 );
@@ -916,7 +916,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Pause and Breathe',
   '5-minute blocks with generous rest. Practice breathing rhythm.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,breathing}',
   true
 );
@@ -926,7 +926,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Post-Race Recovery',
   'Very light session after a hard effort. Move blood, don''t make power.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,post-race}',
   true
 );
@@ -936,7 +936,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Recovery Paddle',
   '25 minutes at recovery pace. Gentle strokes, easy breathing.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1500,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1500,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,easy}',
   true
 );
@@ -946,7 +946,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Stroke Rate Ladder (Easy)',
   'Rate changes at easy pace. Focus on stroke mechanics at each rate.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":16,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":16,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":16,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":18,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":55,"target_stroke_rate":16,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,technique,rate-ladder}',
   true
 );
@@ -956,7 +956,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Technique Focus',
   'Alternate low and moderate rates at easy pace. Focus on body position.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{recovery,technique}',
   true
 );

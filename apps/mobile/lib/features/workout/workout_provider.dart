@@ -56,8 +56,7 @@ class WorkoutSessionState {
   final bool isLoading;
   final String? _error;
 
-  /// FTP dialog state
-  final bool showFtpDialog;
+  /// FTP result state
   final int? calculatedFtp;
   final String? ftpCalculationBasis;
 
@@ -103,7 +102,6 @@ class WorkoutSessionState {
     this.workoutTags = const [],
     this.isLoading = false,
     String? error,
-    this.showFtpDialog = false,
     this.calculatedFtp,
     this.ftpCalculationBasis,
     this.previousFtpWatts,
@@ -130,7 +128,6 @@ class WorkoutSessionState {
     List<String>? workoutTags,
     bool? isLoading,
     Object? error = _sentinel,
-    bool? showFtpDialog,
     int? calculatedFtp,
     String? ftpCalculationBasis,
     Object? previousFtpWatts = _sentinel,
@@ -156,7 +153,6 @@ class WorkoutSessionState {
       workoutTags: workoutTags ?? this.workoutTags,
       isLoading: isLoading ?? this.isLoading,
       error: error == _sentinel ? _error : error as String?,
-      showFtpDialog: showFtpDialog ?? this.showFtpDialog,
       calculatedFtp: calculatedFtp ?? this.calculatedFtp,
       ftpCalculationBasis: ftpCalculationBasis ?? this.ftpCalculationBasis,
       previousFtpWatts:
@@ -195,6 +191,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
   /// Supabase-assigned result ID, set after successful save.
   String? _savedResultId;
+
+  /// Guards against retry re-queuing the same result to SQLite.
+  bool _resultQueued = false;
   StreamSubscription<WorkoutEngineState>? _engineSub;
   StreamSubscription<PM5Data>? _pm5BleSubscription;
   StreamSubscription<int>? _hrBleSubscription;
@@ -339,6 +338,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _engine?.dispose();
     _engine = null;
     _startedAt = null;
+    _resultQueued = false;
+    _savedResultId = null;
     _suppressBleData = true;
     _lastStandaloneHr = null;
     _loadGeneration++;
@@ -370,13 +371,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
       if (_loadGeneration != myGen) return; // Superseded by a newer load
 
-      final isFtpTest = workout.tags.contains('ftp');
       final isRampTest = workout.tags.contains('ramp');
       _engine = WorkoutEngine(
         workout: workout,
         pm5Stream: _pm5Controller.stream,
         ftpWatts: ftpWatts,
-        paceFailThreshold: isFtpTest ? 10 : 0,
+        paceFailThreshold: isRampTest ? 10 : 0,
         autoPauseFinishSeconds: isRampTest ? 15 : 0,
       );
 
@@ -573,7 +573,6 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
       if (ftp > 0) {
         state = state.copyWith(
-          showFtpDialog: true,
           calculatedFtp: ftp,
           ftpCalculationBasis: basis,
           previousFtpWatts: state.ftpWatts,
@@ -586,38 +585,60 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   }
 
   /// Save the pending result (queue for sync, record plan progress).
-  Future<void> saveResult() async {
+  /// If [ftpWatts] is provided, saves the FTP record after the result is
+  /// persisted so that [sourceResultId] links the two correctly.
+  /// Idempotent: retries sync existing rows instead of re-queuing.
+  Future<void> saveResult({int? ftpWatts}) async {
     final result = state.pendingResult;
-    if (result == null) return;
+    if (result == null && !_resultQueued) return;
 
     state = state.copyWith(saveProgress: SaveProgress.saving);
-    _savedResultId = null;
 
     try {
-      // Queue for offline-first sync (SQLite write + Supabase attempt)
-      final outcome = await _syncService.queueResult(result);
-      state = state.copyWith(saveProgress: SaveProgress.savedLocally);
+      final SyncOutcome outcome;
 
-      // Record plan progress if launched from a training plan
-      if (state.planId != null &&
-          state.planWeek != null &&
-          state.planSession != null) {
-        try {
-          await _supabaseService.completePlanSession(
-            state.planId!,
-            state.planWeek!,
-            state.planSession!,
-            null,
-          );
-          _ref.invalidate(planProgressProvider(state.planId!));
-          _ref.invalidate(userPlanProgressProvider);
-        } catch (_) {
-          // Non-critical — don't block workout completion
+      if (!_resultQueued) {
+        // First attempt: queue to SQLite + attempt sync
+        outcome = await _syncService.queueResult(result!);
+        _resultQueued = true;
+        _savedResultId = outcome.resultId;
+        _ref.invalidate(workoutHistoryProvider);
+
+        // Record plan progress (once only)
+        if (state.planId != null &&
+            state.planWeek != null &&
+            state.planSession != null) {
+          try {
+            await _supabaseService.completePlanSession(
+              state.planId!,
+              state.planWeek!,
+              state.planSession!,
+              null,
+            );
+            _ref.invalidate(planProgressProvider(state.planId!));
+            _ref.invalidate(userPlanProgressProvider);
+          } catch (_) {
+            // Non-critical — don't block workout completion
+          }
+        }
+
+        // Save FTP after result ID is available
+        if (ftpWatts != null && ftpWatts > 0) {
+          try {
+            await saveFtp(ftpWatts);
+          } catch (_) {
+            // FTP save failed — workout was already saved
+          }
+        }
+      } else {
+        // Retry: sync existing pending rows without re-queuing
+        outcome = await _syncService.retrySync();
+        if (outcome.resultId != null) {
+          _savedResultId = outcome.resultId;
         }
       }
 
-      _savedResultId = outcome.resultId;
-      _ref.invalidate(workoutHistoryProvider);
+      state = state.copyWith(saveProgress: SaveProgress.savedLocally);
 
       // Cloud status from actual sync outcome
       if (outcome.savedToSupabase) {
@@ -675,13 +696,6 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     await _supabaseService.saveFtpRecord(record);
     await _supabaseService.updateProfileFtp(watts);
-
-    state = state.copyWith(showFtpDialog: false);
-  }
-
-  /// Dismiss FTP dialog without saving.
-  void dismissFtpDialog() {
-    state = state.copyWith(showFtpDialog: false);
   }
 
   @override

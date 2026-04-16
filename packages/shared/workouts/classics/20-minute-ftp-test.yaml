@@ -3,13 +3,10 @@ title: "20-Minute FTP Test"
 description: "Functional Threshold Power test. Row the hardest pace you can sustain for 20 minutes."
 difficulty: intermediate
 tags: [ftp, test, benchmark, threshold]
-estimated_duration_minutes: 30
+estimated_duration_minutes: 22
 segments:
-  - duration: "5:00"
-    intensity: 60%
+  - duration: "1:00"
     stroke_rate: 20
   - duration: "20:00"
-    stroke_rate: 26
-  - duration: "5:00"
-    intensity: 60%
+  - duration: "1:00"
     stroke_rate: 20

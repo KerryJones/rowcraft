@@ -402,7 +402,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       body: SafeArea(
         child: engineState.phase == WorkoutPhase.finished &&
                 session.pendingResult != null
-            ? (session.showFtpDialog && session.calculatedFtp != null
+            ? (session.calculatedFtp != null
                 ? FtpResultScreen(
                     calculatedFtp: session.calculatedFtp!,
                     calculationBasis: session.ftpCalculationBasis ?? '',
@@ -411,12 +411,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                     rampStagesCompleted: session.rampStagesCompleted,
                     rampTotalStages: session.rampTotalStages,
                     rampPeakWatts: session.rampPeakWatts,
-                    onSave: (watts) {
-                      ref.read(workoutSessionProvider.notifier).saveFtp(watts);
-                    },
-                    onSkip: () {
-                      ref.read(workoutSessionProvider.notifier).dismissFtpDialog();
-                    },
                   )
                 : const WorkoutSummaryContent())
             : Stack(

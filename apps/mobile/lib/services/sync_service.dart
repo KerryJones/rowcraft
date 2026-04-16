@@ -126,6 +126,36 @@ class SyncService {
     );
   }
 
+  /// Retry syncing pending results without re-queuing.
+  /// Returns a [SyncOutcome] reflecting the current sync status.
+  Future<SyncOutcome> retrySync() async {
+    _rowErrors.clear();
+    _rowResultIds.clear();
+
+    await syncPendingResults();
+
+    final pending = await db.getPendingResults();
+    if (pending.isEmpty) {
+      return const SyncOutcome(
+        savedToSupabase: true,
+        savedToC2: true,
+        savedToPlexo: true,
+      );
+    }
+
+    final row = pending.last;
+    final error = _rowErrors[row.id];
+    final resultId = _rowResultIds[row.id];
+
+    return SyncOutcome(
+      savedToSupabase: row.syncedToSupabase,
+      savedToC2: row.syncedToC2,
+      savedToPlexo: row.syncedToPlexo,
+      error: error,
+      resultId: resultId,
+    );
+  }
+
   /// Attempt to sync all pending results to Supabase and C2 Logbook.
   ///
   /// This is safe to call multiple times — it uses a lock to prevent

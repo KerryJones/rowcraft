@@ -6,7 +6,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk1 Day1',
   'Week 1 Day 1: Easy 10 minutes at recovery pace to get back on the erg.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":600,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{return-to-rowing,recovery,week-1}',
   true
 );
@@ -26,7 +26,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'Return to Rowing Wk1 Day3',
   'Week 1 Day 3: Easy 15 minutes at recovery pace.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":900,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{return-to-rowing,recovery,week-1}',
   true
 );

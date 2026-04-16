@@ -66,7 +66,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   '2K Prep Wk3 Easy Recovery',
   'Week 3: 20-minute easy recovery row at Z1.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,recovery,week-3}',
   true
 );

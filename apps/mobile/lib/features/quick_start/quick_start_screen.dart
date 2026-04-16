@@ -30,7 +30,9 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
       if (mounted) {
         context.push('/workout/$_justRowWorkoutId').then((_) {
           _pushed = false;
-          if (mounted) _navigateToWorkout();
+          if (mounted) {
+            StatefulNavigationShell.maybeOf(context)?.goBranch(0);
+          }
         });
       } else {
         _pushed = false;

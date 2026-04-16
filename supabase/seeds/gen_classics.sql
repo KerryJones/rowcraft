@@ -15,8 +15,8 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000005',
   '20-Minute FTP Test',
   'Functional Threshold Power test. Row the hardest pace you can sustain for 20 minutes.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1200,"target_intensity":null,"target_stroke_rate":26,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  'single_time',
+  '[{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
   '{ftp,test,benchmark,threshold}',
   true
 );
