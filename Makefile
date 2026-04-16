@@ -8,7 +8,7 @@ LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/nul
 LOCAL_SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.app
 
-.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds release
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds apk release
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ list:
 	@echo ""
 	@echo "Build:"
 	@echo "  make build-seeds      Generate SQL seeds from YAML workout definitions"
-	@echo "  make build-apk        Build Android APK"
+	@echo "  make apk              Build Android APK"
 	@echo "  make release          Build signed AAB for Play Store"
 	@echo ""
 	@echo "Utilities:"
@@ -163,7 +163,8 @@ studio:
 build-seeds:
 	cd scripts && npx tsx build-seeds.ts
 
-build-apk:
+apk:
+	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
 	cd apps/mobile && flutter build apk --release \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
 		--dart-define=SUPABASE_PUBLISHABLE_KEY=$(SUPABASE_PUBLISHABLE_KEY) \
@@ -173,7 +174,10 @@ build-apk:
 		--dart-define=PLEXO_API_URL=$(PLEXO_API_URL) \
 		--dart-define=PLEXO_API_KEY=$(PLEXO_API_KEY) \
 		--dart-define=PLEXO_USER_ID=$(PLEXO_USER_ID)
-	@echo "APK at apps/mobile/build/app/outputs/flutter-apk/app-release.apk"
+	@mkdir -p apks
+	@VERSION=$$(grep '^version:' apps/mobile/pubspec.yaml | sed 's/version: //') && \
+	cp apps/mobile/build/app/outputs/flutter-apk/app-release.apk "apks/rowcraft-$$VERSION.apk" && \
+	echo "APK at apks/rowcraft-$$VERSION.apk"
 
 bump-version:
 	@cd apps/mobile && \
