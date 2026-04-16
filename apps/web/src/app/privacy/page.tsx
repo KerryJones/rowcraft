@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — RowCraft',
@@ -83,9 +84,10 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white">6. Data Retention</h2>
           <p>
-            We retain your data for as long as your account is active. If you delete your account, all associated
-            personal data and workout history will be permanently deleted. Public workouts you created may be retained
-            in anonymized form.
+            We retain your data for as long as your account is active. If you{' '}
+            <Link href="/delete-account" className="text-blue-400 hover:text-blue-300">delete your account</Link>,
+            all associated personal data and workout history will be permanently deleted. Public workouts you created
+            may be retained in anonymized form.
           </p>
         </section>
 
@@ -101,8 +103,12 @@ export default function PrivacyPage() {
               <strong>Correct your data:</strong> Update your profile information at any time through the Service.
             </li>
             <li>
-              <strong>Delete your data:</strong> Request deletion of your account and all associated data by
-              contacting us.
+              <strong>Delete your data:</strong>{' '}
+              <Link href="/delete-account" className="text-blue-400 hover:text-blue-300">Delete your account</Link>{' '}
+              and all associated data at any time, or contact us at{' '}
+              <a href="mailto:support@rowcraft.app" className="text-blue-400 hover:text-blue-300">
+                support@rowcraft.app
+              </a>.
             </li>
             <li>
               <strong>Export your data:</strong> Request a copy of your workout data by contacting us.
