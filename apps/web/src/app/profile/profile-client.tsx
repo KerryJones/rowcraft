@@ -7,7 +7,8 @@ import type { Profile } from '@/lib/types';
 import { HR_ZONES } from '@/lib/utils/ftp';
 import { wattsToPaceTenths, paceTenthsToWatts, formatWatts } from '@/lib/utils/ftp';
 import { formatPace, parsePace } from '@/lib/utils/format';
-import { Save, Loader2, LogOut, Link as LinkIcon, Unlink, CheckCircle2 } from 'lucide-react';
+import { Save, Loader2, LogOut, Link as LinkIcon, Unlink, CheckCircle2, Trash2 } from 'lucide-react';
+import NextLink from 'next/link';
 
 const C2_ERROR_MESSAGES: Record<string, string> = {
   c2_oauth_failed: 'Concept2 authorization failed. Please try again.',
@@ -329,6 +330,15 @@ function ProfilePageInner() {
         <LogOut className="h-4 w-4" />
         Sign Out
       </button>
+
+      {/* Delete account */}
+      <NextLink
+        href="/delete-account"
+        className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-500 transition-colors hover:text-red-400"
+      >
+        <Trash2 className="h-3 w-3" />
+        Delete Account
+      </NextLink>
     </div>
   );
 }
