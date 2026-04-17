@@ -1,19 +1,21 @@
 import type { WorkoutSegment } from '@/lib/types';
 import { formatDuration, formatDistance } from '@/lib/utils/format';
-import { computeTotalTime, computeTotalDistance, computeSegmentCount } from '@/lib/utils/workout';
+import { getEffectiveFtp } from '@/lib/utils/ftp';
+import { computeTotalDistance, computeSegmentCount, estimateTotalSeconds } from '@/lib/utils/workout';
 
 interface StatsBarProps {
   segments: WorkoutSegment[];
   forkCount?: number;
+  ftpWatts?: number | null;
 }
 
-export function StatsBar({ segments, forkCount }: StatsBarProps) {
-  const totalTime = computeTotalTime(segments);
+export function StatsBar({ segments, forkCount, ftpWatts }: StatsBarProps) {
   const totalDistance = computeTotalDistance(segments);
+  const estimatedSecs = estimateTotalSeconds(segments, getEffectiveFtp(ftpWatts ?? null));
   const segmentCount = computeSegmentCount(segments);
 
   const stats = [
-    ...(totalTime !== null ? [{ label: 'TIME', value: formatDuration(totalTime) }] : []),
+    { label: 'DURATION', value: formatDuration(estimatedSecs) },
     ...(totalDistance !== null ? [{ label: 'DISTANCE', value: formatDistance(totalDistance) }] : []),
     { label: 'SEGMENTS', value: String(segmentCount) },
     ...(forkCount !== undefined ? [{ label: 'FORKS', value: String(forkCount) }] : []),

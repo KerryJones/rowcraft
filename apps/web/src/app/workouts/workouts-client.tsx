@@ -8,6 +8,7 @@ import { WorkoutCard } from '@/components/ui/workout-card';
 import { CategoryCards, EMPTY_FILTERS, hasActiveFilters, getCollectionByKey } from '@/components/ui/category-cards';
 import type { CategoryFilters, DurationBucket, DistanceBucket } from '@/components/ui/category-cards';
 import { Pagination } from '@/components/ui/pagination';
+import { getEffectiveFtp } from '@/lib/utils/ftp';
 import { computeTotalDistance, estimateTotalMinutes } from '@/lib/utils/workout';
 import { Search, Plus, ArrowLeft } from 'lucide-react';
 
@@ -15,8 +16,8 @@ type SortKey = 'newest' | 'most_forked' | 'duration';
 
 const PAGE_SIZE = 12;
 
-function matchesDuration(workout: Workout, bucket: DurationBucket): boolean {
-  const minutes = estimateTotalMinutes(workout.segments);
+function matchesDuration(workout: Workout, bucket: DurationBucket, ftpWatts?: number): boolean {
+  const minutes = estimateTotalMinutes(workout.segments, ftpWatts);
   switch (bucket) {
     case 'under30': return minutes < 30;
     case '30to60': return minutes >= 30 && minutes < 60;
@@ -43,6 +44,7 @@ interface WorkoutsClientProps {
 
 export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientProps) {
   const router = useRouter();
+  const ftp = getEffectiveFtp(ftpWatts ?? null);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<CategoryFilters>(EMPTY_FILTERS);
   const [sortKey, setSortKey] = useState<SortKey>('newest');
@@ -65,7 +67,7 @@ export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientPro
         if (!matchesTitle && !matchesDesc && !matchesTags) return false;
       }
 
-      if (filters.duration && !matchesDuration(w, filters.duration)) return false;
+      if (filters.duration && !matchesDuration(w, filters.duration, ftp)) return false;
       if (filters.distance && !matchesDistance(w, filters.distance)) return false;
 
       if (filters.zones.length > 0) {
@@ -85,7 +87,7 @@ export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientPro
     } else if (sortKey === 'most_forked') {
       result.sort((a, b) => b.fork_count - a.fork_count);
     } else if (sortKey === 'duration') {
-      result.sort((a, b) => estimateTotalMinutes(b.segments) - estimateTotalMinutes(a.segments));
+      result.sort((a, b) => estimateTotalMinutes(b.segments, ftp) - estimateTotalMinutes(a.segments, ftp));
     }
 
     return result;

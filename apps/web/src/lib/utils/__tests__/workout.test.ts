@@ -7,6 +7,7 @@ import {
 	expandSegments,
 	computeIntensity,
 	computeCumulativeMinutes,
+	estimateTotalSeconds,
 	inferWorkoutType,
 } from '../workout';
 import type { WorkoutSegment } from '../../types';
@@ -303,5 +304,50 @@ describe('computeCumulativeMinutes', () => {
 	it('returns one more marker than segments', () => {
 		const segments = [makeSegment(), makeSegment(), makeSegment()];
 		expect(computeCumulativeMinutes(segments)).toHaveLength(4);
+	});
+
+	it('uses provided FTP for distance segment estimation', () => {
+		const segments = [
+			makeSegment({ duration_type: 'distance', duration_value: 1000, target_intensity: 100 }),
+		];
+		const markersDefault = computeCumulativeMinutes(segments, 150);
+		const markersHighFtp = computeCumulativeMinutes(segments, 250);
+		// Higher FTP = faster pace = shorter duration
+		expect(markersHighFtp[1].minute).toBeLessThan(markersDefault[1].minute);
+	});
+});
+
+describe('estimateTotalSeconds', () => {
+	it('returns total seconds for time-based segments', () => {
+		const segments = [
+			makeSegment({ duration_type: 'time', duration_value: 300 }),
+			makeSegment({ duration_type: 'time', duration_value: 120 }),
+		];
+		expect(estimateTotalSeconds(segments)).toBe(420);
+	});
+
+	it('includes estimated time for distance segments in mixed workouts', () => {
+		// Bug regression: mixed time+distance workouts must include both
+		const segments = [
+			makeSegment({ duration_type: 'time', duration_value: 300 }),     // 5 min
+			makeSegment({ duration_type: 'distance', duration_value: 3000, target_intensity: 100 }), // ~13 min at 150W
+			makeSegment({ duration_type: 'time', duration_value: 300 }),     // 5 min
+		];
+		const secs = estimateTotalSeconds(segments);
+		// Must be > 600 (the 10 min from time-only segments)
+		expect(secs).toBeGreaterThan(600);
+		// Should be around 23-24 min total
+		expect(secs).toBeGreaterThan(1200);
+		expect(secs).toBeLessThan(1800);
+	});
+
+	it('uses provided FTP for estimation', () => {
+		const segments = [
+			makeSegment({ duration_type: 'distance', duration_value: 2000, target_intensity: 100 }),
+		];
+		const secsDefault = estimateTotalSeconds(segments, 150);
+		const secsHighFtp = estimateTotalSeconds(segments, 250);
+		// Higher FTP = faster pace = less time
+		expect(secsHighFtp).toBeLessThan(secsDefault);
 	});
 });

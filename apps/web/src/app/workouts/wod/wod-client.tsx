@@ -7,7 +7,7 @@ import type { Workout } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { formatWorkoutType, formatDuration, formatDistance, formatPace } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
-import { computeTotalTime, computeTotalDistance, computeSegmentCount, computeDominantZone } from '@/lib/utils/workout';
+import { computeTotalDistance, computeSegmentCount, computeDominantZone, estimateTotalSeconds } from '@/lib/utils/workout';
 import { Flame, RefreshCw, ArrowLeft, Layers, GitFork } from 'lucide-react';
 
 const ZONE_COLORS: Record<number, { text: string; bg: string }> = {
@@ -45,8 +45,8 @@ export function WodClient({ workouts, ftpWatts }: WodClientProps) {
 
   const workout = workouts[wodSeed % workouts.length];
   const ftp = getEffectiveFtp(ftpWatts ?? null);
-  const totalTime = computeTotalTime(workout.segments);
   const totalDistance = computeTotalDistance(workout.segments);
+  const estimatedSecs = estimateTotalSeconds(workout.segments, ftp);
   const segmentCount = computeSegmentCount(workout.segments);
   const dominantZone = computeDominantZone(workout.segments);
 
@@ -66,18 +66,13 @@ export function WodClient({ workouts, ftpWatts }: WodClientProps) {
 
   const heroValue = totalDistance !== null
     ? formatDistance(totalDistance)
-    : totalTime !== null
-      ? formatDuration(totalTime)
-      : '—';
+    : formatDuration(estimatedSecs);
 
   const zoneStyle = dominantZone ? ZONE_COLORS[dominantZone] : null;
 
   const stats = [
-    totalTime !== null
-      ? { label: 'TIME', value: formatDuration(totalTime) }
-      : totalDistance !== null
-        ? { label: 'DISTANCE', value: formatDistance(totalDistance) }
-        : null,
+    { label: 'DURATION', value: formatDuration(estimatedSecs) },
+    ...(totalDistance !== null ? [{ label: 'DISTANCE', value: formatDistance(totalDistance) }] : []),
     { label: 'SEGMENTS', value: String(segmentCount) },
     { label: 'AVG PACE', value: avgPace !== null ? formatPace(avgPace) : '—' },
   ].filter(Boolean) as { label: string; value: string }[];
