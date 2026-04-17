@@ -612,6 +612,7 @@ class _CategoryTile extends StatelessWidget {
                 width: 2,
               ),
             ),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
