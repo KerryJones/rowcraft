@@ -163,14 +163,6 @@ String formatDuration(int totalSeconds) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-/// Format pace in tenths to M:SS display.
-/// e.g. 1200 → "2:00"
-String formatPace(int tenths) {
-  final minutes = tenths ~/ 600;
-  final secs = (tenths % 600) ~/ 10;
-  return '$minutes:${secs.toString().padLeft(2, '0')}';
-}
-
 /// Compute the dominant HR zone (duration-weighted).
 /// Returns the zone number (1-5) with the most total duration, or null if no zones.
 int? computeDominantZone(List<WorkoutSegment> segments) {

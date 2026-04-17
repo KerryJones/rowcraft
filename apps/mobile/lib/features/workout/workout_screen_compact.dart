@@ -485,7 +485,7 @@ class _TargetPaceTile extends StatelessWidget {
       final avgPace = session.engineState.avgPace;
       return _StatTile(
         label: 'AVG PACE',
-        value: avgPace > 0 ? formatPaceTenths(avgPace.toDouble()) : '--:--',
+        value: avgPace > 0 ? formatPace(avgPace) : '--:--',
         unitSuffix: avgPace > 0 ? '/500m' : null,
         onTap: onTap,
         pageIndex: 1,
@@ -501,12 +501,10 @@ class _TargetPaceTile extends StatelessWidget {
     final value = isResting
         ? 'REST'
         : hasTarget
-            ? formatPaceTenths(
-                resolveSegmentTargetPace(
+            ? formatPace(resolveSegmentTargetPace(
                   segment,
                   session.ftpWatts,
-                ).toDouble(),
-              )
+                ))
             : isNoTarget
                 ? noTargetLabel
                 : '--:--';

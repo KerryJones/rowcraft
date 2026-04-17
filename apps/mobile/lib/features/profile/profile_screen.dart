@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/content_constraint.dart';
 import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/plexo_service.dart';
@@ -110,9 +111,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       _waitingForC2Auth = true;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     } finally {
       if (mounted) setState(() => _c2Linking = false);
@@ -130,277 +131,279 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         bleState.pm5ConnectionState == PM5ConnectionState.connected;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // User info card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
+      appBar: AppBar(title: const Text('Profile')),
+      body: ContentConstraint(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // User info card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Avatar
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: RowCraftTheme.primaryBlue,
+                      child: profileAsync.when(
+                        data: (profile) => _buildInitials(profile.displayName),
+                        loading: () => const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                        error: (_, _) => const Icon(
+                          Icons.person,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Display name
+                    profileAsync.when(
+                      data: (profile) => Text(
+                        profile.displayName ?? 'Rower',
+                        style: theme.textTheme.headlineMedium,
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Email
+                    Text(
+                      currentUser?.email ?? '',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Navigation items (History, Devices)
+            Card(
               child: Column(
                 children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: RowCraftTheme.primaryBlue,
-                    child: profileAsync.when(
-                      data: (profile) =>
-                          _buildInitials(profile.displayName),
-                      loading: () => const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                      error: (_, _) => const Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.white,
+                  ListTile(
+                    leading: const Icon(Icons.history),
+                    title: const Text('Workout History'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/history'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Badge(
+                      isLabelVisible: pm5Connected,
+                      backgroundColor: RowCraftTheme.successGreen,
+                      smallSize: 8,
+                      child: Icon(
+                        pm5Connected
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Display name
-                  profileAsync.when(
-                    data: (profile) => Text(
-                      profile.displayName ?? 'Rower',
-                      style: theme.textTheme.headlineMedium,
+                    title: const Text('Devices'),
+                    subtitle: Text(
+                      pm5Connected ? 'Connected' : 'Not connected',
                     ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, _) => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 4),
-
-                  // Email
-                  Text(
-                    currentUser?.email ?? '',
-                    style: theme.textTheme.bodySmall,
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/devices'),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Navigation items (History, Devices)
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.history),
-                  title: const Text('Workout History'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/history'),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: Badge(
-                    isLabelVisible: pm5Connected,
-                    backgroundColor: RowCraftTheme.successGreen,
-                    smallSize: 8,
-                    child: Icon(
-                      pm5Connected
-                          ? Icons.bluetooth_connected
-                          : Icons.bluetooth,
-                    ),
+            // Concept2 Logbook link
+            Card(
+              child: c2LinkedAsync.when(
+                data: (isLinked) => ListTile(
+                  leading: Icon(
+                    Icons.link,
+                    color: isLinked
+                        ? RowCraftTheme.successGreen
+                        : RowCraftTheme.subtleGrey,
                   ),
-                  title: const Text('Devices'),
-                  subtitle: Text(
-                    pm5Connected ? 'Connected' : 'Not connected',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/devices'),
+                  title: const Text('Concept2 Logbook'),
+                  subtitle: Text(isLinked ? 'Connected' : 'Not connected'),
+                  trailing: isLinked
+                      ? TextButton(
+                          onPressed: () async {
+                            final service = ref.read(c2LogbookServiceProvider);
+                            await service.disconnect();
+                            ref.invalidate(c2LinkedProvider);
+                          },
+                          child: const Text('Disconnect'),
+                        )
+                      : _c2Linking
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : ElevatedButton(
+                          onPressed: _linkC2,
+                          child: const Text('Link'),
+                        ),
                 ),
-              ],
+                loading: () => const ListTile(
+                  leading: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  title: Text('Concept2 Logbook'),
+                  subtitle: Text('Checking...'),
+                ),
+                error: (_, _) => const ListTile(
+                  leading: Icon(
+                    Icons.error_outline,
+                    color: RowCraftTheme.errorRose,
+                  ),
+                  title: Text('Concept2 Logbook'),
+                  subtitle: Text('Error loading status'),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Concept2 Logbook link
-          Card(
-            child: c2LinkedAsync.when(
-              data: (isLinked) => ListTile(
-                leading: Icon(
-                  Icons.link,
-                  color: isLinked
-                      ? RowCraftTheme.successGreen
-                      : RowCraftTheme.subtleGrey,
-                ),
-                title: const Text('Concept2 Logbook'),
-                subtitle: Text(
-                  isLinked ? 'Connected' : 'Not connected',
-                ),
-                trailing: isLinked
-                    ? TextButton(
-                        onPressed: () async {
-                          final service =
-                              ref.read(c2LogbookServiceProvider);
-                          await service.disconnect();
-                          ref.invalidate(c2LinkedProvider);
-                        },
-                        child: const Text('Disconnect'),
-                      )
-                    : _c2Linking
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : ElevatedButton(
-                            onPressed: _linkC2,
-                            child: const Text('Link'),
+            // Plexo sync status — only visible when enabled
+            ref
+                .watch(plexoEnabledProvider)
+                .when(
+                  data: (isEnabled) => isEnabled
+                      ? const Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: Card(
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.sync,
+                                color: RowCraftTheme.successGreen,
+                              ),
+                              title: Text('Plexo'),
+                              subtitle: Text('Enabled'),
+                            ),
                           ),
-              ),
-              loading: () => const ListTile(
-                leading: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                title: Text('Concept2 Logbook'),
-                subtitle: Text('Checking...'),
-              ),
-              error: (_, _) => const ListTile(
-                leading: Icon(Icons.error_outline,
-                    color: RowCraftTheme.errorRose),
-                title: Text('Concept2 Logbook'),
-                subtitle: Text('Error loading status'),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Plexo sync status — only visible when enabled
-          ref.watch(plexoEnabledProvider).when(
-            data: (isEnabled) => isEnabled
-                ? const Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: Card(
-                      child: ListTile(
-                        leading: Icon(Icons.sync,
-                            color: RowCraftTheme.successGreen),
-                        title: Text('Plexo'),
-                        subtitle: Text('Enabled'),
-                      ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-            loading: () => const SizedBox.shrink(),
-            error: (_, _) => const SizedBox.shrink(),
-          ),
-
-          // FTP card
-          _FtpCard(),
-          const SizedBox(height: 16),
-
-          // Settings section
-          Card(
-            child: Column(
-              children: [
-                profileAsync.when(
-                  data: (profile) => ListTile(
-                    leading: const Icon(Icons.monitor_weight_outlined),
-                    title: const Text('Weight'),
-                    subtitle: Text(
-                      profile.weightKg != null
-                          ? '${(profile.weightKg! * 2.20462).round()} lbs (${profile.weightKg!.toStringAsFixed(1)} kg)'
-                          : 'Not set',
-                    ),
-                    onTap: () => _showEditWeightDialog(context, ref),
-                  ),
-                  loading: () => const ListTile(
-                    leading: Icon(Icons.monitor_weight_outlined),
-                    title: Text('Weight'),
-                    subtitle: Text('Loading...'),
-                  ),
+                        )
+                      : const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('About RowCraft'),
-                  subtitle: const Text('Version 0.1.0'),
-                  onTap: () {
-                    showAboutDialog(
-                      context: context,
-                      applicationName: 'RowCraft',
-                      applicationVersion: '0.1.0',
-                      applicationLegalese:
-                          'Structured rowing workouts for Concept2',
-                    );
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined),
-                  title: const Text('Privacy Policy'),
-                  trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () async {
-                    final ok = await launchUrl(
-                      Uri.parse('https://rowcraft.app/privacy'),
-                      mode: LaunchMode.externalApplication,
-                    );
-                    if (!ok && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Could not open link')),
-                      );
-                    }
-                  },
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: const Icon(Icons.description_outlined),
-                  title: const Text('Terms of Service'),
-                  trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () async {
-                    final ok = await launchUrl(
-                      Uri.parse('https://rowcraft.app/terms'),
-                      mode: LaunchMode.externalApplication,
-                    );
-                    if (!ok && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Could not open link')),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
 
-          // Sign out
-          OutlinedButton.icon(
-            onPressed: () async {
-              await ref.read(signOutProvider.future);
-              if (context.mounted) {
-                context.go('/auth');
-              }
-            },
-            icon: const Icon(Icons.logout, color: RowCraftTheme.errorRose),
-            label: const Text(
-              'Sign Out',
-              style: TextStyle(color: RowCraftTheme.errorRose),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: RowCraftTheme.errorRose),
-            ),
-          ),
-          const SizedBox(height: 32),
+            // FTP card
+            _FtpCard(),
+            const SizedBox(height: 16),
 
-          // Delete account
-          TextButton(
-            onPressed: () => _showDeleteAccountDialog(context),
-            child: Text(
-              'Delete Account',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: RowCraftTheme.subtleGrey,
+            // Settings section
+            Card(
+              child: Column(
+                children: [
+                  profileAsync.when(
+                    data: (profile) => ListTile(
+                      leading: const Icon(Icons.monitor_weight_outlined),
+                      title: const Text('Weight'),
+                      subtitle: Text(
+                        profile.weightKg != null
+                            ? '${(profile.weightKg! * 2.20462).round()} lbs (${profile.weightKg!.toStringAsFixed(1)} kg)'
+                            : 'Not set',
+                      ),
+                      onTap: () => _showEditWeightDialog(context, ref),
+                    ),
+                    loading: () => const ListTile(
+                      leading: Icon(Icons.monitor_weight_outlined),
+                      title: Text('Weight'),
+                      subtitle: Text('Loading...'),
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('About RowCraft'),
+                    subtitle: const Text('Version 0.1.0'),
+                    onTap: () {
+                      showAboutDialog(
+                        context: context,
+                        applicationName: 'RowCraft',
+                        applicationVersion: '0.1.0',
+                        applicationLegalese:
+                            'Structured rowing workouts for Concept2',
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Privacy Policy'),
+                    trailing: const Icon(Icons.open_in_new, size: 16),
+                    onTap: () async {
+                      final ok = await launchUrl(
+                        Uri.parse('https://rowcraft.app/privacy'),
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!ok && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Could not open link')),
+                        );
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: const Text('Terms of Service'),
+                    trailing: const Icon(Icons.open_in_new, size: 16),
+                    onTap: () async {
+                      final ok = await launchUrl(
+                        Uri.parse('https://rowcraft.app/terms'),
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!ok && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Could not open link')),
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+
+            // Sign out
+            OutlinedButton.icon(
+              onPressed: () async {
+                await ref.read(signOutProvider.future);
+                if (context.mounted) {
+                  context.go('/auth');
+                }
+              },
+              icon: const Icon(Icons.logout, color: RowCraftTheme.errorRose),
+              label: const Text(
+                'Sign Out',
+                style: TextStyle(color: RowCraftTheme.errorRose),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: RowCraftTheme.errorRose),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Delete account
+            TextButton(
+              onPressed: () => _showDeleteAccountDialog(context),
+              child: Text(
+                'Delete Account',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: RowCraftTheme.subtleGrey,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -486,7 +489,8 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                              'Account deletion failed. Please try again.'),
+                            'Account deletion failed. Please try again.',
+                          ),
                           backgroundColor: RowCraftTheme.errorRose,
                         ),
                       );
@@ -579,38 +583,42 @@ class _FtpCard extends ConsumerWidget {
                   children: [
                     Text('History', style: theme.textTheme.labelLarge),
                     const SizedBox(height: 8),
-                    ...records.take(5).map((r) => Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            children: [
-                              Text(
-                                wattsToPaceStringNoTenths(r.ftpWatts),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                    ...records
+                        .take(5)
+                        .map(
+                          (r) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              children: [
+                                Text(
+                                  wattsToPaceStringNoTenths(r.ftpWatts),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${r.ftpWatts}W',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: RowCraftTheme.subtleGrey,
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${r.ftpWatts}W',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: RowCraftTheme.subtleGrey,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                r.testType,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: RowCraftTheme.subtleGrey,
+                                const SizedBox(width: 8),
+                                Text(
+                                  r.testType,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: RowCraftTheme.subtleGrey,
+                                  ),
                                 ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                _formatDate(r.testedAt),
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
+                                const Spacer(),
+                                Text(
+                                  _formatDate(r.testedAt),
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
                           ),
-                        )),
+                        ),
                   ],
                 );
               },
@@ -625,8 +633,18 @@ class _FtpCard extends ConsumerWidget {
 
   String _formatDate(DateTime dt) {
     final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
@@ -711,13 +729,15 @@ class _ManualFtpDialogState extends State<_ManualFtpDialog> {
               final service = widget.ref.read(supabaseServiceProvider);
               final userId = service.currentUserId;
               if (userId != null) {
-                await service.saveFtpRecord(FtpRecord(
-                  id: '',
-                  userId: userId,
-                  testedAt: DateTime.now(),
-                  ftpWatts: _parsedWatts!,
-                  testType: 'manual',
-                ));
+                await service.saveFtpRecord(
+                  FtpRecord(
+                    id: '',
+                    userId: userId,
+                    testedAt: DateTime.now(),
+                    ftpWatts: _parsedWatts!,
+                    testType: 'manual',
+                  ),
+                );
                 await service.updateProfileFtp(_parsedWatts!);
                 widget.ref.invalidate(profileProvider);
                 widget.ref.invalidate(ftpHistoryProvider);
@@ -839,9 +859,7 @@ class _EditWeightDialogState extends State<_EditWeightDialog> {
               }
               return;
             }
-            final kg = _unit == _WeightUnit.lbs
-                ? value * 0.453592
-                : value;
+            final kg = _unit == _WeightUnit.lbs ? value * 0.453592 : value;
             // Capture ref reads before async gap
             final service = widget.ref.read(supabaseServiceProvider);
             await service.updateProfileWeight(kg);

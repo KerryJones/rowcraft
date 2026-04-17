@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
+import '../../utils/pace_utils.dart' show formatPace;
+import '../../widgets/content_constraint.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
 import '../../utils/segment_color.dart';
@@ -20,14 +22,6 @@ import 'workout_provider.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-String _formatPaceTenths(int tenths) {
-  if (tenths == 0) return '--:--';
-  final m = tenths ~/ 600;
-  final r = tenths % 600;
-  final s = r ~/ 10;
-  return '$m:${s.toString().padLeft(2, '0')}';
-}
-
 String _formatDuration(Duration d) {
   final h = d.inHours;
   final m = d.inMinutes % 60;
@@ -39,7 +33,6 @@ String _formatDuration(Duration d) {
 }
 
 String _formatDistance(double distance) => '${distance.toInt()}m';
-
 
 // ---------------------------------------------------------------------------
 // WorkoutSummaryContent — shown inside WorkoutScreen when phase == finished
@@ -82,80 +75,83 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent>
     final calories = result?.calories ?? pm5.calories;
 
     // Check if HR data exists in time samples
-    final hasHrData = timeSamples != null &&
+    final hasHrData =
+        timeSamples != null &&
         timeSamples.any((s) => s.heartRate != null && s.heartRate! > 0);
 
     return Stack(
       children: [
         SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 160),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
+          child: ContentConstraint(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 8),
 
-              // Stats grid
-              _StatsGrid(
-                totalDistance: totalDistance,
-                totalTime: totalTime,
-                avgPace: avgPace,
-                avgSR: avgSR,
-                avgHR: avgHR,
-                calories: calories,
-              ),
-
-              const SizedBox(height: 16),
-
-              // Combined timeline chart (pace bars + HR line overlay)
-              const _SectionHeader(title: 'TIMELINE'),
-              if (timeSamples != null && timeSamples.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    height: 200,
-                    child: CustomPaint(
-                      size: const Size(double.infinity, 200),
-                      painter: _CombinedChartPainter(
-                        samples: timeSamples,
-                        segments: segments,
-                        maxHr: maxHr,
-                        hasHrData: hasHrData,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                const _NoDataPlaceholder(label: 'No data'),
-
-              const SizedBox(height: 20),
-
-              // HR zone distribution bar (time spent in each zone)
-              if (hasHrData) ...[
-                const _SectionHeader(title: 'HR ZONE DISTRIBUTION'),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    height: 48,
-                    child: CustomPaint(
-                      size: const Size(double.infinity, 48),
-                      painter: _HrZoneDistributionPainter(
-                        samples: timeSamples,
-                        maxHr: maxHr,
-                      ),
-                    ),
-                  ),
+                // Stats grid
+                _StatsGrid(
+                  totalDistance: totalDistance,
+                  totalTime: totalTime,
+                  avgPace: avgPace,
+                  avgSR: avgSR,
+                  avgHR: avgHR,
+                  calories: calories,
                 ),
+
+                const SizedBox(height: 16),
+
+                // Combined timeline chart (pace bars + HR line overlay)
+                const _SectionHeader(title: 'TIMELINE'),
+                if (timeSamples != null && timeSamples.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      height: 200,
+                      child: CustomPaint(
+                        size: const Size(double.infinity, 200),
+                        painter: _CombinedChartPainter(
+                          samples: timeSamples,
+                          segments: segments,
+                          maxHr: maxHr,
+                          hasHrData: hasHrData,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  const _NoDataPlaceholder(label: 'No data'),
+
                 const SizedBox(height: 20),
-              ],
 
-              // Per-segment table
-              if (splits.isNotEmpty) ...[
-                const _SectionHeader(title: 'SPLITS'),
-                _SplitsTable(splits: splits, segments: segments),
-              ],
+                // HR zone distribution bar (time spent in each zone)
+                if (hasHrData) ...[
+                  const _SectionHeader(title: 'HR ZONE DISTRIBUTION'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      height: 48,
+                      child: CustomPaint(
+                        size: const Size(double.infinity, 48),
+                        painter: _HrZoneDistributionPainter(
+                          samples: timeSamples,
+                          maxHr: maxHr,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
-              const SizedBox(height: 24),
-            ],
+                // Per-segment table
+                if (splits.isNotEmpty) ...[
+                  const _SectionHeader(title: 'SPLITS'),
+                  _SplitsTable(splits: splits, segments: segments),
+                ],
+
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
 
@@ -240,7 +236,7 @@ class _StatsGrid extends StatelessWidget {
               Expanded(
                 child: _StatCell(
                   label: 'AVG PACE',
-                  value: '${_formatPaceTenths(avgPace)}/500m',
+                  value: '${formatPace(avgPace)}/500m',
                 ),
               ),
             ],
@@ -249,10 +245,7 @@ class _StatsGrid extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _StatCell(
-                  label: 'AVG S/M',
-                  value: '$avgSR',
-                ),
+                child: _StatCell(label: 'AVG S/M', value: '$avgSR'),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -263,10 +256,7 @@ class _StatsGrid extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _StatCell(
-                  label: 'CALORIES',
-                  value: '$calories',
-                ),
+                child: _StatCell(label: 'CALORIES', value: '$calories'),
               ),
             ],
           ),
@@ -478,7 +468,7 @@ class _CombinedChartPainter extends CustomPainter {
       final y = topPad + frac * chartHeight;
       final tp = TextPainter(
         text: TextSpan(
-          text: _formatPaceTenths(pace.round().clamp(1, 9999)),
+          text: formatPace(pace.round().clamp(1, 9999)),
           style: labelStyle,
         ),
         textDirection: TextDirection.ltr,
@@ -553,7 +543,10 @@ class _CombinedChartPainter extends CustomPainter {
             text: TextSpan(text: '${bpm.round()}', style: hrLabelStyle),
             textDirection: TextDirection.ltr,
           )..layout();
-          tp.paint(canvas, Offset(size.width - tp.width - 2, y - tp.height / 2));
+          tp.paint(
+            canvas,
+            Offset(size.width - tp.width - 2, y - tp.height / 2),
+          );
         }
       }
     }
@@ -587,8 +580,9 @@ class _HrZoneDistributionPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final hrSamples =
-        samples.where((s) => s.heartRate != null && s.heartRate! > 0).toList();
+    final hrSamples = samples
+        .where((s) => s.heartRate != null && s.heartRate! > 0)
+        .toList();
     if (hrSamples.isEmpty) return;
 
     // Count time in each zone (1-5)
@@ -598,12 +592,12 @@ class _HrZoneDistributionPainter extends CustomPainter {
       final zone = pct < 0.6
           ? 0
           : pct < 0.7
-              ? 1
-              : pct < 0.8
-                  ? 2
-                  : pct < 0.9
-                      ? 3
-                      : 4;
+          ? 1
+          : pct < 0.8
+          ? 2
+          : pct < 0.9
+          ? 3
+          : 4;
       zoneCounts[zone]++;
     }
     final total = hrSamples.length.toDouble();
@@ -655,7 +649,10 @@ class _HrZoneDistributionPainter extends CustomPainter {
         )..layout();
         tp.paint(
           canvas,
-          Offset(x + (width - tp.width) / 2, barTop + (barHeight - tp.height) / 2),
+          Offset(
+            x + (width - tp.width) / 2,
+            barTop + (barHeight - tp.height) / 2,
+          ),
         );
       }
 
@@ -678,10 +675,7 @@ class _HrZoneDistributionPainter extends CustomPainter {
           text: TextSpan(text: '$pct%', style: legendStyle),
           textDirection: TextDirection.ltr,
         )..layout();
-        tp.paint(
-          canvas,
-          Offset(x + (width - tp.width) / 2, barHeight + 4),
-        );
+        tp.paint(canvas, Offset(x + (width - tp.width) / 2, barHeight + 4));
       }
       x += width;
     }
@@ -727,23 +721,16 @@ class _SplitsTable extends StatelessWidget {
           children: [
             // Header row
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
                   SizedBox(width: 28, child: Text('#', style: headerStyle)),
-                  SizedBox(
-                      width: 48,
-                      child: Text('TYPE', style: headerStyle)),
+                  SizedBox(width: 48, child: Text('TYPE', style: headerStyle)),
                   Expanded(child: Text('DIST', style: headerStyle)),
                   Expanded(child: Text('TIME', style: headerStyle)),
                   Expanded(child: Text('PACE', style: headerStyle)),
-                  SizedBox(
-                      width: 36,
-                      child: Text('S/M', style: headerStyle)),
-                  SizedBox(
-                      width: 32,
-                      child: Text('HR', style: headerStyle)),
+                  SizedBox(width: 36, child: Text('S/M', style: headerStyle)),
+                  SizedBox(width: 32, child: Text('HR', style: headerStyle)),
                 ],
               ),
             ),
@@ -762,7 +749,9 @@ class _SplitsTable extends StatelessWidget {
 
               return Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 child: Row(
                   children: [
                     // # with color indicator
@@ -789,13 +778,14 @@ class _SplitsTable extends StatelessWidget {
                         () {
                           if (seg == null) return '--';
                           if (seg.isRest) return 'Rest';
-                          if (seg.targetHrZone != null) return 'Z${seg.targetHrZone}';
-                          return seg.durationType == DurationType.time ? 'Free' : 'Row';
+                          if (seg.targetHrZone != null) {
+                            return 'Z${seg.targetHrZone}';
+                          }
+                          return seg.durationType == DurationType.time
+                              ? 'Free'
+                              : 'Row';
                         }(),
-                        style: cellStyle.copyWith(
-                          color: color,
-                          fontSize: 10,
-                        ),
+                        style: cellStyle.copyWith(color: color, fontSize: 10),
                       ),
                     ),
                     Expanded(
@@ -812,16 +802,13 @@ class _SplitsTable extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        '${_formatPaceTenths(split.avgPace)}/500m',
+                        '${formatPace(split.avgPace)}/500m',
                         style: cellStyle,
                       ),
                     ),
                     SizedBox(
                       width: 36,
-                      child: Text(
-                        '${split.avgStrokeRate}',
-                        style: cellStyle,
-                      ),
+                      child: Text('${split.avgStrokeRate}', style: cellStyle),
                     ),
                     SizedBox(
                       width: 32,
@@ -888,7 +875,8 @@ class SaveProgressOverlay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDone = saveProgress == SaveProgress.done;
     final isError = saveProgress == SaveProgress.error;
-    final isSavedLocally = saveProgress == SaveProgress.savedLocally ||
+    final isSavedLocally =
+        saveProgress == SaveProgress.savedLocally ||
         saveProgress == SaveProgress.savedToCloud ||
         isDone;
     final isSavedToCloud = saveProgress == SaveProgress.savedToCloud || isDone;
@@ -903,11 +891,23 @@ class SaveProgressOverlay extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isDone && syncError != null)
-                  const Icon(Icons.warning_amber_rounded, color: RowCraftTheme.warningAmber, size: 64)
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: RowCraftTheme.warningAmber,
+                    size: 64,
+                  )
                 else if (isDone)
-                  const Icon(Icons.check_circle, color: RowCraftTheme.successGreen, size: 64)
+                  const Icon(
+                    Icons.check_circle,
+                    color: RowCraftTheme.successGreen,
+                    size: 64,
+                  )
                 else if (isError)
-                  const Icon(Icons.error_outline, color: RowCraftTheme.errorRose, size: 64)
+                  const Icon(
+                    Icons.error_outline,
+                    color: RowCraftTheme.errorRose,
+                    size: 64,
+                  )
                 else
                   const SizedBox(
                     width: 48,
@@ -922,10 +922,10 @@ class SaveProgressOverlay extends ConsumerWidget {
                   isDone && syncError != null
                       ? 'SAVED LOCALLY'
                       : isDone
-                          ? 'WORKOUT SAVED'
-                          : isError
-                              ? 'SAVE FAILED'
-                              : 'SAVING',
+                      ? 'WORKOUT SAVED'
+                      : isError
+                      ? 'SAVE FAILED'
+                      : 'SAVING',
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -956,7 +956,10 @@ class SaveProgressOverlay extends ConsumerWidget {
                 if (syncError != null && (isDone || isError)) ...[
                   const SizedBox(height: 16),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: RowCraftTheme.warningAmber.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -1087,8 +1090,11 @@ class _ServiceStatusRow extends StatelessWidget {
           ),
         ),
         if (isDone)
-          const Icon(Icons.check_circle,
-              size: 20, color: RowCraftTheme.successGreen)
+          const Icon(
+            Icons.check_circle,
+            size: 20,
+            color: RowCraftTheme.successGreen,
+          )
         else if (isActive)
           const SizedBox(
             width: 18,
@@ -1099,8 +1105,7 @@ class _ServiceStatusRow extends StatelessWidget {
             ),
           )
         else
-          const Icon(Icons.remove,
-              size: 20, color: RowCraftTheme.subtleGrey),
+          const Icon(Icons.remove, size: 20, color: RowCraftTheme.subtleGrey),
       ],
     );
   }
@@ -1123,11 +1128,19 @@ class _C2LogbookStatusRow extends StatelessWidget {
         'Not linked',
       ),
       C2SyncStatus.synced => (
-        const Icon(Icons.check_circle, size: 20, color: RowCraftTheme.successGreen),
+        const Icon(
+          Icons.check_circle,
+          size: 20,
+          color: RowCraftTheme.successGreen,
+        ),
         '',
       ),
       C2SyncStatus.failed => (
-        const Icon(Icons.warning_amber_rounded, size: 20, color: RowCraftTheme.warningAmber),
+        const Icon(
+          Icons.warning_amber_rounded,
+          size: 20,
+          color: RowCraftTheme.warningAmber,
+        ),
         'Will retry',
       ),
     };

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_time_sample.dart';
@@ -26,16 +27,6 @@ import 'workout_summary_screen.dart';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-
-/// Format pace tenths to M:SS
-String formatPaceTenths(double tenths) {
-  final total = tenths.toInt();
-  if (total == 0) return '--:--';
-  final m = total ~/ 600;
-  final r = total % 600;
-  return '$m:${(r ~/ 10).toString().padLeft(2, '0')}';
-}
 
 
 /// Pace acceptance range with 5% tolerance around target pace.
@@ -442,7 +433,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
                 // Workout profile graph
                 if (session.expandedSegments.isNotEmpty)
-                  WorkoutProfileGraph(session: session),
+                  WorkoutProfileGraph(
+                    session: session,
+                    height: isTablet(context) ? 110 : 64,
+                  ),
 
                 // Hero section (pace, guide bar, stroke rate)
                 Expanded(child: HeroSection(session: session)),
@@ -678,6 +672,7 @@ class _OverallStatsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = session.pm5Data;
+    final tablet = isTablet(context);
 
     return Container(
       height: 36,
@@ -689,12 +684,19 @@ class _OverallStatsBar extends StatelessWidget {
           _stat(context, 'DIST', data.distanceFormatted),
           _stat(context, 'CAL', '${data.calories}'),
           _stat(context, 'LEFT', _remainingWorkout()),
+          if (tablet)
+            _stat(context, 'AVG /500', _avgPaceFormatted()),
         ],
       ),
     );
   }
 
   String _remainingWorkout() => remainingWorkoutLabel(session);
+
+  String _avgPaceFormatted() {
+    final avg = session.engineState.avgPace;
+    return avg > 0 ? formatPace(avg) : '--:--';
+  }
 
   Widget _stat(BuildContext context, String label, String value) {
     return Expanded(
@@ -730,16 +732,21 @@ class _OverallStatsBar extends StatelessWidget {
 
 class WorkoutProfileGraph extends StatelessWidget {
   final WorkoutSessionState session;
+  final double height;
 
-  const WorkoutProfileGraph({super.key, required this.session});
+  const WorkoutProfileGraph({
+    super.key,
+    required this.session,
+    this.height = 64,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 64,
+      height: height,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: CustomPaint(
-        size: const Size(double.infinity, 64),
+        size: Size(double.infinity, height),
         painter: _WorkoutProfilePainter(
           segments: session.expandedSegments,
           currentIndex: session.engineState.currentSegmentIndex,
@@ -885,7 +892,7 @@ class _WorkoutProfilePainter extends CustomPainter {
           // Pace label on left
           final tp = TextPainter(
             text: TextSpan(
-              text: formatPaceTenths(pace.round().clamp(1, 9999).toDouble()),
+              text: formatPace(pace.round().clamp(1, 9999)),
               style: labelStyle,
             ),
             textDirection: TextDirection.ltr,
@@ -1152,6 +1159,10 @@ class _CurrentSegment extends StatelessWidget {
 
   const _CurrentSegment({required this.session});
 
+  // Font size bumps for tablet
+  double _paceTargetSize(BuildContext context) => isTablet(context) ? 26 : 22;
+  double _spmTargetSize(BuildContext context) => isTablet(context) ? 20 : 16;
+
   @override
   Widget build(BuildContext context) {
     final engineState = session.engineState;
@@ -1250,12 +1261,12 @@ class _CurrentSegment extends StatelessWidget {
               children: [
                 if (hasPaceTarget) ...[
                   Text(
-                    formatPaceTenths(resolveSegmentTargetPace(
+                    formatPace(resolveSegmentTargetPace(
                       segment,
                       session.ftpWatts,
-                    ).toDouble()),
+                    )),
                     style: GoogleFonts.jetBrainsMono(
-                      fontSize: 22,
+                      fontSize: _paceTargetSize(context),
                       fontWeight: FontWeight.w700,
                       color: RowCraftTheme.successGreen,
                     ),
@@ -1274,7 +1285,7 @@ class _CurrentSegment extends StatelessWidget {
                   Text(
                     '${segment.targetStrokeRate!} s/m',
                     style: GoogleFonts.jetBrainsMono(
-                      fontSize: 16,
+                      fontSize: _spmTargetSize(context),
                       fontWeight: FontWeight.w600,
                       color: RowCraftTheme.successGreen,
                     ),
@@ -1389,24 +1400,20 @@ class HeroSection extends StatelessWidget {
         // Three sizing tiers to prevent overflow on short phones.
         final isTiny = constraints.maxHeight < 170;
         final isSmall = constraints.maxHeight < 260;
-        final paceFontSize = isTiny ? 52.0 : isSmall ? 60.0 : 80.0;
-        final srFontSize = isTiny ? 30.0 : isSmall ? 36.0 : 44.0;
+        final isWide = constraints.maxWidth > 600;
+        final paceFontSize = isTiny ? 52.0 : isSmall ? 60.0 : isWide ? 100.0 : 80.0;
+        final srFontSize = isTiny ? 30.0 : isSmall ? 36.0 : isWide ? 56.0 : 44.0;
         final animHeight = isTiny ? 40.0 : isSmall ? 50.0 : 70.0;
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Hero pace — centered with /500m suffix offset to the right
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
+        // Pace display widget (reused in both layouts)
+        Widget paceDisplay() => FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  if (!isWide) ...[
                     // Invisible counterweight so pace number stays centered
                     Opacity(
                       opacity: 0,
@@ -1416,64 +1423,37 @@ class HeroSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      data.paceFormatted,
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: paceFontSize,
-                        fontWeight: FontWeight.w700,
-                        color: splitColor,
-                        letterSpacing: -2,
-                        height: 1.0,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '/500m',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: RowCraftTheme.subtleGrey,
-                          ),
-                    ),
                   ],
-                ),
+                  Text(
+                    data.paceFormatted,
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: paceFontSize,
+                      fontWeight: FontWeight.w700,
+                      color: splitColor,
+                      letterSpacing: -2,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '/500m',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                  ),
+                ],
               ),
+            );
 
-              // Pace guide bar
-              if (segment != null && segment.hasTarget) ...[
-                const SizedBox(height: 10),
-                Builder(builder: (_) {
-                  final targetPace = resolveSegmentTargetPace(
-                    segment,
-                    session.ftpWatts,
-                  ).toDouble();
-                  return _PaceGuideBar(
-                    targetPace: targetPace,
-                    currentPace: data.pace.toDouble(),
-                  );
-                }),
-              ],
-
-              // Rowing animation — only shown when segment has a target s/m
-              if (segment?.targetStrokeRate != null) ...[
-                const SizedBox(height: 8),
-                RowingAnimation(
-                  strokeRate: segment!.targetStrokeRate!,
-                  isActive: true,
-                  height: animHeight,
-                ),
-              ],
-
-              const SizedBox(height: 8),
-
-              // Stroke rate — centered with invisible counterweight
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    // Invisible counterweight so number stays centered
+        // Stroke rate display widget (reused in both layouts)
+        Widget strokeRateDisplay() => FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  if (!isWide) ...[
                     Opacity(
                       opacity: 0,
                       child: Text(
@@ -1482,39 +1462,110 @@ class HeroSection extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    if (srChevron != null)
-                      Text(
-                        srChevron,
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: srFontSize * 0.5,
-                          color: srColor,
-                          height: 1.0,
-                        ),
-                      ),
-                    if (srChevron != null) const SizedBox(width: 4),
+                  ],
+                  if (srChevron != null)
                     Text(
-                      '${data.strokeRate}',
+                      srChevron,
                       style: GoogleFonts.jetBrainsMono(
-                        fontSize: srFontSize,
-                        fontWeight: FontWeight.w600,
+                        fontSize: srFontSize * 0.5,
                         color: srColor,
                         height: 1.0,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      's/m',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelLarge
-                          ?.copyWith(
-                            color: RowCraftTheme.subtleGrey,
-                          ),
+                  if (srChevron != null) const SizedBox(width: 4),
+                  Text(
+                    '${data.strokeRate}',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: srFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: srColor,
+                      height: 1.0,
                     ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    's/m',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                  ),
+                ],
+              ),
+            );
+
+        // Guide bar widget
+        Widget? guideBar() {
+          if (segment == null || !segment.hasTarget) return null;
+          final targetPace = resolveSegmentTargetPace(
+            segment,
+            session.ftpWatts,
+          ).toDouble();
+          return _PaceGuideBar(
+            targetPace: targetPace,
+            currentPace: data.pace.toDouble(),
+          );
+        }
+
+        // Rowing animation widget
+        Widget? rowingAnim() {
+          if (segment?.targetStrokeRate == null) return null;
+          return RowingAnimation(
+            strokeRate: segment!.targetStrokeRate!,
+            isActive: true,
+            height: animHeight,
+          );
+        }
+
+        final guide = guideBar();
+        final anim = rowingAnim();
+
+        if (isWide) {
+          // Tablet: pace and stroke rate side-by-side
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    paceDisplay(),
+                    strokeRateDisplay(),
                   ],
                 ),
-              ),
-              // Target s/m now shown in _CurrentSegment below
+                if (guide != null) ...[
+                  const SizedBox(height: 10),
+                  guide,
+                ],
+                if (anim != null) ...[
+                  const SizedBox(height: 8),
+                  anim,
+                ],
+              ],
+            ),
+          );
+        }
+
+        // Phone: vertical stack (existing layout)
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              paceDisplay(),
+              if (guide != null) ...[
+                const SizedBox(height: 10),
+                guide,
+              ],
+              if (anim != null) ...[
+                const SizedBox(height: 8),
+                anim,
+              ],
+              const SizedBox(height: 8),
+              strokeRateDisplay(),
             ],
           ),
         );
@@ -1774,7 +1825,7 @@ class _UpNextPreview extends StatelessWidget {
             const SizedBox(width: 10),
             if (next.hasTarget)
               Text(
-                '${formatPaceTenths(resolveSegmentTargetPace(next, session.ftpWatts).toDouble())} /500m',
+                '${formatPace(resolveSegmentTargetPace(next, session.ftpWatts))} /500m',
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -1952,7 +2003,10 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = isLarge ? 64.0 : 48.0;
+    final tablet = isTablet(context);
+    final size = isLarge
+        ? (tablet ? 72.0 : 64.0)
+        : (tablet ? 56.0 : 48.0);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [

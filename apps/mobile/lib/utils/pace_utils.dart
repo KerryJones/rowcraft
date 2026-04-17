@@ -17,35 +17,18 @@ int wattsToPaceTenths(int watts) {
 /// Format pace tenths (e.g. 1350) as "2:15".
 /// Drops the tenths digit — whole seconds only.
 String formatPace(int tenths) {
-  if (tenths <= 0) return '--';
+  if (tenths <= 0) return '--:--';
   final totalSeconds = tenths ~/ 10;
   final minutes = totalSeconds ~/ 60;
   final seconds = totalSeconds % 60;
   return '$minutes:${seconds.toString().padLeft(2, '0')}';
 }
 
-/// Convert watts to a formatted pace string like "1:58.6/500m".
-String wattsToPaceString(int watts) {
-  final tenths = wattsToPaceTenths(watts);
-  if (tenths <= 0) return '--';
-  return '${formatPace(tenths)}/500m';
-}
-
-/// Format pace tenths as "2:14" (no decimal) for FTP display.
-/// Drops the tenths digit — whole seconds only, matching the web app.
-String formatPaceNoTenths(int tenths) {
-  if (tenths <= 0) return '--';
-  final totalSeconds = tenths ~/ 10;
-  final minutes = totalSeconds ~/ 60;
-  final seconds = totalSeconds % 60;
-  return '$minutes:${seconds.toString().padLeft(2, '0')}';
-}
-
-/// Convert watts to a no-tenths pace string like "1:58/500m" for FTP display.
+/// Convert watts to a formatted pace string like "1:58/500m".
 String wattsToPaceStringNoTenths(int watts) {
   final tenths = wattsToPaceTenths(watts);
-  if (tenths <= 0) return '--';
-  return '${formatPaceNoTenths(tenths)}/500m';
+  if (tenths <= 0) return '--:--';
+  return '${formatPace(tenths)}/500m';
 }
 
 /// Parse a pace string "m:ss" to tenths of a second per 500m.

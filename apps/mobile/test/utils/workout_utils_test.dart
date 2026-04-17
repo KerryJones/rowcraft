@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rowcraft/models/workout_segment.dart';
-import 'package:rowcraft/utils/pace_utils.dart' show kDefaultFtpWatts;
+import 'package:rowcraft/utils/pace_utils.dart' show formatPace, kDefaultFtpWatts;
 import 'package:rowcraft/utils/workout_utils.dart';
 
 void main() {

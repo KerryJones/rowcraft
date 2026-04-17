@@ -201,6 +201,21 @@ class RowCraftTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: surfaceContainer,
+        indicatorColor: primaryBlue.withValues(alpha: 0.2),
+        selectedIconTheme: const IconThemeData(color: primaryBlue),
+        unselectedIconTheme: const IconThemeData(color: subtleGrey),
+        selectedLabelTextStyle: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: primaryBlue,
+        ),
+        unselectedLabelTextStyle: GoogleFonts.inter(
+          fontSize: 12,
+          color: subtleGrey,
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceContainer,
         indicatorColor: primaryBlue.withValues(alpha: 0.2),

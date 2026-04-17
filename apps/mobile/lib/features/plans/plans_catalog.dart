@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/theme.dart';
+import '../../widgets/content_constraint.dart';
 import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
 import '../../widgets/ble_status_button.dart';
@@ -39,95 +41,109 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
         title: const Text('Plans'),
         actions: const [BleStatusButton()],
       ),
-      body: Column(
-        children: [
-          // Difficulty filter chips
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildFilterChip(null, 'All'),
-                _buildFilterChip('beginner', 'Beginner'),
-                _buildFilterChip('intermediate', 'Intermediate'),
-                _buildFilterChip('advanced', 'Advanced'),
-              ],
+      body: ContentConstraint(
+        child: Column(
+          children: [
+            // Difficulty filter chips
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: adaptivePadding(context),
+                children: [
+                  _buildFilterChip(null, 'All'),
+                  _buildFilterChip('beginner', 'Beginner'),
+                  _buildFilterChip('intermediate', 'Intermediate'),
+                  _buildFilterChip('advanced', 'Advanced'),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-          // Content
-          Expanded(
-            child: plansAsync.when(
-              data: (plans) {
-                if (plans.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.calendar_month,
-                            size: 64, color: RowCraftTheme.subtleGrey),
-                        const SizedBox(height: 16),
-                        Text('No plans found',
-                            style: theme.textTheme.bodyLarge
-                                ?.copyWith(color: RowCraftTheme.subtleGrey)),
-                      ],
+            // Content
+            Expanded(
+              child: plansAsync.when(
+                data: (plans) {
+                  if (plans.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.calendar_month,
+                            size: 64,
+                            color: RowCraftTheme.subtleGrey,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No plans found',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: RowCraftTheme.subtleGrey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(trainingPlansProvider);
+                      ref.invalidate(userPlanProgressProvider);
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 80),
+                      itemCount:
+                          plans.length + (continueAsync.value != null ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        // Continue banner at top
+                        if (continueAsync.value != null && index == 0) {
+                          final data = continueAsync.value!;
+                          return _ContinueBanner(
+                            plan: data.plan,
+                            progress: data.progress,
+                          );
+                        }
+
+                        final planIndex = continueAsync.value != null
+                            ? index - 1
+                            : index;
+                        final plan = plans[planIndex];
+                        return _PlanCard(
+                          plan: plan,
+                          progress: progressMap[plan.id],
+                        );
+                      },
                     ),
                   );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(trainingPlansProvider);
-                    ref.invalidate(userPlanProgressProvider);
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: plans.length +
-                        (continueAsync.value != null ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      // Continue banner at top
-                      if (continueAsync.value != null && index == 0) {
-                        final data = continueAsync.value!;
-                        return _ContinueBanner(
-                          plan: data.plan,
-                          progress: data.progress,
-                        );
-                      }
-
-                      final planIndex =
-                          continueAsync.value != null ? index - 1 : index;
-                      final plan = plans[planIndex];
-                      return _PlanCard(
-                        plan: plan,
-                        progress: progressMap[plan.id],
-                      );
-                    },
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: RowCraftTheme.errorRose,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load plans',
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => ref.invalidate(trainingPlansProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: RowCraftTheme.errorRose),
-                    const SizedBox(height: 16),
-                    Text('Failed to load plans',
-                        style: theme.textTheme.bodyLarge),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => ref.invalidate(trainingPlansProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -179,8 +195,9 @@ class _ContinueBanner extends StatelessWidget {
     }
 
     // Count completed sessions in current week
-    final currentWeekData =
-        plan.weeks.where((w) => w.weekNumber == currentWeek).firstOrNull;
+    final currentWeekData = plan.weeks
+        .where((w) => w.weekNumber == currentWeek)
+        .firstOrNull;
     final weekSessions = currentWeekData?.sessions.length ?? 0;
     int doneInWeek = 0;
     if (currentWeekData != null) {
@@ -209,13 +226,19 @@ class _ContinueBanner extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Continue: ${plan.title}',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                            color: RowCraftTheme.metricWhite,
-                            fontWeight: FontWeight.w600)),
+                    child: Text(
+                      'Continue: ${plan.title}',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: RowCraftTheme.metricWhite,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                  const Icon(Icons.arrow_forward_ios,
-                      size: 16, color: RowCraftTheme.primaryBlue),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: RowCraftTheme.primaryBlue,
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
@@ -230,8 +253,9 @@ class _ContinueBanner extends StatelessWidget {
                   value: progressFraction,
                   minHeight: 6,
                   backgroundColor: RowCraftTheme.surfaceContainerHigh,
-                  valueColor:
-                      const AlwaysStoppedAnimation(RowCraftTheme.primaryBlue),
+                  valueColor: const AlwaysStoppedAnimation(
+                    RowCraftTheme.primaryBlue,
+                  ),
                 ),
               ),
             ],
@@ -251,12 +275,10 @@ class _PlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasProgress =
-        progress != null && progress!.totalCompleted > 0;
+    final hasProgress = progress != null && progress!.totalCompleted > 0;
     final total = plan.totalSessions;
     final completed = progress?.totalCompleted ?? 0;
-    final progressFraction =
-        hasProgress && total > 0 ? completed / total : 0.0;
+    final progressFraction = hasProgress && total > 0 ? completed / total : 0.0;
 
     return Card(
       child: InkWell(
@@ -270,14 +292,17 @@ class _PlanCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(plan.title,
-                        style: theme.textTheme.headlineSmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      plan.title,
+                      style: theme.textTheme.headlineSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   DifficultyIndicator(
                     level: DifficultyIndicator.levelFromDifficulty(
-                        plan.difficulty),
+                      plan.difficulty,
+                    ),
                   ),
                 ],
               ),
@@ -285,15 +310,18 @@ class _PlanCard extends StatelessWidget {
               Text(
                 '${plan.durationWeeks} weeks · ${plan.sessionsPerWeek}x/week',
                 style: theme.textTheme.bodySmall?.copyWith(
-                    color: RowCraftTheme.primaryBlue,
-                    fontWeight: FontWeight.w500),
+                  color: RowCraftTheme.primaryBlue,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               if (plan.description.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(plan.description,
-                    style: theme.textTheme.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  plan.description,
+                  style: theme.textTheme.bodySmall,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
               // Progress bar
               if (hasProgress) ...[
@@ -308,7 +336,8 @@ class _PlanCard extends StatelessWidget {
                           minHeight: 4,
                           backgroundColor: RowCraftTheme.surfaceContainerHigh,
                           valueColor: const AlwaysStoppedAnimation(
-                              RowCraftTheme.primaryBlue),
+                            RowCraftTheme.primaryBlue,
+                          ),
                         ),
                       ),
                     ),
@@ -316,7 +345,8 @@ class _PlanCard extends StatelessWidget {
                     Text(
                       '$completed/$total',
                       style: theme.textTheme.labelSmall?.copyWith(
-                          color: RowCraftTheme.subtleGrey),
+                        color: RowCraftTheme.subtleGrey,
+                      ),
                     ),
                   ],
                 ),

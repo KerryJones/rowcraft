@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
@@ -223,10 +224,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   Widget _buildTilesGrid(BuildContext context, String? userId) {
     final tiles = _visibleTiles(userId: userId);
+    final sizeClass = windowSizeClass(context);
+    final columns = switch (sizeClass) {
+      WindowSizeClass.compact => 2,
+      WindowSizeClass.medium => 3,
+      WindowSizeClass.expanded => 4,
+    };
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
         childAspectRatio: 1,

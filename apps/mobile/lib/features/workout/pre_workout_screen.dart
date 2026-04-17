@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/content_constraint.dart';
 import '../../models/workout.dart';
 import '../../models/workout_segment.dart';
 import '../../services/supabase_service.dart';
-import '../../utils/pace_utils.dart' show intensityToPaceTenths, kDefaultFtpWatts;
+import '../../utils/pace_utils.dart'
+    show formatPace, intensityToPaceTenths, kDefaultFtpWatts;
 import '../../utils/segment_color.dart';
 import '../../utils/segment_display.dart';
 import '../../utils/workout_utils.dart';
@@ -90,10 +92,7 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
     if (bleState.pm5ConnectionState == PM5ConnectionState.connected) {
       _startWorkout();
     } else {
-      showConnectionRequiredSheet(
-        context: context,
-        onConnected: _startWorkout,
-      );
+      showConnectionRequiredSheet(context: context, onConnected: _startWorkout);
     }
   }
 
@@ -147,53 +146,60 @@ class _PreWorkoutScreenState extends ConsumerState<PreWorkoutScreen> {
       backgroundColor: RowCraftTheme.surfaceDark,
       appBar: AppBar(title: const Text('Workout')),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _WorkoutDetailBody(
-                    workout: workout,
-                    ftpWatts: ref.watch(profileProvider).value?.currentFtpWatts ?? kDefaultFtpWatts,
-                  ),
-                  const SizedBox(height: 24),
-                  _SimilarWorkoutsSection(workout: workout),
-                ],
+        child: ContentConstraint(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _WorkoutDetailBody(
+                      workout: workout,
+                      ftpWatts:
+                          ref.watch(profileProvider).value?.currentFtpWatts ??
+                          kDefaultFtpWatts,
+                    ),
+                    const SizedBox(height: 24),
+                    _SimilarWorkoutsSection(workout: workout),
+                  ],
+                ),
               ),
-            ),
 
-            // BEGIN WORKOUT button
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: const BoxDecoration(
-                color: RowCraftTheme.surfaceContainer,
-                borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: _handleBeginWorkout,
-                  icon: const Icon(Icons.play_arrow, size: 28),
-                  label: const Text(
-                    'BEGIN WORKOUT',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: RowCraftTheme.successGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+              // BEGIN WORKOUT button
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                decoration: const BoxDecoration(
+                  color: RowCraftTheme.surfaceContainer,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: _handleBeginWorkout,
+                    icon: const Icon(Icons.play_arrow, size: 28),
+                    label: const Text(
+                      'BEGIN WORKOUT',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: RowCraftTheme.successGreen,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -262,24 +268,25 @@ class _WorkoutDetailBody extends StatelessWidget {
             if (totalTime > 0)
               _StatItem(label: 'DURATION', value: formatDuration(totalTime)),
             if (totalDist != null)
-              _StatItem(
-                  label: 'DISTANCE', value: formatDistance(totalDist)),
-            _StatItem(
-              label: 'SEGMENTS',
-              value: '$segCount',
-            ),
+              _StatItem(label: 'DISTANCE', value: formatDistance(totalDist)),
+            _StatItem(label: 'SEGMENTS', value: '$segCount'),
             if (avgPace != null)
               _StatItem(
-                  label: 'AVG PACE', value: '${formatPace(avgPace)}/500m'),
+                label: 'AVG PACE',
+                value: '${formatPace(avgPace)}/500m',
+              ),
           ],
         ),
 
         // Segment list
         if (segments.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Segments',
-              style: theme.textTheme.labelLarge?.copyWith(
-                  color: RowCraftTheme.subtleGrey)),
+          Text(
+            'Segments',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: RowCraftTheme.subtleGrey,
+            ),
+          ),
           const SizedBox(height: 8),
           ...segments.map((seg) => _SegmentRow(segment: seg)),
         ],
@@ -287,17 +294,22 @@ class _WorkoutDetailBody extends StatelessWidget {
         // HR Zone chips
         if (hrZones.isNotEmpty) ...[
           const SizedBox(height: 16),
-          Text('Target HR Zones',
-              style: theme.textTheme.labelLarge?.copyWith(
-                  color: RowCraftTheme.subtleGrey)),
+          Text(
+            'Target HR Zones',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: RowCraftTheme.subtleGrey,
+            ),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             children: (hrZones.toList()..sort()).map((zone) {
               final color = _hrZoneColor(zone);
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
@@ -305,9 +317,10 @@ class _WorkoutDetailBody extends StatelessWidget {
                 child: Text(
                   'Zone $zone',
                   style: TextStyle(
-                      color: color,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600),
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               );
             }).toList(),
@@ -378,8 +391,7 @@ class _SegmentRow extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
                     children: [
                       Text(
@@ -465,9 +477,9 @@ class _SimilarWorkoutsSection extends ConsumerWidget {
     if (workout.tags.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
-    final similarAsync = ref.watch(similarWorkoutsProvider(
-      (workoutId: workout.id, tags: workout.tags),
-    ));
+    final similarAsync = ref.watch(
+      similarWorkoutsProvider((workoutId: workout.id, tags: workout.tags)),
+    );
 
     return similarAsync.when(
       data: (similar) {
@@ -475,9 +487,12 @@ class _SimilarWorkoutsSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Similar Workouts',
-                style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600)),
+            Text(
+              'Similar Workouts',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 12),
             SizedBox(
               height: 140,
@@ -532,7 +547,9 @@ class _SimilarWorkoutCard extends StatelessWidget {
             WorkoutGraph(segments: workout.segments, height: 32),
             const SizedBox(height: 8),
             DifficultyIndicator.fromSegments(
-                segments: workout.segments, size: 12),
+              segments: workout.segments,
+              size: 12,
+            ),
           ],
         ),
       ),

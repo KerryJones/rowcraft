@@ -137,7 +137,7 @@ class WodCard extends StatelessWidget {
                 const SizedBox(width: 20),
                 _StatItem(
                   label: 'AVG PACE',
-                  value: avgPace != null ? wu.formatPace(avgPace) : '—',
+                  value: avgPace != null ? formatPace(avgPace) : '—',
                 ),
               ],
             ),

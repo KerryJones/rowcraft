@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/theme.dart';
+import '../../widgets/content_constraint.dart';
 import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout.dart';
@@ -52,7 +53,10 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
             return const Center(child: Text('Plan not found'));
           }
           final progress = progressAsync.value;
-          return _PlanDetailContent(plan: plan, progress: progress);
+          return ContentConstraint(
+            maxWidth: 800,
+            child: _PlanDetailContent(plan: plan, progress: progress),
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

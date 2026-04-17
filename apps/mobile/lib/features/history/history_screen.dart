@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
 import '../../models/workout_result.dart';
+import '../../widgets/content_constraint.dart';
 import 'history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -16,9 +17,7 @@ class HistoryScreen extends ConsumerWidget {
     final resultsAsync = ref.watch(workoutHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('History'),
-      ),
+      appBar: AppBar(title: const Text('History')),
       body: resultsAsync.when(
         data: (results) {
           if (results.isEmpty) {
@@ -51,20 +50,19 @@ class HistoryScreen extends ConsumerWidget {
           // Group results by date
           final grouped = _groupByDate(results);
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(workoutHistoryProvider);
-            },
-            child: ListView.builder(
-              padding: const EdgeInsets.only(bottom: 16),
-              itemCount: grouped.length,
-              itemBuilder: (context, index) {
-                final entry = grouped.entries.elementAt(index);
-                return _DateGroup(
-                  date: entry.key,
-                  results: entry.value,
-                );
+          return ContentConstraint(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(workoutHistoryProvider);
               },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 16),
+                itemCount: grouped.length,
+                itemBuilder: (context, index) {
+                  final entry = grouped.entries.elementAt(index);
+                  return _DateGroup(date: entry.key, results: entry.value);
+                },
+              ),
             ),
           );
         },
@@ -73,7 +71,11 @@ class HistoryScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: RowCraftTheme.errorRose),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: RowCraftTheme.errorRose,
+              ),
               const SizedBox(height: 16),
               Text('Failed to load history', style: theme.textTheme.bodyLarge),
               const SizedBox(height: 8),
@@ -158,9 +160,13 @@ class _ResultCard extends StatelessWidget {
                   if (result.syncedToC2)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: RowCraftTheme.successGreen.withValues(alpha: 0.2),
+                        color: RowCraftTheme.successGreen.withValues(
+                          alpha: 0.2,
+                        ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
@@ -175,10 +181,7 @@ class _ResultCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
-                result.displayName,
-                style: theme.textTheme.titleMedium,
-              ),
+              Text(result.displayName, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
 
               // Main metrics row
@@ -192,10 +195,7 @@ class _ResultCard extends StatelessWidget {
                   const SizedBox(width: 24),
 
                   // Time
-                  _MetricCell(
-                    value: result.totalTimeFormatted,
-                    label: 'Time',
-                  ),
+                  _MetricCell(value: result.totalTimeFormatted, label: 'Time'),
                   const SizedBox(width: 24),
 
                   // Avg split
@@ -207,10 +207,7 @@ class _ResultCard extends StatelessWidget {
                   const Spacer(),
 
                   // Stroke rate
-                  _MetricCell(
-                    value: '${result.avgStrokeRate}',
-                    label: 's/m',
-                  ),
+                  _MetricCell(value: '${result.avgStrokeRate}', label: 's/m'),
                 ],
               ),
 
@@ -254,10 +251,7 @@ class _MetricCell extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        Text(
-          label,
-          style: theme.textTheme.labelMedium,
-        ),
+        Text(label, style: theme.textTheme.labelMedium),
       ],
     );
   }
