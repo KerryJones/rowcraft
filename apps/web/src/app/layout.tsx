@@ -37,7 +37,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span>&middot;</span>
                 <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
                 <span>&middot;</span>
-                <a href="mailto:support@rowcraft.app" className="hover:text-white transition-colors">Contact</a>
+                <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
+                <span>&middot;</span>
+                <a href="https://buymeacoffee.com/kerryjones" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Support</a>
               </p>
               <p className="text-xs text-gray-600">
                 Not affiliated with or endorsed by Concept2, Inc. Concept2&reg; is a registered trademark of Concept2, Inc.
