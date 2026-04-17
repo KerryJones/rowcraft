@@ -14,6 +14,7 @@ import '../../services/audio_service.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
+import '../../widgets/hr_zone_badge.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
 import 'ftp_result_screen.dart';
@@ -675,7 +676,7 @@ class _OverallStatsBar extends StatelessWidget {
     final tablet = isTablet(context);
 
     return Container(
-      height: 36,
+      height: tablet ? 40 : 36,
       color: RowCraftTheme.surfaceContainer,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -914,7 +915,7 @@ class _WorkoutProfilePainter extends CustomPainter {
         if (maxHr > minHr) {
           final hrLabelStyle = GoogleFonts.jetBrainsMono(
             fontSize: 9,
-            color: const Color(0xFFEF5350).withValues(alpha: 0.7),
+            color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
           );
           for (var i = 0; i < 3; i++) {
             final frac = i / 2.0;
@@ -1064,7 +1065,7 @@ class _WorkoutProfilePainter extends CustomPainter {
           canvas.drawPath(
             hrPath,
             Paint()
-              ..color = const Color(0xFFEF5350).withValues(alpha: 0.7)
+              ..color = RowCraftTheme.errorRose.withValues(alpha: 0.7)
               ..style = PaintingStyle.stroke
               ..strokeWidth = 1.5
               ..strokeJoin = StrokeJoin.round,
@@ -1315,21 +1316,10 @@ class _CurrentSegment extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: info.color.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '${isEstimated ? '~' : ''}Z$zone',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: info.color,
-                            ),
-                          ),
+                        HrZoneBadge(
+                          zone: zone,
+                          color: info.color,
+                          estimated: isEstimated,
                         ),
                       ],
                     );

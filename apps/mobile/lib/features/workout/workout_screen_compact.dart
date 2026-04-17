@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../app/adaptive.dart';
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../services/local_db.dart';
 import '../../utils/pace_utils.dart';
+import '../../widgets/hr_zone_badge.dart';
 import 'hr_zone_gauge.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
@@ -577,7 +579,7 @@ class _HrTile extends StatelessWidget {
         value: (avgHr != null && avgHr > 0) ? '$avgHr' : '--',
         unitSuffix: (avgHr != null && avgHr > 0) ? 'bpm' : null,
         icon: Icons.favorite,
-        iconColor: const Color(0xFFEF5350),
+        iconColor: RowCraftTheme.errorRose,
         onTap: onTap,
         pageIndex: 1,
         pageCount: 2,
@@ -593,7 +595,30 @@ class _HrTile extends StatelessWidget {
         label: 'HR',
         value: '--',
         icon: Icons.favorite,
-        iconColor: const Color(0xFFEF5350),
+        iconColor: RowCraftTheme.errorRose,
+        onTap: onTap,
+        pageIndex: 0,
+        pageCount: 2,
+      );
+    }
+
+    if (isTablet(context)) {
+      final segment = session.engineState.currentSegment;
+      final targetZone = segment?.targetHrZone;
+      final zone = targetZone ?? estimateHrZone(hr, maxHr: maxHr);
+      final info = hrZoneInfo(zone);
+      return _StatTile(
+        label: 'HR',
+        value: '$hr',
+        valueColor: info.color,
+        unitSuffix: 'bpm',
+        icon: Icons.favorite,
+        iconColor: RowCraftTheme.errorRose,
+        trailing: HrZoneBadge(
+          zone: zone,
+          color: info.color,
+          estimated: targetZone == null,
+        ),
         onTap: onTap,
         pageIndex: 0,
         pageCount: 2,
@@ -613,7 +638,7 @@ class _HrTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.favorite, size: 11, color: Color(0xFFEF5350)),
+                const Icon(Icons.favorite, size: 11, color: RowCraftTheme.errorRose),
                 const SizedBox(width: 3),
                 Text(
                   'HR',

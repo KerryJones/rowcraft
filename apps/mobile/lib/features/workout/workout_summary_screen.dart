@@ -524,7 +524,7 @@ class _CombinedChartPainter extends CustomPainter {
         canvas.drawPath(
           hrPath,
           Paint()
-            ..color = const Color(0xFFEF5350)
+            ..color = RowCraftTheme.errorRose
             ..style = PaintingStyle.stroke
             ..strokeWidth = 2
             ..strokeJoin = StrokeJoin.round,
@@ -533,7 +533,7 @@ class _CombinedChartPainter extends CustomPainter {
         // HR Y-axis labels (right side)
         final hrLabelStyle = GoogleFonts.jetBrainsMono(
           fontSize: 9,
-          color: const Color(0xFFEF5350).withValues(alpha: 0.7),
+          color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
         );
         for (var i = 0; i < 3; i++) {
           final frac = i / 2.0;
