@@ -66,8 +66,9 @@ function intensityToHeight(segment: WorkoutSegment): number {
 function getXAxisLabels(
   segments: WorkoutSegment[],
   totalDuration: number,
+  ftpWatts?: number,
 ): { minute: number; fraction: number }[] {
-  const markers = computeCumulativeMinutes(segments);
+  const markers = computeCumulativeMinutes(segments, ftpWatts);
   const totalMinutes = markers[markers.length - 1]?.minute ?? 0;
   if (totalMinutes <= 0) return [];
 
@@ -134,7 +135,7 @@ export function WorkoutGraph({
   const totalGapWidth = BAR_GAP * (expandedSegments.length - 1);
   const availableBarWidth = chartAreaWidth - totalGapWidth;
 
-  const xLabels = getXAxisLabels(expandedSegments, totalDuration);
+  const xLabels = getXAxisLabels(expandedSegments, totalDuration, ftp);
 
   // Compute bar positions
   const bars: {

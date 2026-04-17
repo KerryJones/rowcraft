@@ -125,7 +125,7 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
 
       {/* Stats boxes */}
       <div className="mb-8">
-        <StatsBar segments={workout.segments} forkCount={workout.fork_count} />
+        <StatsBar segments={workout.segments} forkCount={workout.fork_count} ftpWatts={ftpWatts} />
       </div>
 
       {/* Segments */}

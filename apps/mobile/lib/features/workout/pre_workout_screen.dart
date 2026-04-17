@@ -212,7 +212,7 @@ class _WorkoutDetailBody extends StatelessWidget {
 
   const _WorkoutDetailBody({
     required this.workout,
-    this.ftpWatts = kDefaultFtpWatts,
+    required this.ftpWatts,
   });
 
   @override
@@ -288,7 +288,7 @@ class _WorkoutDetailBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          ...segments.map((seg) => _SegmentRow(segment: seg)),
+          ...segments.map((seg) => _SegmentRow(segment: seg, ftpWatts: ftpWatts)),
         ],
 
         // HR Zone chips
@@ -360,13 +360,14 @@ class _WorkoutDetailBody extends StatelessWidget {
 
 class _SegmentRow extends StatelessWidget {
   final WorkoutSegment segment;
+  final int ftpWatts;
 
-  const _SegmentRow({required this.segment});
+  const _SegmentRow({required this.segment, required this.ftpWatts});
 
   @override
   Widget build(BuildContext context) {
     final color = segmentDisplayColor(segment);
-    final paceLabel = segmentPaceLabel(segment, kDefaultFtpWatts);
+    final paceLabel = segmentPaceLabel(segment, ftpWatts);
     final srLabel = segmentStrokeRateLabel(segment);
 
     return Padding(

@@ -125,30 +125,30 @@ export interface MinuteMarker {
 	segmentIndex: number;
 }
 
-export function computeCumulativeMinutes(segments: WorkoutSegment[]): MinuteMarker[] {
+/** Estimate duration in seconds for a single segment. */
+function segmentSeconds(seg: WorkoutSegment, ftpWatts: number): number {
+	if (seg.duration_type === 'time') {
+		return seg.duration_value;
+	} else if (seg.duration_type === 'distance') {
+		// Estimate time from intensity-resolved pace, or assume 2:00/500m
+		let pacePerMeter = 0.24; // 2:00/500m = 0.24 sec/m
+		if (seg.target_intensity != null) {
+			const pace = resolveIntensityToPace(seg.target_intensity, ftpWatts);
+			pacePerMeter = (pace / 10) / 500;
+		}
+		return seg.duration_value * pacePerMeter;
+	} else {
+		// Calories — rough estimate: ~15 cal/min
+		return (seg.duration_value / 15) * 60;
+	}
+}
+
+export function computeCumulativeMinutes(segments: WorkoutSegment[], ftpWatts = DEFAULT_FTP_WATTS): MinuteMarker[] {
 	const markers: MinuteMarker[] = [{ minute: 0, segmentIndex: 0 }];
 	let cumulativeSeconds = 0;
 
 	for (let i = 0; i < segments.length; i++) {
-		const seg = segments[i];
-		let segSeconds: number;
-
-		if (seg.duration_type === 'time') {
-			segSeconds = seg.duration_value;
-		} else if (seg.duration_type === 'distance') {
-			// Estimate time from intensity-resolved pace, or assume 2:00/500m
-			let pacePerMeter = 0.24; // 2:00/500m = 0.24 sec/m
-			if (seg.target_intensity != null) {
-				const pace = resolveIntensityToPace(seg.target_intensity, DEFAULT_FTP_WATTS);
-				pacePerMeter = (pace / 10) / 500;
-			}
-			segSeconds = seg.duration_value * pacePerMeter;
-		} else {
-			// Calories — rough estimate: ~15 cal/min
-			segSeconds = (seg.duration_value / 15) * 60;
-		}
-
-		cumulativeSeconds += segSeconds;
+		cumulativeSeconds += segmentSeconds(segments[i], ftpWatts);
 		markers.push({
 			minute: Math.round(cumulativeSeconds / 60 * 10) / 10,
 			segmentIndex: i + 1,
@@ -161,9 +161,21 @@ export function computeCumulativeMinutes(segments: WorkoutSegment[]): MinuteMark
 /**
  * Estimate total workout duration in minutes (including distance/calorie segments).
  */
-export function estimateTotalMinutes(segments: WorkoutSegment[]): number {
-	const markers = computeCumulativeMinutes(segments);
+export function estimateTotalMinutes(segments: WorkoutSegment[], ftpWatts = DEFAULT_FTP_WATTS): number {
+	const markers = computeCumulativeMinutes(segments, ftpWatts);
 	return markers[markers.length - 1]?.minute ?? 0;
+}
+
+/**
+ * Estimate total workout duration in seconds (including distance/calorie segments).
+ * Computes from raw seconds to avoid rounding artifacts from minute markers.
+ */
+export function estimateTotalSeconds(segments: WorkoutSegment[], ftpWatts = DEFAULT_FTP_WATTS): number {
+	let total = 0;
+	for (const seg of segments) {
+		total += segmentSeconds(seg, ftpWatts);
+	}
+	return Math.round(total);
 }
 
 /**

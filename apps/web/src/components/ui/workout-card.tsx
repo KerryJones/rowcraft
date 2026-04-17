@@ -3,7 +3,8 @@
 import type { Workout } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { formatWorkoutType, formatDuration, formatDistance, getWorkoutTypeBadgeColor } from '@/lib/utils/format';
-import { computeTotalTime, computeTotalDistance, computeSegmentCount, estimateTotalMinutes, computeDominantZone } from '@/lib/utils/workout';
+import { getEffectiveFtp } from '@/lib/utils/ftp';
+import { computeTotalDistance, computeSegmentCount, estimateTotalSeconds, computeDominantZone } from '@/lib/utils/workout';
 import { GitFork, Layers } from 'lucide-react';
 
 const ZONE_COLORS: Record<number, { text: string; bg: string }> = {
@@ -21,18 +22,15 @@ interface WorkoutCardProps {
 }
 
 export function WorkoutCard({ workout, onClick, ftpWatts }: WorkoutCardProps) {
-  const totalTime = computeTotalTime(workout.segments);
   const totalDistance = computeTotalDistance(workout.segments);
   const segmentCount = computeSegmentCount(workout.segments);
   const dominantZone = computeDominantZone(workout.segments);
-  const minutes = estimateTotalMinutes(workout.segments);
+  const estimatedSecs = estimateTotalSeconds(workout.segments, getEffectiveFtp(ftpWatts ?? null));
 
-  // Hero stat: show estimated minutes for time-based, distance for distance-based
+  // Hero stat: distance for distance workouts, estimated duration for everything else
   const heroValue = totalDistance !== null
     ? formatDistance(totalDistance)
-    : totalTime !== null
-      ? formatDuration(totalTime)
-      : `${Math.round(minutes)} min`;
+    : formatDuration(estimatedSecs);
 
   const zoneStyle = dominantZone ? ZONE_COLORS[dominantZone] : null;
 

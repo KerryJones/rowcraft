@@ -702,20 +702,19 @@ class _WorkoutCard extends StatelessWidget {
   final Workout workout;
   final int ftpWatts;
 
-  const _WorkoutCard({required this.workout, this.ftpWatts = kDefaultFtpWatts});
+  const _WorkoutCard({required this.workout, required this.ftpWatts});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totalDist = computeTotalDistance(workout.segments);
-    final totalTime = computeTotalTime(workout.segments);
     final estimatedSecs = computeEstimatedTotalTime(workout.segments, ftpWatts);
     final dominantZone = computeDominantZone(workout.segments);
 
-    // Hero value: distance for distance workouts, time for everything else
+    // Hero value: distance for distance workouts, estimated duration for everything else
     final heroValue = workout.workoutType == WorkoutType.singleDistance
         ? formatDistance(totalDist ?? 0)
-        : formatDuration(totalTime ?? estimatedSecs);
+        : formatDuration(estimatedSecs);
 
     const zoneColors = {
       1: RowCraftTheme.hrZone1,

@@ -305,7 +305,7 @@ export default function BuilderPage() {
 
           {/* Stats */}
           <div className="mb-6">
-            <StatsBar segments={segments} />
+            <StatsBar segments={segments} ftpWatts={ftpWatts} />
           </div>
 
           {/* Segment list */}

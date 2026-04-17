@@ -6,6 +6,7 @@ import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
+import '../profile/profile_screen.dart' show profileProvider;
 
 enum LibrarySortOrder { newest, duration, mostForked }
 
@@ -119,6 +120,8 @@ final filteredWorkoutsProvider = FutureProvider.family<
       LibrarySortOrder sort,
     })>((ref, filter) async {
   final allWorkouts = await ref.watch(workoutLibraryProvider.future);
+  final profile = ref.watch(profileProvider);
+  final ftpWatts = profile.value?.currentFtpWatts ?? kDefaultFtpWatts;
 
   var filtered = allWorkouts;
 
@@ -127,7 +130,7 @@ final filteredWorkoutsProvider = FutureProvider.family<
       (filter.duration != null || filter.sort == LibrarySortOrder.duration)
           ? {
               for (final w in allWorkouts)
-                w.id: computeEstimatedTotalTime(w.segments, kDefaultFtpWatts),
+                w.id: computeEstimatedTotalTime(w.segments, ftpWatts),
             }
           : null;
 
@@ -168,7 +171,6 @@ final filteredWorkoutsProvider = FutureProvider.family<
     filtered = filtered.where((w) => w.tags.contains(filter.tag)).toList();
   }
 
-  // Filter by duration (estimated total time using default FTP)
   if (filter.duration != null) {
     filtered = filtered.where((w) {
       final secs = durationMap![w.id]!;
