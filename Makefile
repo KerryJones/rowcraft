@@ -8,7 +8,7 @@ LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/nul
 LOCAL_SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.app
 
-.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds apk release
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds apk install release
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ list:
 	@echo "  make dev              Start Supabase, show instructions"
 	@echo "  make dev-web          Start Next.js dev server (http://localhost:3000)"
 	@echo "  make dev-mobile       Start Flutter app with local Supabase"
-	@echo "  make dev-mobile-cloud Start Flutter app with cloud Supabase"
+	@echo "  make install          Run app on device with cloud Supabase"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test             Run all tests (mobile + web)"
@@ -98,7 +98,7 @@ dev-mobile:
 		--dart-define=GOOGLE_WEB_CLIENT_ID=$(GOOGLE_WEB_CLIENT_ID) \
 		--dart-define=WEB_APP_URL=http://$(LOCAL_IP):3000
 
-dev-mobile-cloud:
+install:
 	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
 	cd apps/mobile && flutter run \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
