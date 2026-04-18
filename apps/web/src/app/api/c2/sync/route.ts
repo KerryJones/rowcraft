@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import truncate from 'lodash.truncate';
 import { createSupabaseServer } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
+import {
+  type RowCraftWorkoutType,
+  type C2Segment,
+  type SplitJson,
+  type TimeSampleJson,
+  mapC2WorkoutType,
+  buildHeartRateObject,
+  buildSplits,
+  buildIntervals,
+  buildStrokeData,
+} from '@/lib/utils/c2-payload';
 
 async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
   const authHeader = request.headers.get('authorization');
@@ -27,7 +38,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { result_id } = await request.json();
+  const body = await request.json();
+  const { result_id, client_version, device, device_os, device_os_version } = body;
 
   if (!result_id) {
     return NextResponse.json({ error: 'result_id is required' }, { status: 400 });
@@ -39,10 +51,10 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
-  // Fetch the workout result
+  // Fetch the workout result with joined workout data
   const { data: result, error: resultError } = await supabase
     .from('workout_results')
-    .select('*, workouts(title)')
+    .select('*, workouts(title, workout_type, segments)')
     .eq('id', result_id)
     .eq('user_id', userId)
     .single();
@@ -87,29 +99,87 @@ export async function POST(request: NextRequest) {
     String(finishedAt.getUTCSeconds()).padStart(2, '0'),
   ].join(':');
 
-  // Build C2 API payload with required + optional fields.
-  // Both DB and C2 API use tenths of seconds for time.
+  // Extract workout definition (may be null for free rows)
+  const workout = result.workouts as { title: string; workout_type: string; segments: C2Segment[] } | null;
+  const workoutType = (workout?.workout_type ?? null) as RowCraftWorkoutType | null;
+  const segments: C2Segment[] = workout?.segments ?? [];
+
+  // Build C2 API payload
   const c2Payload: Record<string, unknown> = {
     type: 'rower',
     date: c2Date,
     distance: result.total_distance,
     time: result.total_time,
     weight_class: weightClass,
+    workout_type: mapC2WorkoutType(workoutType, segments),
   };
+
+  // Timezone (IANA format)
+  if (result.timezone && result.timezone !== 'UTC') {
+    c2Payload.timezone = result.timezone;
+  }
+
+  // Overall averages
   if (result.avg_stroke_rate != null) {
     c2Payload.stroke_rate = result.avg_stroke_rate;
   }
   if (result.calories != null) {
     c2Payload.calories_total = result.calories;
   }
-  if (result.avg_heart_rate != null) {
-    c2Payload.heart_rate = { average: result.avg_heart_rate };
+  if (result.stroke_count > 0) {
+    c2Payload.stroke_count = result.stroke_count;
   }
-  // C2 API doesn't document a max length for `comments`, so truncate conservatively.
-  const workoutTitle = (result.workouts as { title: string } | null)?.title;
+  if (result.drag_factor != null) {
+    c2Payload.drag_factor = result.drag_factor;
+  }
+
+  // Compute watt-minutes
+  if (result.avg_watts > 0 && result.total_time > 0) {
+    const timeMinutes = result.total_time / 600;
+    c2Payload.wattminutes_total = Math.round(result.avg_watts * timeMinutes);
+  }
+
+  // Heart rate
+  const hr = buildHeartRateObject(
+    result.avg_heart_rate,
+    result.min_heart_rate,
+    result.max_heart_rate,
+    result.ending_heart_rate,
+  );
+  if (hr) c2Payload.heart_rate = hr;
+
+  // Comments
+  const workoutTitle = workout?.title;
   c2Payload.comments = workoutTitle
     ? truncate(`Rowed on RowCraft: ${workoutTitle}`, { length: 240, omission: '…' })
     : 'Rowed on RowCraft';
+
+  // Splits or Intervals
+  const splits: SplitJson[] = result.splits ?? [];
+  if (splits.length > 0) {
+    const isInterval = workoutType === 'intervals' || workoutType === 'variable_intervals';
+    if (isInterval && segments.length > 0) {
+      const intervals = buildIntervals(splits, segments);
+      if (intervals.length > 0) {
+        c2Payload.intervals = intervals;
+      }
+    } else {
+      c2Payload.splits = buildSplits(splits);
+    }
+  }
+
+  // Stroke data (time-series samples)
+  const timeSamples: TimeSampleJson[] = result.time_samples ?? [];
+  if (timeSamples.length > 0) {
+    c2Payload.strokes = buildStrokeData(timeSamples);
+  }
+
+  // Device metadata
+  if (client_version) c2Payload.client_version = client_version;
+  c2Payload.pm_version = 5;
+  if (device) c2Payload.device = device;
+  if (device_os) c2Payload.device_os = device_os;
+  if (device_os_version) c2Payload.device_os_version = device_os_version;
 
   // Post result to C2 Logbook
   const c2Response = await fetch(
@@ -155,7 +225,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Persist refreshed tokens (best-effort — proceed with sync even if this fails)
+    // Persist refreshed tokens (best-effort)
     await supabase
       .from('profiles')
       .update({
@@ -164,7 +234,7 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', userId);
 
-    // Retry the sync with the new token
+    // Retry with the new token
     const retryResponse = await fetch(
       `${process.env.C2_BASE_URL}/api/users/${profile.c2_user_id}/results`,
       {
@@ -178,14 +248,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (!retryResponse.ok) {
-      const body = await retryResponse.text().catch(() => '');
+      const retryBody = await retryResponse.text().catch(() => '');
       return NextResponse.json(
-        { error: `Failed to sync to C2 after token refresh: ${retryResponse.status}`, detail: body },
+        { error: `Failed to sync to C2 after token refresh: ${retryResponse.status}`, detail: retryBody },
         { status: retryResponse.status === 401 ? 401 : retryResponse.status === 429 ? 429 : 502 },
       );
     }
-
-    // Retry succeeded — fall through to mark as synced
   } else if (c2Response.status === 401) {
     return NextResponse.json(
       { error: 'C2 token expired — reconnect in Profile' },
@@ -197,9 +265,9 @@ export async function POST(request: NextRequest) {
       { status: 429 },
     );
   } else if (!c2Response.ok) {
-    const body = await c2Response.text().catch(() => '');
+    const errorBody = await c2Response.text().catch(() => '');
     return NextResponse.json(
-      { error: `Failed to sync to C2: ${c2Response.status}`, detail: body },
+      { error: `Failed to sync to C2: ${c2Response.status}`, detail: errorBody },
       { status: 502 },
     );
   }

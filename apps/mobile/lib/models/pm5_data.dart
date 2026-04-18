@@ -13,6 +13,7 @@ class PM5Data {
   final int? heartRate;
   final int strokeCount;
   final int intervalCount;
+  final int dragFactor;
 
   /// True when strokeRate was freshly parsed from Additional Status 1,
   /// false when copied from a previous snapshot by other characteristics.
@@ -28,6 +29,7 @@ class PM5Data {
     this.heartRate,
     required this.strokeCount,
     required this.intervalCount,
+    this.dragFactor = 0,
     this.strokeRateUpdated = false,
   });
 
@@ -42,6 +44,7 @@ class PM5Data {
         heartRate = null,
         strokeCount = 0,
         intervalCount = 0,
+        dragFactor = 0,
         strokeRateUpdated = false;
 
   PM5Data copyWith({
@@ -54,6 +57,7 @@ class PM5Data {
     int? heartRate,
     int? strokeCount,
     int? intervalCount,
+    int? dragFactor,
     bool? strokeRateUpdated,
   }) {
     return PM5Data(
@@ -66,6 +70,7 @@ class PM5Data {
       heartRate: heartRate ?? this.heartRate,
       strokeCount: strokeCount ?? this.strokeCount,
       intervalCount: intervalCount ?? this.intervalCount,
+      dragFactor: dragFactor ?? this.dragFactor,
       strokeRateUpdated: strokeRateUpdated ?? this.strokeRateUpdated,
     );
   }

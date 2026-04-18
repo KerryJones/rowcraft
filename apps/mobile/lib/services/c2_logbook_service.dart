@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,6 +35,7 @@ final c2LogbookServiceProvider = Provider<C2LogbookService>((ref) {
 /// the profiles table.
 class C2LogbookService {
   final _client = Supabase.instance.client;
+  static Map<String, String>? _cachedDeviceMetadata;
 
   /// Whether the user has linked their C2 Logbook account.
   ///
@@ -83,6 +87,43 @@ class C2LogbookService {
     await launchUrl(authUrl, mode: LaunchMode.externalApplication);
   }
 
+  /// Gather device metadata for C2 Logbook submissions.
+  /// Cached after first call since device info doesn't change.
+  /// Returns an empty map on failure so sync still proceeds without metadata.
+  Future<Map<String, String>> _getDeviceMetadata() async {
+    if (_cachedDeviceMetadata != null) return _cachedDeviceMetadata!;
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final deviceInfo = DeviceInfoPlugin();
+
+      String device;
+      String deviceOs;
+      String deviceOsVersion;
+
+      if (Platform.isAndroid) {
+        final android = await deviceInfo.androidInfo;
+        device = '${android.manufacturer} ${android.model}';
+        deviceOs = 'Android';
+        deviceOsVersion = android.version.release;
+      } else {
+        final ios = await deviceInfo.iosInfo;
+        device = ios.utsname.machine;
+        deviceOs = 'iOS';
+        deviceOsVersion = ios.systemVersion;
+      }
+
+      _cachedDeviceMetadata = {
+        'client_version': packageInfo.version,
+        'device': device,
+        'device_os': deviceOs,
+        'device_os_version': deviceOsVersion,
+      };
+      return _cachedDeviceMetadata!;
+    } catch (_) {
+      return {};
+    }
+  }
+
   /// Sync a workout result to the C2 Online Logbook.
   ///
   /// Returns a record with `success` and an optional `error` message.
@@ -97,13 +138,18 @@ class C2LogbookService {
     }
 
     try {
+      final metadata = await _getDeviceMetadata();
+
       final response = await http.post(
         Uri.parse('$_webAppUrl/api/c2/sync'),
         headers: {
           'Authorization': 'Bearer ${session.accessToken}',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'result_id': result.id}),
+        body: jsonEncode({
+          'result_id': result.id,
+          ...metadata,
+        }),
       );
 
       if (response.statusCode == 200) {

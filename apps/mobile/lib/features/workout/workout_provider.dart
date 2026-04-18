@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../../models/pm5_data.dart';
 import '../../models/workout_segment.dart';
@@ -208,6 +209,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// Recorded when start() is called — used for accurate startedAt.
   DateTime? _startedAt;
 
+  /// IANA timezone captured at workout load time (e.g. "America/New_York").
+  String _timezone = 'UTC';
+
   /// Generation counter to guard against concurrent loadWorkout calls.
   int _loadGeneration = 0;
 
@@ -342,6 +346,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _savedResultId = null;
     _suppressBleData = true;
     _lastStandaloneHr = null;
+    _timezone = await FlutterTimezone.getLocalTimezone();
     _loadGeneration++;
     final myGen = _loadGeneration;
 
@@ -525,9 +530,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       avgSplit: avgSplit,
       avgStrokeRate: avgSR,
       avgHeartRate: data.heartRate,
+      minHeartRate: _engine!.overallMinHr,
+      maxHeartRate: _engine!.overallMaxHr,
+      endingHeartRate: _engine!.endingHeartRate,
       avgWatts: avgW,
       calories: data.calories,
+      strokeCount: data.strokeCount,
+      dragFactor: _engine!.avgDragFactor,
+      timezone: _timezone,
       splits: splits,
+      timeSamples: _engine!.timeSamples,
     );
 
     state = state.copyWith(

@@ -1,3 +1,5 @@
+import 'workout_time_sample.dart';
+
 class SplitData {
   final int intervalIndex;
   final double distance;
@@ -6,6 +8,8 @@ class SplitData {
   final int avgStrokeRate;
   final int avgWatts;
   final int? avgHeartRate;
+  final int? minHeartRate;
+  final int? maxHeartRate;
   final int calories;
 
   const SplitData({
@@ -16,6 +20,8 @@ class SplitData {
     required this.avgStrokeRate,
     required this.avgWatts,
     this.avgHeartRate,
+    this.minHeartRate,
+    this.maxHeartRate,
     required this.calories,
   });
 
@@ -28,6 +34,8 @@ class SplitData {
       avgStrokeRate: json['avg_stroke_rate'] as int,
       avgWatts: json['avg_watts'] as int,
       avgHeartRate: json['avg_heart_rate'] as int?,
+      minHeartRate: json['min_heart_rate'] as int?,
+      maxHeartRate: json['max_heart_rate'] as int?,
       calories: json['calories'] as int,
     );
   }
@@ -41,6 +49,8 @@ class SplitData {
       'avg_stroke_rate': avgStrokeRate,
       'avg_watts': avgWatts,
       if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
+      if (minHeartRate != null) 'min_heart_rate': minHeartRate,
+      if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
       'calories': calories,
     };
   }
@@ -66,9 +76,16 @@ class WorkoutResult {
   final int avgSplit;
   final int avgStrokeRate;
   final int? avgHeartRate;
+  final int? minHeartRate;
+  final int? maxHeartRate;
+  final int? endingHeartRate;
   final int avgWatts;
   final int calories;
+  final int strokeCount;
+  final int? dragFactor;
+  final String timezone;
   final List<SplitData> splits;
+  final List<WorkoutTimeSample> timeSamples;
   final bool syncedToC2;
 
   const WorkoutResult({
@@ -83,9 +100,16 @@ class WorkoutResult {
     required this.avgSplit,
     required this.avgStrokeRate,
     this.avgHeartRate,
+    this.minHeartRate,
+    this.maxHeartRate,
+    this.endingHeartRate,
     required this.avgWatts,
     required this.calories,
+    this.strokeCount = 0,
+    this.dragFactor,
+    this.timezone = 'UTC',
     this.splits = const [],
+    this.timeSamples = const [],
     this.syncedToC2 = false,
   });
 
@@ -101,9 +125,16 @@ class WorkoutResult {
     int? avgSplit,
     int? avgStrokeRate,
     int? avgHeartRate,
+    int? minHeartRate,
+    int? maxHeartRate,
+    int? endingHeartRate,
     int? avgWatts,
     int? calories,
+    int? strokeCount,
+    int? dragFactor,
+    String? timezone,
     List<SplitData>? splits,
+    List<WorkoutTimeSample>? timeSamples,
     bool? syncedToC2,
   }) {
     return WorkoutResult(
@@ -118,9 +149,16 @@ class WorkoutResult {
       avgSplit: avgSplit ?? this.avgSplit,
       avgStrokeRate: avgStrokeRate ?? this.avgStrokeRate,
       avgHeartRate: avgHeartRate ?? this.avgHeartRate,
+      minHeartRate: minHeartRate ?? this.minHeartRate,
+      maxHeartRate: maxHeartRate ?? this.maxHeartRate,
+      endingHeartRate: endingHeartRate ?? this.endingHeartRate,
       avgWatts: avgWatts ?? this.avgWatts,
       calories: calories ?? this.calories,
+      strokeCount: strokeCount ?? this.strokeCount,
+      dragFactor: dragFactor ?? this.dragFactor,
+      timezone: timezone ?? this.timezone,
       splits: splits ?? this.splits,
+      timeSamples: timeSamples ?? this.timeSamples,
       syncedToC2: syncedToC2 ?? this.syncedToC2,
     );
   }
@@ -174,10 +212,20 @@ class WorkoutResult {
       avgSplit: json['avg_split'] as int,
       avgStrokeRate: json['avg_stroke_rate'] as int,
       avgHeartRate: json['avg_heart_rate'] as int?,
+      minHeartRate: json['min_heart_rate'] as int?,
+      maxHeartRate: json['max_heart_rate'] as int?,
+      endingHeartRate: json['ending_heart_rate'] as int?,
       avgWatts: json['avg_watts'] as int,
       calories: json['calories'] as int,
+      strokeCount: (json['stroke_count'] as int?) ?? 0,
+      dragFactor: json['drag_factor'] as int?,
+      timezone: (json['timezone'] as String?) ?? 'UTC',
       splits: (json['splits'] as List<dynamic>?)
               ?.map((e) => SplitData.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      timeSamples: (json['time_samples'] as List<dynamic>?)
+              ?.map((e) => WorkoutTimeSample.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       syncedToC2: (json['synced_to_c2'] as bool?) ?? false,
@@ -198,9 +246,17 @@ class WorkoutResult {
       'avg_split': avgSplit,
       'avg_stroke_rate': avgStrokeRate,
       if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
+      if (minHeartRate != null) 'min_heart_rate': minHeartRate,
+      if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
+      if (endingHeartRate != null) 'ending_heart_rate': endingHeartRate,
       'avg_watts': avgWatts,
       'calories': calories,
+      'stroke_count': strokeCount,
+      if (dragFactor != null) 'drag_factor': dragFactor,
+      'timezone': timezone,
       'splits': splits.map((e) => e.toJson()).toList(),
+      if (timeSamples.isNotEmpty)
+        'time_samples': timeSamples.map((e) => e.toJson()).toList(),
       'synced_to_c2': syncedToC2,
     };
   }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rowcraft/models/workout_result.dart';
+import 'package:rowcraft/models/workout_time_sample.dart';
 
 void main() {
   final startedAt = DateTime.utc(2025, 6, 15, 10, 0, 0);
@@ -22,7 +23,7 @@ void main() {
         'avg_pace': avgPace,
         'avg_stroke_rate': avgStrokeRate,
         'avg_watts': avgWatts,
-        if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
+        'avg_heart_rate': ?avgHeartRate,
         'calories': calories,
       };
 
@@ -43,14 +44,14 @@ void main() {
       {
         'id': id,
         'user_id': userId,
-        if (workoutId != null) 'workout_id': workoutId,
+        'workout_id': ?workoutId,
         'started_at': startedAt.toIso8601String(),
         'finished_at': finishedAt.toIso8601String(),
         'total_distance': totalDistance,
         'total_time_ms': totalTimeMs,
         'avg_split': avgSplit,
         'avg_stroke_rate': avgStrokeRate,
-        if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
+        'avg_heart_rate': ?avgHeartRate,
         'avg_watts': avgWatts,
         'calories': calories,
         'splits': splits ?? [splitJson(segmentIndex: 0), splitJson(segmentIndex: 1)],
@@ -375,6 +376,161 @@ void main() {
         final b = WorkoutResult.fromJson(resultJson(id: 'id-2'));
         expect(a, isNot(equals(b)));
       });
+    });
+
+    group('C2 detail fields', () {
+      test('deserializes new C2 detail fields', () {
+        final json = resultJson();
+        json['stroke_count'] = 450;
+        json['drag_factor'] = 115;
+        json['min_heart_rate'] = 120;
+        json['max_heart_rate'] = 175;
+        json['ending_heart_rate'] = 168;
+        json['timezone'] = 'America/New_York';
+        json['time_samples'] = [
+          {'t': 1000, 'd': 5.2, 'p': 1050, 'spm': 28, 'hr': 145, 'si': 0},
+          {'t': 2000, 'd': 10.5, 'p': 1040, 'spm': 29, 'si': 0},
+        ];
+
+        final result = WorkoutResult.fromJson(json);
+
+        expect(result.strokeCount, 450);
+        expect(result.dragFactor, 115);
+        expect(result.minHeartRate, 120);
+        expect(result.maxHeartRate, 175);
+        expect(result.endingHeartRate, 168);
+        expect(result.timezone, 'America/New_York');
+        expect(result.timeSamples, hasLength(2));
+        expect(result.timeSamples[0].pace, 1050);
+        expect(result.timeSamples[0].distance, 5.2);
+        expect(result.timeSamples[1].heartRate, isNull);
+      });
+
+      test('defaults for missing C2 detail fields', () {
+        final json = resultJson();
+        final result = WorkoutResult.fromJson(json);
+
+        expect(result.strokeCount, 0);
+        expect(result.dragFactor, isNull);
+        expect(result.minHeartRate, isNull);
+        expect(result.maxHeartRate, isNull);
+        expect(result.endingHeartRate, isNull);
+        expect(result.timezone, 'UTC');
+        expect(result.timeSamples, isEmpty);
+      });
+
+      test('serializes C2 detail fields', () {
+        final json = resultJson();
+        json['stroke_count'] = 450;
+        json['drag_factor'] = 115;
+        json['min_heart_rate'] = 120;
+        json['max_heart_rate'] = 175;
+        json['ending_heart_rate'] = 168;
+        json['timezone'] = 'America/New_York';
+        json['time_samples'] = [
+          {'t': 1000, 'd': 5.2, 'p': 1050, 'spm': 28, 'hr': 145, 'si': 0},
+        ];
+
+        final result = WorkoutResult.fromJson(json);
+        final output = result.toJson();
+
+        expect(output['stroke_count'], 450);
+        expect(output['drag_factor'], 115);
+        expect(output['min_heart_rate'], 120);
+        expect(output['max_heart_rate'], 175);
+        expect(output['ending_heart_rate'], 168);
+        expect(output['timezone'], 'America/New_York');
+        expect(output['time_samples'], hasLength(1));
+      });
+
+      test('omits time_samples when empty', () {
+        final json = resultJson();
+        final result = WorkoutResult.fromJson(json);
+        final output = result.toJson();
+
+        expect(output.containsKey('time_samples'), isFalse);
+      });
+    });
+  });
+
+  group('WorkoutTimeSample', () {
+    test('toJson uses compact keys', () {
+      const sample = WorkoutTimeSample(
+        timestamp: Duration(milliseconds: 5000),
+        distance: 25.3,
+        pace: 1050,
+        strokeRate: 28,
+        heartRate: 145,
+        segmentIndex: 0,
+      );
+
+      final json = sample.toJson();
+
+      expect(json['t'], 5000);
+      expect(json['d'], 25.3);
+      expect(json['p'], 1050);
+      expect(json['spm'], 28);
+      expect(json['hr'], 145);
+      expect(json['si'], 0);
+    });
+
+    test('toJson omits hr when null', () {
+      const sample = WorkoutTimeSample(
+        timestamp: Duration(milliseconds: 5000),
+        distance: 25.3,
+        pace: 1050,
+        strokeRate: 28,
+        segmentIndex: 0,
+      );
+
+      final json = sample.toJson();
+      expect(json.containsKey('hr'), isFalse);
+    });
+
+    test('fromJson/toJson roundtrip', () {
+      const original = WorkoutTimeSample(
+        timestamp: Duration(milliseconds: 12000),
+        distance: 60.5,
+        pace: 1100,
+        strokeRate: 26,
+        heartRate: 155,
+        segmentIndex: 2,
+      );
+
+      final json = original.toJson();
+      final restored = WorkoutTimeSample.fromJson(json);
+
+      expect(restored.timestamp, original.timestamp);
+      expect(restored.distance, original.distance);
+      expect(restored.pace, original.pace);
+      expect(restored.strokeRate, original.strokeRate);
+      expect(restored.heartRate, original.heartRate);
+      expect(restored.segmentIndex, original.segmentIndex);
+    });
+  });
+
+  group('SplitData HR min/max', () {
+    test('serializes min/max heart rate', () {
+      final json = splitJson();
+      json['min_heart_rate'] = 130;
+      json['max_heart_rate'] = 170;
+
+      final split = SplitData.fromJson(json);
+      expect(split.minHeartRate, 130);
+      expect(split.maxHeartRate, 170);
+
+      final output = split.toJson();
+      expect(output['min_heart_rate'], 130);
+      expect(output['max_heart_rate'], 170);
+    });
+
+    test('omits min/max heart rate when null', () {
+      final json = splitJson();
+      final split = SplitData.fromJson(json);
+      final output = split.toJson();
+
+      expect(output.containsKey('min_heart_rate'), isFalse);
+      expect(output.containsKey('max_heart_rate'), isFalse);
     });
   });
 }
