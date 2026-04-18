@@ -173,12 +173,21 @@ class WorkoutEngine {
   int _hrSum = 0;
   int _hrCount = 0;
   int _sampleCount = 0;
+  int? _segmentMinHr;
+  int? _segmentMaxHr;
 
   // Overall accumulators (across all segments)
   int _totalPaceSum = 0;
   int _totalSampleCount = 0;
   int _totalHrSum = 0;
   int _totalHrCount = 0;
+  int? _overallMinHr;
+  int? _overallMaxHr;
+  int? _lastValidHr;
+
+  // Drag factor accumulator
+  int _dragFactorSum = 0;
+  int _dragFactorCount = 0;
 
   // Time-series data collection (running log across whole workout)
   final List<WorkoutTimeSample> _timeSamples = [];
@@ -196,6 +205,12 @@ class WorkoutEngine {
   WorkoutPhase? _prePausePhase;
   int _segmentStartCalories = 0;
   static const _autoPauseDelaySeconds = 5;
+
+  static int _trackMin(int? current, int value) =>
+      current == null ? value : math.min(current, value);
+
+  static int _trackMax(int? current, int value) =>
+      current == null ? value : math.max(current, value);
 
   // Auto-pause finish timer (ramp FTP tests)
   Timer? _autoPauseFinishTimer;
@@ -229,6 +244,15 @@ class WorkoutEngine {
   /// Time-series samples collected across the whole workout.
   List<WorkoutTimeSample> get timeSamples =>
       List.unmodifiable(_timeSamples);
+
+  /// Overall HR min/max/ending across the entire workout.
+  int? get overallMinHr => _overallMinHr;
+  int? get overallMaxHr => _overallMaxHr;
+  int? get endingHeartRate => _lastValidHr;
+
+  /// Average drag factor across the workout, or null if none recorded.
+  int? get avgDragFactor =>
+      _dragFactorCount > 0 ? _dragFactorSum ~/ _dragFactorCount : null;
 
   /// Enter the ready phase — listens for PM5 data and starts the workout
   /// automatically when the rower takes the first stroke.
@@ -503,6 +527,8 @@ class WorkoutEngine {
     _hrSum = 0;
     _hrCount = 0;
     _sampleCount = 0;
+    _segmentMinHr = null;
+    _segmentMaxHr = null;
     _outOfRangeSince = null;
     _lastStrokeCount = _state.latestData.strokeCount;
     _lastActivityAt = null;
@@ -616,17 +642,27 @@ class WorkoutEngine {
     _strokeRateSum += data.strokeRate;
     _wattsSum += data.watts;
     if (data.heartRate != null) {
-      _hrSum += data.heartRate!;
+      final hr = data.heartRate!;
+      _hrSum += hr;
       _hrCount++;
+      _segmentMinHr = _trackMin(_segmentMinHr, hr);
+      _segmentMaxHr = _trackMax(_segmentMaxHr, hr);
+      _totalHrSum += hr;
+      _totalHrCount++;
+      _overallMinHr = _trackMin(_overallMinHr, hr);
+      _overallMaxHr = _trackMax(_overallMaxHr, hr);
+      _lastValidHr = hr;
+    }
+
+    // Accumulate drag factor (only during rowing — rest sends stale values)
+    if (data.dragFactor > 0 && _state.phase == WorkoutPhase.rowing) {
+      _dragFactorSum += data.dragFactor;
+      _dragFactorCount++;
     }
 
     // Accumulate for overall averages
     _totalSampleCount++;
     _totalPaceSum += data.pace;
-    if (data.heartRate != null) {
-      _totalHrSum += data.heartRate!;
-      _totalHrCount++;
-    }
 
     // Collect time-series sample (~1/second, during rowing and resting)
     if (_state.phase == WorkoutPhase.rowing ||
@@ -637,6 +673,7 @@ class WorkoutEngine {
       if (shouldSample) {
         _timeSamples.add(WorkoutTimeSample(
           timestamp: elapsed,
+          distance: data.distance,
           pace: data.pace,
           strokeRate: data.strokeRate,
           heartRate: data.heartRate,
@@ -764,6 +801,8 @@ class WorkoutEngine {
       avgStrokeRate: _sampleCount > 0 ? _strokeRateSum ~/ _sampleCount : 0,
       avgWatts: _sampleCount > 0 ? _wattsSum ~/ _sampleCount : 0,
       avgHeartRate: _hrCount > 0 ? _hrSum ~/ _hrCount : null,
+      minHeartRate: _segmentMinHr,
+      maxHeartRate: _segmentMaxHr,
       calories: math.max(0, _state.latestData.calories - _segmentStartCalories),
     );
     _completedSplits.add(split);

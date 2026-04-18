@@ -40,9 +40,12 @@ class PM5Parser {
         data[3] | (data[4] << 8) | (data[5] << 16);
     final distance = distanceTenths / 10.0;
 
+    final dragFactor = data.length >= 19 ? data[18] : current.dragFactor;
+
     return current.copyWith(
       elapsedTime: elapsedTime,
       distance: distance,
+      dragFactor: dragFactor > 0 ? dragFactor : null,
     );
   }
 

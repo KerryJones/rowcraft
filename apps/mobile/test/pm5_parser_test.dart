@@ -37,6 +37,42 @@ void main() {
         expect(identical(result, current), isTrue);
       });
 
+      test('parses drag factor from byte 18', () {
+        final data = Uint8List(19);
+        data[0] = 0x70;
+        data[1] = 0x17;
+        data[2] = 0x00;
+        data[3] = 0x88;
+        data[4] = 0x13;
+        data[5] = 0x00;
+        data[18] = 115; // drag factor
+
+        final result =
+            PM5Parser.parseGeneralStatus(data, const PM5Data.zero());
+
+        expect(result.dragFactor, 115);
+      });
+
+      test('preserves drag factor when byte 18 is zero', () {
+        const current = PM5Data(
+          elapsedTime: Duration.zero,
+          distance: 0,
+          pace: 0,
+          strokeRate: 0,
+          watts: 0,
+          calories: 0,
+          strokeCount: 0,
+          intervalCount: 0,
+          dragFactor: 110,
+        );
+
+        final data = Uint8List(19);
+        data[18] = 0; // zero drag factor — keep previous
+
+        final result = PM5Parser.parseGeneralStatus(data, current);
+        expect(result.dragFactor, 110);
+      });
+
       test('preserves fields from other characteristics', () {
         const current = PM5Data(
           elapsedTime: Duration.zero,
