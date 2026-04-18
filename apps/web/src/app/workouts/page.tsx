@@ -6,6 +6,7 @@ import { WorkoutsClient } from './workouts-client';
 
 export const metadata: Metadata = {
   title: 'Workouts — RowCraft',
+  description: 'Browse structured rowing workouts for Concept2 ergometers.',
 };
 
 export default async function WorkoutsPage() {

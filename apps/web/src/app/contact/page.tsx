@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Contact — RowCraft',
+  description: 'Get in touch with the RowCraft team.',
 };
 
 export default function ContactPage() {

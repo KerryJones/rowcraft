@@ -5,6 +5,7 @@ import { PlansClient } from './plans-client';
 
 export const metadata: Metadata = {
   title: 'Plans — RowCraft',
+  description: 'Multi-week rowing training plans for every skill level.',
 };
 
 export default async function PlansPage() {

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowing.kerryjones.net'),
   title: 'RowCraft',
   description: 'Structured rowing workouts for Concept2 rowers',
   manifest: '/site.webmanifest',
@@ -19,6 +20,15 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-touch-icon.png',
   },
+  openGraph: {
+    siteName: 'RowCraft',
+    type: 'website',
+    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'RowCraft' }],
+  },
+  twitter: {
+    card: 'summary',
+    images: ['/logo.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -26,8 +36,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={cn("dark", "font-sans", geist.variable)}>
       <body className="bg-gray-950 text-white antialiased">
         <div className="flex min-h-screen flex-col">
+          <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white">Skip to content</a>
           <Header />
-          <main className="flex-1">{children}</main>
+          <main id="main" className="flex-1">{children}</main>
           <footer className="border-t border-gray-800 py-8">
             <div className="mx-auto max-w-7xl space-y-3 px-4 text-center text-sm text-gray-500 sm:px-6 lg:px-8">
               <p>RowCraft &mdash; Structured rowing workouts for Concept2 ergometers.</p>

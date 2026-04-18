@@ -6,6 +6,7 @@ import { Bluetooth, Wrench, Calendar, Gauge } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'RowCraft — Structured Rowing Workouts',
+  description: 'Build custom interval workouts, follow training plans, and connect to your Concept2 rower via Bluetooth.',
 };
 
 const features = [
@@ -41,7 +42,7 @@ export default async function LandingPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       {/* Hero */}
       <section className="flex flex-col items-center py-24 text-center">
-        <img src="/logo_gold.svg" alt="" className="mb-6 h-16 w-auto" fetchPriority="high" />
+        <img src="/logo_gold.svg" alt="RowCraft" className="mb-6 h-16 w-auto" fetchPriority="high" />
         <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl">
           RowCraft
         </h1>

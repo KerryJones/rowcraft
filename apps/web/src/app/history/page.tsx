@@ -5,6 +5,7 @@ import { HistoryClient } from './history-client';
 
 export const metadata: Metadata = {
   title: 'History — RowCraft',
+  description: 'Your rowing workout history and results.',
 };
 
 export default async function HistoryPage() {

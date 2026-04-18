@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — RowCraft',
+  description: 'How RowCraft collects, uses, and protects your data.',
 };
 
 export default function PrivacyPage() {

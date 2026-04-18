@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import BuilderPage from './builder-client';
 
-export const metadata = { title: 'Workout Builder — RowCraft' };
+export const metadata = { title: 'Workout Builder — RowCraft', description: 'Design custom interval rowing workouts.' };
 
 export default function Page() {
   return (
