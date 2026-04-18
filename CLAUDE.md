@@ -61,6 +61,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - **No git commits/pushes without explicit user permission.** Read-only git (`diff`, `status`, `log`) is fine.
 - **No Claude attribution in commit messages.** Never add `Co-Authored-By` or similar AI credit lines.
 - **Commit messages as plain text** — no quotes, backticks, or code fences when presenting a commit message.
+- **Conventional Commits** — all commit messages must use the format `type: description`. Types: `feat:` (new feature), `fix:` (bug fix), `refactor:`, `chore:`, `docs:`, `test:`. Use `feat!:` or `fix!:` for breaking changes. release-please uses these prefixes to auto-generate changelogs and version bumps.
 
 ### Memory Discipline
 - Do NOT save architecture, file paths, code patterns, or project structure to MEMORY.md.
