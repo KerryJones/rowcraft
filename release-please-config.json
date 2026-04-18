@@ -1,0 +1,10 @@
+{
+  "packages": {
+    "apps/mobile": {
+      "release-type": "dart",
+      "package-name": "rowcraft-mobile",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": true
+    }
+  }
+}
