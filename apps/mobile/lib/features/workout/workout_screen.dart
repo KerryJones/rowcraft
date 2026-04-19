@@ -10,7 +10,6 @@ import '../../app/adaptive.dart';
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_time_sample.dart';
-import '../../services/audio_service.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
@@ -91,8 +90,6 @@ class WorkoutScreen extends ConsumerStatefulWidget {
 class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   bool _isLocked = false;
   bool _structuredCompleteShown = false;
-  int _lastBeepSecond = -1;
-  int _lastBeepSegmentIndex = -1;
 
   void _showCompletionModal(BuildContext context) {
     showDialog<void>(
@@ -193,32 +190,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     );
   }
 
-  void _checkCountdownBeep(WorkoutEngineState es) {
-    final seg = es.currentSegment;
-    if (seg == null) return;
-    final phase = es.phase;
-    if (phase != WorkoutPhase.rowing && phase != WorkoutPhase.resting) return;
-    if (seg.durationType != DurationType.time) return;
-
-    final remaining =
-        seg.durationValue.toInt() - es.segmentElapsedTime.inSeconds;
-    if (remaining > 3 || remaining < 0) {
-      // Reset when we enter a new segment or are far from transition.
-      if (es.currentSegmentIndex != _lastBeepSegmentIndex) {
-        _lastBeepSegmentIndex = es.currentSegmentIndex;
-        _lastBeepSecond = -1;
-      }
-      return;
-    }
-    if (remaining == _lastBeepSecond &&
-        es.currentSegmentIndex == _lastBeepSegmentIndex) {
-      return; // Already beeped for this second
-    }
-    _lastBeepSecond = remaining;
-    _lastBeepSegmentIndex = es.currentSegmentIndex;
-    AudioService.instance.playCountdownBeep(remaining);
-  }
-
   void _confirmStop(BuildContext ctx, VoidCallback onConfirmed) {
     showDialog(
       context: ctx,
@@ -312,9 +283,6 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   Widget build(BuildContext context) {
     final session = ref.watch(workoutSessionProvider);
     final engineState = session.engineState;
-
-    // Segment transition countdown beeps (time-based segments only)
-    _checkCountdownBeep(engineState);
 
     // Show completion modal when structured workout ends.
     // For FTP tests, skip the modal and auto-finish to go straight to results.

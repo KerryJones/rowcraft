@@ -6,6 +6,18 @@ import 'package:rowcraft/models/pm5_data.dart';
 import 'package:rowcraft/models/workout.dart';
 import 'package:rowcraft/models/workout_segment.dart';
 
+Workout _makeWorkout(List<WorkoutSegment> segments) {
+  return Workout(
+    id: 'test-workout',
+    authorId: 'test-user',
+    title: 'Test Workout',
+    workoutType: WorkoutType.intervals,
+    segments: segments,
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+  );
+}
+
 void main() {
   group('WorkoutEngine', () {
     late StreamController<PM5Data> pm5Controller;
@@ -20,21 +32,9 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test-workout',
-        authorId: 'test-user',
-        title: 'Test Workout',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
-
     test('initial state is idle', () {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 500,
@@ -49,7 +49,7 @@ void main() {
 
     test('start immediately begins rowing', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 500,
@@ -70,7 +70,7 @@ void main() {
 
     test('ready phase transitions to rowing on first stroke', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 500,
@@ -107,7 +107,7 @@ void main() {
 
     test('ready phase updates latestData while waiting', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 500,
@@ -141,7 +141,7 @@ void main() {
 
     test('handles multiple individual segments', () {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 500,
@@ -166,7 +166,7 @@ void main() {
 
     test('completes segment when distance reached', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 100,
@@ -200,7 +200,7 @@ void main() {
 
     test('stop finalizes and moves to finished', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -219,7 +219,7 @@ void main() {
 
     test('transitions between work and rest segments', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -270,7 +270,7 @@ void main() {
       // Bug fix: rest progress must tick even when PM5 stops sending data
       // (rower stops → PM5 auto-pauses its internal clock).
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -330,7 +330,7 @@ void main() {
       // segmentProgress during rest, causing flickering when flywheel spin-down
       // data arrived between tick intervals.
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -392,7 +392,7 @@ void main() {
 
     test('collects split data for completed segments', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -452,21 +452,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test-workout',
-        authorId: 'test-user',
-        title: 'Test Workout',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('auto-pause triggers after 5s of no new strokes', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -524,7 +513,7 @@ void main() {
 
     test('auto-pause triggers during spin-down (SR > 0 but no new strokes)', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -579,7 +568,7 @@ void main() {
 
     test('auto-resume when stroke rate returns > 0', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -655,7 +644,7 @@ void main() {
     test('no auto-resume on flywheel spin-down (SR > 0 but no new strokes)',
         () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -748,7 +737,7 @@ void main() {
 
     test('no auto-pause during rest segments', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -814,7 +803,7 @@ void main() {
     test('manual pause/resume sets correct phase and isAutoPaused flag',
         () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -856,7 +845,7 @@ void main() {
 
     test('zero-SR samples excluded from averages', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -937,21 +926,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test-workout',
-        authorId: 'test-user',
-        title: 'Test Workout',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('calorie segment progress advances correctly', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.calories,
             durationValue: 100,
@@ -983,7 +961,7 @@ void main() {
 
     test('calorie segment auto-completes at target', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.calories,
             durationValue: 100,
@@ -1017,7 +995,7 @@ void main() {
 
     test('per-segment calories are deltas not cumulative', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -1072,7 +1050,7 @@ void main() {
 
     test('paused time excluded from time-based segment progress', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 60,
@@ -1147,21 +1125,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test-workout',
-        authorId: 'test-user',
-        title: 'Test Workout',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('manual pause does NOT auto-resume on stroke rate > 0', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -1214,7 +1181,7 @@ void main() {
 
     test('double pause does not corrupt prePausePhase', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -1255,7 +1222,7 @@ void main() {
 
     test('stop while paused produces finished state', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -1297,7 +1264,7 @@ void main() {
 
     test('pause during rest, rest timer does not fire', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -1360,7 +1327,7 @@ void main() {
 
     test('calorie segment with non-zero start calories tracks delta', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -1432,7 +1399,7 @@ void main() {
 
     test('zero-duration rest segment advances to next work segment', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 50,
@@ -1492,21 +1459,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test-workout',
-        authorId: 'test-user',
-        title: 'Test Workout',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('pace fail disabled when threshold is 0', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -1544,7 +1500,7 @@ void main() {
 
     test('pace fail triggers when threshold > 0 and pace exceeds max', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 2000,
@@ -1593,21 +1549,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test',
-        authorId: 'user',
-        title: 'Test',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('finishFromStructuredComplete transitions to finished', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 100,
@@ -1640,7 +1585,7 @@ void main() {
 
     test('continueWithFreeRow appends free segment and re-enters rowing', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 100,
@@ -1679,7 +1624,7 @@ void main() {
 
     test('continueWithFreeRow is a no-op outside structuredComplete', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 100,
@@ -1698,7 +1643,7 @@ void main() {
 
     test('finishFromStructuredComplete is a no-op outside structuredComplete', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 100,
@@ -1729,21 +1674,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test',
-        authorId: 'user',
-        title: 'Test',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('collects samples once per second during rowing', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 5000,
@@ -1782,7 +1716,7 @@ void main() {
 
     test('collects samples during rest segments', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 1, // 1 second work — completes immediately
@@ -1834,7 +1768,7 @@ void main() {
 
     test('does not collect samples when paused', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.distance,
             durationValue: 5000,
@@ -1886,7 +1820,7 @@ void main() {
 
     test('samples persist across segments', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.time,
             durationValue: 1,
@@ -1937,6 +1871,215 @@ void main() {
     });
   });
 
+  group('Countdown beep stream', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+
+    test('emits 3,2,1,0 for time-based work segment', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 5, // 5 seconds
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.start();
+      // Wait for the full segment + buffer
+      await Future.delayed(const Duration(seconds: 6));
+
+      expect(beeps, [3, 2, 1, 0]);
+    });
+
+    test('emits 3,2,1,0 for time-based rest segment', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 50,
+            targetIntensity: 80,
+          ),
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 5,
+            isRest: true,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Complete work segment to enter rest
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 15),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 5,
+        strokeCount: 30,
+        intervalCount: 1,
+      ));
+
+      // Wait for rest countdown (5s segment, beep at T-3)
+      await Future.delayed(const Duration(seconds: 6));
+
+      expect(beeps, [3, 2, 1, 0]);
+    });
+
+    test('does not emit for distance-based segments', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Complete it
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 30),
+        distance: 100,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 10,
+        strokeCount: 60,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect(beeps, isEmpty);
+    });
+
+    test('does not emit for calorie-based segments', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.calories,
+            durationValue: 10,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 30),
+        distance: 200,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 10,
+        strokeCount: 30,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect(beeps, isEmpty);
+    });
+
+    test('does not emit for segments shorter than 4 seconds', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 3,
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.start();
+      await Future.delayed(const Duration(seconds: 4));
+
+      expect(beeps, isEmpty);
+    });
+
+    test('pause during countdown resumes remaining beeps', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 6,
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.start();
+      // Wait until first beep fires (T-3, at 3s into 6s segment)
+      await Future.delayed(const Duration(milliseconds: 3500));
+      expect(beeps, contains(3));
+
+      // Pause mid-countdown
+      engine.pause();
+      final beepsAtPause = List<int>.from(beeps);
+      await Future.delayed(const Duration(seconds: 2));
+      // No new beeps during pause
+      expect(beeps, beepsAtPause);
+
+      // Resume — remaining beeps should fire
+      engine.resume();
+      await Future.delayed(const Duration(seconds: 4));
+
+      // Should have all 4 beeps (3, 2, 1, 0)
+      expect(beeps, containsAllInOrder([3, 2, 1, 0]));
+    });
+  });
+
   group('structuredComplete does not accumulate extra splits', () {
     late StreamController<PM5Data> pm5Controller;
     late WorkoutEngine engine;
@@ -1950,21 +2093,10 @@ void main() {
       pm5Controller.close();
     });
 
-    Workout makeWorkout(List<WorkoutSegment> segments) {
-      return Workout(
-        id: 'test',
-        authorId: 'user',
-        title: 'Test',
-        workoutType: WorkoutType.intervals,
-        segments: segments,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
 
     test('PM5 data after calorie segment completion does not create extra splits', () async {
       engine = WorkoutEngine(
-        workout: makeWorkout([
+        workout: _makeWorkout([
           const WorkoutSegment(
             durationType: DurationType.calories,
             durationValue: 5,

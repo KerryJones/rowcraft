@@ -8,6 +8,7 @@ import '../../models/pm5_data.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_time_sample.dart';
+import '../../services/audio_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
@@ -196,6 +197,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// Guards against retry re-queuing the same result to SQLite.
   bool _resultQueued = false;
   StreamSubscription<WorkoutEngineState>? _engineSub;
+  StreamSubscription<int>? _countdownBeepSub;
   StreamSubscription<PM5Data>? _pm5BleSubscription;
   StreamSubscription<int>? _hrBleSubscription;
   StreamSubscription<HrConnectionState>? _hrConnectionSub;
@@ -339,6 +341,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     // engine's listener from overwriting the fresh state during async gaps.
     _engineSub?.cancel();
     _engineSub = null;
+    _countdownBeepSub?.cancel();
+    _countdownBeepSub = null;
     _engine?.dispose();
     _engine = null;
     _startedAt = null;
@@ -384,6 +388,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         paceFailThreshold: isRampTest ? 10 : 0,
         autoPauseFinishSeconds: isRampTest ? 15 : 0,
       );
+
+      _countdownBeepSub = _engine!.countdownBeepStream.listen((secondsLeft) {
+        AudioService.instance.playCountdownBeep(secondsLeft);
+      });
 
       _engineSub = _engine!.stateStream.listen((engineState) {
         final engine = _engine;
@@ -713,6 +721,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   @override
   void dispose() {
     _engineSub?.cancel();
+    _countdownBeepSub?.cancel();
     _engine?.dispose();
     _pm5Controller.close();
     _pm5BleSubscription?.cancel();

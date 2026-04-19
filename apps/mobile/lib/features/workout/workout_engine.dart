@@ -151,6 +151,7 @@ class WorkoutEngine {
   final int autoPauseFinishSeconds;
 
   final _stateController = StreamController<WorkoutEngineState>.broadcast();
+  final _countdownBeepController = StreamController<int>.broadcast();
   StreamSubscription<PM5Data>? _pm5Subscription;
   Timer? _restTimer;
 
@@ -158,6 +159,10 @@ class WorkoutEngine {
   /// second independently of PM5 data (which may freeze when rower stops).
   Timer? _restTickTimer;
   DateTime? _restStartWallTime;
+
+  Timer? _countdownBeepTimer;
+  DateTime? _segmentWallStart;
+  int _countdownBeepsRemaining = -1;
 
   /// The list of segments to execute.
   late final List<WorkoutSegment> _expandedSegments;
@@ -230,6 +235,10 @@ class WorkoutEngine {
   /// Stream of engine state updates.
   Stream<WorkoutEngineState> get stateStream => _stateController.stream;
 
+  /// Emits secondsLeft (3, 2, 1, 0) for countdown beeps before segment end.
+  /// Driven by wall-clock timers, independent of PM5 data and UI rebuilds.
+  Stream<int> get countdownBeepStream => _countdownBeepController.stream;
+
   /// Current engine state.
   WorkoutEngineState get currentState => _state;
 
@@ -291,6 +300,7 @@ class WorkoutEngine {
     _restTimer?.cancel();
     _restTickTimer?.cancel();
     _restTickTimer = null;
+    _cancelCountdownBeeps();
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
     _state = _state.copyWith(
@@ -344,6 +354,8 @@ class WorkoutEngine {
         }
       }
     }
+    // Reschedule countdown beeps for both work and rest segments
+    _rescheduleCountdownBeeps();
   }
 
   void _checkAutoPause() {
@@ -359,6 +371,7 @@ class WorkoutEngine {
     if (_state.phase != WorkoutPhase.rowing) return;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
+    _cancelCountdownBeeps();
     _prePausePhase = _state.phase;
     _pausedAt = DateTime.now();
     _state = _state.copyWith(
@@ -435,6 +448,7 @@ class WorkoutEngine {
       const Duration(seconds: 1),
       (_) => _checkAutoPause(),
     );
+    _rescheduleCountdownBeeps();
     _emit();
   }
 
@@ -456,6 +470,75 @@ class WorkoutEngine {
       segmentElapsedTime: elapsed,
     );
     _emit();
+  }
+
+  void _scheduleCountdownBeeps(WorkoutSegment segment) {
+    if (segment.durationType != DurationType.time) return;
+    final totalSeconds = segment.durationValue.toInt();
+    if (totalSeconds < 4) return; // Too short for a 3-second countdown
+
+    _segmentWallStart = DateTime.now();
+    final delayToFirstBeep = totalSeconds - 3;
+    _countdownBeepsRemaining = 3;
+    _countdownBeepTimer = Timer(
+      Duration(seconds: delayToFirstBeep),
+      _tickCountdownBeep,
+    );
+  }
+
+  void _tickCountdownBeep() {
+    if (_countdownBeepController.isClosed) return;
+    if (_state.phase == WorkoutPhase.paused ||
+        _state.phase == WorkoutPhase.finished ||
+        _state.phase == WorkoutPhase.structuredComplete) {
+      return;
+    }
+    final secondsLeft = _countdownBeepsRemaining;
+    _countdownBeepController.add(secondsLeft);
+    _countdownBeepsRemaining--;
+    if (secondsLeft > 0) {
+      _countdownBeepTimer = Timer(
+        const Duration(seconds: 1),
+        _tickCountdownBeep,
+      );
+    } else {
+      _countdownBeepTimer = null;
+    }
+  }
+
+  void _cancelCountdownBeeps() {
+    _countdownBeepTimer?.cancel();
+    _countdownBeepTimer = null;
+    _countdownBeepsRemaining = -1;
+  }
+
+  void _rescheduleCountdownBeeps() {
+    _cancelCountdownBeeps();
+    final segment = _state.currentSegment;
+    if (segment == null || segment.durationType != DurationType.time) return;
+    if (_segmentWallStart == null) return;
+
+    final totalSeconds = segment.durationValue.toInt();
+    if (totalSeconds < 4) return;
+
+    final wallElapsed =
+        DateTime.now().difference(_segmentWallStart!) - _totalPausedDuration;
+    final elapsedSeconds = wallElapsed.inSeconds;
+    final remaining = totalSeconds - elapsedSeconds;
+
+    if (remaining <= 0) return; // Segment is done
+    if (remaining <= 3) {
+      // Already in countdown window — start beeping immediately
+      _countdownBeepsRemaining = remaining;
+      _tickCountdownBeep();
+    } else {
+      // Schedule the first beep
+      _countdownBeepsRemaining = 3;
+      _countdownBeepTimer = Timer(
+        Duration(seconds: remaining - 3),
+        _tickCountdownBeep,
+      );
+    }
   }
 
   void _accumulatePausedDuration() {
@@ -537,6 +620,8 @@ class WorkoutEngine {
     _restTickTimer?.cancel();
     _restTickTimer = null;
     _restStartWallTime = null;
+    _cancelCountdownBeeps();
+    _segmentWallStart = null;
     _pausedAt = null;
     _totalPausedDuration = Duration.zero;
     _prePausePhase = null;
@@ -572,6 +657,10 @@ class WorkoutEngine {
         () => _advanceToNextSegment(),
       );
     }
+
+    // Schedule countdown beeps for time-based segments (both work and rest).
+    // Uses wall-clock timer so beeps fire reliably regardless of PM5 data.
+    _scheduleCountdownBeeps(segment);
   }
 
   void _onPM5Data(PM5Data data) {
@@ -781,6 +870,13 @@ class WorkoutEngine {
     _advancing = true;
     try {
       _restTimer?.cancel();
+      // Fire T-0 beep if we're waiting for exactly the final tick.
+      if (_countdownBeepsRemaining == 0 &&
+          _countdownBeepTimer != null &&
+          !_countdownBeepController.isClosed) {
+        _countdownBeepController.add(0);
+      }
+      _cancelCountdownBeeps();
       _finishCurrentSegment();
       _beginSegment(_state.currentSegmentIndex + 1);
     } finally {
@@ -822,6 +918,7 @@ class WorkoutEngine {
     _restTimer?.cancel();
     _restTickTimer?.cancel();
     _restTickTimer = null;
+    _cancelCountdownBeeps();
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
     _autoPauseFinishTimer?.cancel();
@@ -832,5 +929,6 @@ class WorkoutEngine {
   void dispose() {
     _cleanup();
     _stateController.close();
+    _countdownBeepController.close();
   }
 }
