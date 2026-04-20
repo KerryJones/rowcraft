@@ -102,16 +102,29 @@ export function buildSplits(splits: SplitJson[]): Record<string, unknown>[] {
   });
 }
 
+export interface IntervalsResult {
+  intervals: Record<string, unknown>[];
+  totalRestTime: number;
+  totalRestDistance: number;
+}
+
 export function buildIntervals(
   splits: SplitJson[],
   segments: C2Segment[],
-): Record<string, unknown>[] {
+): IntervalsResult {
   const intervals: Record<string, unknown>[] = [];
+  let totalRestTime = 0;
+  let totalRestDistance = 0;
 
   for (let i = 0; i < splits.length; i++) {
     const split = splits[i];
     const seg = segments[split.segment_index];
-    if (!seg || seg.is_rest) continue;
+    if (!seg) continue;
+    if (seg.is_rest) {
+      totalRestTime += Math.round(split.time_ms / 100);
+      totalRestDistance += Math.round(split.distance);
+      continue;
+    }
 
     const timeInTenths = Math.round(split.time_ms / 100);
     const interval: Record<string, unknown> = {
@@ -150,7 +163,7 @@ export function buildIntervals(
     intervals.push(interval);
   }
 
-  return intervals;
+  return { intervals, totalRestTime, totalRestDistance };
 }
 
 export function buildStrokeData(timeSamples: TimeSampleJson[]): Record<string, unknown>[] {

@@ -138,18 +138,22 @@ describe('buildIntervals', () => {
       { segment_index: 3, distance: 15, time_ms: 60000, avg_pace: 0, avg_stroke_rate: 0, avg_watts: 0, calories: 0 },
     ];
 
-    const result = buildIntervals(splits, segments);
-    expect(result).toHaveLength(2);
+    const { intervals, totalRestTime, totalRestDistance } = buildIntervals(splits, segments);
+    expect(intervals).toHaveLength(2);
 
     // First work interval
-    expect(result[0].type).toBe('distance');
-    expect(result[0].distance).toBe(500);
-    expect(result[0].rest_time).toBe(600); // 60000ms -> 600 tenths
+    expect(intervals[0].type).toBe('distance');
+    expect(intervals[0].distance).toBe(500);
+    expect(intervals[0].rest_time).toBe(600); // 60000ms -> 600 tenths
 
     // Second work interval
-    expect(result[1].type).toBe('distance');
-    expect(result[1].distance).toBe(500);
-    expect(result[1].rest_time).toBe(600);
+    expect(intervals[1].type).toBe('distance');
+    expect(intervals[1].distance).toBe(500);
+    expect(intervals[1].rest_time).toBe(600);
+
+    // Rest totals
+    expect(totalRestTime).toBe(1200); // 2 x 600 tenths
+    expect(totalRestDistance).toBe(35); // 20 + 15
   });
 
   it('skips rest-only splits', () => {
@@ -163,9 +167,9 @@ describe('buildIntervals', () => {
       { segment_index: 1, distance: 10, time_ms: 60000, avg_pace: 0, avg_stroke_rate: 0, avg_watts: 0, calories: 0 },
     ];
 
-    const result = buildIntervals(splits, segments);
-    expect(result).toHaveLength(1);
-    expect(result[0].type).toBe('time');
+    const { intervals } = buildIntervals(splits, segments);
+    expect(intervals).toHaveLength(1);
+    expect(intervals[0].type).toBe('time');
   });
 
   it('uses segment definition for rest when no rest split exists', () => {
@@ -179,8 +183,8 @@ describe('buildIntervals', () => {
       // No split for rest segment
     ];
 
-    const result = buildIntervals(splits, segments);
-    expect(result[0].rest_time).toBe(600); // 60s * 10
+    const { intervals } = buildIntervals(splits, segments);
+    expect(intervals[0].rest_time).toBe(600); // 60s * 10
   });
 
   it('sets rest_time to 0 when no rest segment follows', () => {
@@ -192,8 +196,8 @@ describe('buildIntervals', () => {
       { segment_index: 0, distance: 500, time_ms: 105000, avg_pace: 1050, avg_stroke_rate: 28, avg_watts: 200, calories: 30 },
     ];
 
-    const result = buildIntervals(splits, segments);
-    expect(result[0].rest_time).toBe(0);
+    const { intervals } = buildIntervals(splits, segments);
+    expect(intervals[0].rest_time).toBe(0);
   });
 });
 
