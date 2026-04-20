@@ -154,24 +154,26 @@ export async function POST(request: NextRequest) {
     ? truncate(`Rowed on RowCraft: ${workoutTitle}`, { length: 240, omission: '…' })
     : 'Rowed on RowCraft';
 
-  // Splits or Intervals
+  // Splits or Intervals (C2 API nests these inside a "workout" object)
   const splits: SplitJson[] = result.splits ?? [];
   if (splits.length > 0) {
     const isInterval = workoutType === 'intervals' || workoutType === 'variable_intervals';
     if (isInterval && segments.length > 0) {
-      const intervals = buildIntervals(splits, segments);
+      const { intervals, totalRestTime, totalRestDistance } = buildIntervals(splits, segments);
       if (intervals.length > 0) {
-        c2Payload.intervals = intervals;
+        c2Payload.workout = { intervals };
       }
+      if (totalRestTime > 0) c2Payload.rest_time = totalRestTime;
+      if (totalRestDistance > 0) c2Payload.rest_distance = totalRestDistance;
     } else {
-      c2Payload.splits = buildSplits(splits);
+      c2Payload.workout = { splits: buildSplits(splits) };
     }
   }
 
-  // Stroke data (time-series samples)
+  // Stroke data (time-series samples — C2 field is "stroke_data")
   const timeSamples: TimeSampleJson[] = result.time_samples ?? [];
   if (timeSamples.length > 0) {
-    c2Payload.strokes = buildStrokeData(timeSamples);
+    c2Payload.stroke_data = buildStrokeData(timeSamples);
   }
 
   // Device metadata
