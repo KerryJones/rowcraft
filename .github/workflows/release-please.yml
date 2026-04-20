@@ -8,9 +8,15 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  FLUTTER_VERSION: '3.41.5'
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      mobile-release-created: ${{ steps.release.outputs['apps/mobile--release_created'] }}
+      mobile-tag-name: ${{ steps.release.outputs['apps/mobile--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         id: release
@@ -18,3 +24,84 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  test-mobile:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.mobile-release-created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      - name: Generate code
+        working-directory: apps/mobile
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Analyze
+        working-directory: apps/mobile
+        run: flutter analyze
+      - name: Test
+        working-directory: apps/mobile
+        run: flutter test
+
+  deploy-play-store:
+    needs: [release-please, test-mobile]
+    if: ${{ needs.release-please.outputs.mobile-release-created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$GITHUB_WORKSPACE/upload-keystore.jks"
+      - name: Create key.properties
+        env:
+          STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          printf 'storePassword=%s\n' "$STORE_PASSWORD" > apps/mobile/android/key.properties
+          printf 'keyPassword=%s\n' "$KEY_PASSWORD" >> apps/mobile/android/key.properties
+          printf 'keyAlias=%s\n' "$KEY_ALIAS" >> apps/mobile/android/key.properties
+          printf 'storeFile=%s\n' "$GITHUB_WORKSPACE/upload-keystore.jks" >> apps/mobile/android/key.properties
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      - name: Generate code
+        working-directory: apps/mobile
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Build AAB
+        working-directory: apps/mobile
+        run: |
+          flutter build appbundle --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }} \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }} \
+            --dart-define=SENTRY_DSN=${{ secrets.SENTRY_DSN }} \
+            --dart-define=WEB_APP_URL=${{ secrets.WEB_APP_URL }} \
+            --dart-define=PLEXO_API_URL=${{ secrets.PLEXO_API_URL }} \
+            --dart-define=PLEXO_API_KEY=${{ secrets.PLEXO_API_KEY }} \
+            --dart-define=PLEXO_USER_ID=${{ secrets.PLEXO_USER_ID }}
+      - name: Upload to Play Store
+        uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.rowcraft.app
+          releaseFiles: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          track: alpha
+          status: completed
+          releaseName: ${{ needs.release-please.outputs.mobile-tag-name }}
