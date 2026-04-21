@@ -14,6 +14,9 @@ import { Search, Plus, ArrowLeft } from 'lucide-react';
 
 type SortKey = 'newest' | 'most_forked' | 'duration';
 
+// Keep in sync with kPlanTags in apps/mobile/lib/features/library/library_provider.dart
+const PLAN_TAGS = new Set(['pete-plan', 'ftp-builder', '2k-race-prep', 'return-to-rowing']);
+
 const PAGE_SIZE = 12;
 
 function matchesDuration(workout: Workout, bucket: DurationBucket, ftpWatts?: number): boolean {
@@ -55,6 +58,11 @@ export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientPro
   // Filter workouts
   const filtered = useMemo(() => {
     const result = workouts.filter((w) => {
+      // Exclude plan workouts unless the user selected a plan collection
+      if (!filters.collection || !PLAN_TAGS.has(filters.collection)) {
+        if (w.tags.some((t) => PLAN_TAGS.has(t))) return false;
+      }
+
       if (filters.mine) {
         if (!userId) return false;
         if (w.author_id !== userId) return false;

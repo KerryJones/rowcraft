@@ -1,7 +1,7 @@
 import type { WorkoutSegment } from '@/lib/types';
 import { isRestSegment } from '@/lib/types';
 import { formatSegmentDuration, formatPace } from '@/lib/utils/format';
-import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts } from '@/lib/utils/ftp';
+import { resolveIntensityToPace, getEffectiveFtp, formatWatts, intensityToWatts, wattsToPaceTenths } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 
 const HR_ZONE_BADGE: Record<number, string> = {
@@ -39,8 +39,17 @@ export function SegmentCard({ segment, index, ftpWatts }: SegmentCardProps) {
       </div>
 
       {/* Secondary line: intensity, SPM, HR zone badge */}
-      {(segment.target_intensity != null || segment.target_stroke_rate != null) && (
+      {(segment.target_intensity != null || segment.target_watts != null || segment.target_stroke_rate != null) && (
         <div className="ml-[18px] mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
+          {segment.target_watts != null && segment.target_intensity == null && (() => {
+            const pace = wattsToPaceTenths(segment.target_watts);
+            return (
+              <span>
+                {formatPace(pace)}/500m{' '}
+                <span className="text-gray-500">({formatWatts(segment.target_watts)})</span>
+              </span>
+            );
+          })()}
           {segment.target_intensity != null && (() => {
             const pace = resolveIntensityToPace(segment.target_intensity, ftp);
             const watts = intensityToWatts(segment.target_intensity, ftp);

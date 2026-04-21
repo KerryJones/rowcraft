@@ -58,6 +58,7 @@ Standard segments with optional targets.
 | `type` | enum | yes | `warmup`, `work`, or `cooldown` |
 | `duration` | string | yes | See Duration Format below |
 | `intensity` | string | no | FTP percentage target, e.g. `95%` |
+| `target_watts` | integer | no | Absolute watt target, e.g. `200`. Takes precedence over `intensity`. |
 | `stroke_rate` | integer | no | SPM target, e.g. `28` |
 | `hr_zone` | integer | no | HR zone 1-5 |
 | `messages` | array | no | Coaching cues (see Messages below) |

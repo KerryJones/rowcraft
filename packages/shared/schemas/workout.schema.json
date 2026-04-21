@@ -31,6 +31,12 @@
             "maximum": 200,
             "description": "FTP percentage target"
           },
+          "target_watts": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Absolute watt target"
+          },
           "target_stroke_rate": {
             "type": ["integer", "null"],
             "minimum": 10,

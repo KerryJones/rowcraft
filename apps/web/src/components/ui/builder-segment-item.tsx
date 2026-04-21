@@ -64,6 +64,7 @@ export function BuilderSegmentItem({
 			...(checked && {
 				duration_type: 'time',
 				target_intensity: null,
+				target_watts: null,
 				target_stroke_rate: null,
 				target_hr_zone: null,
 			}),

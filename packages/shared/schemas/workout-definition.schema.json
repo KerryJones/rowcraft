@@ -61,6 +61,12 @@
       "minimum": 10,
       "maximum": 50
     },
+    "target_watts": {
+      "type": "integer",
+      "description": "Absolute watt target. Takes precedence over intensity.",
+      "minimum": 1,
+      "maximum": 1000
+    },
     "message": {
       "type": "object",
       "required": ["at", "text"],
@@ -91,6 +97,7 @@
       "properties": {
         "duration": { "$ref": "#/definitions/duration" },
         "intensity": { "$ref": "#/definitions/intensity" },
+        "target_watts": { "$ref": "#/definitions/target_watts" },
         "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
         "messages": {
           "type": "array",
@@ -112,6 +119,7 @@
           "properties": {
             "duration": { "$ref": "#/definitions/duration" },
             "intensity": { "$ref": "#/definitions/intensity" },
+            "target_watts": { "$ref": "#/definitions/target_watts" },
             "stroke_rate": { "$ref": "#/definitions/stroke_rate" },
             "messages": { "type": "array", "items": { "$ref": "#/definitions/message" } }
           }

@@ -28,6 +28,7 @@ interface YamlMessage {
 interface YamlTargetFields {
   duration: string;
   intensity?: string;
+  target_watts?: number;
   stroke_rate?: number;
   messages?: YamlMessage[];
 }
@@ -35,6 +36,7 @@ interface YamlTargetFields {
 interface YamlFlatSegment {
   duration: string;
   intensity?: string;
+  target_watts?: number;
   stroke_rate?: number;
   messages?: YamlMessage[];
 }
@@ -62,6 +64,7 @@ interface DbSegment {
   duration_type: string;
   duration_value: number;
   target_intensity: number | null;
+  target_watts: number | null;
   target_stroke_rate: number | null;
   target_hr_zone: number | null;
   is_rest?: boolean;
@@ -149,10 +152,12 @@ function parseMessageTrigger(at: string): { trigger_type: DbMessage['trigger_typ
 function buildDbSegment(fields: YamlTargetFields): DbSegment {
   const dur = parseDuration(fields.duration);
   const targetIntensity = fields.intensity != null ? parseIntensity(fields.intensity) : null;
+  const targetWatts = fields.target_watts ?? null;
   const seg: DbSegment = {
     duration_type: dur.type,
     duration_value: dur.value,
     target_intensity: targetIntensity,
+    target_watts: targetWatts,
     target_stroke_rate: fields.stroke_rate != null ? parseStrokeRate(fields.stroke_rate) : null,
     target_hr_zone: targetIntensity != null ? intensityToHrZone(targetIntensity) : null,
   };
@@ -196,8 +201,8 @@ function expandSegments(yamlSegments: YamlSegment[]): DbSegment[] {
 // ── Workout Type Inference ──────────────────────────────────────────────────
 
 function inferWorkoutType(segments: DbSegment[]): string {
-  // Active segments are those with an intensity target (formerly "work" type)
-  const activeSegs = segments.filter((s) => s.target_intensity != null);
+  // Active segments are those with a pace target (intensity% or absolute watts)
+  const activeSegs = segments.filter((s) => s.target_intensity != null || s.target_watts != null);
 
   if (activeSegs.length === 0) return 'single_time';
 
@@ -207,17 +212,20 @@ function inferWorkoutType(segments: DbSegment[]): string {
   }
 
   // Check if all active segments are identical (intervals pattern)
+  const isActive = (s: DbSegment) => s.target_intensity != null || s.target_watts != null;
+
   const allIdentical = activeSegs.every((s) =>
     s.duration_type === activeSegs[0].duration_type &&
     s.duration_value === activeSegs[0].duration_value &&
     s.target_intensity === activeSegs[0].target_intensity &&
+    s.target_watts === activeSegs[0].target_watts &&
     s.target_stroke_rate === activeSegs[0].target_stroke_rate &&
     s.target_hr_zone === activeSegs[0].target_hr_zone
   );
 
   // Pure intervals: all active segments identical, no leading/trailing non-identical active segs
-  const hasLeadingRest = segments[0]?.target_intensity == null && segments[0]?.target_stroke_rate == null;
-  const hasTrailingRest = segments[segments.length - 1]?.target_intensity == null && segments[segments.length - 1]?.target_stroke_rate == null;
+  const hasLeadingRest = !isActive(segments[0]) && segments[0]?.target_stroke_rate == null;
+  const hasTrailingRest = !isActive(segments[segments.length - 1]) && segments[segments.length - 1]?.target_stroke_rate == null;
 
   if (allIdentical && !hasLeadingRest && !hasTrailingRest) {
     return 'intervals';

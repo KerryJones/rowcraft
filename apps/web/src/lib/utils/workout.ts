@@ -1,6 +1,6 @@
 import type { WorkoutSegment, WorkoutType } from '@/lib/types';
 import { DEFAULT_FTP_WATTS, isRestSegment } from '../types';
-import { resolveIntensityToPace } from './ftp';
+import { resolveIntensityToPace, wattsToPaceTenths } from './ftp';
 
 /**
  * Compute total time in seconds for all time-based segments (accounting for repeats).
@@ -63,7 +63,7 @@ export interface GroupedSegment {
 }
 
 function sameIntensity(a: WorkoutSegment, b: WorkoutSegment): boolean {
-	return a.target_intensity === b.target_intensity;
+	return a.target_intensity === b.target_intensity && a.target_watts === b.target_watts;
 }
 
 export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
@@ -100,14 +100,20 @@ export function groupSegments(segments: WorkoutSegment[]): GroupedSegment[] {
  * Higher = harder. Duration-weighted by segment duration.
  * Returns null if no segments have intensity targets.
  */
-export function computeIntensity(segments: WorkoutSegment[]): number | null {
+export function computeIntensity(segments: WorkoutSegment[], ftpWatts = DEFAULT_FTP_WATTS): number | null {
 	let totalWeight = 0;
 	let weightedSum = 0;
 
 	for (const seg of segments) {
-		if (seg.target_intensity == null) continue;
+		let intensityPct: number | null = null;
+		if (seg.target_intensity != null) {
+			intensityPct = seg.target_intensity;
+		} else if (seg.target_watts != null) {
+			intensityPct = (seg.target_watts / ftpWatts) * 100;
+		}
+		if (intensityPct == null) continue;
 		const duration = seg.duration_value;
-		weightedSum += (seg.target_intensity / 100) * duration;
+		weightedSum += (intensityPct / 100) * duration;
 		totalWeight += duration;
 	}
 
@@ -130,9 +136,12 @@ function segmentSeconds(seg: WorkoutSegment, ftpWatts: number): number {
 	if (seg.duration_type === 'time') {
 		return seg.duration_value;
 	} else if (seg.duration_type === 'distance') {
-		// Estimate time from intensity-resolved pace, or assume 2:00/500m
+		// Estimate time from pace target, or assume 2:00/500m
 		let pacePerMeter = 0.24; // 2:00/500m = 0.24 sec/m
-		if (seg.target_intensity != null) {
+		if (seg.target_watts != null) {
+			const pace = wattsToPaceTenths(seg.target_watts);
+			pacePerMeter = (pace / 10) / 500;
+		} else if (seg.target_intensity != null) {
 			const pace = resolveIntensityToPace(seg.target_intensity, ftpWatts);
 			pacePerMeter = (pace / 10) / 500;
 		}
@@ -219,6 +228,7 @@ export function inferWorkoutType(segments: WorkoutSegment[]): WorkoutType {
 		isRestSegment(s) ||
 		(s.duration_type === 'time' &&
 			s.target_intensity == null &&
+			s.target_watts == null &&
 			s.target_stroke_rate == null);
 	const activeSegs = segments.filter((s) => !isEffectivelyRest(s));
 
@@ -232,6 +242,7 @@ export function inferWorkoutType(segments: WorkoutSegment[]): WorkoutType {
 		s.duration_type === activeSegs[0].duration_type &&
 		s.duration_value === activeSegs[0].duration_value &&
 		s.target_intensity === activeSegs[0].target_intensity &&
+		s.target_watts === activeSegs[0].target_watts &&
 		s.target_stroke_rate === activeSegs[0].target_stroke_rate
 	);
 

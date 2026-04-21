@@ -143,6 +143,7 @@ describe('formatSegmentDuration', () => {
 		duration_type: 'time',
 		duration_value: 300,
 		target_intensity: null,
+		target_watts: null,
 		target_stroke_rate: null,
 		target_hr_zone: null,
 		messages: null,

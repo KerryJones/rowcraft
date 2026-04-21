@@ -4,7 +4,7 @@ import type { WorkoutSegment } from '@/lib/types';
 import { isRestSegment } from '@/lib/types';
 import { cn } from '@/lib/utils/cn';
 import { formatSegmentDuration } from '@/lib/utils/format';
-import { resolveIntensityToPace, getEffectiveFtp } from '@/lib/utils/ftp';
+import { resolveIntensityToPace, getEffectiveFtp, wattsToPaceTenths } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 import { computeCumulativeMinutes, expandSegments } from '@/lib/utils/workout';
 
@@ -39,7 +39,10 @@ function getEffectiveDuration(seg: WorkoutSegment, ftp: number): number {
   }
   if (seg.duration_type === 'distance') {
     let pacePerMeter = 0.24; // 2:00/500m default
-    if (seg.target_intensity) {
+    if (seg.target_watts != null) {
+      const pace = wattsToPaceTenths(seg.target_watts);
+      pacePerMeter = (pace / 10) / 500;
+    } else if (seg.target_intensity) {
       const pace = resolveIntensityToPace(seg.target_intensity, ftp);
       pacePerMeter = (pace / 10) / 500;
     }
@@ -53,9 +56,13 @@ function getEffectiveDuration(seg: WorkoutSegment, ftp: number): number {
  * Map a segment's intensity to a height fraction (0-1) on a fixed absolute scale.
  * Higher intensity % = taller bar. Segments without intensity get minimum height.
  */
-function intensityToHeight(segment: WorkoutSegment): number {
-  if (!segment.target_intensity) return MIN_BAR_HEIGHT_FRACTION;
-  const clamped = Math.max(INTENSITY_FLOOR, Math.min(INTENSITY_CEIL, segment.target_intensity));
+function intensityToHeight(segment: WorkoutSegment, ftpWatts: number): number {
+  let intensityPct = segment.target_intensity;
+  if (intensityPct == null && segment.target_watts != null) {
+    intensityPct = Math.round((segment.target_watts / ftpWatts) * 100);
+  }
+  if (intensityPct == null) return MIN_BAR_HEIGHT_FRACTION;
+  const clamped = Math.max(INTENSITY_FLOOR, Math.min(INTENSITY_CEIL, intensityPct));
   const normalized = (clamped - INTENSITY_FLOOR) / (INTENSITY_CEIL - INTENSITY_FLOOR);
   return MIN_BAR_HEIGHT_FRACTION + normalized * (1 - MIN_BAR_HEIGHT_FRACTION);
 }
@@ -152,7 +159,7 @@ export function WorkoutGraph({
     const seg = expandedSegments[i];
     const widthFraction = durations[i] / totalDuration;
     const barWidth = Math.max(2, widthFraction * availableBarWidth);
-    const heightFraction = intensityToHeight(seg);
+    const heightFraction = intensityToHeight(seg, ftp);
     const barHeight = heightFraction * chartAreaHeight;
     const barY = chartAreaBottom - barHeight;
 

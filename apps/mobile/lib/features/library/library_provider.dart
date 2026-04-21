@@ -20,8 +20,19 @@ const Map<String, Set<String>> kCollectionTags = {
   'pete-plan': {'pete-plan'},
   'ftp-builder': {'ftp-builder'},
   '2k-race-prep': {'2k-race-prep'},
+  'return-to-rowing': {'return-to-rowing'},
   'wods': {'wod', 'challenge'},
   'classics': {'classic', 'benchmark', 'test'},
+};
+
+/// Tags that identify plan-specific workouts. Excluded from general
+/// library browsing (shown when the user selects the plan's collection tile).
+/// Keep in sync with PLAN_TAGS in apps/web/src/app/workouts/workouts-client.tsx.
+const Set<String> kPlanTags = {
+  'pete-plan',
+  'ftp-builder',
+  '2k-race-prep',
+  'return-to-rowing',
 };
 
 /// Increment to force a library refresh (e.g. pull-to-refresh).
@@ -125,11 +136,19 @@ final filteredWorkoutsProvider = FutureProvider.family<
 
   var filtered = allWorkouts;
 
+  // Exclude plan-specific workouts unless the user explicitly selected
+  // a plan collection (e.g., tapped the "Pete Plan" tile).
+  if (filter.collectionKey == null ||
+      !kPlanTags.contains(filter.collectionKey)) {
+    filtered =
+        filtered.where((w) => !w.tags.any(kPlanTags.contains)).toList();
+  }
+
   // Pre-compute durations once if needed for filter or sort (avoids O(n·segments) per comparison).
   final Map<String, int>? durationMap =
       (filter.duration != null || filter.sort == LibrarySortOrder.duration)
           ? {
-              for (final w in allWorkouts)
+              for (final w in filtered)
                 w.id: computeEstimatedTotalTime(w.segments, ftpWatts),
             }
           : null;
@@ -138,7 +157,7 @@ final filteredWorkoutsProvider = FutureProvider.family<
   // null means the workout has no distance-based segments.
   final Map<String, double?>? distanceMap = filter.distance != null
       ? {
-          for (final w in allWorkouts) w.id: computeTotalDistance(w.segments),
+          for (final w in filtered) w.id: computeTotalDistance(w.segments),
         }
       : null;
 

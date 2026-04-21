@@ -51,6 +51,7 @@ const COLLECTION_CATEGORIES: CollectionCategory[] = [
   { key: 'pete-plan', label: 'Pete Plan', tags: ['pete-plan'] },
   { key: 'ftp-builder', label: 'FTP Builder', tags: ['ftp-builder'] },
   { key: '2k-race-prep', label: '2K Race Prep', tags: ['2k-race-prep'] },
+  { key: 'return-to-rowing', label: 'Return to Rowing', tags: ['return-to-rowing'] },
   { key: 'wods', label: 'WODs', tags: ['wod', 'challenge'] },
   { key: 'classics', label: 'Classics', tags: ['classic', 'benchmark', 'test'] },
 ];

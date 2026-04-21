@@ -7,6 +7,7 @@ function makeSegment(overrides: Partial<WorkoutSegment> = {}): WorkoutSegment {
     duration_type: 'time',
     duration_value: 300,
     target_intensity: 90,
+    target_watts: null,
     target_stroke_rate: null,
     target_hr_zone: null,
     messages: null,

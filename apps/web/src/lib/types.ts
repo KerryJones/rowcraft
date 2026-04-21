@@ -12,6 +12,8 @@ export interface WorkoutSegment {
 	duration_value: number; // seconds, meters, or calories depending on duration_type
 	/** FTP percentage target (0–200). Higher % = more watts = faster pace. */
 	target_intensity: number | null;
+	/** Absolute watt target. Takes precedence over target_intensity. */
+	target_watts: number | null;
 	/** Strokes per minute target (10–50). */
 	target_stroke_rate: number | null;
 	/** HR zone (1–5) derived from target_intensity at build/save time. Read-only. */
@@ -37,6 +39,7 @@ export const DEFAULT_FTP_WATTS = 150;
 export function normalizeWorkoutSegments(segments: WorkoutSegment[]): WorkoutSegment[] {
 	return segments.map((seg) => ({
 		...seg,
+		target_watts: seg.target_watts ?? null,
 		messages: seg.messages ?? null,
 	}));
 }
