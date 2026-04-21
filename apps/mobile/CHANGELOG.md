@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.1.1...rowcraft-mobile-v0.2.0) (2026-04-21)
+
+
+### Features
+
+* add shared top nav bar with notifications bell and profile avatar ([3c170e4](https://github.com/KerryJones/rowcraft/commit/3c170e4ee9a325b9fd503bf9367aaa73c48d090c))
+
+
+### Bug Fixes
+
+* ramp FTP test uses absolute watts, exclude plan workouts from library ([9c1cec9](https://github.com/KerryJones/rowcraft/commit/9c1cec996b303c2d11616a4994a923fbb7e45eb7))
+
 ## [0.1.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.1.0...rowcraft-mobile-v0.1.1) (2026-04-19)
 
 
