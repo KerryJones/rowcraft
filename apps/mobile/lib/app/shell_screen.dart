@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'adaptive.dart';
+import 'shell_app_bar_actions_provider.dart';
 
 const _destinations = [
   (
@@ -22,15 +24,27 @@ const _destinations = [
   (icon: Icons.person_outline, selected: Icons.person, label: 'Profile'),
 ];
 
-class ShellScreen extends StatelessWidget {
+class ShellScreen extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const ShellScreen({super.key, required this.navigationShell});
 
+  @override
+  ConsumerState<ShellScreen> createState() => _ShellScreenState();
+}
+
+class _ShellScreenState extends ConsumerState<ShellScreen> {
+  late int _previousIndex = widget.navigationShell.currentIndex;
+
   void _onDestinationSelected(int index) {
-    navigationShell.goBranch(
+    // Clear per-screen actions when switching tabs
+    if (index != _previousIndex) {
+      ref.read(shellAppBarActionsProvider.notifier).state = [];
+      _previousIndex = index;
+    }
+    widget.navigationShell.goBranch(
       index,
-      initialLocation: index == navigationShell.currentIndex,
+      initialLocation: index == widget.navigationShell.currentIndex,
     );
   }
 
@@ -39,10 +53,10 @@ class ShellScreen extends StatelessWidget {
     final tablet = isTablet(context);
 
     return PopScope(
-      canPop: navigationShell.currentIndex == 2,
+      canPop: widget.navigationShell.currentIndex == 2,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          navigationShell.goBranch(2, initialLocation: true);
+          widget.navigationShell.goBranch(2, initialLocation: true);
         }
       },
       child: Scaffold(
@@ -50,7 +64,7 @@ class ShellScreen extends StatelessWidget {
             ? Row(
                 children: [
                   NavigationRail(
-                    selectedIndex: navigationShell.currentIndex,
+                    selectedIndex: widget.navigationShell.currentIndex,
                     onDestinationSelected: _onDestinationSelected,
                     labelType: NavigationRailLabelType.all,
                     destinations: [
@@ -63,14 +77,14 @@ class ShellScreen extends StatelessWidget {
                     ],
                   ),
                   const VerticalDivider(width: 1, thickness: 1),
-                  Expanded(child: navigationShell),
+                  Expanded(child: widget.navigationShell),
                 ],
               )
-            : navigationShell,
+            : widget.navigationShell,
         bottomNavigationBar: tablet
             ? null
             : NavigationBar(
-                selectedIndex: navigationShell.currentIndex,
+                selectedIndex: widget.navigationShell.currentIndex,
                 onDestinationSelected: _onDestinationSelected,
                 destinations: [
                   for (final d in _destinations)

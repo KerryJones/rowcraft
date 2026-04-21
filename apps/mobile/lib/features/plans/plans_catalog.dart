@@ -7,8 +7,8 @@ import '../../app/theme.dart';
 import '../../widgets/content_constraint.dart';
 import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
-import '../../widgets/ble_status_button.dart';
 import '../../widgets/difficulty_indicator.dart';
+import '../../widgets/row_craft_app_bar.dart';
 import 'plans_provider.dart';
 
 class PlansCatalog extends ConsumerStatefulWidget {
@@ -37,10 +37,7 @@ class _PlansCatalogState extends ConsumerState<PlansCatalog> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Plans'),
-        actions: const [BleStatusButton()],
-      ),
+      appBar: const RowCraftAppBar(title: 'Plans'),
       body: ContentConstraint(
         child: Column(
           children: [

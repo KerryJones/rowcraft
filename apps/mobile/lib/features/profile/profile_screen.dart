@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app/app_version_provider.dart';
 import '../../app/theme.dart';
 import '../../widgets/content_constraint.dart';
+import '../../widgets/row_craft_app_bar.dart';
+import '../../widgets/user_avatar.dart';
 import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/plexo_service.dart';
@@ -35,6 +38,7 @@ final c2LinkedProvider = FutureProvider<bool>((ref) async {
   final service = ref.watch(c2LogbookServiceProvider);
   return service.isLinked();
 });
+
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -131,7 +135,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         bleState.pm5ConnectionState == PM5ConnectionState.connected;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: const RowCraftAppBar(title: 'Profile', showProfileAvatar: false),
       body: ContentConstraint(
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -142,23 +146,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // Avatar
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: RowCraftTheme.primaryBlue,
-                      child: profileAsync.when(
-                        data: (profile) => _buildInitials(profile.displayName),
-                        loading: () => const CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                        error: (_, _) => const Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    const UserAvatar(radius: 40),
                     const SizedBox(height: 16),
 
                     // Display name
@@ -320,19 +308,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     error: (_, _) => const SizedBox.shrink(),
                   ),
                   const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text('About RowCraft'),
-                    subtitle: const Text('Version 0.1.0'),
-                    onTap: () {
-                      showAboutDialog(
-                        context: context,
-                        applicationName: 'RowCraft',
-                        applicationVersion: '0.1.0',
-                        applicationLegalese:
-                            'Structured rowing workouts for Concept2',
-                      );
-                    },
+                  ref.watch(appVersionProvider).when(
+                    data: (version) => ListTile(
+                      leading: const Icon(Icons.info_outline),
+                      title: const Text('About RowCraft'),
+                      subtitle: Text('Version $version'),
+                      onTap: () {
+                        showAboutDialog(
+                          context: context,
+                          applicationName: 'RowCraft',
+                          applicationVersion: version,
+                          applicationLegalese:
+                              'Structured rowing workouts for Concept2',
+                        );
+                      },
+                    ),
+                    loading: () => const ListTile(
+                      leading: Icon(Icons.info_outline),
+                      title: Text('About RowCraft'),
+                      subtitle: Text('Loading...'),
+                    ),
+                    error: (_, _) => const ListTile(
+                      leading: Icon(Icons.info_outline),
+                      title: Text('About RowCraft'),
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -408,21 +407,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  Widget _buildInitials(String? name) {
-    final initials = (name ?? 'R')
-        .split(' ')
-        .take(2)
-        .map((w) => w.isNotEmpty ? w[0].toUpperCase() : '')
-        .join();
-    return Text(
-      initials.isEmpty ? 'R' : initials,
-      style: const TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        color: Colors.white,
-      ),
-    );
-  }
 
   static void _showEditWeightDialog(BuildContext context, WidgetRef ref) {
     showDialog(

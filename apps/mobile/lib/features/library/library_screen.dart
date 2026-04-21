@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/adaptive.dart';
+import '../../app/shell_app_bar_actions_provider.dart';
 import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
-import '../../widgets/ble_status_button.dart';
+import '../../widgets/row_craft_app_bar.dart';
 import '../../widgets/wod_card.dart';
 import '../../widgets/workout_graph.dart';
 import '../plans/plans_provider.dart';
@@ -32,6 +33,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   bool _mine = false;
   LibrarySortOrder _sortOrder = LibrarySortOrder.newest;
   int _wodShuffleOffset = 0;
+  bool? _lastIsBrowsing;
+  LibrarySortOrder? _lastSortOrder;
 
   bool get _hasAnyFilter =>
       _duration != null ||
@@ -146,18 +149,26 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final wod = wodWorkout;
     final wodLoading = wodAsync.isLoading && wod == null;
 
+    // Inject sort button into shared AppBar when browsing or sort order changes
+    if (_isBrowsing != _lastIsBrowsing ||
+        (_isBrowsing && _sortOrder != _lastSortOrder)) {
+      _lastIsBrowsing = _isBrowsing;
+      _lastSortOrder = _sortOrder;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(shellAppBarActionsProvider.notifier).state = _isBrowsing
+            ? <Widget>[
+                _SortButton(
+                  current: _sortOrder,
+                  onSelected: (order) => setState(() => _sortOrder = order),
+                ),
+              ]
+            : <Widget>[];
+      });
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Workouts'),
-        actions: [
-          if (_isBrowsing)
-            _SortButton(
-              current: _sortOrder,
-              onSelected: (order) => setState(() => _sortOrder = order),
-            ),
-          const BleStatusButton(),
-        ],
-      ),
+      appBar: const RowCraftAppBar(title: 'Workouts'),
       body: Column(
         children: [
           // WOD slot — pinned at top, but suppressed when browsing "My
