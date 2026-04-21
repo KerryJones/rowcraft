@@ -17,7 +17,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -56,7 +56,7 @@ jobs:
       - name: Build AAB
         working-directory: apps/mobile
         run: flutter build appbundle --release --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-aab
           path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
