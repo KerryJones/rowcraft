@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <h1 className="mb-2 text-3xl font-bold text-white">Privacy Policy</h1>
-      <p className="mb-8 text-sm text-gray-500">Last updated: April 14, 2026</p>
+      <p className="mb-8 text-sm text-gray-500">Last updated: April 23, 2026</p>
 
       <div className="prose prose-invert prose-gray max-w-none space-y-6 text-sm leading-relaxed text-gray-300">
         <section>
@@ -69,8 +69,14 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white">4. Cookies and Tracking</h2>
           <p>
-            The Service uses only essential cookies required for authentication and session management. We do not use
-            analytics cookies, advertising trackers, or any third-party tracking services.
+            The Service uses essential cookies required for authentication and session management. We also use PostHog,
+            a product analytics service, to understand how the Service is used. PostHog collects anonymous usage data
+            such as pages visited, session duration, and general device type. This data helps us improve the Service
+            and is not used for advertising or sold to third parties.
+          </p>
+          <p>
+            PostHog may set cookies to distinguish unique visitors and sessions. No personally identifiable information
+            (such as your email address or workout data) is sent to PostHog.
           </p>
         </section>
 
@@ -141,6 +147,16 @@ export default function PrivacyPage() {
             diagnostic data such as the error message, stack trace, and device type. This data is used solely to
             identify and fix bugs. Sentry does not receive your workout data, email address, or any personally
             identifiable information.
+          </p>
+          <p>
+            We use PostHog for product analytics. PostHog receives anonymous usage data such as pages visited and
+            session duration to help us understand how the Service is used and where to make improvements. PostHog
+            does not receive your email address, workout data, or any personally identifiable information. For more
+            details, see{' '}
+            <a href="https://posthog.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+              PostHog&apos;s privacy policy
+            </a>
+            .
           </p>
         </section>
 

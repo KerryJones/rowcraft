@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Header } from '@/components/layout/header';
+import { PostHogProvider } from '@/components/posthog-provider';
 import './globals.css';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="flex min-h-screen flex-col">
           <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white">Skip to content</a>
           <Header />
-          <main id="main" className="flex-1">{children}</main>
+          <PostHogProvider>
+            <main id="main" className="flex-1">{children}</main>
+          </PostHogProvider>
           <footer className="border-t border-gray-800 py-8">
             <div className="mx-auto max-w-7xl space-y-3 px-4 text-center text-sm text-gray-500 sm:px-6 lg:px-8">
               <p>RowCraft &mdash; Structured rowing workouts for Concept2 ergometers.</p>
