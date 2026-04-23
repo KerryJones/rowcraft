@@ -6,6 +6,8 @@ import type { TrainingPlan } from '@/lib/types';
 import { formatDifficulty } from '@/lib/utils/format';
 import { PlanWeeksAccordion } from './plan-weeks';
 import { Calendar, Dumbbell, Pencil } from 'lucide-react';
+import { JsonLd } from '@/components/json-ld';
+import { SITE_URL, ROWCRAFT_ORGANIZATION } from '@/lib/seo';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -26,6 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${data.title} — RowCraft`,
     description: data.description || 'A RowCraft training plan',
+    alternates: { canonical: `/plans/${slug}` },
     openGraph: {
       title: data.title,
       description: data.description || 'A RowCraft training plan',
@@ -95,6 +98,17 @@ export default async function PlanDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'ExercisePlan',
+        name: plan.title,
+        description: plan.description || `A ${formatDifficulty(plan.difficulty).toLowerCase()} rowing training plan.`,
+        url: `${SITE_URL}/plans/${plan.slug}`,
+        exerciseType: 'Rowing',
+        exercisePlanDuration: `P${plan.duration_weeks}W`,
+        intensity: formatDifficulty(plan.difficulty),
+        provider: ROWCRAFT_ORGANIZATION,
+      }} />
       {/* Title + badges */}
       <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -142,8 +156,15 @@ export default async function PlanDetailPage({ params }: PageProps) {
 
       {/* Description */}
       {plan.description && (
-        <p className="mb-8 text-gray-400">{plan.description}</p>
+        <p className="mb-4 text-gray-400">{plan.description}</p>
       )}
+
+      {/* AI-citable summary */}
+      <p className="mb-8 text-sm text-gray-500">
+        {`This ${formatDifficulty(plan.difficulty).toLowerCase()}-level rowing training plan spans ${plan.duration_weeks} week${plan.duration_weeks !== 1 ? 's' : ''} with ${plan.sessions_per_week} session${plan.sessions_per_week !== 1 ? 's' : ''} per week. `}
+        {`It contains ${plan.weeks.reduce((sum, w) => sum + w.sessions.length, 0)} total workouts `}
+        {'designed for Concept2 ergometers with structured progression.'}
+      </p>
 
       {/* Weeks */}
       <PlanWeeksAccordion weeks={plan.weeks} workoutTitles={workoutTitles} />

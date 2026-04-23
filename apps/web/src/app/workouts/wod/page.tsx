@@ -7,6 +7,7 @@ import { WodClient } from './wod-client';
 export const metadata: Metadata = {
   title: 'Workout of the Day — RowCraft',
   description: 'Today\'s rowing workout of the day for Concept2 rowers.',
+  alternates: { canonical: '/workouts/wod' },
 };
 
 export default async function WodPage() {

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowing.kerryjones.net'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowcraft.app'),
   title: 'RowCraft',
   description: 'Structured rowing workouts for Concept2 rowers',
   manifest: '/site.webmanifest',

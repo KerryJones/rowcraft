@@ -1,13 +1,26 @@
 import type { Metadata } from 'next';
+import { JsonLd } from '@/components/json-ld';
+import { SITE_URL, ROWCRAFT_ORGANIZATION } from '@/lib/seo';
 
 export const metadata: Metadata = {
   title: 'Contact — RowCraft',
   description: 'Get in touch with the RowCraft team.',
+  alternates: { canonical: '/contact' },
 };
 
 export default function ContactPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'ContactPage',
+        name: 'Contact RowCraft',
+        url: `${SITE_URL}/contact`,
+        mainEntity: {
+          ...ROWCRAFT_ORGANIZATION,
+          email: 'support@rowcraft.app',
+        },
+      }} />
       <h1 className="mb-8 text-3xl font-bold text-white">Contact</h1>
 
       <div className="prose prose-invert prose-gray max-w-none space-y-6 text-sm leading-relaxed text-gray-300">

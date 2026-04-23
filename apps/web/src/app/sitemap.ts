@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { createSupabaseAdmin } from '@/lib/supabase/admin';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowing.kerryjones.net';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowcraft.app';
 
 export const revalidate = 3600;
 

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Terms of Service — RowCraft',
   description: 'Terms of service for using RowCraft.',
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

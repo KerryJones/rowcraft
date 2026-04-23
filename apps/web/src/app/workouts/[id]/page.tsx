@@ -10,6 +10,8 @@ import { StatsBar } from '@/components/ui/stats-bar';
 import { SegmentCard } from '@/components/ui/segment-card';
 import { WorkoutDetailActions } from './actions';
 import { expandSegments } from '@/lib/utils/workout';
+import { JsonLd } from '@/components/json-ld';
+import { SITE_URL, ROWCRAFT_ORGANIZATION } from '@/lib/seo';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -25,6 +27,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${data.title} — RowCraft`,
     description: data.description || 'A RowCraft workout',
+    alternates: { canonical: `/workouts/${id}` },
     openGraph: {
       title: data.title,
       description: data.description || 'A RowCraft workout',
@@ -83,8 +86,41 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
     }
   }
 
+  // Build workload description for JSON-LD and citable summary
+  const totalSeconds = expanded.reduce((sum, seg) => {
+    if (seg.duration_type === 'time') return sum + seg.duration_value;
+    return sum;
+  }, 0);
+  const totalMinutes = Math.round(totalSeconds / 60);
+
+  const zoneCounts = new Map<number, number>();
+  for (const s of expanded) {
+    if (!isRestSegment(s) && s.target_hr_zone != null) {
+      zoneCounts.set(s.target_hr_zone, (zoneCounts.get(s.target_hr_zone) ?? 0) + 1);
+    }
+  }
+  let dominantZone: number | null = null;
+  let maxCount = 0;
+  for (const [zone, count] of zoneCounts) {
+    if (count > maxCount) { dominantZone = zone; maxCount = count; }
+  }
+
+  const workSegments = expanded.filter((s) => s.target_intensity != null && !isRestSegment(s));
+  const intensities = workSegments.map((s) => s.target_intensity!);
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@type': 'ExercisePlan',
+        name: workout.title,
+        description: workout.description || `A ${formatWorkoutType(workout.workout_type).toLowerCase()} rowing workout for Concept2 ergometers.`,
+        url: `${SITE_URL}/workouts/${workout.id}`,
+        exerciseType: 'Rowing',
+        provider: ROWCRAFT_ORGANIZATION,
+        ...(totalMinutes > 0 && { workload: `${expanded.length} segments, approximately ${totalMinutes} minutes` }),
+        ...(dominantZone != null && { intensity: `Heart rate zone ${dominantZone}` }),
+      }} />
       {/* Hero graph */}
       <div className="mb-6">
         <WorkoutGraph segments={workout.segments} variant="hero" ftpWatts={ftpWatts} />
@@ -105,6 +141,17 @@ export default async function WorkoutDetailPage({ params }: PageProps) {
       {workout.description && (
         <p className="mb-4 text-gray-400">{workout.description}</p>
       )}
+
+      {/* AI-citable summary */}
+      <p className="mb-4 text-sm text-gray-500">
+        {`This ${formatWorkoutType(workout.workout_type).toLowerCase()} rowing workout consists of ${expanded.length} segment${expanded.length !== 1 ? 's' : ''}`}
+        {totalMinutes > 0 && ` totaling approximately ${totalMinutes} minute${totalMinutes !== 1 ? 's' : ''}`}
+        {dominantZone != null && `, primarily targeting heart rate zone ${dominantZone}`}
+        {'. '}
+        {intensities.length > 0 &&
+          `Intensity ranges from ${Math.min(...intensities)}% to ${Math.max(...intensities)}% of FTP. `}
+        {'Designed for use on a Concept2 ergometer with PM5 Bluetooth connectivity.'}
+      </p>
 
       {/* Tags + metadata row */}
       <div className="mb-8 flex flex-wrap items-center justify-between gap-2">
