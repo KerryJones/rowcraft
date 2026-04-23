@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.2.0...rowcraft-mobile-v0.3.0) (2026-04-23)
+
+
+### Features
+
+* add Tests & Benchmarks collection with 10K and Half Marathon tests ([2a5e547](https://github.com/KerryJones/rowcraft/commit/2a5e547a87a1394ec6682054853470b1b07932dc))
+
 ## [0.2.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.1.1...rowcraft-mobile-v0.2.0) (2026-04-21)
 
 
