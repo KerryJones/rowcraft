@@ -3,7 +3,7 @@
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'a0000000-0000-0000-0000-000000000008',
-  '10K Test',
+  '10K',
   'Long-distance benchmark. 10,000 meters at your best sustainable effort.',
   'intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":10000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
@@ -33,7 +33,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'a0000000-0000-0000-0000-000000000001',
-  '2K Test',
+  '2K',
   'The gold standard rowing benchmark. 2000 meters, all-out effort.',
   'intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":2000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
@@ -53,7 +53,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'a0000000-0000-0000-0000-000000000002',
-  '5K Test',
+  '5K',
   'Endurance benchmark. 5000 meters at your best sustainable effort.',
   'intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
@@ -63,7 +63,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'a0000000-0000-0000-0000-000000000009',
-  'Half Marathon Test',
+  'Half Marathon',
   'The ultimate endurance benchmark. 21,097 meters — a full half marathon on the erg.',
   'intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":21097,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
