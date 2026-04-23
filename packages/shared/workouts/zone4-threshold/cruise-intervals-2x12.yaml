@@ -3,7 +3,6 @@ title: "Cruise Intervals 2x12"
 description: "Two long cruise intervals. Sustained threshold development."
 difficulty: intermediate
 tags: [threshold, cruise, long]
-estimated_duration_minutes: 38
 segments:
   - duration: "5:00"
     intensity: 60%

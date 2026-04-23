@@ -3,7 +3,6 @@ title: "The Long Game"
 description: "Alternate 5-min aerobic and tempo blocks. 40 min of work."
 difficulty: intermediate
 tags: [endurance, long, mixed]
-estimated_duration_minutes: 50
 segments:
   - duration: "5:00"
     intensity: 60%

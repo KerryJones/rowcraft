@@ -3,7 +3,6 @@ title: "Half Marathon Split Manager"
 description: "21K managed in 4K blocks with recovery floats."
 difficulty: intermediate
 tags: [challenge, half-marathon, endurance]
-estimated_duration_minutes: 84
 segments:
   - duration: 2000m
     intensity: 60%

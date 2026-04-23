@@ -3,7 +3,6 @@ title: "Long Tempo Build"
 description: "Build from aerobic to tempo then ease off. Progressive session."
 difficulty: intermediate
 tags: [tempo, build, progression]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

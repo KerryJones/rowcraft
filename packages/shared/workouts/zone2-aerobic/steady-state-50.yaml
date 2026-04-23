@@ -3,7 +3,6 @@ title: "Steady State 50"
 description: "Long aerobic session. Keep it comfortable for the full 40 minutes."
 difficulty: beginner
 tags: [aerobic, steady-state, long]
-estimated_duration_minutes: 50
 segments:
   - duration: "5:00"
     intensity: 60%

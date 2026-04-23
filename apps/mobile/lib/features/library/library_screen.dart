@@ -573,13 +573,13 @@ const _kAllTiles = <_TileDef>[
   ),
   _TileDef(
     type: _TileType.collection,
-    label: 'Classics',
-    subtitle: 'Benchmarks',
+    label: 'Tests & Benchmarks',
+    subtitle: 'Track progress',
     icon: Icons.military_tech,
     bgStart: Color(0xFFCA8A04),
     bgEnd: Color(0xFF713F12),
     ring: Color(0xFFFACC15),
-    collectionKey: 'classics',
+    collectionKey: 'tests',
   ),
   // Special
   _TileDef(

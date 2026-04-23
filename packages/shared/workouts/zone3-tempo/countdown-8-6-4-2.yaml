@@ -3,7 +3,6 @@ title: "Countdown (8/6/4/2)"
 description: "Descending intervals, ascending effort. Shorter gets harder."
 difficulty: intermediate
 tags: [tempo, descending, countdown]
-estimated_duration_minutes: 42
 segments:
   - duration: "5:00"
     intensity: 60%

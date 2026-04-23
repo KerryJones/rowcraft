@@ -4,7 +4,7 @@
   "title": "RowCraft Workout Definition (YAML)",
   "description": "Schema for YAML workout definition files. Validated at build time before SQL generation.",
   "type": "object",
-  "required": ["id", "title", "description", "difficulty", "tags", "estimated_duration_minutes", "segments"],
+  "required": ["id", "title", "description", "difficulty", "tags", "segments"],
   "additionalProperties": false,
   "properties": {
     "id": {
@@ -30,11 +30,6 @@
       "items": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9-]+$" },
       "minItems": 1,
       "maxItems": 10
-    },
-    "estimated_duration_minutes": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 300
     },
     "segments": {
       "type": "array",

@@ -56,7 +56,6 @@ interface YamlWorkout {
   description: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   tags: string[];
-  estimated_duration_minutes: number;
   segments: YamlSegment[];
 }
 

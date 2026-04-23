@@ -3,7 +3,6 @@ title: "3-Minute Efforts"
 description: "Five 3-minute VO2max efforts with equal rest."
 difficulty: advanced
 tags: [vo2max, intervals]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

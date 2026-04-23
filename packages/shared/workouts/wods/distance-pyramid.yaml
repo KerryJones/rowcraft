@@ -3,7 +3,6 @@ title: "Distance Pyramid"
 description: "Distance pyramid peaking at 1000m."
 difficulty: advanced
 tags: [pyramid, distance]
-estimated_duration_minutes: 33
 segments:
   - duration: "5:00"
     intensity: 60%

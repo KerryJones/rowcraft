@@ -3,7 +3,6 @@ title: "10 x 500m"
 description: "Ten 500m intervals with 1 minute rest. A classic interval session for building speed and endurance."
 difficulty: intermediate
 tags: [intervals, speed, popular]
-estimated_duration_minutes: 35
 segments:
   - duration: "5:00"
     intensity: 60%

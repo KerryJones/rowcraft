@@ -3,7 +3,6 @@ title: "Threshold 2K Repeats"
 description: "Four 2K repeats at threshold. Race-distance practice."
 difficulty: intermediate
 tags: [threshold, distance, 2k]
-estimated_duration_minutes: 51
 segments:
   - duration: "5:00"
     intensity: 60%

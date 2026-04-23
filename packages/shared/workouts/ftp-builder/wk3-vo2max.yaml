@@ -3,7 +3,6 @@ title: "FTP Builder Wk3 VO2max"
 description: "Week 3: 8x90s VO2max intervals at Z5 with 90s rest."
 difficulty: intermediate
 tags: [ftp-builder, vo2max, week-3]
-estimated_duration_minutes: 34
 segments:
   - duration: "5:00"
     intensity: 60%

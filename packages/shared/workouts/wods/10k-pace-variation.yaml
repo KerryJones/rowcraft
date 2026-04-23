@@ -3,7 +3,6 @@ title: "10K Pace Variation"
 description: "10K with pace surges every 3K."
 difficulty: advanced
 tags: [challenge, 10k, distance]
-estimated_duration_minutes: 36
 segments:
   - duration: 1000m
     intensity: 60%

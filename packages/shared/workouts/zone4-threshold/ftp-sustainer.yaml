@@ -3,7 +3,6 @@ title: "FTP Sustainer"
 description: "20 minutes at threshold. The ultimate FTP test of will."
 difficulty: intermediate
 tags: [threshold, sustained, ftp]
-estimated_duration_minutes: 30
 segments:
   - duration: "5:00"
     intensity: 60%

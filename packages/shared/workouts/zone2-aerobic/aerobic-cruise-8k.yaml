@@ -3,7 +3,6 @@ title: "Aerobic Cruise 8K"
 description: "8K distance piece at aerobic pace."
 difficulty: beginner
 tags: [aerobic, distance]
-estimated_duration_minutes: 32
 segments:
   - duration: 1000m
     intensity: 60%

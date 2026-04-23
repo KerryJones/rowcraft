@@ -3,7 +3,6 @@ title: "Threshold Ladder"
 description: "Ascending and descending time ladder at threshold."
 difficulty: intermediate
 tags: [threshold, ladder]
-estimated_duration_minutes: 44
 segments:
   - duration: "5:00"
     intensity: 60%

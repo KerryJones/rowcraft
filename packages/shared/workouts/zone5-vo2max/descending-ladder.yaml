@@ -3,7 +3,6 @@ title: "Descending Ladder"
 description: "2K/1.5K/1K/500m — shorter gets faster. Generous rest between pieces."
 difficulty: advanced
 tags: [vo2max, ladder, descending]
-estimated_duration_minutes: 36
 segments:
   - duration: "5:00"
     intensity: 60%

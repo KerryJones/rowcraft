@@ -3,7 +3,6 @@ title: "Two-Pace Aerobic"
 description: "Alternate moderate and easy aerobic blocks."
 difficulty: beginner
 tags: [aerobic, steady-state]
-estimated_duration_minutes: 50
 segments:
   - duration: "5:00"
     intensity: 60%

@@ -3,7 +3,6 @@ title: "Tempo 20"
 description: "20 minutes sustained tempo. No intervals, just hold the effort."
 difficulty: intermediate
 tags: [tempo, sustained]
-estimated_duration_minutes: 30
 segments:
   - duration: "5:00"
     intensity: 60%

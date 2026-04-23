@@ -3,7 +3,6 @@ title: "Tabata Erg"
 description: "Classic Tabata: 20s max / 10s rest x8. Four minutes of pain."
 difficulty: advanced
 tags: [vo2max, tabata, sprint]
-estimated_duration_minutes: 14
 segments:
   - duration: "5:00"
     intensity: 60%

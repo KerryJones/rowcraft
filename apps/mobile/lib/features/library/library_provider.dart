@@ -22,7 +22,7 @@ const Map<String, Set<String>> kCollectionTags = {
   '2k-race-prep': {'2k-race-prep'},
   'return-to-rowing': {'return-to-rowing'},
   'wods': {'wod', 'challenge'},
-  'classics': {'classic', 'benchmark', 'test'},
+  'tests': {'test', 'benchmark'},
 };
 
 /// Tags that identify plan-specific workouts. Excluded from general

@@ -3,7 +3,6 @@ title: "Rate Pyramid WOD"
 description: "Rate pyramid from 20 to 32 spm and back. Intensity follows rate."
 difficulty: advanced
 tags: [wod, rate-pyramid]
-estimated_duration_minutes: 31
 segments:
   - duration: "5:00"
     intensity: 60%

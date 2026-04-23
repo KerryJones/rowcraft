@@ -3,7 +3,6 @@ title: "Threshold 3x8"
 description: "Longer threshold blocks. Build capacity to hold pace."
 difficulty: intermediate
 tags: [threshold, intervals, long]
-estimated_duration_minutes: 42
 segments:
   - duration: "5:00"
     intensity: 60%

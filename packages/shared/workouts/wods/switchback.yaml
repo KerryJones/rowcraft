@@ -3,7 +3,6 @@ title: "Switchback"
 description: "Tempo/sprint/recovery cycles. Controlled chaos."
 difficulty: advanced
 tags: [wod, mixed-zone]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

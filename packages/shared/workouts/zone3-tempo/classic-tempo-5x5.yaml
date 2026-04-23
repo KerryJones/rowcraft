@@ -3,7 +3,6 @@ title: "Classic Tempo 5x5"
 description: "Five 5-minute tempo efforts. The classic tempo session."
 difficulty: intermediate
 tags: [tempo, intervals, classic]
-estimated_duration_minutes: 45
 segments:
   - duration: "5:00"
     intensity: 60%

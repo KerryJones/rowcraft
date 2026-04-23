@@ -3,7 +3,6 @@ title: "Ascending Ladder"
 description: "1 to 5 minute ladder. Rest equals work."
 difficulty: advanced
 tags: [ladder, ascending, time]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

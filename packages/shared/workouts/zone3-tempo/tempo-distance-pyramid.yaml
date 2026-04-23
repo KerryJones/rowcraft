@@ -3,7 +3,6 @@ title: "Tempo Distance Pyramid"
 description: "Distance pyramid at tempo. Peak at 1500m then come back down."
 difficulty: intermediate
 tags: [tempo, pyramid, distance]
-estimated_duration_minutes: 38
 segments:
   - duration: "5:00"
     intensity: 60%

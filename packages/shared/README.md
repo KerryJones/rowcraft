@@ -18,7 +18,7 @@ All split times are in **tenths of seconds per 500m**, following Concept2's conv
 
 Ready-to-use workouts organized by training plan:
 
-- `workouts/classics/` — Standard benchmarks (2K, 5K, 30min, 10x500m)
+- `workouts/tests/` — Tests & benchmarks (2K, 5K, 10K, Half Marathon, FTP) and classic workouts
 - `workouts/pete-plan/` — Pete Plan beginner/intermediate program
 - `workouts/wolverine-plan/` — Wolverine Plan endurance program
 - `workouts/british-rowing/` — British Rowing structured sessions

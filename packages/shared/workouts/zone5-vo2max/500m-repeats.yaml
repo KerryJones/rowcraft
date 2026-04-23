@@ -3,7 +3,6 @@ title: "500m Repeats"
 description: "Six 500m repeats above FTP. Race-quality efforts."
 difficulty: advanced
 tags: [vo2max, 500m, repeats]
-estimated_duration_minutes: 32
 segments:
   - duration: "5:00"
     intensity: 60%

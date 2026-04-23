@@ -3,7 +3,6 @@ title: "30-Minute Challenge"
 description: "Tempo blocks punctuated by 2-min surges."
 difficulty: advanced
 tags: [challenge, 30-min]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

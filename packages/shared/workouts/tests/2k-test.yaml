@@ -3,7 +3,6 @@ title: "2K Test"
 description: "The gold standard rowing benchmark. 2000 meters, all-out effort."
 difficulty: advanced
 tags: [test, benchmark, race-pace]
-estimated_duration_minutes: 18
 segments:
   - duration: "5:00"
     intensity: 60%

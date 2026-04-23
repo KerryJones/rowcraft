@@ -3,7 +3,6 @@ title: "Rate Pyramid Steady"
 description: "Rate pyramid at constant aerobic intensity."
 difficulty: beginner
 tags: [aerobic, pyramid, rate]
-estimated_duration_minutes: 45
 segments:
   - duration: "5:00"
     intensity: 60%

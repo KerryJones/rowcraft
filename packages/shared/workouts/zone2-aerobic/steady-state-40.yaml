@@ -3,7 +3,6 @@ title: "Steady State 40"
 description: "30 minutes of steady aerobic work. The bread and butter of training."
 difficulty: beginner
 tags: [aerobic, steady-state, endurance]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

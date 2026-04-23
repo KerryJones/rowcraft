@@ -3,7 +3,6 @@ title: "Ramp FTP Test"
 description: "Progressive ramp test. Intensity increases every minute until failure. Last completed stage estimates your FTP."
 difficulty: intermediate
 tags: [ftp, test, benchmark, threshold, ramp]
-estimated_duration_minutes: 20
 segments:
   - duration: "2:00"
     target_watts: 80

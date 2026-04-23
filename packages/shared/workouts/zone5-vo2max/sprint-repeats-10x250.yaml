@@ -3,7 +3,6 @@ title: "Sprint Repeats 10x250"
 description: "Ten 250m sprints. Pure speed work."
 difficulty: advanced
 tags: [vo2max, sprint, repeats]
-estimated_duration_minutes: 27
 segments:
   - duration: "5:00"
     intensity: 60%

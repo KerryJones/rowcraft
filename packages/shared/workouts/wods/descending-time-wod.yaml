@@ -3,7 +3,6 @@ title: "Descending Time WOD"
 description: "8/6/4/2 with 3 min rest. Shorter intervals, higher effort."
 difficulty: advanced
 tags: [wod, descending, time]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

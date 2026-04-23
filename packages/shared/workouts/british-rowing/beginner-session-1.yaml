@@ -3,7 +3,6 @@ title: "Beginner Session 1"
 description: "British Rowing beginner session: 5x3min work intervals at tempo pace with 1-minute rest."
 difficulty: beginner
 tags: [beginner, british-rowing, structured]
-estimated_duration_minutes: 26
 segments:
   - duration: "3:00"
     intensity: 60%

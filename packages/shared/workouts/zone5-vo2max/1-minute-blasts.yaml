@@ -3,7 +3,6 @@ title: "1-Minute Blasts"
 description: "Ten 1-minute max efforts with equal rest."
 difficulty: advanced
 tags: [vo2max, intervals]
-estimated_duration_minutes: 30
 segments:
   - duration: "5:00"
     intensity: 60%

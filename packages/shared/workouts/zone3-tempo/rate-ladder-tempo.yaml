@@ -3,7 +3,6 @@ title: "Rate Ladder Tempo"
 description: "Ascending rate at tempo pace. Same effort, different feel."
 difficulty: intermediate
 tags: [tempo, rate-ladder]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

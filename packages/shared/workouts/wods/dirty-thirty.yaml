@@ -3,7 +3,6 @@ title: "Dirty Thirty"
 description: "30 minutes: 4.5 min tempo / 30 sec sprint x6."
 difficulty: advanced
 tags: [wod, 30-min, mixed]
-estimated_duration_minutes: 40
 segments:
   - duration: "5:00"
     intensity: 60%

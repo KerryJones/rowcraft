@@ -3,7 +3,6 @@ title: "30/30 Repeats"
 description: "16 rounds of 30 seconds on, 30 off. Classic VO2max builder."
 difficulty: advanced
 tags: [vo2max, short, sharp]
-estimated_duration_minutes: 26
 segments:
   - duration: "5:00"
     intensity: 60%

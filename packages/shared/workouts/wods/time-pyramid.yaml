@@ -3,7 +3,6 @@ title: "Time Pyramid"
 description: "1/2/3/4/3/2/1 minute pyramid. Peak at 4 minutes."
 difficulty: advanced
 tags: [pyramid, time]
-estimated_duration_minutes: 33
 segments:
   - duration: "5:00"
     intensity: 60%

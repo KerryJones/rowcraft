@@ -3,7 +3,6 @@ title: "EMOM 150m"
 description: "150m sprint every minute for 10 minutes."
 difficulty: advanced
 tags: [wod, emom]
-estimated_duration_minutes: 20
 segments:
   - duration: "5:00"
     intensity: 60%

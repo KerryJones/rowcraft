@@ -12,7 +12,6 @@ title: "10 x 500m"
 description: "Ten 500m intervals with 1 minute rest."
 difficulty: intermediate                      # beginner | intermediate | advanced
 tags: [intervals, speed, popular]
-estimated_duration_minutes: 35                # approximate, for display
 segments:
   - type: warmup
     duration: 5:00
@@ -44,7 +43,6 @@ segments:
 | `description` | string | One-line description (max 2000 chars). |
 | `difficulty` | enum | `beginner`, `intermediate`, or `advanced`. |
 | `tags` | string[] | 1-10 tags for search/filtering. |
-| `estimated_duration_minutes` | integer | Approximate total time including rest. |
 | `segments` | array | At least one segment. |
 
 ## Segment Types
@@ -169,7 +167,7 @@ Reads all `.yaml` files → validates → generates `supabase/seeds/*.sql`. The 
 
 | Prefix | Category |
 |--------|----------|
-| `a0000000` | Classics/benchmarks |
+| `a0000000` | Tests & benchmarks |
 | `b0000000` | Pete Plan week 1 |
 | `c0000000` | Wolverine |
 | `d0000000` | British Rowing |

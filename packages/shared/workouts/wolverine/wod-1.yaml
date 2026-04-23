@@ -3,7 +3,6 @@ title: "Wolverine WOD 1"
 description: "Wolverine Plan workout: 4x2000m steady state intervals with 5-minute rest."
 difficulty: intermediate
 tags: [wolverine-plan, endurance, long-intervals]
-estimated_duration_minutes: 52
 segments:
   - duration: "5:00"
     intensity: 60%

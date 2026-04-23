@@ -3,7 +3,6 @@ title: "Ascending Pyramid"
 description: "Distance pyramid from 250m up to 1K and back down."
 difficulty: advanced
 tags: [vo2max, pyramid]
-estimated_duration_minutes: 29
 segments:
   - duration: "5:00"
     intensity: 60%

@@ -3,7 +3,6 @@ title: "Race Pace Simulation"
 description: "Four 500m pieces at race pace with 2 min rest."
 difficulty: advanced
 tags: [vo2max, race-pace, simulation]
-estimated_duration_minutes: 24
 segments:
   - duration: "5:00"
     intensity: 60%

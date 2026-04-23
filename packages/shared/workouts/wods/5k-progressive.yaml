@@ -3,7 +3,6 @@ title: "5K Progressive"
 description: "7K total: warmup 1K, then 5x1K each faster, cooldown 1K."
 difficulty: advanced
 tags: [progressive, 5k, distance]
-estimated_duration_minutes: 28
 segments:
   - duration: 1000m
     intensity: 60%

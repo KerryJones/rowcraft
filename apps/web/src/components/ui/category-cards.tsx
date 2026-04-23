@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Heart, Wind, Activity, Flame, Zap, User, Trophy, Ruler } from 'lucide-react';
+import { Clock, Heart, Wind, Activity, Flame, Zap, User, Trophy, Ruler, Medal } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 // ── Duration categories ─────────────────────────────────────────
@@ -53,7 +53,7 @@ const COLLECTION_CATEGORIES: CollectionCategory[] = [
   { key: '2k-race-prep', label: '2K Race Prep', tags: ['2k-race-prep'] },
   { key: 'return-to-rowing', label: 'Return to Rowing', tags: ['return-to-rowing'] },
   { key: 'wods', label: 'WODs', tags: ['wod', 'challenge'] },
-  { key: 'classics', label: 'Classics', tags: ['classic', 'benchmark', 'test'] },
+  { key: 'tests', label: 'Tests & Benchmarks', tags: ['test', 'benchmark'] },
 ];
 
 export function getCollectionByKey(key: string): CollectionCategory | undefined {
@@ -158,6 +158,12 @@ const ALL_CATEGORIES: CategoryItem[] = [
     icon: <Trophy className="h-7 w-7" />,
     bg: 'bg-gradient-to-br from-orange-600 to-orange-800',
     ring: 'ring-orange-400',
+  },
+  {
+    type: 'collection', key: 'tests', label: 'Tests & Benchmarks', subtitle: 'Track progress',
+    icon: <Medal className="h-7 w-7" />,
+    bg: 'bg-gradient-to-br from-yellow-600 to-yellow-800',
+    ring: 'ring-yellow-400',
   },
   // Special
   {

@@ -3,7 +3,6 @@ title: "Death By 100m"
 description: "Progressive 100m sprints. Each one harder than the last."
 difficulty: advanced
 tags: [wod, death-by, escalating]
-estimated_duration_minutes: 18
 segments:
   - duration: "5:00"
     intensity: 60%

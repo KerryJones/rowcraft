@@ -3,7 +3,6 @@ title: "Descending Ladder"
 description: "5 to 1 minute ladder. Gets shorter, stay strong."
 difficulty: advanced
 tags: [ladder, descending, time]
-estimated_duration_minutes: 35
 segments:
   - duration: "5:00"
     intensity: 60%

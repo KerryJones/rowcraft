@@ -3,7 +3,6 @@ title: "Active Recovery 30"
 description: "30 minutes with gentle rate progression. Easy aerobic flush."
 difficulty: beginner
 tags: [recovery, 30-min]
-estimated_duration_minutes: 30
 segments:
   - duration: "3:00"
     intensity: 50%

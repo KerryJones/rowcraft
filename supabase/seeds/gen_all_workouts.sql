@@ -124,77 +124,6 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   true
 );
 
--- classics (7)
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000004',
-  '10 x 500m',
-  'Ten 500m intervals with 1 minute rest. A classic interval session for building speed and endurance.',
-  'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{intervals,speed,popular}',
-  true
-);
-
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000005',
-  '20-Minute FTP Test',
-  'Functional Threshold Power test. Row the hardest pace you can sustain for 20 minutes.',
-  'single_time',
-  '[{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
-  '{ftp,test,benchmark,threshold}',
-  true
-);
-
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000001',
-  '2K Test',
-  'The gold standard rowing benchmark. 2000 meters, all-out effort.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":2000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{test,benchmark,race-pace}',
-  true
-);
-
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000003',
-  '30 Minute Steady State',
-  'Foundational aerobic work. Hold a comfortable, sustainable pace for 30 minutes.',
-  'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1800,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{steady-state,endurance,beginner-friendly}',
-  true
-);
-
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000002',
-  '5K Test',
-  'Endurance benchmark. 5000 meters at your best sustainable effort.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{test,benchmark,endurance}',
-  true
-);
-
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000007',
-  'Just Row',
-  'Open rowing session — no targets, no time pressure. Row as long as you like and sync to your C2 Logbook.',
-  'single_time',
-  '[{"duration_type":"time","duration_value":7200,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
-  '{free-row,just-row}',
-  true
-);
-
-insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
-  'a0000000-0000-0000-0000-000000000006',
-  'Ramp FTP Test',
-  'Progressive ramp test. Intensity increases every minute until failure. Last completed stage estimates your FTP.',
-  'variable_intervals',
-  '[{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":80,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":100,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":120,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":140,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":160,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":180,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":200,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":220,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":240,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":260,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":280,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":300,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":320,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":340,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":360,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":380,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":400,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
-  '{ftp,test,benchmark,threshold,ramp}',
-  true
-);
-
 -- ftp-builder (18)
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0001-000000000003',
@@ -665,6 +594,97 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{return-to-rowing,intervals,week-4}',
+  true
+);
+
+-- tests (9)
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000008',
+  '10K Test',
+  'Long-distance benchmark. 10,000 meters at your best sustainable effort.',
+  'intervals',
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":10000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{test,benchmark,endurance}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000004',
+  '10 x 500m',
+  'Ten 500m intervals with 1 minute rest. A classic interval session for building speed and endurance.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{intervals,speed,popular}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000005',
+  '20-Minute FTP Test',
+  'Functional Threshold Power test. Row the hardest pace you can sustain for 20 minutes.',
+  'single_time',
+  '[{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
+  '{ftp,test,benchmark,threshold}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000001',
+  '2K Test',
+  'The gold standard rowing benchmark. 2000 meters, all-out effort.',
+  'intervals',
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":2000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{test,benchmark,race-pace}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000003',
+  '30 Minute Steady State',
+  'Foundational aerobic work. Hold a comfortable, sustainable pace for 30 minutes.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":1800,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{steady-state,endurance,beginner-friendly}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000002',
+  '5K Test',
+  'Endurance benchmark. 5000 meters at your best sustainable effort.',
+  'intervals',
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{test,benchmark,endurance}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000009',
+  'Half Marathon Test',
+  'The ultimate endurance benchmark. 21,097 meters — a full half marathon on the erg.',
+  'intervals',
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":21097,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{test,benchmark,endurance}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000007',
+  'Just Row',
+  'Open rowing session — no targets, no time pressure. Row as long as you like and sync to your C2 Logbook.',
+  'single_time',
+  '[{"duration_type":"time","duration_value":7200,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{free-row,just-row}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-000000000006',
+  'Ramp FTP Test',
+  'Progressive ramp test. Intensity increases every minute until failure. Last completed stage estimates your FTP.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":80,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":100,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":120,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":140,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":160,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":180,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":200,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":220,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":240,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":260,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":280,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":300,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":320,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":340,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":360,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":380,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":400,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{ftp,test,benchmark,threshold,ramp}',
   true
 );
 

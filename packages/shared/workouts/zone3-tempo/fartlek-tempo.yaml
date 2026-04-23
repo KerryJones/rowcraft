@@ -3,7 +3,6 @@ title: "Fartlek Tempo"
 description: "Alternate tempo and easy every 2 minutes. Fartlek-style."
 difficulty: intermediate
 tags: [tempo, fartlek]
-estimated_duration_minutes: 42
 segments:
   - duration: "5:00"
     intensity: 60%
