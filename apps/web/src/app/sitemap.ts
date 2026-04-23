@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { createSupabaseAdmin } from '@/lib/supabase/admin';
 import { getAllPosts } from '@/lib/blog';
+import { getAllComparisons } from '@/lib/comparisons';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowcraft.app';
 
@@ -16,6 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/contact`, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE_URL}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${BASE_URL}/terms`, changeFrequency: 'monthly', priority: 0.2 },
+    { url: `${BASE_URL}/vs`, changeFrequency: 'monthly', priority: 0.7 },
   ];
 
   const supabase = createSupabaseAdmin();
@@ -59,5 +61,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...workoutPages, ...planPages, ...blogPages];
+  const comparisonPages: MetadataRoute.Sitemap = getAllComparisons().map((c) => ({
+    url: `${BASE_URL}/vs/${c.slug}`,
+    lastModified: c.lastUpdated,
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...workoutPages, ...planPages, ...blogPages, ...comparisonPages];
 }
