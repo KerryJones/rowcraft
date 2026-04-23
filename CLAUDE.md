@@ -4,15 +4,22 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 
 ## Rules
 
+### Before Presenting Work as Done
+1. Run checks: `flutter analyze` (mobile), `npm run check` (web).
+2. If dependencies, Android config, or native code changed: `flutter build apk --debug`.
+3. Run code review agent in a loop until clean.
+4. If generated files changed, tell the user what commands to run locally.
+
 ### Ownership & Quality
 - You own this entire codebase. A failing test is always your bug — never dismiss as pre-existing.
-- **Write tests before or alongside features** — not comprehensive TDD, but cover the key behaviors: happy path, error paths, and edge cases that would catch regressions. If a bug is being fixed, write a test that reproduces it first.
+- **Write tests before or alongside features** — happy path, error paths, and edge cases. If fixing a bug, write a reproducing test first.
 - Planning sessions use a separate git worktree (`isolation: "worktree"`).
-- **Sync worktree with main before starting work** — worktrees don't auto-update when main advances. At the start of a session, run `git log --oneline HEAD..main` to check for new commits. If behind, merge main before reading or editing any files. Skipping this causes regressions by overwriting work done in other worktrees.
-- Run code review agent in a loop until clean before presenting code as done.
-- **Resolve TODOs during planning** — when exploring code for a task, scan for existing TODOs in the files you touch. If a TODO is achievable within the current scope, include it in the plan and do it. Don't leave TODOs behind in new code.
-- Always run checks before done: `flutter analyze` (mobile), `npm run check` (web).
-- **Test builds, not just analyze** — when changing dependencies, Android config, or native code, run `flutter build apk --debug` to catch Gradle/Kotlin compilation errors that `flutter analyze` misses.
+- **Sync worktree with main before starting work** — run `git log --oneline HEAD..main` at session start. If behind, merge main before reading or editing files.
+- **Resolve TODOs during planning** — scan for existing TODOs in files you touch. If achievable in scope, do it. Don't leave TODOs in new code.
+
+### Generated Files
+- **YAML is the source of truth for workouts** — never edit `gen_*.sql` or `gen_all_workouts.sql` directly. Edit YAML in `packages/shared/workouts/`, then run `npx tsx scripts/build-seeds.ts`.
+- **Never edit any generated file directly** — find the source and edit that instead.
 
 ### Pre-launch App
 - **No legacy/backward-compat code** — this app has not shipped. Never write migration shims, legacy expansion, or backward-compat wrappers without asking first. If you think old data needs handling, ask.
@@ -69,45 +76,14 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - Architecture and reference docs belong in `docs/` if they need to be persisted.
 - Keep CLAUDE.md under 100 lines — behavioral rules only, not reference content.
 
-## Build & Test
-
-### Mobile
-```
-cd apps/mobile
-flutter pub get
-dart run build_runner build
-flutter test
-flutter analyze
-```
-
-### Web
-```
-cd apps/web
-npm install
-npm run check
-npx vitest
-```
-
-### Supabase
-```
-supabase start
-supabase db reset
-```
-
 ## Reference Docs
 
-Detailed docs live in `docs/`. **Do not put reference content in CLAUDE.md** — this file is for behavioral rules only.
+Read the relevant doc before starting a task. Don't pre-load all of them.
 
 | File | Contents |
 |------|----------|
-| `docs/architecture.md` | System overview, data flows, tech stack, design decisions |
+| `docs/architecture.md` | System overview, data flows, tech stack |
 | `docs/database.md` | Schema, migrations, tables, RLS policies |
-| `docs/key-files.md` | File map with descriptions (web + mobile + shared) |
+| `docs/key-files.md` | File map with descriptions |
 
-### When to read
-- **Starting a task**: Read the doc(s) relevant to the subsystem you're about to touch.
-- **Don't pre-load all docs** — only read what's needed for the current task.
-
-### When to update
-- After adding/changing a subsystem, update the relevant `docs/` file — not CLAUDE.md.
-- After adding/changing a behavioral rule or convention, update CLAUDE.md — not `docs/`.
+After changing a subsystem, update the relevant `docs/` file. After changing a behavioral rule, update CLAUDE.md.
