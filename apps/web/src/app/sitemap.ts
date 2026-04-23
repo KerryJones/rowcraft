@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { createSupabaseAdmin } from '@/lib/supabase/admin';
+import { getAllPosts } from '@/lib/blog';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rowcraft.app';
 
@@ -11,12 +12,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/workouts`, changeFrequency: 'daily', priority: 0.9 },
     { url: `${BASE_URL}/workouts/wod`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/plans`, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${BASE_URL}/blog`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${BASE_URL}/contact`, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE_URL}/privacy`, changeFrequency: 'monthly', priority: 0.2 },
     { url: `${BASE_URL}/terms`, changeFrequency: 'monthly', priority: 0.2 },
   ];
 
   const supabase = createSupabaseAdmin();
+
+  const blogPosts = getAllPosts();
 
   const [workoutsRes, plansRes] = await Promise.all([
     supabase
@@ -48,5 +52,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...workoutPages, ...planPages];
+  const blogPages: MetadataRoute.Sitemap = blogPosts.map((p) => ({
+    url: `${BASE_URL}/blog/${p.slug}`,
+    lastModified: p.date,
+    changeFrequency: 'monthly',
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...workoutPages, ...planPages, ...blogPages];
 }

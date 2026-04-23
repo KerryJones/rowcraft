@@ -34,12 +34,14 @@ export function Header() {
         { href: '/plans', label: 'Plans' },
         { href: '/builder', label: 'Builder' },
         { href: '/history', label: 'History' },
+        { href: '/blog', label: 'Blog' },
         { href: '/contact', label: 'Contact' },
       ]
     : [
         { href: '/workouts', label: 'Workouts' },
         { href: '/workouts/wod', label: 'WOD' },
         { href: '/plans', label: 'Plans' },
+        { href: '/blog', label: 'Blog' },
         { href: '/contact', label: 'Contact' },
       ];
 

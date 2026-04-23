@@ -1,0 +1,75 @@
+---
+title: "Stop Programming Your PM5 by Hand"
+description: "The Concept2 PM5 makes interval programming painful. There's a better way."
+date: "2026-04-21"
+author: "Kerry Jones"
+tags: ["concept2", "PM5", "workouts"]
+published: true
+---
+
+## The problem everyone knows about
+
+You want to do 8x500m intervals with 3:30 rest. On the Concept2 PM5, here's what that takes:
+
+1. Navigate to **Menu → Select Workout → New Workout**
+2. Choose **Intervals: Distance**
+3. Set distance to 500m using the arrow and +/- buttons
+4. Set rest time to 3:30
+5. Set number of intervals to 8
+6. Start rowing
+
+That's the simple version. It gets worse.
+
+**Variable intervals** — like a pyramid of 250m, 500m, 750m, 1000m, 750m, 500m, 250m — require programming each segment individually. Seven separate distance entries, each with its own rest time. All through the PM5's five buttons.
+
+Fat-finger one setting? Start over.
+
+## What the PM5 can't do
+
+The PM5 is an excellent monitor for tracking your strokes. But as a workout programmer, it has real limitations:
+
+- **30 interval maximum** (50 with a USB logbook)
+- **No mixed intervals.** You can't combine distance-based and time-based segments in one workout.
+- **No target paces.** The PM5 shows your current pace but won't display what pace you should be hitting.
+- **No coaching cues.** There's no way to add notes like "build stroke rate" or "settle into rhythm."
+
+These aren't bugs. The PM5 was designed in an era before smartphones. It does what it does well. But structured training demands more than it can offer.
+
+## The ErgData situation
+
+Concept2's own app, ErgData, can push custom workouts to the PM5 via Bluetooth. It's free. It should be the obvious solution.
+
+The problem: **it's unreliable.** A March 2025 update broke Apple Watch heart rate connectivity. As of this writing, the iOS version sits at a 2.0-star rating. Users report that undefined rest intervals fail to sync — defined rest works, undefined rest doesn't.
+
+For an official app from the company that makes the hardware, that's a rough spot.
+
+## How BLE workout loading works
+
+The PM5 speaks a protocol called CSAFE over Bluetooth Low Energy (BLE). An app connects to the PM5, sends commands to configure the workout (distance, time, intervals, targets), and the PM5 executes it.
+
+One important technical detail: **all real-time data from the PM5 must be read via BLE notifications, not BLE reads.** Direct reads return junk data. This is a common mistake developers make when building PM5 integrations, and it's why some third-party apps show incorrect or missing data.
+
+The PM5 also only allows **one BLE connection at a time.** If ErgData is connected, nothing else can connect. If you're using a different app, ErgData can't connect. This is a hardware limitation, not a software choice.
+
+## What RowCraft does differently
+
+You pick a workout. You connect to your PM5. You start rowing.
+
+No button mashing. No programming intervals by hand. The workout loads to your PM5 over Bluetooth, including:
+
+- **Every segment** — warmup, work intervals, rest periods, cooldown
+- **Target paces** personalized to your FTP
+- **Stroke rate targets** per segment
+- **Coaching cues** that display during the workout
+
+A workout like "4x2000m at 95% FTP with 5:00 rest" takes two taps in the app. On the PM5 alone, that's a multi-step process through nested menus — and you still won't get pace targets.
+
+## The real value isn't convenience
+
+Saving 60 seconds of button-pressing is nice. But the bigger problem with manual programming is that **it discourages complex workouts.**
+
+When programming is painful, you default to simple sessions. 30 minutes at a steady pace. Maybe 5x500m. The friction pushes you toward the easy-to-program option, not the training-optimal one.
+
+Structured plans like the Pete Plan rotate through 8x500m, 6x750m, 4x1000m, distance pyramids, and steady distance — all in a single week. Each session targets a different energy system. Programming those by hand every session is tedious enough that most people just don't do it.
+
+Remove the friction and the training gets better. That's the point.

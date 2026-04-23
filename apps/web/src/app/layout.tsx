@@ -50,6 +50,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span>&middot;</span>
                 <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
                 <span>&middot;</span>
+                <Link href="/blog" className="hover:text-white transition-colors">Blog</Link>
+                <span>&middot;</span>
                 <a href="https://buymeacoffee.com/kerryjones" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Support</a>
               </p>
               <p className="text-xs text-gray-600">

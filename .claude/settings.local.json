@@ -56,7 +56,12 @@
       "WebFetch(domain:api.supabase.com)",
       "WebFetch(domain:api.github.com)",
       "WebFetch(domain:registry.npmjs.org)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:api.search.brave.com)",
+      "WebFetch(domain:fonts.googleapis.com)",
+      "WebFetch(domain:fonts.gstatic.com)",
+      "WebFetch(domain:sentry.io)",
+      "WebFetch(domain:us.sentry.io)"
     ]
   }
 }
