@@ -1,0 +1,41 @@
+id: "00000000-0000-4000-a000-000000000002"
+slug: return-to-rowing
+title: "Return to Rowing"
+description: "Coming back after a break? Four weeks of progressive sessions to rebuild your base safely."
+difficulty: beginner
+sessions_per_week: 3
+tags: [return-to-rowing, beginner, comeback]
+weeks:
+  - title: "Getting Started"
+    sessions:
+      - day_label: "Day 1"
+        workout_id: "f0000000-0000-0000-0001-000000000001"
+      - day_label: "Day 2"
+        workout_id: "f0000000-0000-0000-0001-000000000002"
+      - day_label: "Day 3"
+        workout_id: "f0000000-0000-0000-0001-000000000003"
+  - title: "Building Volume"
+    sessions:
+      - day_label: "Day 1"
+        workout_id: "f0000000-0000-0000-0002-000000000001"
+      - day_label: "Day 2"
+        workout_id: "f0000000-0000-0000-0002-000000000002"
+      - day_label: "Day 3"
+        workout_id: "f0000000-0000-0000-0002-000000000003"
+  - title: "Finding Rhythm"
+    sessions:
+      - day_label: "Day 1"
+        workout_id: "f0000000-0000-0000-0003-000000000001"
+      - day_label: "Day 2"
+        workout_id: "f0000000-0000-0000-0003-000000000002"
+      - day_label: "Day 3"
+        workout_id: "f0000000-0000-0000-0003-000000000003"
+  - title: "Coming Home"
+    sessions:
+      - day_label: "Day 1"
+        workout_id: "f0000000-0000-0000-0004-000000000001"
+      - day_label: "Day 2"
+        workout_id: "f0000000-0000-0000-0004-000000000002"
+      - day_label: "Day 3"
+        workout_id: "a0000000-0000-0000-0000-000000000003"
+        notes: "30 Min Steady State — you've earned it!"

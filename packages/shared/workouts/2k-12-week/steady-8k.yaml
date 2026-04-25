@@ -1,0 +1,15 @@
+id: f2000000-0000-0000-000d-000000000003
+title: "2K Build — 8K Steady"
+description: "8K steady state at aerobic pace. Optional extra volume day."
+difficulty: intermediate
+tags: [2k-12-week, aerobic, steady-state]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - duration: 8000m
+    intensity: 70%
+    stroke_rate: 22
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

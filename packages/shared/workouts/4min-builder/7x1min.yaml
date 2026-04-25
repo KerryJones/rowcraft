@@ -1,0 +1,20 @@
+id: f3000000-0000-0000-0002-000000000002
+title: "4min Build — 7x1min"
+description: "7 x 1-minute intervals with 1-minute rest. VO2max speed work."
+difficulty: intermediate
+tags: [4min-builder, vo2max, intervals]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 7
+    work:
+      duration: "1:00"
+      intensity: 112%
+      stroke_rate: 30
+    rest:
+      duration: "1:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

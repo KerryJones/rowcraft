@@ -1,0 +1,20 @@
+id: f2000000-0000-0000-0008-000000000001
+title: "2K Build — 6x2min Taper"
+description: "6 x 2-minute intervals with 2-minute rest. Taper week VO2max sharpening."
+difficulty: advanced
+tags: [2k-12-week, vo2max, intervals, taper]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 6
+    work:
+      duration: "2:00"
+      intensity: 112%
+      stroke_rate: 30
+    rest:
+      duration: "2:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

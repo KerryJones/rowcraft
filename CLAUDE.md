@@ -18,8 +18,8 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - **Resolve TODOs during planning** — scan for existing TODOs in files you touch. If achievable in scope, do it. Don't leave TODOs in new code.
 
 ### Generated Files
-- **YAML is the source of truth for workouts** — never edit `gen_*.sql` or `gen_all_workouts.sql` directly. Edit YAML in `packages/shared/workouts/`, then run `npx tsx scripts/build-seeds.ts`.
-- **Never edit any generated file directly** — find the source and edit that instead.
+- **YAML is the source of truth** — for workouts and training plans. Never edit any `.sql` file in `supabase/seeds/` directly. Edit YAML in `packages/shared/`, then run `make build-seeds`.
+- **Never edit any generated file directly** — find the source and edit that instead. If no YAML source exists yet, create one and extend the build script.
 
 ### Pre-launch App
 - **No legacy/backward-compat code** — this app has not shipped. Never write migration shims, legacy expansion, or backward-compat wrappers without asking first. If you think old data needs handling, ask.

@@ -8,7 +8,7 @@ LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/nul
 LOCAL_SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.app
 
-.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed-workouts build-seeds apk install release
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed build-seeds apk install release
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ list:
 	@echo ""
 	@echo "Database:"
 	@echo "  make db-reset              Truncate all data (with confirmation)"
-	@echo "  make db-reseed-workouts    Replace workouts/plans, preserve results + FTP history"
+	@echo "  make db-reseed             Replace workouts/plans, preserve results + FTP history"
 	@echo "  make db-push          Push migrations to linked project"
 	@echo "  make db-seed          Run seed.sql on linked project"
 	@echo "  make studio           Open Supabase Studio"
@@ -151,10 +151,11 @@ db-push:
 db-seed:
 	supabase db query --linked --file supabase/seeds/00_functions.sql
 	supabase db query --linked --file supabase/seeds/gen_all_workouts.sql
-	supabase db query --linked --file supabase/seeds/90_training_plans.sql
+	supabase db query --linked --file supabase/seeds/gen_training_plans.sql
 
-db-reseed-workouts:
+db-reseed:
 	supabase db query --linked --file supabase/seeds/gen_all_workouts.sql
+	supabase db query --linked --file supabase/seeds/gen_training_plans.sql
 
 studio:
 	@echo "Supabase Studio: http://localhost:54323"

@@ -1,0 +1,20 @@
+id: f2000000-0000-0000-0001-000000000002
+title: "2K Build — 6x2min"
+description: "6 x 2-minute intervals with 1-minute rest. VO2max speed work."
+difficulty: intermediate
+tags: [2k-12-week, vo2max, intervals]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 6
+    work:
+      duration: "2:00"
+      intensity: 112%
+      stroke_rate: 30
+    rest:
+      duration: "1:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

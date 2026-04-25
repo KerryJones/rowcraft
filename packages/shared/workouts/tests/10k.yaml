@@ -2,12 +2,6 @@ id: a0000000-0000-0000-0000-000000000008
 title: "10K"
 description: "Long-distance benchmark. 10,000 meters at your best sustainable effort."
 difficulty: intermediate
-tags: [test, benchmark, endurance]
+tags: [benchmark, endurance]
 segments:
-  - duration: "5:00"
-    intensity: 60%
-    stroke_rate: 20
   - duration: 10000m
-  - duration: "5:00"
-    intensity: 60%
-    stroke_rate: 20

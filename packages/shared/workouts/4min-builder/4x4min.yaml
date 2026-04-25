@@ -1,0 +1,20 @@
+id: f3000000-0000-0000-0005-000000000002
+title: "4min Build — 4x4min"
+description: "4 x 4-minute intervals with 3-minute rest. Threshold pace work."
+difficulty: intermediate
+tags: [4min-builder, threshold, intervals]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 4
+    work:
+      duration: "4:00"
+      intensity: 95%
+      stroke_rate: 26
+    rest:
+      duration: "3:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

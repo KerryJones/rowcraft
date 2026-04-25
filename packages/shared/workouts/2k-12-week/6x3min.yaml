@@ -1,0 +1,20 @@
+id: f2000000-0000-0000-0007-000000000001
+title: "2K Build — 6x3min"
+description: "6 x 3-minute intervals with 2-minute rest. Threshold pace work."
+difficulty: advanced
+tags: [2k-12-week, threshold, intervals]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 6
+    work:
+      duration: "3:00"
+      intensity: 95%
+      stroke_rate: 26
+    rest:
+      duration: "2:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

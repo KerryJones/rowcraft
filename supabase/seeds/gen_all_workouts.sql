@@ -2,6 +2,177 @@
 -- Wipe all system workouts (author_id IS NULL) then re-insert
 delete from public.workouts where author_id is null;
 
+-- 2k-12-week (17)
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0005-000000000003',
+  '2K Build — 10x2min',
+  '10 x 2-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0007-000000000003',
+  '2K Build — 12x1min',
+  '12 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0002-000000000001',
+  '2K Build — 3x6min',
+  '3 x 6-minute intervals with 3-minute rest. Tempo aerobic work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,tempo,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0008-000000000002',
+  '2K Build — 4x4min Taper',
+  '4 x 4-minute intervals with 3-minute rest. Taper week threshold sharpening.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,threshold,intervals,taper}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0001-000000000001',
+  '2K Build — 4x4min',
+  '4 x 4-minute intervals with 2-minute rest. Threshold pace work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,threshold,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0007-000000000002',
+  '2K Build — 4x5min',
+  '4 x 5-minute intervals with 3-minute rest. Tempo aerobic work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,tempo,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0005-000000000002',
+  '2K Build — 4x6min',
+  '4 x 6-minute intervals with 3-minute rest. Tempo aerobic work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":360,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,tempo,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0003-000000000001',
+  '2K Build — 5x4min',
+  '5 x 4-minute intervals with 2-minute rest. Threshold pace work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,threshold,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0001-000000000002',
+  '2K Build — 6x2min',
+  '6 x 2-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0008-000000000001',
+  '2K Build — 6x2min Taper',
+  '6 x 2-minute intervals with 2-minute rest. Taper week VO2max sharpening.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,vo2max,intervals,taper}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0007-000000000001',
+  '2K Build — 6x3min',
+  '6 x 3-minute intervals with 2-minute rest. Threshold pace work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,threshold,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0005-000000000001',
+  '2K Build — 6x4min',
+  '6 x 4-minute intervals with 2-minute rest. Threshold pace work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,threshold,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-0003-000000000002',
+  '2K Build — 8x2min',
+  '8 x 2-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-000d-000000000004',
+  '2K Build — 10K Steady',
+  '10K steady state at aerobic pace. Optional extra volume day.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":10000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,aerobic,steady-state}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-000d-000000000001',
+  '2K Build — 5K Steady',
+  '5K steady state at aerobic pace. Optional extra volume day.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,aerobic,steady-state}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-000d-000000000002',
+  '2K Build — 6K Steady',
+  '6K steady state at aerobic pace. Optional extra volume day.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":6000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,aerobic,steady-state}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f2000000-0000-0000-000d-000000000003',
+  '2K Build — 8K Steady',
+  '8K steady state at aerobic pace. Optional extra volume day.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":8000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":2},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{2k-12-week,aerobic,steady-state}',
+  true
+);
+
 -- 2k-race-prep (11)
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0001-000000000003',
@@ -110,6 +281,137 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":30,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":30,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":30,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
   '{2k-race-prep,shakeout,week-4}',
+  true
+);
+
+-- 4min-builder (13)
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0005-000000000003',
+  '4min Build — 10x1min',
+  '10 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0006-000000000001',
+  '4min Build — 11x1min',
+  '11 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0007-000000000002',
+  '4min Build — 12x1min',
+  '12 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0002-000000000001',
+  '4min Build — 3x4min',
+  '3 x 4-minute intervals with 3-minute rest. Threshold pace work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,threshold,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0001-000000000001',
+  '4min Build — 4x2min',
+  '4 x 2-minute intervals with 2-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0005-000000000002',
+  '4min Build — 4x4min',
+  '4 x 4-minute intervals with 3-minute rest. Threshold pace work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,threshold,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0003-000000000001',
+  '4min Build — 5x2min',
+  '5 x 2-minute intervals with 2-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0001-000000000002',
+  '4min Build — 6x1min',
+  '6 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0005-000000000001',
+  '4min Build — 6x2min',
+  '6 x 2-minute intervals with 2-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0002-000000000002',
+  '4min Build — 7x1min',
+  '7 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0003-000000000002',
+  '4min Build — 8x1min',
+  '8 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0007-000000000001',
+  '4min Build — 8x2min',
+  '8 x 2-minute intervals with 2-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'f3000000-0000-0000-0004-000000000001',
+  '4min Build — 9x1min',
+  '9 x 1-minute intervals with 1-minute rest. VO2max speed work.',
+  'variable_intervals',
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":60,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
+  '{4min-builder,vo2max,intervals}',
   true
 );
 
@@ -597,14 +899,14 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   true
 );
 
--- tests (9)
+-- tests (10)
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'a0000000-0000-0000-0000-000000000008',
   '10K',
   'Long-distance benchmark. 10,000 meters at your best sustainable effort.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":10000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{test,benchmark,endurance}',
+  'single_time',
+  '[{"duration_type":"distance","duration_value":10000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{benchmark,endurance}',
   true
 );
 
@@ -632,9 +934,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000001',
   '2K',
   'The gold standard rowing benchmark. 2000 meters, all-out effort.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":2000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{test,benchmark,race-pace}',
+  'single_time',
+  '[{"duration_type":"distance","duration_value":2000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{benchmark,race-pace}',
   true
 );
 
@@ -649,12 +951,22 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 );
 
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
+  'a0000000-0000-0000-0000-00000000000a',
+  '4 Minute',
+  'British Rowing fitness assessment. Maximum effort for 4 minutes.',
+  'single_time',
+  '[{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{benchmark,vo2max}',
+  true
+);
+
+insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'a0000000-0000-0000-0000-000000000002',
   '5K',
   'Endurance benchmark. 5000 meters at your best sustainable effort.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":5000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{test,benchmark,endurance}',
+  'single_time',
+  '[{"duration_type":"distance","duration_value":5000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{benchmark,endurance}',
   true
 );
 
@@ -662,9 +974,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000009',
   'Half Marathon',
   'The ultimate endurance benchmark. 21,097 meters — a full half marathon on the erg.',
-  'intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2},{"duration_type":"distance","duration_value":21097,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":2}]'::jsonb,
-  '{test,benchmark,endurance}',
+  'single_time',
+  '[{"duration_type":"distance","duration_value":21097,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
+  '{benchmark,endurance}',
   true
 );
 

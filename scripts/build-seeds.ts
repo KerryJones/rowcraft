@@ -15,6 +15,7 @@ import Ajv from 'ajv';
 
 const ROOT = join(import.meta.dirname, '..');
 const WORKOUTS_DIR = join(ROOT, 'packages/shared/workouts');
+const PLANS_DIR = join(ROOT, 'packages/shared/plans');
 const SCHEMA_PATH = join(ROOT, 'packages/shared/schemas/workout-definition.schema.json');
 const OUTPUT_DIR = join(ROOT, 'supabase/seeds');
 
@@ -74,6 +75,30 @@ interface DbMessage {
   trigger_type: 'time' | 'distance' | 'start' | 'end';
   trigger_value: number;
   text: string;
+}
+
+// ── Plan Types ─────────────────────────────────────────────────────────────
+
+interface YamlPlanSession {
+  day_label: string;
+  workout_id: string;
+  notes?: string;
+}
+
+interface YamlPlanWeek {
+  title: string;
+  sessions: YamlPlanSession[];
+}
+
+interface YamlPlan {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  sessions_per_week: number;
+  tags: string[];
+  weeks: YamlPlanWeek[];
 }
 
 // ── HR Zone Derivation ───────────────────────────────────────────────────────
@@ -239,17 +264,33 @@ function escapeSQL(str: string): string {
   return str.replace(/'/g, "''");
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+function validateUUID(value: string, context: string): void {
+  if (!UUID_RE.test(value)) {
+    throw new Error(`Invalid UUID "${value}" in ${context}`);
+  }
+}
+
+function validateTags(tags: string[], context: string): void {
+  for (const tag of tags) {
+    if (!/^[a-z0-9-]+$/.test(tag)) {
+      throw new Error(`Invalid tag "${tag}" in ${context} — tags must be lowercase alphanumeric with hyphens only`);
+    }
+  }
+}
+
+function formatTagsSQL(tags: string[]): string {
+  return `'{${tags.join(',')}}'`;
+}
+
 function workoutToSQL(workout: YamlWorkout): string {
+  validateUUID(workout.id, `workout "${workout.title}"`);
   const segments = expandSegments(workout.segments);
   const workoutType = inferWorkoutType(segments);
   const segmentsJson = JSON.stringify(segments);
-  // Validate tags contain only safe characters (lowercase, digits, hyphens)
-  for (const tag of workout.tags) {
-    if (!/^[a-z0-9-]+$/.test(tag)) {
-      throw new Error(`Invalid tag "${tag}" in workout "${workout.title}" — tags must be lowercase alphanumeric with hyphens only`);
-    }
-  }
-  const tags = `'{${workout.tags.join(',')}}'`;
+  validateTags(workout.tags, `workout "${workout.title}"`);
+  const tags = formatTagsSQL(workout.tags);
 
   return [
     `insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (`,
@@ -284,6 +325,99 @@ function getCategoryFromPath(filePath: string): string {
   const rel = relative(WORKOUTS_DIR, filePath);
   const dir = dirname(rel);
   return dir === '.' ? 'uncategorized' : dir;
+}
+
+// ── Plan SQL Generation ────────────────────────────────────────────────────
+
+function planToSQL(plan: YamlPlan): string {
+  validateUUID(plan.id, `plan "${plan.title}"`);
+  const weeksJson = plan.weeks.map((week, i) => ({
+    week_number: i + 1,
+    title: week.title,
+    sessions: week.sessions.map((s) => {
+      const session: Record<string, string> = {
+        day_label: s.day_label,
+        workout_id: s.workout_id,
+      };
+      if (s.notes) session.notes = s.notes;
+      return session;
+    }),
+  }));
+
+  const tags = formatTagsSQL(plan.tags);
+
+  return [
+    `insert into public.training_plans (id, slug, title, description, difficulty, duration_weeks, sessions_per_week, tags, weeks) values`,
+    `('${plan.id}', '${escapeSQL(plan.slug)}', '${escapeSQL(plan.title)}', '${escapeSQL(plan.description)}', '${plan.difficulty}', ${plan.weeks.length}, ${plan.sessions_per_week}, ${tags}, '${escapeSQL(JSON.stringify(weeksJson))}'::jsonb)`,
+    `on conflict (id) do update set slug = excluded.slug, title = excluded.title, description = excluded.description, difficulty = excluded.difficulty, duration_weeks = excluded.duration_weeks, sessions_per_week = excluded.sessions_per_week, tags = excluded.tags, weeks = excluded.weeks, updated_at = now();`,
+  ].join('\n');
+}
+
+function buildPlans(workoutIds: Set<string>): string | null {
+  let planFiles: string[];
+  try {
+    planFiles = readdirSync(PLANS_DIR)
+      .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
+      .sort()
+      .map((f) => join(PLANS_DIR, f));
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
+
+  if (planFiles.length === 0) return null;
+
+  console.log(`\nFound ${planFiles.length} plan files`);
+
+  const seenIds = new Set<string>();
+  const statements: string[] = [];
+  let errors = 0;
+
+  for (const filePath of planFiles) {
+    const relPath = relative(ROOT, filePath);
+    try {
+      const raw = readFileSync(filePath, 'utf-8');
+      const data = yaml.load(raw) as YamlPlan;
+
+      if (!data.id || !data.slug || !data.title || !data.tags || !data.weeks) {
+        console.error(`INVALID PLAN in ${relPath}: missing required fields`);
+        errors++;
+        continue;
+      }
+
+      if (seenIds.has(data.id)) {
+        console.error(`DUPLICATE PLAN ID in ${relPath}: ${data.id}`);
+        errors++;
+        continue;
+      }
+      seenIds.add(data.id);
+
+      validateTags(data.tags, `plan "${data.title}"`);
+
+      // Cross-validate workout_id references
+      for (const week of data.weeks) {
+        for (const session of week.sessions) {
+          if (!workoutIds.has(session.workout_id)) {
+            throw new Error(`Unknown workout_id "${session.workout_id}" in plan "${data.title}", week "${week.title}", ${session.day_label}`);
+          }
+        }
+      }
+
+      statements.push(planToSQL(data));
+      console.log(`  ${basename(filePath)}: ${data.title} (${data.weeks.length} weeks)`);
+    } catch (err) {
+      console.error(`ERROR in ${relPath}: ${(err as Error).message}`);
+      errors++;
+    }
+  }
+
+  if (errors > 0) {
+    console.error(`\n${errors} plan error(s) found. Fix them before generating SQL.`);
+    process.exit(1);
+  }
+
+  const header = `-- Training Plans (${statements.length} plans)\n-- Generated by scripts/build-seeds.ts — do not edit manually\n`;
+  return header + '\n' + statements.join('\n\n') + '\n';
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
@@ -356,9 +490,9 @@ function main() {
   // Write output files
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  // Remove old generated files (keep non-generated ones like 90_training_plans.sql)
+  // Remove old generated files
   for (const f of readdirSync(OUTPUT_DIR)) {
-    if (f.startsWith('gen_')) {
+    if (f.startsWith('gen_') || f === '90_training_plans.sql') {
       rmSync(join(OUTPUT_DIR, f));
     }
   }
@@ -390,6 +524,14 @@ function main() {
 
   const totalWorkouts = [...workoutsByCategory.values()].reduce((a, b) => a + b.length, 0);
   console.log(`\nGenerated ${totalWorkouts} workouts across ${sortedCategories.length} categories`);
+
+  // Build training plans (always write the file so Makefile targets don't break)
+  const plansSql = buildPlans(seenIds);
+  writeFileSync(
+    join(OUTPUT_DIR, 'gen_training_plans.sql'),
+    plansSql ?? '-- No training plans found\n',
+  );
+
   console.log(`Output: ${OUTPUT_DIR}/gen_*.sql`);
 }
 

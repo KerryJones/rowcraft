@@ -163,6 +163,78 @@ npx tsx scripts/build-seeds.ts
 
 Reads all `.yaml` files → validates → generates `supabase/seeds/*.sql`. The generated SQL deletes all system workouts (`author_id IS NULL`) then inserts fresh.
 
+---
+
+# RowCraft Training Plan YAML Spec
+
+Training plans are defined as YAML files in `packages/shared/plans/`. The build script (`scripts/build-seeds.ts`) validates them, cross-checks workout references, and generates SQL.
+
+## Plan File
+
+Each `.yaml` file defines one training plan.
+
+```yaml
+id: "00000000-0000-4000-a000-000000000001"   # stable UUID
+slug: pete-plan
+title: "Pete Plan"
+description: "The most popular beginner rowing program."
+difficulty: beginner                            # beginner | intermediate | advanced
+sessions_per_week: 3
+tags: [pete-plan, beginner, popular]
+weeks:
+  - title: "Foundation"
+    sessions:
+      - day_label: "Day 1"
+        workout_id: "b0000000-0000-0000-0000-000000000001"
+        notes: "5K steady — focus on consistent splits"
+      - day_label: "Day 2"
+        workout_id: "b0000000-0000-0000-0000-000000000002"
+      - day_label: "Day 3"
+        workout_id: "b0000000-0000-0000-0000-000000000003"
+```
+
+## Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID string | Stable identifier. Must not change once published. |
+| `slug` | string | URL-friendly identifier (lowercase, hyphens). |
+| `title` | string | Plan name. |
+| `description` | string | One-line description. |
+| `difficulty` | enum | `beginner`, `intermediate`, or `advanced`. |
+| `sessions_per_week` | integer | Number of sessions per week. |
+| `tags` | string[] | Tags for search/filtering. Lowercase alphanumeric + hyphens only. |
+| `weeks` | array | At least one week. |
+
+## Week Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | string | Week display name (e.g. "Foundation"). |
+| `sessions` | array | At least one session. |
+
+## Session Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `day_label` | string | yes | Display label (e.g. "Day 1"). |
+| `workout_id` | UUID string | yes | References a workout `id` from the workout YAML files. Validated at build time. |
+| `notes` | string | no | Optional coaching notes for this session. |
+
+## Cross-Validation
+
+The build script collects all workout IDs during workout generation, then validates that every `workout_id` referenced in a plan exists. A typo or stale reference fails the build with a clear error:
+
+```
+ERROR: Unknown workout_id "bad-uuid" in plan "Pete Plan", week "Foundation", Day 1
+```
+
+## Generated Output
+
+`make build-seeds` generates `supabase/seeds/gen_training_plans.sql` alongside the workout SQL files. The SQL uses `ON CONFLICT (id) DO UPDATE` so plans can be re-seeded without duplicates.
+
+---
+
 ## UUID Conventions
 
 | Prefix | Category |
@@ -175,6 +247,8 @@ Reads all `.yaml` files → validates → generates `supabase/seeds/*.sql`. The 
 | `e1000000` | FTP Builder |
 | `f0000000` | Return to Rowing |
 | `f1000000` | 2K Race Prep |
+| `f2000000` | 2K 12-Week Build |
+| `f3000000` | 4-Minute Builder |
 | `10000000` | Zone 1 Recovery |
 | `20000000` | Zone 2 Aerobic |
 | `30000000` | Zone 3 Tempo |

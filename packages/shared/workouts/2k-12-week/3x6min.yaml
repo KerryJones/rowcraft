@@ -1,0 +1,20 @@
+id: f2000000-0000-0000-0002-000000000001
+title: "2K Build — 3x6min"
+description: "3 x 6-minute intervals with 3-minute rest. Tempo aerobic work."
+difficulty: intermediate
+tags: [2k-12-week, tempo, intervals]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 3
+    work:
+      duration: "6:00"
+      intensity: 83%
+      stroke_rate: 24
+    rest:
+      duration: "3:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

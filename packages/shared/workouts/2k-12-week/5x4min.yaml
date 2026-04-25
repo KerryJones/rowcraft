@@ -1,0 +1,20 @@
+id: f2000000-0000-0000-0003-000000000001
+title: "2K Build — 5x4min"
+description: "5 x 4-minute intervals with 2-minute rest. Threshold pace work."
+difficulty: intermediate
+tags: [2k-12-week, threshold, intervals]
+segments:
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20
+  - type: interval
+    reps: 5
+    work:
+      duration: "4:00"
+      intensity: 95%
+      stroke_rate: 26
+    rest:
+      duration: "2:00"
+  - duration: "3:00"
+    intensity: 60%
+    stroke_rate: 20

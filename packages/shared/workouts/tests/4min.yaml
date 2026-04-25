@@ -1,0 +1,7 @@
+id: a0000000-0000-0000-0000-00000000000a
+title: "4 Minute"
+description: "British Rowing fitness assessment. Maximum effort for 4 minutes."
+difficulty: advanced
+tags: [benchmark, vo2max]
+segments:
+  - duration: "4:00"

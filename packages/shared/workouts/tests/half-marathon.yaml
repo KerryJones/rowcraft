@@ -2,12 +2,6 @@ id: a0000000-0000-0000-0000-000000000009
 title: "Half Marathon"
 description: "The ultimate endurance benchmark. 21,097 meters — a full half marathon on the erg."
 difficulty: advanced
-tags: [test, benchmark, endurance]
+tags: [benchmark, endurance]
 segments:
-  - duration: "5:00"
-    intensity: 60%
-    stroke_rate: 20
   - duration: 21097m
-  - duration: "5:00"
-    intensity: 60%
-    stroke_rate: 20
