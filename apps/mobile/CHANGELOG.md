@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.1...rowcraft-mobile-v0.3.2) (2026-04-25)
+
+
+### Bug Fixes
+
+* use zone-aware clock in workout engine so tests control wall-clock time ([5ec4160](https://github.com/KerryJones/rowcraft/commit/5ec416043ccd4766178f803dc521258bb1526288))
+
 ## [0.3.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.0...rowcraft-mobile-v0.3.1) (2026-04-25)
 
 
