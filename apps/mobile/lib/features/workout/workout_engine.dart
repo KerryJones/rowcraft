@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:clock/clock.dart';
+
 import '../../models/pm5_data.dart';
 import '../../models/workout.dart';
 import '../../models/workout_segment.dart';
@@ -301,7 +303,7 @@ class WorkoutEngine {
       return;
     }
     _prePausePhase = _state.phase;
-    _pausedAt = DateTime.now();
+    _pausedAt = clock.now();
     // Cancel timers so they don't fire while paused
     _restTimer?.cancel();
     _restTickTimer?.cancel();
@@ -345,7 +347,7 @@ class WorkoutEngine {
       if (restoredPhase == WorkoutPhase.resting) {
         // Wall-clock elapsed = total since segment start minus all paused time.
         final wallElapsed = _restStartWallTime != null
-            ? (DateTime.now().difference(_restStartWallTime!) - _totalPausedDuration)
+            ? (clock.now().difference(_restStartWallTime!) - _totalPausedDuration)
             : ((_state.latestData.elapsedTime - _segmentStartTime) - _totalPausedDuration);
         final remainingSeconds =
             segment.durationValue.toInt() - wallElapsed.inSeconds;
@@ -371,7 +373,7 @@ class WorkoutEngine {
   void _checkAutoPause() {
     if (_state.phase != WorkoutPhase.rowing) return;
     if (_lastActivityAt == null) return;
-    final elapsed = DateTime.now().difference(_lastActivityAt!).inSeconds;
+    final elapsed = clock.now().difference(_lastActivityAt!).inSeconds;
     if (elapsed >= _autoPauseDelaySeconds) {
       _autoPause();
     }
@@ -387,7 +389,7 @@ class WorkoutEngine {
     _workCompletionTimer = null;
     _cancelCountdownBeeps();
     _prePausePhase = _state.phase;
-    _pausedAt = DateTime.now();
+    _pausedAt = clock.now();
     _state = _state.copyWith(
       phase: WorkoutPhase.paused,
       isAutoPaused: true,
@@ -448,7 +450,7 @@ class WorkoutEngine {
     if (_state.phase != WorkoutPhase.paused) return;
     _cancelAutoPauseFinishTimer();
     _accumulatePausedDuration();
-    _lastActivityAt = DateTime.now();
+    _lastActivityAt = clock.now();
     _state = _state.copyWith(
       phase: _prePausePhase ?? WorkoutPhase.rowing,
       isAutoPaused: false,
@@ -479,7 +481,7 @@ class WorkoutEngine {
     if (segment == null || segment.durationType != DurationType.time) return;
     if (wallStart == null) return;
 
-    final wallElapsed = DateTime.now().difference(wallStart) - _totalPausedDuration;
+    final wallElapsed = clock.now().difference(wallStart) - _totalPausedDuration;
     final totalSec = segment.durationValue;
     final elapsed = wallElapsed.isNegative ? Duration.zero : wallElapsed;
     final progress = (elapsed.inSeconds / totalSec).clamp(0.0, 1.0);
@@ -501,7 +503,7 @@ class WorkoutEngine {
     }
 
     final wallElapsed =
-        DateTime.now().difference(_workStartWallTime!) - _totalPausedDuration;
+        clock.now().difference(_workStartWallTime!) - _totalPausedDuration;
     final remainingSeconds =
         segment.durationValue.toInt() - wallElapsed.inSeconds;
     _workTickTimer?.cancel();
@@ -525,7 +527,7 @@ class WorkoutEngine {
     final totalSeconds = segment.durationValue.toInt();
     if (totalSeconds < 4) return; // Too short for a 3-second countdown
 
-    _segmentWallStart = DateTime.now();
+    _segmentWallStart = clock.now();
     final delayToFirstBeep = totalSeconds - 3;
     _countdownBeepsRemaining = 3;
     _countdownBeepTimer = Timer(
@@ -570,7 +572,7 @@ class WorkoutEngine {
     if (totalSeconds < 4) return;
 
     final wallElapsed =
-        DateTime.now().difference(_segmentWallStart!) - _totalPausedDuration;
+        clock.now().difference(_segmentWallStart!) - _totalPausedDuration;
     final elapsedSeconds = wallElapsed.inSeconds;
     final remaining = totalSeconds - elapsedSeconds;
 
@@ -591,7 +593,7 @@ class WorkoutEngine {
 
   void _accumulatePausedDuration() {
     if (_pausedAt != null) {
-      _totalPausedDuration += DateTime.now().difference(_pausedAt!);
+      _totalPausedDuration += clock.now().difference(_pausedAt!);
       _pausedAt = null;
     }
   }
@@ -701,7 +703,7 @@ class WorkoutEngine {
     // advance) plus a 1Hz tick timer to keep the countdown display updated even
     // when PM5 stops sending data while the rower rests.
     if (isRest && segment.durationType == DurationType.time) {
-      _restStartWallTime = DateTime.now();
+      _restStartWallTime = clock.now();
       _restTickTimer?.cancel();
       _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickTimedSegment(WorkoutPhase.resting, _restStartWallTime));
       _restTimer?.cancel();
@@ -716,7 +718,7 @@ class WorkoutEngine {
     // when the app pauses, causing countdown beeps and segment completion to
     // fire at wrong times.
     if (!isRest && segment.durationType == DurationType.time) {
-      _workStartWallTime = DateTime.now();
+      _workStartWallTime = clock.now();
       _workTickTimer?.cancel();
       _workTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickTimedSegment(WorkoutPhase.rowing, _workStartWallTime));
       _workCompletionTimer?.cancel();
@@ -780,7 +782,7 @@ class WorkoutEngine {
     // completed strokes, unaffected by flywheel spin-down).
     if (data.strokeCount != _lastStrokeCount) {
       _lastStrokeCount = data.strokeCount;
-      _lastActivityAt = DateTime.now();
+      _lastActivityAt = clock.now();
       // Start auto-pause timer on first activity if not running
       if (_autoPauseTimer == null && _state.phase == WorkoutPhase.rowing) {
         _autoPauseTimer = Timer.periodic(
@@ -901,9 +903,9 @@ class WorkoutEngine {
 
       if (data.pace > targetPace) {
         // Rower is too slow — start or continue the fail timer
-        _outOfRangeSince ??= DateTime.now();
+        _outOfRangeSince ??= clock.now();
         final secondsOut =
-            DateTime.now().difference(_outOfRangeSince!).inSeconds;
+            clock.now().difference(_outOfRangeSince!).inSeconds;
         _state = _state.copyWith(secondsOutOfRange: secondsOut);
 
         if (secondsOut >= paceFailThreshold) {
