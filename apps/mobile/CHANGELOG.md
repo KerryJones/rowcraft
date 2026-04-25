@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.0...rowcraft-mobile-v0.3.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* pause timer drift, C2 interval sync, and add max HR setting ([0ddaf45](https://github.com/KerryJones/rowcraft/commit/0ddaf4571e910b6f68dc9779e0392afe8ad19386))
+
 ## [0.3.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.2.0...rowcraft-mobile-v0.3.0) (2026-04-23)
 
 
