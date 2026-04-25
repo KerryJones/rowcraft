@@ -12,6 +12,7 @@ import {
   buildSplits,
   buildIntervals,
   buildStrokeData,
+  buildIntervalStrokeData,
 } from '@/lib/utils/c2-payload';
 
 async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
@@ -154,11 +155,15 @@ export async function POST(request: NextRequest) {
     ? truncate(`Rowed on RowCraft: ${workoutTitle}`, { length: 240, omission: '…' })
     : 'Rowed on RowCraft';
 
-  // Splits or Intervals (C2 API nests these inside a "workout" object)
+  // Splits, Intervals, and Stroke data
   const splits: SplitJson[] = result.splits ?? [];
+  const timeSamples: TimeSampleJson[] = result.time_samples ?? [];
+  const isInterval = (workoutType === 'intervals' || workoutType === 'variable_intervals')
+    && segments.length > 0;
+
+  // C2 API nests splits/intervals inside a "workout" object
   if (splits.length > 0) {
-    const isInterval = workoutType === 'intervals' || workoutType === 'variable_intervals';
-    if (isInterval && segments.length > 0) {
+    if (isInterval) {
       const { intervals, totalRestTime, totalRestDistance } = buildIntervals(splits, segments);
       if (intervals.length > 0) {
         c2Payload.workout = { intervals };
@@ -170,10 +175,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Stroke data (time-series samples — C2 field is "stroke_data")
-  const timeSamples: TimeSampleJson[] = result.time_samples ?? [];
+  // For interval workouts, C2 expects t/d to reset to 0 at each interval
+  // boundary so it can infer which samples belong to which interval.
   if (timeSamples.length > 0) {
-    c2Payload.stroke_data = buildStrokeData(timeSamples);
+    c2Payload.stroke_data = isInterval
+      ? buildIntervalStrokeData(timeSamples, segments)
+      : buildStrokeData(timeSamples);
   }
 
   // Device metadata

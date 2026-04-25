@@ -201,7 +201,7 @@ class _ResultCard extends StatelessWidget {
                   // Avg split
                   _MetricCell(
                     value: result.avgSplitFormatted,
-                    label: '/500m',
+                    label: '',
                     highlight: true,
                   ),
                   const Spacer(),

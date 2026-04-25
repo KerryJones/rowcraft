@@ -160,6 +160,12 @@ class WorkoutEngine {
   Timer? _restTickTimer;
   DateTime? _restStartWallTime;
 
+  /// Wall-clock ticker for timed work segments — same approach as rest to
+  /// avoid PM5 timer drift during pause/resume cycles.
+  Timer? _workTickTimer;
+  Timer? _workCompletionTimer;
+  DateTime? _workStartWallTime;
+
   Timer? _countdownBeepTimer;
   DateTime? _segmentWallStart;
   int _countdownBeepsRemaining = -1;
@@ -300,6 +306,10 @@ class WorkoutEngine {
     _restTimer?.cancel();
     _restTickTimer?.cancel();
     _restTickTimer = null;
+    _workTickTimer?.cancel();
+    _workTickTimer = null;
+    _workCompletionTimer?.cancel();
+    _workCompletionTimer = null;
     _cancelCountdownBeeps();
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
@@ -329,13 +339,11 @@ class WorkoutEngine {
     if (restoredPhase == WorkoutPhase.rowing) {
       _lastActivityAt = null;
     }
-    // Restart timers if resuming into a rest segment
-    if (restoredPhase == WorkoutPhase.resting) {
-      final segment = _state.currentSegment;
-      if (segment != null && segment.durationType == DurationType.time) {
+    // Restart timers if resuming into a timed segment
+    final segment = _state.currentSegment;
+    if (segment != null && segment.durationType == DurationType.time) {
+      if (restoredPhase == WorkoutPhase.resting) {
         // Wall-clock elapsed = total since segment start minus all paused time.
-        // Use the tick-based elapsed from state (updated by _tickRest) if available,
-        // otherwise fall back to PM5 elapsed.
         final wallElapsed = _restStartWallTime != null
             ? (DateTime.now().difference(_restStartWallTime!) - _totalPausedDuration)
             : ((_state.latestData.elapsedTime - _segmentStartTime) - _totalPausedDuration);
@@ -343,7 +351,7 @@ class WorkoutEngine {
             segment.durationValue.toInt() - wallElapsed.inSeconds;
         // Restart the tick timer
         _restTickTimer?.cancel();
-        _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickRest());
+        _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickTimedSegment(WorkoutPhase.resting, _restStartWallTime));
         if (remainingSeconds > 0) {
           _restTimer = Timer(
             Duration(seconds: remainingSeconds),
@@ -352,6 +360,8 @@ class WorkoutEngine {
         } else {
           _advanceToNextSegment();
         }
+      } else if (restoredPhase == WorkoutPhase.rowing && _workStartWallTime != null) {
+        _restartWorkTimers();
       }
     }
     // Reschedule countdown beeps for both work and rest segments
@@ -371,6 +381,10 @@ class WorkoutEngine {
     if (_state.phase != WorkoutPhase.rowing) return;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
+    _workTickTimer?.cancel();
+    _workTickTimer = null;
+    _workCompletionTimer?.cancel();
+    _workCompletionTimer = null;
     _cancelCountdownBeeps();
     _prePausePhase = _state.phase;
     _pausedAt = DateTime.now();
@@ -448,20 +462,24 @@ class WorkoutEngine {
       const Duration(seconds: 1),
       (_) => _checkAutoPause(),
     );
+    // Restart work timers if auto-resuming into a timed work segment
+    if (_state.phase == WorkoutPhase.rowing && _workStartWallTime != null) {
+      _restartWorkTimers();
+    }
     _rescheduleCountdownBeeps();
     _emit();
   }
 
-  /// Tick handler called every second during a timed rest segment.
+  /// Tick handler called every second during a timed segment (work or rest).
   /// Advances segmentProgress from wall-clock time so the countdown display
-  /// updates even when the PM5 stops sending data.
-  void _tickRest() {
-    if (_state.phase != WorkoutPhase.resting) return;
+  /// updates even when the PM5 stops sending data or drifts during pause.
+  void _tickTimedSegment(WorkoutPhase expectedPhase, DateTime? wallStart) {
+    if (_state.phase != expectedPhase) return;
     final segment = _state.currentSegment;
     if (segment == null || segment.durationType != DurationType.time) return;
-    if (_restStartWallTime == null) return;
+    if (wallStart == null) return;
 
-    final wallElapsed = DateTime.now().difference(_restStartWallTime!) - _totalPausedDuration;
+    final wallElapsed = DateTime.now().difference(wallStart) - _totalPausedDuration;
     final totalSec = segment.durationValue;
     final elapsed = wallElapsed.isNegative ? Duration.zero : wallElapsed;
     final progress = (elapsed.inSeconds / totalSec).clamp(0.0, 1.0);
@@ -470,6 +488,36 @@ class WorkoutEngine {
       segmentElapsedTime: elapsed,
     );
     _emit();
+  }
+
+  /// Restart wall-clock timers for a timed work segment after pause/resume.
+  /// Calculates remaining time and starts both the tick and completion timers.
+  void _restartWorkTimers() {
+    final segment = _state.currentSegment;
+    if (segment == null ||
+        segment.durationType != DurationType.time ||
+        _workStartWallTime == null) {
+      return;
+    }
+
+    final wallElapsed =
+        DateTime.now().difference(_workStartWallTime!) - _totalPausedDuration;
+    final remainingSeconds =
+        segment.durationValue.toInt() - wallElapsed.inSeconds;
+    _workTickTimer?.cancel();
+    _workTickTimer = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _tickTimedSegment(WorkoutPhase.rowing, _workStartWallTime),
+    );
+    if (remainingSeconds > 0) {
+      _workCompletionTimer?.cancel();
+      _workCompletionTimer = Timer(
+        Duration(seconds: remainingSeconds),
+        () => _advanceToNextSegment(),
+      );
+    } else {
+      _advanceToNextSegment();
+    }
   }
 
   void _scheduleCountdownBeeps(WorkoutSegment segment) {
@@ -620,6 +668,11 @@ class WorkoutEngine {
     _restTickTimer?.cancel();
     _restTickTimer = null;
     _restStartWallTime = null;
+    _workTickTimer?.cancel();
+    _workTickTimer = null;
+    _workCompletionTimer?.cancel();
+    _workCompletionTimer = null;
+    _workStartWallTime = null;
     _cancelCountdownBeeps();
     _segmentWallStart = null;
     _pausedAt = null;
@@ -650,9 +703,24 @@ class WorkoutEngine {
     if (isRest && segment.durationType == DurationType.time) {
       _restStartWallTime = DateTime.now();
       _restTickTimer?.cancel();
-      _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickRest());
+      _restTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickTimedSegment(WorkoutPhase.resting, _restStartWallTime));
       _restTimer?.cancel();
       _restTimer = Timer(
+        Duration(seconds: segment.durationValue.toInt()),
+        () => _advanceToNextSegment(),
+      );
+    }
+
+    // For timed work segments, use wall-clock tracking (same as rest) to avoid
+    // PM5 timer drift during pause/resume. The PM5 hardware timer keeps running
+    // when the app pauses, causing countdown beeps and segment completion to
+    // fire at wrong times.
+    if (!isRest && segment.durationType == DurationType.time) {
+      _workStartWallTime = DateTime.now();
+      _workTickTimer?.cancel();
+      _workTickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickTimedSegment(WorkoutPhase.rowing, _workStartWallTime));
+      _workCompletionTimer?.cancel();
+      _workCompletionTimer = Timer(
         Duration(seconds: segment.durationValue.toInt()),
         () => _advanceToNextSegment(),
       );
@@ -777,13 +845,16 @@ class WorkoutEngine {
     final elapsedTime = data.elapsedTime - _segmentStartTime;
     final elapsedCalories = math.max(0, data.calories - _segmentStartCalories);
 
-    // For timed rest segments, _tickRest() owns segmentProgress/segmentElapsedTime
-    // via wall-clock tracking. Skip PM5-derived progress here to avoid flickering
-    // caused by competing writes (PM5 flywheel data vs wall-clock tick).
+    // For timed segments (both rest and work), wall-clock tick handlers own
+    // segmentProgress/segmentElapsedTime. Skip PM5-derived progress here to
+    // avoid flickering and drift from PM5 hardware timer during pause/resume.
     final isTimedRest = _state.phase == WorkoutPhase.resting &&
         segment.durationType == DurationType.time;
+    final isTimedWork = _state.phase == WorkoutPhase.rowing &&
+        segment.durationType == DurationType.time &&
+        _workStartWallTime != null;
 
-    if (!isTimedRest) {
+    if (!isTimedRest && !isTimedWork) {
       double progress = 0;
       switch (segment.durationType) {
         case DurationType.distance:
@@ -808,8 +879,8 @@ class WorkoutEngine {
         segmentElapsedCalories: elapsedCalories,
       );
     } else {
-      // Still track distance and calories during rest (e.g. for non-time rest types
-      // and sample accumulation), but leave segmentProgress/segmentElapsedTime to _tickRest.
+      // Wall-clock tick owns segmentProgress/segmentElapsedTime — still track
+      // distance and calories from PM5 data.
       _state = _state.copyWith(
         segmentElapsedDistance: elapsedDistance,
         segmentElapsedCalories: elapsedCalories,
@@ -855,9 +926,10 @@ class WorkoutEngine {
 
     _emit();
 
-    // Check if segment is complete. Timed rest segments are advanced by
-    // _restTimer, not by PM5 data — skip the check to avoid double-advance.
-    if (!isTimedRest && _state.segmentProgress >= 1.0) {
+    // Check if segment is complete. Timed segments (rest via _restTimer,
+    // work via _workCompletionTimer) are advanced by wall-clock timers —
+    // skip the check to avoid double-advance.
+    if (!isTimedRest && !isTimedWork && _state.segmentProgress >= 1.0) {
       _advanceToNextSegment();
     }
   }
@@ -870,6 +942,9 @@ class WorkoutEngine {
     _advancing = true;
     try {
       _restTimer?.cancel();
+      _workCompletionTimer?.cancel();
+      _workTickTimer?.cancel();
+      _workTickTimer = null;
       // Fire T-0 beep if we're waiting for exactly the final tick.
       if (_countdownBeepsRemaining == 0 &&
           _countdownBeepTimer != null &&
@@ -918,6 +993,10 @@ class WorkoutEngine {
     _restTimer?.cancel();
     _restTickTimer?.cancel();
     _restTickTimer = null;
+    _workTickTimer?.cancel();
+    _workTickTimer = null;
+    _workCompletionTimer?.cancel();
+    _workCompletionTimer = null;
     _cancelCountdownBeeps();
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;

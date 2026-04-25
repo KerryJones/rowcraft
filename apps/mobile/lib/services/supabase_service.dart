@@ -375,6 +375,20 @@ class SupabaseService {
     }
   }
 
+  /// Update just the max heart rate on the profile.
+  Future<void> updateProfileMaxHr(int maxHr) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+      await _client
+          .from('profiles')
+          .update({'max_heart_rate': maxHr}).eq('id', userId);
+    } catch (e, stack) {
+      _log('updateProfileMaxHr', e, stack);
+      rethrow;
+    }
+  }
+
   // ── FTP History ─────────────────────────────────────────────────────
 
   Future<List<FtpRecord>> getFtpHistory() async {

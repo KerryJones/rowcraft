@@ -166,15 +166,64 @@ export function buildIntervals(
   return { intervals, totalRestTime, totalRestDistance };
 }
 
+/** Map a single time sample to C2 stroke_data format, with optional rebase offsets. */
+function mapSampleToStroke(
+  s: TimeSampleJson,
+  baseT = 0,
+  baseD = 0,
+): Record<string, unknown> {
+  const stroke: Record<string, unknown> = {
+    t: Math.round((s.t - baseT) / 100),   // ms -> tenths of seconds
+    d: Math.round((s.d - baseD) * 10),     // meters -> decimeters
+    p: s.p,                                // already tenths/500m
+    spm: s.spm,
+  };
+  if (s.hr != null) stroke.hr = s.hr;
+  return stroke;
+}
+
 export function buildStrokeData(timeSamples: TimeSampleJson[]): Record<string, unknown>[] {
-  return timeSamples.map(s => {
-    const stroke: Record<string, unknown> = {
-      t: Math.round(s.t / 100),       // ms -> tenths of seconds
-      d: Math.round(s.d * 10),        // meters -> decimeters
-      p: s.p,                          // already tenths/500m
-      spm: s.spm,
-    };
-    if (s.hr != null) stroke.hr = s.hr;
-    return stroke;
-  });
+  return timeSamples.map(s => mapSampleToStroke(s));
+}
+
+/**
+ * Build stroke_data for interval workouts. C2 expects timestamps and distance
+ * to reset to 0 at each interval boundary — it infers interval breaks from
+ * these resets. Rest segment samples are excluded.
+ */
+export function buildIntervalStrokeData(
+  timeSamples: TimeSampleJson[],
+  segments: C2Segment[],
+): Record<string, unknown>[] {
+  // Group samples by segment index
+  const bySegment = new Map<number, TimeSampleJson[]>();
+  for (const s of timeSamples) {
+    const group = bySegment.get(s.si) ?? [];
+    group.push(s);
+    bySegment.set(s.si, group);
+  }
+
+  const result: Record<string, unknown>[] = [];
+
+  // Process each segment in order, skip rest segments
+  const sortedKeys = [...bySegment.keys()].sort((a, b) => a - b);
+  for (const si of sortedKeys) {
+    const seg = segments[si];
+    if (!seg || seg.is_rest) continue;
+
+    const samples = bySegment.get(si)!;
+    if (samples.length === 0) continue;
+
+    // Sort by timestamp in case DB returns out of order
+    samples.sort((a, b) => a.t - b.t);
+
+    // Rebase so each interval starts at t=0, d=0
+    const baseT = samples[0].t;
+    const baseD = samples[0].d;
+    for (const s of samples) {
+      result.push(mapSampleToStroke(s, baseT, baseD));
+    }
+  }
+
+  return result;
 }

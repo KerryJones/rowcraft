@@ -308,6 +308,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     error: (_, _) => const SizedBox.shrink(),
                   ),
                   const Divider(height: 1),
+                  profileAsync.when(
+                    data: (profile) => ListTile(
+                      leading: const Icon(Icons.favorite_outline),
+                      title: const Text('Max Heart Rate'),
+                      subtitle: Text(
+                        profile.maxHeartRate != null
+                            ? '${profile.maxHeartRate} bpm'
+                            : 'Not set (default: 190)',
+                      ),
+                      onTap: () => _showEditMaxHrDialog(context, ref),
+                    ),
+                    loading: () => const ListTile(
+                      leading: Icon(Icons.favorite_outline),
+                      title: Text('Max Heart Rate'),
+                      subtitle: Text('Loading...'),
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                  const Divider(height: 1),
                   ref.watch(appVersionProvider).when(
                     data: (version) => ListTile(
                       leading: const Icon(Icons.info_outline),
@@ -412,6 +431,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => _EditWeightDialog(ref: ref),
+    );
+  }
+
+  static void _showEditMaxHrDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _EditMaxHrDialog(ref: ref),
     );
   }
 
@@ -847,6 +873,83 @@ class _EditWeightDialogState extends State<_EditWeightDialog> {
             // Capture ref reads before async gap
             final service = widget.ref.read(supabaseServiceProvider);
             await service.updateProfileWeight(kg);
+            if (!context.mounted) return;
+            widget.ref.invalidate(profileProvider);
+            Navigator.of(context).pop();
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditMaxHrDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _EditMaxHrDialog({required this.ref});
+
+  @override
+  State<_EditMaxHrDialog> createState() => _EditMaxHrDialogState();
+}
+
+class _EditMaxHrDialogState extends State<_EditMaxHrDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.ref.read(profileProvider).value;
+    if (profile?.maxHeartRate != null) {
+      _controller.text = profile!.maxHeartRate.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Set Max Heart Rate'),
+      content: TextField(
+        controller: _controller,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          hintText: 'Enter max HR',
+          suffixText: 'bpm',
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final value = int.tryParse(_controller.text);
+            if (value == null || value < 100 || value > 250) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Enter a value between 100-250')),
+                );
+              }
+              return;
+            }
+            final service = widget.ref.read(supabaseServiceProvider);
+            try {
+              await service.updateProfileMaxHr(value);
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to update max heart rate')),
+                );
+              }
+              return;
+            }
             if (!context.mounted) return;
             widget.ref.invalidate(profileProvider);
             Navigator.of(context).pop();
