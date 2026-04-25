@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.2...rowcraft-mobile-v0.3.3) (2026-04-25)
+
+
+### Bug Fixes
+
+* add fake_async to dev_dependencies for analyzer ([f57f809](https://github.com/KerryJones/rowcraft/commit/f57f809f0db08108c7d08d71ed0f9579d5f5fb7c))
+
 ## [0.3.2](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.1...rowcraft-mobile-v0.3.2) (2026-04-25)
 
 
