@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.3...rowcraft-mobile-v0.3.4) (2026-04-26)
+
+
+### Bug Fixes
+
+* correct workout type inference for distance-only workouts and plan ordering ([b8bc70e](https://github.com/KerryJones/rowcraft/commit/b8bc70e1a4288f43d45a3abb724bd79ae7170155))
+
 ## [0.3.3](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.2...rowcraft-mobile-v0.3.3) (2026-04-25)
 
 
