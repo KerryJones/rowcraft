@@ -228,7 +228,11 @@ function inferWorkoutType(segments: DbSegment[]): string {
   // Active segments are those with a pace target (intensity% or absolute watts)
   const activeSegs = segments.filter((s) => s.target_intensity != null || s.target_watts != null);
 
-  if (activeSegs.length === 0) return 'single_time';
+  if (activeSegs.length === 0) {
+    const firstWork = segments.find((s) => !s.is_rest);
+    if (firstWork?.duration_type === 'distance') return 'single_distance';
+    return 'single_time';
+  }
 
   // Single active segment (ignoring rest segments)
   if (activeSegs.length === 1) {

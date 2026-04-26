@@ -5,7 +5,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000008',
   '10K',
   'Long-distance benchmark. 10,000 meters at your best sustainable effort.',
-  'single_time',
+  'single_distance',
   '[{"duration_type":"distance","duration_value":10000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
   '{benchmark,endurance}',
   true
@@ -35,7 +35,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000001',
   '2K',
   'The gold standard rowing benchmark. 2000 meters, all-out effort.',
-  'single_time',
+  'single_distance',
   '[{"duration_type":"distance","duration_value":2000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
   '{benchmark,race-pace}',
   true
@@ -65,7 +65,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000002',
   '5K',
   'Endurance benchmark. 5000 meters at your best sustainable effort.',
-  'single_time',
+  'single_distance',
   '[{"duration_type":"distance","duration_value":5000,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
   '{benchmark,endurance}',
   true
@@ -75,7 +75,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'a0000000-0000-0000-0000-000000000009',
   'Half Marathon',
   'The ultimate endurance benchmark. 21,097 meters — a full half marathon on the erg.',
-  'single_time',
+  'single_distance',
   '[{"duration_type":"distance","duration_value":21097,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null}]'::jsonb,
   '{benchmark,endurance}',
   true

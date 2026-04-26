@@ -18,10 +18,13 @@ export default async function PlansPage() {
   const { data } = await supabase
     .from('training_plans')
     .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+    .eq('is_active', true);
 
-  const plans: TrainingPlan[] = data ?? [];
+  const difficultyOrder: Record<string, number> = { beginner: 0, intermediate: 1, advanced: 2 };
+  const plans: TrainingPlan[] = [...(data ?? [])].sort(
+    (a, b) => (difficultyOrder[a.difficulty] ?? 99) - (difficultyOrder[b.difficulty] ?? 99)
+      || a.title.localeCompare(b.title)
+  );
 
   return (
     <>

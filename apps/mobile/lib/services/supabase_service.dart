@@ -432,10 +432,16 @@ class SupabaseService {
       final response = await _client
           .from('training_plans')
           .select()
-          .order('created_at', ascending: true);
-      return response
-          .map((e) => TrainingPlan.fromJson(e))
-          .toList();
+          .eq('is_active', true);
+      const difficultyOrder = {'beginner': 0, 'intermediate': 1, 'advanced': 2};
+      final plans = response.map((e) => TrainingPlan.fromJson(e)).toList();
+      plans.sort((a, b) {
+        final d = (difficultyOrder[a.difficulty] ?? 99)
+            .compareTo(difficultyOrder[b.difficulty] ?? 99);
+        if (d != 0) return d;
+        return a.title.compareTo(b.title);
+      });
+      return plans;
     } catch (e, stack) {
       _log('getTrainingPlans', e, stack);
       rethrow;
