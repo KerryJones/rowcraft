@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -54,12 +55,43 @@ class RowCraftAppBar extends ConsumerWidget implements PreferredSizeWidget {
     );
   }
 
-  void _showNotifications(BuildContext context, WidgetRef ref) {
+  void _showReleaseNotes(
+      BuildContext context, WidgetRef ref, AppNotification notification) {
+    if (!context.mounted) return;
+    ref.read(notificationProvider.notifier).markAllRead();
+    final content = notification.releaseNotes ?? notification.body;
+    final theme = Theme.of(context);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(notification.title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Markdown(
+            data: content,
+            shrinkWrap: true,
+            styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+              p: theme.textTheme.bodyMedium,
+              h3: theme.textTheme.titleSmall,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotifications(BuildContext outerContext, WidgetRef ref) {
     final notifState = ref.read(notificationProvider).value;
     final notifications = notifState?.notifications ?? [];
 
     showModalBottomSheet(
-      context: context,
+      context: outerContext,
       builder: (context) => SafeArea(
         child: ConstrainedBox(
           constraints: BoxConstraints(
@@ -113,6 +145,10 @@ class RowCraftAppBar extends ConsumerWidget implements PreferredSizeWidget {
                               ),
                               title: Text(n.title),
                               subtitle: Text(n.body),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showReleaseNotes(outerContext, ref, n);
+                              },
                               trailing: IconButton(
                                 icon: const Icon(Icons.close, size: 18),
                                 onPressed: () {

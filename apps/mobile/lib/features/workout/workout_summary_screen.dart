@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
 import '../../utils/pace_utils.dart' show formatPace;
+import '../../utils/workout_utils.dart' show formatDistance;
 import '../../widgets/content_constraint.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
@@ -696,6 +697,14 @@ class _SplitsTable extends StatelessWidget {
 
   const _SplitsTable({required this.splits, required this.segments});
 
+  /// Detect auto-splits: multiple splits all sharing the same segment index,
+  /// which means they are sub-splits of a single distance segment.
+  bool get _isAutoSplit {
+    if (splits.length <= 1) return false;
+    final firstIdx = splits.first.intervalIndex;
+    return splits.every((s) => s.intervalIndex == firstIdx);
+  }
+
   @override
   Widget build(BuildContext context) {
     final headerStyle = GoogleFonts.inter(
@@ -709,6 +718,21 @@ class _SplitsTable extends StatelessWidget {
       fontWeight: FontWeight.w500,
       color: RowCraftTheme.metricWhite,
     );
+
+    final isAutoSplit = _isAutoSplit;
+
+    // Precompute cumulative distances for auto-split labels
+    final cumDistances = isAutoSplit
+        ? () {
+            final result = <double>[];
+            var sum = 0.0;
+            for (final s in splits) {
+              sum += s.distance;
+              result.add(sum);
+            }
+            return result;
+          }()
+        : <double>[];
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -725,7 +749,7 @@ class _SplitsTable extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(width: 28, child: Text('#', style: headerStyle)),
-                  SizedBox(width: 48, child: Text('TYPE', style: headerStyle)),
+                  SizedBox(width: 48, child: Text(isAutoSplit ? 'SPLIT' : 'TYPE', style: headerStyle)),
                   Expanded(child: Text('DIST', style: headerStyle)),
                   Expanded(child: Text('TIME', style: headerStyle)),
                   Expanded(child: Text('PACE', style: headerStyle)),
@@ -746,6 +770,23 @@ class _SplitsTable extends StatelessWidget {
               final color = seg != null
                   ? segmentDisplayColor(seg)
                   : RowCraftTheme.segmentRest;
+
+              String typeLabel;
+              if (isAutoSplit) {
+                typeLabel = formatDistance(cumDistances[i]);
+              } else {
+                if (seg == null) {
+                  typeLabel = '--';
+                } else if (seg.isRest) {
+                  typeLabel = 'Rest';
+                } else if (seg.targetHrZone != null) {
+                  typeLabel = 'Z${seg.targetHrZone}';
+                } else {
+                  typeLabel = seg.durationType == DurationType.time
+                      ? 'Free'
+                      : 'Row';
+                }
+              }
 
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -775,16 +816,7 @@ class _SplitsTable extends StatelessWidget {
                     SizedBox(
                       width: 48,
                       child: Text(
-                        () {
-                          if (seg == null) return '--';
-                          if (seg.isRest) return 'Rest';
-                          if (seg.targetHrZone != null) {
-                            return 'Z${seg.targetHrZone}';
-                          }
-                          return seg.durationType == DurationType.time
-                              ? 'Free'
-                              : 'Row';
-                        }(),
+                        typeLabel,
                         style: cellStyle.copyWith(color: color, fontSize: 10),
                       ),
                     ),

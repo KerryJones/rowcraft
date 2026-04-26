@@ -392,6 +392,7 @@ void main() {
     });
 
     test('collects split data for completed segments', () async {
+      // Single 50m distance segment auto-splits into 5x10m sub-splits
       engine = WorkoutEngine(
         workout: _makeWorkout([
           const WorkoutSegment(
@@ -406,37 +407,30 @@ void main() {
       engine.start();
       await Future.delayed(const Duration(milliseconds: 50));
 
-      // Send some data then complete
-      pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 10),
-        distance: 25,
-        pace: 1200,
-        strokeRate: 24,
-        strokeRateUpdated: true,
-        watts: 180,
-        calories: 5,
-        strokeCount: 20,
-        intervalCount: 1,
-      ));
-      await Future.delayed(const Duration(milliseconds: 50));
+      // Send data at 10m intervals to match auto-split thresholds
+      for (var dist = 10.0; dist <= 50; dist += 10) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: (dist * 0.4).round()),
+          distance: dist,
+          pace: 1200,
+          strokeRate: 24,
+          strokeRateUpdated: true,
+          watts: 180,
+          calories: (dist / 5).round(),
+          strokeCount: (dist * 0.4).round(),
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
 
-      pm5Controller.add(const PM5Data(
-        elapsedTime: Duration(seconds: 20),
-        distance: 50,
-        pace: 1150,
-        strokeRate: 26,
-        strokeRateUpdated: true,
-        watts: 200,
-        calories: 10,
-        strokeCount: 40,
-        intervalCount: 1,
-      ));
       await Future.delayed(const Duration(milliseconds: 100));
 
-      expect(engine.completedSplits.length, 1);
-      final split = engine.completedSplits.first;
-      expect(split.avgPace, greaterThan(0));
-      expect(split.avgStrokeRate, greaterThan(0));
+      // 50m / 5 = 10m auto-splits → 5 splits
+      expect(engine.completedSplits.length, 5);
+      for (final split in engine.completedSplits) {
+        expect(split.avgPace, greaterThan(0));
+        expect(split.avgStrokeRate, greaterThan(0));
+      }
     });
   });
 
@@ -2075,6 +2069,314 @@ void main() {
 
       // Should have all 4 beeps (3, 2, 1, 0)
       expect(beeps, containsAllInOrder([3, 2, 1, 0]));
+    });
+  });
+
+  group('autoSplitDistance()', () {
+    test('2000m returns 500m (C2 exception)', () {
+      expect(autoSplitDistance(2000), 500);
+    });
+
+    test('42195m (marathon) returns 2000m (C2 exception)', () {
+      expect(autoSplitDistance(42195), 2000);
+    });
+
+    test('500m returns 100m (fifths)', () {
+      expect(autoSplitDistance(500), 100);
+    });
+
+    test('1000m returns 200m (fifths)', () {
+      expect(autoSplitDistance(1000), 200);
+    });
+
+    test('5000m returns 1000m (fifths)', () {
+      expect(autoSplitDistance(5000), 1000);
+    });
+
+    test('10000m returns 2000m (fifths)', () {
+      expect(autoSplitDistance(10000), 2000);
+    });
+
+    test('6000m returns 1200m (fifths, non-round)', () {
+      expect(autoSplitDistance(6000), 1200);
+    });
+
+    test('0 returns 0', () {
+      expect(autoSplitDistance(0), 0);
+    });
+
+    test('negative returns 0', () {
+      expect(autoSplitDistance(-100), 0);
+    });
+  });
+
+  group('Auto-split engine behavior', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    test('2000m single-distance produces 4x500m auto-splits', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 2000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Simulate rowing at ~2:00/500m pace, sending data at each 500m boundary
+      for (var dist = 100.0; dist <= 2000; dist += 100) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: (dist / 2.5).round()),
+          distance: dist,
+          pace: 1200,
+          strokeRate: 28,
+          strokeRateUpdated: true,
+          watts: 210,
+          calories: (dist / 20).round(),
+          strokeCount: (dist / 2.5).round(),
+          intervalCount: 1,
+          heartRate: 155,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Should have 4 splits (4x500m)
+      expect(engine.completedSplits.length, 4);
+
+      // Each split should have ~500m distance
+      for (final split in engine.completedSplits) {
+        expect(split.distance, closeTo(500, 50));
+        expect(split.avgPace, 1200);
+        expect(split.avgStrokeRate, 28);
+        expect(split.avgHeartRate, 155);
+      }
+    });
+
+    test('10000m single-distance produces 5x2000m auto-splits', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 10000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Send data at every 1000m (two points per split)
+      for (var dist = 1000.0; dist <= 10000; dist += 1000) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: (dist / 2.5).round()),
+          distance: dist,
+          pace: 1200,
+          strokeRate: 26,
+          strokeRateUpdated: true,
+          watts: 200,
+          calories: (dist / 10).round(),
+          strokeCount: (dist / 2.5).round(),
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Should have 5 splits (5x2000m)
+      expect(engine.completedSplits.length, 5);
+    });
+
+    test('multi-segment workout does NOT auto-split', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 500,
+            targetIntensity: 80,
+          ),
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 60,
+            isRest: true,
+          ),
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 500,
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Complete first segment
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 120),
+        distance: 500,
+        pace: 1200,
+        strokeRate: 28,
+        strokeRateUpdated: true,
+        watts: 210,
+        calories: 25,
+        strokeCount: 100,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // First segment should produce 1 split (not auto-split into 5x100m)
+      expect(engine.completedSplits.length, 1);
+      expect(engine.completedSplits.first.distance, closeTo(500, 5));
+    });
+
+    test('auto-split accumulators track per-split averages correctly', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 2000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // First 500m at pace 1200
+      for (var dist = 100.0; dist <= 500; dist += 100) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: (dist / 2.5).round()),
+          distance: dist,
+          pace: 1200,
+          strokeRate: 28,
+          strokeRateUpdated: true,
+          watts: 210,
+          calories: (dist / 20).round(),
+          strokeCount: (dist / 2.5).round(),
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      // Second 500m at pace 1100 (faster)
+      for (var dist = 600.0; dist <= 1000; dist += 100) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: (dist / 2.5).round()),
+          distance: dist,
+          pace: 1100,
+          strokeRate: 30,
+          strokeRateUpdated: true,
+          watts: 240,
+          calories: (dist / 20).round(),
+          strokeCount: (dist / 2.5).round(),
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      // Stop here to check the first two completed splits
+      expect(engine.completedSplits.length, 2);
+      expect(engine.completedSplits[0].avgPace, 1200);
+      expect(engine.completedSplits[0].avgStrokeRate, 28);
+      expect(engine.completedSplits[1].avgPace, 1100);
+      expect(engine.completedSplits[1].avgStrokeRate, 30);
+    });
+
+    test('stop mid-workout emits final partial auto-split', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 2000,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Row 700m (past first 500m split, 200m into second)
+      for (var dist = 100.0; dist <= 700; dist += 100) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: (dist / 2.5).round()),
+          distance: dist,
+          pace: 1200,
+          strokeRate: 28,
+          strokeRateUpdated: true,
+          watts: 210,
+          calories: (dist / 20).round(),
+          strokeCount: (dist / 2.5).round(),
+          intervalCount: 1,
+        ));
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
+
+      engine.stop();
+
+      // Should have 2 splits: 500m complete + ~200m partial
+      expect(engine.completedSplits.length, 2);
+      expect(engine.completedSplits[0].distance, closeTo(500, 50));
+      expect(engine.completedSplits[1].distance, closeTo(200, 50));
+    });
+
+    test('timed single-segment does NOT auto-split', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.time,
+            durationValue: 1200,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 10),
+        distance: 50,
+        pace: 1200,
+        strokeRate: 28,
+        strokeRateUpdated: true,
+        watts: 210,
+        calories: 5,
+        strokeCount: 20,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      engine.stop();
+
+      // Should have exactly 1 split (no auto-splitting for time-based)
+      expect(engine.completedSplits.length, 1);
     });
   });
 

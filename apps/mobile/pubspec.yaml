@@ -39,6 +39,7 @@ dependencies:
   package_info_plus: ^10.0.0
   device_info_plus: ^13.0.0
   shared_preferences: ^2.3.0
+  flutter_markdown: ^0.7.7+1
 
 dev_dependencies:
   flutter_test:
@@ -72,4 +73,5 @@ flutter:
   assets:
     - assets/
     - assets/audio/
+    - CHANGELOG.md
 

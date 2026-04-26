@@ -127,6 +127,24 @@ class WorkoutEngineState {
   }
 }
 
+/// Calculate the auto-split distance for a given total workout distance.
+///
+/// Matches PM5 behavior:
+/// - 2000m → 500m splits (4 splits, C2 documented exception)
+/// - 42195m (marathon) → 2000m splits (~21 splits, C2 documented exception)
+/// - All others → total / 5 (fifths rule)
+///
+/// Returns 0 if auto-splitting does not apply (e.g. distance <= 0).
+int autoSplitDistance(double totalDistance) {
+  if (totalDistance <= 0) return 0;
+  final total = totalDistance.round();
+  // C2 documented exceptions
+  if (total == 2000) return 500;
+  if (total == 42195) return 2000;
+  // General fifths rule
+  return total ~/ 5;
+}
+
 /// Workout execution engine (state machine).
 ///
 /// Takes a [Workout] definition and a stream of [PM5Data] from BLE,
@@ -174,6 +192,9 @@ class WorkoutEngine {
 
   /// The list of segments to execute.
   late final List<WorkoutSegment> _expandedSegments;
+
+  /// True when the workout has exactly one non-rest segment (candidate for auto-splitting).
+  late bool _isSingleWorkSegment;
 
   WorkoutEngineState _state = const WorkoutEngineState();
 
@@ -230,6 +251,25 @@ class WorkoutEngine {
 
   final List<SplitData> _completedSplits = [];
 
+  // Auto-split tracking for single-segment distance workouts
+  bool _autoSplitEnabled = false;
+  int _autoSplitDist = 0;
+  double _nextAutoSplitThreshold = 0;
+  // Per-auto-split accumulators (separate from segment accumulators)
+  int _splitPaceSum = 0;
+  int _splitSampleCount = 0;
+  int _splitSRSum = 0;
+  int _splitWattsSum = 0;
+  int _splitHrSum = 0;
+  int _splitHrCount = 0;
+  int? _splitMinHr;
+  int? _splitMaxHr;
+  int _splitStartCalories = 0;
+  double _splitStartDistance = 0;
+  DateTime? _splitStartTime;
+  Duration _splitPausedDuration = Duration.zero;
+  DateTime? _splitPauseStart;
+
   WorkoutEngine({
     required this.workout,
     required this.pm5Stream,
@@ -238,6 +278,8 @@ class WorkoutEngine {
     this.autoPauseFinishSeconds = 0,
   }) {
     _expandedSegments = List.from(workout.segments);
+    _isSingleWorkSegment =
+        _expandedSegments.where((s) => !s.isRest).length == 1;
   }
 
   /// Stream of engine state updates.
@@ -304,6 +346,7 @@ class WorkoutEngine {
     }
     _prePausePhase = _state.phase;
     _pausedAt = clock.now();
+    if (_autoSplitEnabled) _splitPauseStart = clock.now();
     // Cancel timers so they don't fire while paused
     _restTimer?.cancel();
     _restTickTimer?.cancel();
@@ -390,6 +433,7 @@ class WorkoutEngine {
     _cancelCountdownBeeps();
     _prePausePhase = _state.phase;
     _pausedAt = clock.now();
+    if (_autoSplitEnabled) _splitPauseStart = clock.now();
     _state = _state.copyWith(
       phase: WorkoutPhase.paused,
       isAutoPaused: true,
@@ -593,8 +637,13 @@ class WorkoutEngine {
 
   void _accumulatePausedDuration() {
     if (_pausedAt != null) {
-      _totalPausedDuration += clock.now().difference(_pausedAt!);
+      final now = clock.now();
+      _totalPausedDuration += now.difference(_pausedAt!);
       _pausedAt = null;
+      if (_autoSplitEnabled && _splitPauseStart != null) {
+        _splitPausedDuration += now.difference(_splitPauseStart!);
+        _splitPauseStart = null;
+      }
     }
   }
 
@@ -608,6 +657,7 @@ class WorkoutEngine {
       isRest: false,
     );
     _expandedSegments.add(freeSegment);
+    _isSingleWorkSegment = false; // No longer a single-segment workout
     _beginSegment(_expandedSegments.length - 1);
   }
 
@@ -680,6 +730,20 @@ class WorkoutEngine {
     _pausedAt = null;
     _totalPausedDuration = Duration.zero;
     _prePausePhase = null;
+
+    // Determine if auto-splitting applies: single non-rest distance segment
+    _autoSplitEnabled = false;
+    _autoSplitDist = 0;
+    if (!isRest &&
+        segment.durationType == DurationType.distance &&
+        _isSingleWorkSegment) {
+      _autoSplitDist = autoSplitDistance(segment.durationValue);
+      if (_autoSplitDist > 0 && _autoSplitDist < segment.durationValue) {
+        _autoSplitEnabled = true;
+        _nextAutoSplitThreshold = _autoSplitDist.toDouble();
+        _resetAutoSplitAccumulators();
+      }
+    }
 
     _state = _state.copyWith(
       phase: isRest ? WorkoutPhase.resting : WorkoutPhase.rowing,
@@ -819,6 +883,21 @@ class WorkoutEngine {
       _dragFactorCount++;
     }
 
+    // Accumulate for auto-split averages
+    if (_autoSplitEnabled) {
+      _splitSampleCount++;
+      _splitPaceSum += data.pace;
+      _splitSRSum += data.strokeRate;
+      _splitWattsSum += data.watts;
+      if (data.heartRate != null) {
+        final hr = data.heartRate!;
+        _splitHrSum += hr;
+        _splitHrCount++;
+        _splitMinHr = _trackMin(_splitMinHr, hr);
+        _splitMaxHr = _trackMax(_splitMaxHr, hr);
+      }
+    }
+
     // Accumulate for overall averages
     _totalSampleCount++;
     _totalPaceSum += data.pace;
@@ -887,6 +966,14 @@ class WorkoutEngine {
         segmentElapsedDistance: elapsedDistance,
         segmentElapsedCalories: elapsedCalories,
       );
+    }
+
+    // ── Auto-split threshold detection ──────────────────────────────────
+    // Loop to handle PM5 data that jumps past multiple thresholds at once.
+    while (_autoSplitEnabled &&
+        elapsedDistance >= _nextAutoSplitThreshold) {
+      _snapshotAutoSplit(_autoSplitDist.toDouble());
+      _nextAutoSplitThreshold += _autoSplitDist;
     }
 
     // ── Pace fail detection ────────────────────────────────────────────
@@ -961,7 +1048,62 @@ class WorkoutEngine {
     }
   }
 
+  void _resetAutoSplitAccumulators() {
+    _splitPaceSum = 0;
+    _splitSampleCount = 0;
+    _splitSRSum = 0;
+    _splitWattsSum = 0;
+    _splitHrSum = 0;
+    _splitHrCount = 0;
+    _splitMinHr = null;
+    _splitMaxHr = null;
+    _splitStartCalories = _state.latestData.calories;
+    _splitStartDistance = _state.latestData.distance - _segmentStartDistance;
+    _splitStartTime = clock.now();
+    _splitPausedDuration = Duration.zero;
+    _splitPauseStart = null;
+  }
+
+  /// Build a SplitData from the current auto-split accumulators.
+  SplitData _buildAutoSplitData(double distance) {
+    final splitTime = _splitStartTime != null
+        ? clock.now().difference(_splitStartTime!) - _splitPausedDuration
+        : Duration.zero;
+    return SplitData(
+      intervalIndex: _state.currentSegmentIndex,
+      distance: distance,
+      time: splitTime,
+      avgPace: _splitSampleCount > 0 ? _splitPaceSum ~/ _splitSampleCount : 0,
+      avgStrokeRate:
+          _splitSampleCount > 0 ? _splitSRSum ~/ _splitSampleCount : 0,
+      avgWatts:
+          _splitSampleCount > 0 ? _splitWattsSum ~/ _splitSampleCount : 0,
+      avgHeartRate: _splitHrCount > 0 ? _splitHrSum ~/ _splitHrCount : null,
+      minHeartRate: _splitMinHr,
+      maxHeartRate: _splitMaxHr,
+      calories:
+          math.max(0, _state.latestData.calories - _splitStartCalories),
+    );
+  }
+
+  /// Snapshot the current auto-split accumulators into a SplitData and reset.
+  void _snapshotAutoSplit(double splitDistance) {
+    _completedSplits.add(_buildAutoSplitData(splitDistance));
+    _resetAutoSplitAccumulators();
+  }
+
   void _finishCurrentSegment() {
+    if (_autoSplitEnabled) {
+      // Emit the final partial auto-split (distance from last threshold to end)
+      final remainingDist = _state.segmentElapsedDistance - _splitStartDistance;
+      if (remainingDist > 0 || _splitSampleCount > 0) {
+        _completedSplits.add(
+            _buildAutoSplitData(math.max(0.0, remainingDist)));
+      }
+      return;
+    }
+
+    // Non-auto-split: record a single split for the whole segment.
     // Always record a split when advancing normally between segments so
     // averages from zero-sample rest segments don't silently drop data.
     // When sampleCount is 0 (e.g. resting with no PM5 frames), use safe

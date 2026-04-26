@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { WorkoutResult } from '@/lib/types';
+import type { SplitData, WorkoutResult } from '@/lib/types';
 import { formatTimeTenths, formatPace, formatDistance } from '@/lib/utils/format';
 import { Cloud, CloudOff, ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -97,29 +97,54 @@ export function HistoryClient({ results, workoutTitles }: HistoryClientProps) {
 
               {/* Expanded: per-segment splits */}
               {isExpanded && result.splits && result.splits.length > 0 && (
-                <div className="border-t border-gray-800 p-4">
-                  <h4 className="mb-2 text-xs font-medium text-gray-500">Segment Splits</h4>
-                  <div className="space-y-1.5">
-                    {result.splits.map((split, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-xs"
-                      >
-                        <span className="text-gray-400">Segment {split.segment_index + 1}</span>
-                        <div className="flex gap-4 text-gray-300">
-                          <span>{formatPace(split.avg_split)}/500m</span>
-                          <span>{formatDistance(split.distance)}</span>
-                          <span>{formatTimeTenths(split.time)}</span>
-                          <span>{split.avg_stroke_rate}spm</span>
-                          {split.avg_heart_rate && (
-                            <span>{split.avg_heart_rate}bpm</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <SplitDetails splits={result.splits} />
               )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SplitDetails({ splits }: { splits: SplitData[] }) {
+  const isAutoSplit = splits.length > 1 &&
+    splits.every(s => s.segment_index === splits[0].segment_index);
+
+  // Precompute cumulative distances for auto-split labels
+  const cumDistances = isAutoSplit
+    ? splits.reduce<number[]>((acc, s) => {
+        acc.push((acc[acc.length - 1] ?? 0) + s.distance);
+        return acc;
+      }, [])
+    : [];
+
+  return (
+    <div className="border-t border-gray-800 p-4">
+      <h4 className="mb-2 text-xs font-medium text-gray-500">
+        {isAutoSplit ? 'Splits' : 'Segment Splits'}
+      </h4>
+      <div className="space-y-1.5">
+        {splits.map((split, i) => {
+          const label = isAutoSplit
+            ? formatDistance(Math.round(cumDistances[i]))
+            : `Segment ${split.segment_index + 1}`;
+
+          return (
+            <div
+              key={i}
+              className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-xs"
+            >
+              <span className="text-gray-400">{label}</span>
+              <div className="flex gap-4 text-gray-300">
+                <span>{formatPace(split.avg_split)}/500m</span>
+                <span>{formatDistance(split.distance)}</span>
+                <span>{formatTimeTenths(split.time)}</span>
+                <span>{split.avg_stroke_rate}spm</span>
+                {split.avg_heart_rate && (
+                  <span>{split.avg_heart_rate}bpm</span>
+                )}
+              </div>
             </div>
           );
         })}
