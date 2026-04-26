@@ -67,6 +67,12 @@
 | `features/workout/pre_workout_screen.dart` | PM5 connection gate before starting |
 | `features/workout/rowing_animation.dart` | Animated stick-figure rower (CustomPainter) |
 | `services/audio_service.dart` | Countdown beep playback; generates PCM WAV in-memory (sine wave + fade envelope); configures audio session to duck background music |
+| `models/personal_record.dart` | PersonalRecord + PrType enum |
+| `models/achievement.dart` | Achievement + AchievementType enum with thresholds |
+| `services/pr_service.dart` | PR detection, cache, upsert, backfill |
+| `services/achievement_service.dart` | Achievement detection (distance, workouts, plans, streaks) |
+| `features/achievements/achievements_provider.dart` | Riverpod providers for PRs/achievements + init/backfill |
+| `features/achievements/achievements_screen.dart` | Achievements page (PRs + badge grid) |
 | `services/supabase_service.dart` | Supabase queries |
 | `services/local_db.dart` | Drift ORM (pending results, cached workouts, saved devices) |
 | `services/sync_service.dart` | Async result sync to Supabase |

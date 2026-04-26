@@ -59,6 +59,31 @@ Test types: `ramp`, `20min`, `manual`.
 Tracks per-user plan completion. Unique on (user_id, plan_id).
 `completed_sessions` JSONB: array of {week, session, result_id, completed_at}.
 
+### personal_records
+One row per (user, pr_type), upserted on improvement.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | |
+| user_id | UUID FK | → profiles |
+| pr_type | text | e.g. 'fastest_2k', 'longest_distance' |
+| value | int | tenths/500m for pace, meters for distance, watts for FTP |
+| result_id | UUID FK | → workout_results (nullable) |
+| achieved_at | timestamptz | |
+| previous_value | int | For "was X, now Y" display |
+
+### achievements
+One row per (user, achievement_type, threshold), inserted once.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID PK | |
+| user_id | UUID FK | → profiles |
+| achievement_type | text | e.g. 'total_distance', 'streak_days' |
+| threshold | int | e.g. 1000000 for 1M meters |
+| achieved_at | timestamptz | |
+| result_id | UUID FK | → workout_results (nullable) |
+
 ## RLS Policies
 
 - **Profiles**: own row only
@@ -67,6 +92,8 @@ Tracks per-user plan completion. Unique on (user_id, plan_id).
 - **FTP History**: own only
 - **Plans**: all authenticated users (read), authors can create/update/delete own plans
 - **Plan Progress**: own only
+- **Personal Records**: own only (select/insert/update)
+- **Achievements**: own only (select/insert)
 
 ## Migrations
 
@@ -82,3 +109,7 @@ Tracks per-user plan completion. Unique on (user_id, plan_id).
 10. `010_sync_all_workout_segments.sql` — sync all workout segments
 11. `011_add_weight_kg.sql` — weight_kg column on profiles
 12. `012_delete_account.sql` — `delete_user_account()` RPC for self-serve account deletion (cascades through all user data)
+13. `013_remove_segment_type.sql` — remove segment_type column
+14. `014_admin_stats.sql` — admin statistics RPC
+15. `015_c2_detail_fields.sql` — C2 detail fields on workout_results
+16. `016_personal_records_achievements.sql` — personal_records + achievements tables with RLS

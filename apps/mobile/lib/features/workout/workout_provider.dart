@@ -4,12 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
+import '../../models/achievement.dart';
+import '../../models/personal_record.dart';
 import '../../models/pm5_data.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_time_sample.dart';
+import '../../services/achievement_service.dart';
 import '../../services/audio_service.dart';
 import '../../services/c2_logbook_service.dart';
+import '../../services/pr_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/workout_repository.dart';
@@ -94,6 +98,12 @@ class WorkoutSessionState {
   /// Last sync error message for display.
   final String? syncError;
 
+  /// PRs broken during this save (for summary screen display).
+  final List<PersonalRecord> newPRs;
+
+  /// Achievements earned during this save (for summary screen display).
+  final List<Achievement> newAchievements;
+
   String? get error => _error;
 
   const WorkoutSessionState({
@@ -120,6 +130,8 @@ class WorkoutSessionState {
     this.saveProgress = SaveProgress.idle,
     this.c2SyncStatus = C2SyncStatus.idle,
     this.syncError,
+    this.newPRs = const [],
+    this.newAchievements = const [],
   }) : _error = error;
 
   WorkoutSessionState copyWith({
@@ -146,6 +158,8 @@ class WorkoutSessionState {
     SaveProgress? saveProgress,
     C2SyncStatus? c2SyncStatus,
     Object? syncError = _sentinel,
+    List<PersonalRecord>? newPRs,
+    List<Achievement>? newAchievements,
   }) {
     return WorkoutSessionState(
       workoutTitle: workoutTitle ?? this.workoutTitle,
@@ -179,6 +193,8 @@ class WorkoutSessionState {
       saveProgress: saveProgress ?? this.saveProgress,
       c2SyncStatus: c2SyncStatus ?? this.c2SyncStatus,
       syncError: syncError == _sentinel ? this.syncError : syncError as String?,
+      newPRs: newPRs ?? this.newPRs,
+      newAchievements: newAchievements ?? this.newAchievements,
     );
   }
 }
@@ -663,6 +679,48 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       // Cloud status from actual sync outcome
       if (outcome.savedToSupabase) {
         state = state.copyWith(saveProgress: SaveProgress.savedToCloud);
+
+        // Check for new PRs and achievements after successful cloud save
+        if (result != null && _savedResultId != null) {
+          try {
+            final prService = _ref.read(prServiceProvider);
+            final achievementService = _ref.read(achievementServiceProvider);
+
+            // Ensure services are loaded
+            if (!prService.isLoaded) await prService.load();
+            if (!achievementService.isLoaded) await achievementService.load();
+
+            final prs =
+                await prService.checkAndUpdatePRs(result, _savedResultId!);
+
+            // Get cumulative stats for achievement checks
+            final results =
+                await _ref.read(workoutHistoryProvider.future);
+            final totalDistance =
+                results.fold(0.0, (sum, r) => sum + r.totalDistance);
+            final totalWorkouts = results.length;
+            final completedPlanCount =
+                await _ref.read(completedPlanCountProvider.future);
+
+            final achievements = await achievementService.checkAchievements(
+              userId: result.userId,
+              totalDistance: totalDistance,
+              totalWorkouts: totalWorkouts,
+              completedPlanCount: completedPlanCount,
+              results: results,
+              resultId: _savedResultId,
+            );
+
+            if (prs.isNotEmpty || achievements.isNotEmpty) {
+              state = state.copyWith(
+                newPRs: [...state.newPRs, ...prs],
+                newAchievements: [...state.newAchievements, ...achievements],
+              );
+            }
+          } catch (_) {
+            // Non-critical — don't block save completion
+          }
+        }
       } else if (outcome.error != null) {
         state = state.copyWith(syncError: outcome.error);
       }
@@ -716,6 +774,18 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     await _supabaseService.saveFtpRecord(record);
     await _supabaseService.updateProfileFtp(watts);
+
+    // Check for FTP PR
+    try {
+      final prService = _ref.read(prServiceProvider);
+      if (!prService.isLoaded) await prService.load();
+      final ftpPr = await prService.checkFtpPR(watts, userId, _savedResultId);
+      if (ftpPr != null) {
+        state = state.copyWith(newPRs: [...state.newPRs, ftpPr]);
+      }
+    } catch (_) {
+      // Non-critical
+    }
   }
 
   @override

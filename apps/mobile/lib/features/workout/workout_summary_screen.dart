@@ -7,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/theme.dart';
+import '../../models/achievement.dart';
+import '../../models/personal_record.dart';
 import '../../utils/pace_utils.dart' show formatPace;
-import '../../utils/workout_utils.dart' show formatDistance;
+import '../../utils/workout_utils.dart' show formatDistance, formatDistanceKm, formatDistanceShort;
 import '../../widgets/content_constraint.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
@@ -913,6 +915,10 @@ class SaveProgressOverlay extends ConsumerWidget {
         isDone;
     final isSavedToCloud = saveProgress == SaveProgress.savedToCloud || isDone;
 
+    final session = ref.watch(workoutSessionProvider);
+    final newPRs = session.newPRs;
+    final newAchievements = session.newAchievements;
+
     return Container(
       color: Colors.black87,
       child: SafeArea(
@@ -981,8 +987,26 @@ class SaveProgressOverlay extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _C2LogbookStatusRow(
-                  c2Status: ref.watch(workoutSessionProvider).c2SyncStatus,
+                  c2Status: session.c2SyncStatus,
                 ),
+
+                // New PRs
+                if (isDone && newPRs.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  ...newPRs.map((pr) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _PrChip(pr: pr),
+                  )),
+                ],
+
+                // New achievements
+                if (isDone && newAchievements.isNotEmpty) ...[
+                  SizedBox(height: newPRs.isNotEmpty ? 8 : 24),
+                  ...newAchievements.map((a) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _AchievementChip(achievement: a),
+                  )),
+                ],
 
                 // Show sync error details if present
                 if (syncError != null && (isDone || isError)) ...[
@@ -1139,6 +1163,167 @@ class _ServiceStatusRow extends StatelessWidget {
         else
           const Icon(Icons.remove, size: 20, color: RowCraftTheme.subtleGrey),
       ],
+    );
+  }
+}
+
+class _PrChip extends StatelessWidget {
+  final PersonalRecord pr;
+
+  const _PrChip({required this.pr});
+
+  String _formatValue() {
+    return switch (pr.prType) {
+      PrType.highestFtp => '${pr.value}W',
+      PrType.longestDistance => formatDistanceKm(pr.value),
+      _ => '${formatPace(pr.value)}/500m',
+    };
+  }
+
+  String? _formatDelta() {
+    final prev = pr.previousValue;
+    if (prev == null) return null;
+    if (pr.prType.lowerIsBetter) {
+      final diff = prev - pr.value;
+      if (diff <= 0) return null;
+      final seconds = diff ~/ 10;
+      final tenths = diff % 10;
+      return '-$seconds.${tenths}s';
+    } else {
+      final diff = pr.value - prev;
+      if (diff <= 0) return null;
+      if (pr.prType == PrType.longestDistance) {
+        return '+${formatDistanceKm(diff)}';
+      }
+      return '+${diff}W';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final delta = _formatDelta();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: RowCraftTheme.warningAmber.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: RowCraftTheme.warningAmber.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.emoji_events, size: 20, color: RowCraftTheme.warningAmber),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'New PR!',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: RowCraftTheme.warningAmber,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Text(
+                pr.prType.label,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _formatValue(),
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              if (delta != null)
+                Text(
+                  delta,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 11,
+                    color: RowCraftTheme.successGreen,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AchievementChip extends StatelessWidget {
+  final Achievement achievement;
+
+  const _AchievementChip({required this.achievement});
+
+  String get _label {
+    final type = achievement.achievementType;
+    final t = achievement.threshold;
+    return switch (type) {
+      AchievementType.totalDistance => '${type.label}: ${formatDistanceShort(t)}',
+      AchievementType.workoutCount => '${type.label}: $t',
+      AchievementType.planCompleted => '${type.label}: $t',
+      AchievementType.streakDays => '${type.label}: ${t}d',
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: RowCraftTheme.primaryBlue.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: RowCraftTheme.primaryBlue.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.star, size: 20, color: RowCraftTheme.primaryBlue),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Achievement Unlocked!',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: RowCraftTheme.primaryBlue,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  _label,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

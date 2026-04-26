@@ -199,3 +199,27 @@ String formatDistance(double meters) {
   }
   return '${m}m';
 }
+
+/// Format meters as km with one decimal for large values.
+/// e.g. 2500 → "2.5km", 800 → "800m"
+String formatDistanceKm(int meters) {
+  if (meters >= 1000) {
+    return '${(meters / 1000).toStringAsFixed(1)}km';
+  }
+  return '${meters}m';
+}
+
+/// Format meters as compact shorthand for badges/achievements.
+/// e.g. 1000000 → "1M", 250000 → "250K", 500 → "500m"
+String formatDistanceShort(int meters) {
+  if (meters >= 1000000) {
+    final m = meters / 1000000;
+    return m == m.roundToDouble()
+        ? '${m.toInt()}M'
+        : '${m.toStringAsFixed(1)}M';
+  }
+  if (meters >= 1000) {
+    return '${meters ~/ 1000}K';
+  }
+  return '${meters}m';
+}

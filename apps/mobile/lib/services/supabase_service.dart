@@ -3,6 +3,8 @@ import 'dart:developer' as dev;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/achievement.dart';
+import '../models/personal_record.dart';
 import '../models/plan_progress.dart';
 import '../models/training_plan.dart';
 import '../models/workout.dart';
@@ -558,6 +560,76 @@ class SupabaseService {
       rethrow;
     }
   }
+
+  // ── Personal Records ────────────────────────────────────────────────
+
+  Future<List<PersonalRecord>> getPersonalRecords() async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final response = await _client
+          .from('personal_records')
+          .select()
+          .eq('user_id', userId);
+      return (response as List<dynamic>)
+          .map((e) => PersonalRecord.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getPersonalRecords', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<PersonalRecord> upsertPersonalRecord(PersonalRecord record) async {
+    try {
+      final response = await _client
+          .from('personal_records')
+          .upsert(record.toJson(), onConflict: 'user_id,pr_type')
+          .select()
+          .single();
+      return PersonalRecord.fromJson(response);
+    } catch (e, stack) {
+      _log('upsertPersonalRecord', e, stack);
+      rethrow;
+    }
+  }
+
+  // ── Achievements ───────────────────────────────────────────────────
+
+  Future<List<Achievement>> getAchievements() async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final response = await _client
+          .from('achievements')
+          .select()
+          .eq('user_id', userId);
+      return (response as List<dynamic>)
+          .map((e) => Achievement.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e, stack) {
+      _log('getAchievements', e, stack);
+      rethrow;
+    }
+  }
+
+  Future<Achievement> insertAchievement(Achievement achievement) async {
+    try {
+      final response = await _client
+          .from('achievements')
+          .insert(achievement.toJson())
+          .select()
+          .single();
+      return Achievement.fromJson(response);
+    } catch (e, stack) {
+      _log('insertAchievement', e, stack);
+      rethrow;
+    }
+  }
+
+  // ── Plan Progress ──────────────────────────────────────────────────
 
   Future<void> touchPlanLastViewed(String planId) async {
     try {

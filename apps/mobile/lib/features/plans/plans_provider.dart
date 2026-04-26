@@ -48,6 +48,21 @@ final lastViewedPlanProvider =
   return null;
 });
 
+/// Number of fully completed training plans.
+final completedPlanCountProvider = FutureProvider<int>((ref) async {
+  final progressList = await ref.watch(userPlanProgressProvider.future);
+  final plans = await ref.watch(trainingPlansProvider.future);
+
+  var count = 0;
+  for (final progress in progressList) {
+    final plan = plans.where((p) => p.id == progress.planId).firstOrNull;
+    if (plan != null && progress.totalCompleted >= plan.totalSessions) {
+      count++;
+    }
+  }
+  return count;
+});
+
 /// Plans filtered by difficulty.
 final filteredPlansProvider = FutureProvider.family<List<TrainingPlan>, String?>(
     (ref, difficulty) async {

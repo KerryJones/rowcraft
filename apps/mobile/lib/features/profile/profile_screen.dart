@@ -200,6 +200,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/devices'),
                   ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.emoji_events_outlined),
+                    title: const Text('Achievements'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/achievements'),
+                  ),
                 ],
               ),
             ),

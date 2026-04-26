@@ -135,3 +135,42 @@ export interface TrainingPlan {
 	created_at: string;
 	updated_at: string;
 }
+
+export type PrType =
+	| 'fastest_500m'
+	| 'fastest_2k'
+	| 'fastest_5k'
+	| 'fastest_6k'
+	| 'fastest_10k'
+	| 'fastest_half_marathon'
+	| 'fastest_marathon'
+	| 'highest_ftp'
+	| 'longest_distance';
+
+export interface PersonalRecord {
+	id: string;
+	user_id: string;
+	pr_type: PrType;
+	value: number;
+	result_id: string | null;
+	achieved_at: string;
+	previous_value: number | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export type AchievementType =
+	| 'total_distance'
+	| 'workout_count'
+	| 'plan_completed'
+	| 'streak_days';
+
+export interface Achievement {
+	id: string;
+	user_id: string;
+	achievement_type: AchievementType;
+	threshold: number;
+	achieved_at: string;
+	result_id: string | null;
+	created_at: string;
+}

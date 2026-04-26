@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../features/achievements/achievements_screen.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/ble/connection_gate_screen.dart';
 import '../features/library/library_screen.dart';
@@ -148,6 +149,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) =>
             const ConnectionGateScreen(isManagement: true),
+      ),
+
+      // Achievements — full-screen, accessible from Profile
+      GoRoute(
+        path: '/achievements',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const AchievementsScreen(),
       ),
 
       // Bottom nav shell with 4 tabs
