@@ -42,7 +42,7 @@ export function WorkoutCard({ workout, onClick, ftpWatts }: WorkoutCardProps) {
     >
       {/* Top row: title + type badge + zone */}
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-semibold text-white">{workout.title}</h3>
+        <h3 className="font-mono text-2xl font-bold text-white">{workout.title}</h3>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getWorkoutTypeBadgeColor(workout.workout_type)}`}>
             {formatWorkoutType(workout.workout_type)}
@@ -61,9 +61,7 @@ export function WorkoutCard({ workout, onClick, ftpWatts }: WorkoutCardProps) {
       </div>
 
       {/* Hero stat */}
-      <span className="font-mono text-2xl font-bold text-white">
-        {heroValue}
-      </span>
+      <span className="font-semibold text-white">{heroValue}</span>
 
       {/* Metadata + Tags row */}
       <div className="flex items-center justify-between gap-2">
