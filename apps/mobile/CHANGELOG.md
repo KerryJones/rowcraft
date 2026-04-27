@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.4...rowcraft-mobile-v0.4.0) (2026-04-27)
+
+
+### Features
+
+* add personal records and achievements system ([4052e6d](https://github.com/KerryJones/rowcraft/commit/4052e6dc481bd44ce5ccaede4c00a009caa81070))
+* add release notes dialog and auto-splits for single-distance workouts ([e73434d](https://github.com/KerryJones/rowcraft/commit/e73434d3c80992c39759074c5b322fdcdee5e045))
+
 ## [0.3.4](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.3...rowcraft-mobile-v0.3.4) (2026-04-26)
 
 
