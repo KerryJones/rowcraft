@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const workoutFaqs: FaqItem[] = [
   {
     question: 'What types of rowing workouts does RowCraft offer?',
-    answer: 'RowCraft includes workouts across all five heart rate training zones: Zone 1 recovery, Zone 2 aerobic (steady state), Zone 3 tempo, Zone 4 threshold, and Zone 5 VO2max (sprint intervals). Workouts range from short 20-minute sessions to 60+ minute endurance pieces.',
+    answer: 'RowCraft includes workouts across all heart rate training zones: recovery, aerobic (UT2), tempo (UT1), threshold (AT), and VO2max (TR/AN). Workouts range from short 20-minute sessions to 60+ minute endurance pieces.',
   },
   {
     question: 'Can I create my own rowing workouts?',

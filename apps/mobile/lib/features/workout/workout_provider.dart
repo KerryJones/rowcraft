@@ -17,6 +17,7 @@ import '../../services/pr_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/workout_repository.dart';
+import '../../utils/hr_zones.dart' show ZoneSystem;
 import '../../utils/pace_utils.dart';
 import '../ble/ble_provider.dart';
 import '../ble/csafe_commands.dart';
@@ -80,6 +81,12 @@ class WorkoutSessionState {
   /// User's max heart rate from profile (for HR zone calculation).
   final int? maxHeartRate;
 
+  /// User's resting heart rate from profile (for HRR/Karvonen calculation).
+  final int? restingHeartRate;
+
+  /// User's zone system preference (standard or rowing).
+  final ZoneSystem zoneSystem;
+
   /// User's FTP in watts (for resolving intensity targets to pace).
   final int ftpWatts;
 
@@ -124,6 +131,8 @@ class WorkoutSessionState {
     this.planWeek,
     this.planSession,
     this.maxHeartRate,
+    this.restingHeartRate,
+    this.zoneSystem = ZoneSystem.rowing,
     this.ftpWatts = kDefaultFtpWatts,
     this.pendingResult,
     this.timeSamples,
@@ -152,6 +161,8 @@ class WorkoutSessionState {
     Object? planWeek = _sentinel,
     Object? planSession = _sentinel,
     Object? maxHeartRate = _sentinel,
+    Object? restingHeartRate = _sentinel,
+    ZoneSystem? zoneSystem,
     int? ftpWatts,
     Object? pendingResult = _sentinel,
     Object? timeSamples = _sentinel,
@@ -185,6 +196,9 @@ class WorkoutSessionState {
           planSession == _sentinel ? this.planSession : planSession as int?,
       maxHeartRate:
           maxHeartRate == _sentinel ? this.maxHeartRate : maxHeartRate as int?,
+      restingHeartRate:
+          restingHeartRate == _sentinel ? this.restingHeartRate : restingHeartRate as int?,
+      zoneSystem: zoneSystem ?? this.zoneSystem,
       ftpWatts: ftpWatts ?? this.ftpWatts,
       pendingResult:
           pendingResult == _sentinel ? this.pendingResult : pendingResult as WorkoutResult?,
@@ -382,12 +396,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       final workout = await _workoutRepository.getWorkout(workoutId);
       if (_loadGeneration != myGen) return; // Superseded by a newer load
 
-      // Fetch user's profile for max HR and FTP (non-blocking on failure)
+      // Fetch user's profile for max HR, resting HR, zone system, FTP
       int? maxHr;
+      int? restingHr;
+      ZoneSystem zoneSystem = ZoneSystem.rowing;
       int ftpWatts = kDefaultFtpWatts;
       try {
         final profile = await _supabaseService.getProfile();
         maxHr = profile.maxHeartRate;
+        restingHr = profile.restingHeartRate;
+        zoneSystem = profile.zoneSystem;
         if (profile.currentFtpWatts != null && profile.currentFtpWatts! > 0) {
           ftpWatts = profile.currentFtpWatts!;
         }
@@ -436,6 +454,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         expandedSegments: _engine!.expandedSegments,
         workoutTags: workout.tags,
         maxHeartRate: maxHr,
+        restingHeartRate: restingHr,
+        zoneSystem: zoneSystem,
         ftpWatts: ftpWatts,
         isLoading: false,
       );

@@ -13,11 +13,11 @@ import '../../models/workout_time_sample.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
+import '../../utils/hr_zones.dart';
 import '../../widgets/hr_zone_badge.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
 import 'ftp_result_screen.dart';
-import 'hr_zone_gauge.dart';
 import 'rowing_animation.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
@@ -1264,10 +1264,11 @@ class _CurrentSegment extends StatelessWidget {
                 if (data.heartRate != null && data.heartRate! > 0)
                   Builder(builder: (_) {
                     final hr = data.heartRate!;
+                    final maxHr = session.maxHeartRate ?? 190;
+                    final restHr = session.restingHeartRate;
                     final zone = segment.targetHrZone ??
-                        estimateHrZone(hr,
-                            maxHr: session.maxHeartRate ?? 190);
-                    final info = hrZoneInfo(zone);
+                        estimateHrZone(hr, maxHr, restingHr: restHr);
+                    final info = zoneDisplayInfo(zone, session.zoneSystem);
                     final isEstimated = segment.targetHrZone == null;
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1288,6 +1289,7 @@ class _CurrentSegment extends StatelessWidget {
                           zone: zone,
                           color: info.color,
                           estimated: isEstimated,
+                          zoneSystem: session.zoneSystem,
                         ),
                       ],
                     );

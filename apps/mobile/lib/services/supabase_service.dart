@@ -3,6 +3,7 @@ import 'dart:developer' as dev;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../utils/hr_zones.dart' show ZoneSystem;
 import '../models/achievement.dart';
 import '../models/personal_record.dart';
 import '../models/plan_progress.dart';
@@ -23,6 +24,9 @@ class Profile {
   final int? currentFtpWatts;
   final int? maxHeartRate;
   final double? weightKg;
+  final int? restingHeartRate;
+  final ZoneSystem zoneSystem;
+  final bool onboardingCompleted;
 
   const Profile({
     required this.id,
@@ -32,6 +36,9 @@ class Profile {
     this.currentFtpWatts,
     this.maxHeartRate,
     this.weightKg,
+    this.restingHeartRate,
+    this.zoneSystem = ZoneSystem.rowing,
+    this.onboardingCompleted = false,
   });
 
   Profile copyWith({
@@ -42,6 +49,9 @@ class Profile {
     int? currentFtpWatts,
     int? maxHeartRate,
     double? weightKg,
+    int? restingHeartRate,
+    ZoneSystem? zoneSystem,
+    bool? onboardingCompleted,
   }) {
     return Profile(
       id: id ?? this.id,
@@ -51,6 +61,9 @@ class Profile {
       currentFtpWatts: currentFtpWatts ?? this.currentFtpWatts,
       maxHeartRate: maxHeartRate ?? this.maxHeartRate,
       weightKg: weightKg ?? this.weightKg,
+      restingHeartRate: restingHeartRate ?? this.restingHeartRate,
+      zoneSystem: zoneSystem ?? this.zoneSystem,
+      onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
     );
   }
 
@@ -63,6 +76,9 @@ class Profile {
       currentFtpWatts: json['current_ftp_watts'] as int?,
       maxHeartRate: json['max_heart_rate'] as int?,
       weightKg: (json['weight_kg'] as num?)?.toDouble(),
+      restingHeartRate: json['resting_heart_rate'] as int?,
+      zoneSystem: ZoneSystem.fromString(json['zone_system'] as String?),
+      onboardingCompleted: (json['onboarding_completed'] as bool?) ?? false,
     );
   }
 
@@ -75,6 +91,9 @@ class Profile {
       if (currentFtpWatts != null) 'current_ftp_watts': currentFtpWatts,
       if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
       if (weightKg != null) 'weight_kg': weightKg,
+      if (restingHeartRate != null) 'resting_heart_rate': restingHeartRate,
+      'zone_system': zoneSystem.toJsonString(),
+      if (onboardingCompleted) 'onboarding_completed': true,
     };
   }
 }
@@ -387,6 +406,61 @@ class SupabaseService {
           .update({'max_heart_rate': maxHr}).eq('id', userId);
     } catch (e, stack) {
       _log('updateProfileMaxHr', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Update resting heart rate on the profile.
+  Future<void> updateProfileRestingHr(int restingHr) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+      await _client
+          .from('profiles')
+          .update({'resting_heart_rate': restingHr}).eq('id', userId);
+    } catch (e, stack) {
+      _log('updateProfileRestingHr', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Update zone system preference on the profile.
+  Future<void> updateProfileZoneSystem(ZoneSystem zoneSystem) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+      await _client
+          .from('profiles')
+          .update({'zone_system': zoneSystem.toJsonString()}).eq('id', userId);
+    } catch (e, stack) {
+      _log('updateProfileZoneSystem', e, stack);
+      rethrow;
+    }
+  }
+
+  /// Save multiple onboarding fields at once.
+  Future<void> saveOnboardingProfile({
+    double? weightKg,
+    int? maxHeartRate,
+    int? restingHeartRate,
+    ZoneSystem? zoneSystem,
+  }) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+      final updates = <String, dynamic>{};
+      if (weightKg != null) updates['weight_kg'] = weightKg;
+      if (maxHeartRate != null) updates['max_heart_rate'] = maxHeartRate;
+      if (restingHeartRate != null) {
+        updates['resting_heart_rate'] = restingHeartRate;
+      }
+      if (zoneSystem != null) {
+        updates['zone_system'] = zoneSystem.toJsonString();
+      }
+      updates['onboarding_completed'] = true;
+      await _client.from('profiles').update(updates).eq('id', userId);
+    } catch (e, stack) {
+      _log('saveOnboardingProfile', e, stack);
       rethrow;
     }
   }

@@ -14,6 +14,7 @@ import '../../utils/workout_utils.dart' show formatDistance, formatDistanceKm, f
 import '../../widgets/content_constraint.dart';
 import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
+import '../../utils/hr_zones.dart' as hr_zones;
 import '../../utils/segment_color.dart';
 import '../../models/workout_time_sample.dart';
 import '../../widgets/discard_workout_dialog.dart';
@@ -139,6 +140,8 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent>
                         painter: _HrZoneDistributionPainter(
                           samples: timeSamples,
                           maxHr: maxHr,
+                          restingHr: session.restingHeartRate,
+                          zoneSystem: session.zoneSystem,
                         ),
                       ),
                     ),
@@ -570,6 +573,8 @@ class _CombinedChartPainter extends CustomPainter {
 class _HrZoneDistributionPainter extends CustomPainter {
   final List<WorkoutTimeSample> samples;
   final int maxHr;
+  final int? restingHr;
+  final hr_zones.ZoneSystem zoneSystem;
 
   static const _zoneColors = [
     RowCraftTheme.hrZone1,
@@ -579,7 +584,12 @@ class _HrZoneDistributionPainter extends CustomPainter {
     RowCraftTheme.hrZone5,
   ];
 
-  _HrZoneDistributionPainter({required this.samples, required this.maxHr});
+  _HrZoneDistributionPainter({
+    required this.samples,
+    required this.maxHr,
+    this.restingHr,
+    this.zoneSystem = hr_zones.ZoneSystem.rowing,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -588,20 +598,17 @@ class _HrZoneDistributionPainter extends CustomPainter {
         .toList();
     if (hrSamples.isEmpty) return;
 
-    // Count time in each zone (1-5)
+    // Count time in each zone (1-5). Zone 0 (below UT2/recovery) is grouped
+    // into slot 0 (the lowest zone) since it's typically negligible during workouts.
     final zoneCounts = List.filled(5, 0);
     for (final s in hrSamples) {
-      final pct = s.heartRate! / maxHr;
-      final zone = pct < 0.6
-          ? 0
-          : pct < 0.7
-          ? 1
-          : pct < 0.8
-          ? 2
-          : pct < 0.9
-          ? 3
-          : 4;
-      zoneCounts[zone]++;
+      final zone = hr_zones.estimateHrZone(
+        s.heartRate!,
+        maxHr,
+        restingHr: restingHr,
+      );
+      final slot = zone == 0 ? 0 : (zone - 1).clamp(0, 4);
+      zoneCounts[slot]++;
     }
     final total = hrSamples.length.toDouble();
 
@@ -638,7 +645,10 @@ class _HrZoneDistributionPainter extends CustomPainter {
 
       // Zone label inside the band (if wide enough)
       if (width > 30) {
-        final label = 'Z${i + 1}';
+        final zoneNum = i + 1;
+        final zones = hr_zones.zonesForSystem(zoneSystem);
+        final zoneDef = zoneNum <= zones.length ? zones[zoneNum - 1] : null;
+        final label = zoneDef?.shortLabel ?? 'Z$zoneNum';
         final tp = TextPainter(
           text: TextSpan(
             text: label,
@@ -686,7 +696,7 @@ class _HrZoneDistributionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_HrZoneDistributionPainter old) =>
-      old.samples != samples || old.maxHr != maxHr;
+      old.samples != samples || old.maxHr != maxHr || old.restingHr != restingHr || old.zoneSystem != zoneSystem;
 }
 
 // ---------------------------------------------------------------------------

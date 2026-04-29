@@ -3,8 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createSupabaseBrowser } from '@/lib/supabase/client';
-import type { Profile } from '@/lib/types';
-import { HR_ZONES } from '@/lib/utils/ftp';
+import type { Profile, ZoneSystem } from '@/lib/types';
+import { HR_ZONES, pctToBpm } from '@/lib/utils/ftp';
 import { wattsToPaceTenths, paceTenthsToWatts, formatWatts } from '@/lib/utils/ftp';
 import { formatPace, parsePace } from '@/lib/utils/format';
 import { Save, Loader2, LogOut, Link as LinkIcon, Unlink, CheckCircle2, Trash2 } from 'lucide-react';
@@ -37,6 +37,8 @@ function ProfilePageInner() {
   const [ftpPaceStr, setFtpPaceStr] = useState('');
   const [ftpWatts, setFtpWatts] = useState<number | null>(null);
   const [maxHr, setMaxHr] = useState<number | null>(null);
+  const [restingHr, setRestingHr] = useState<number | null>(null);
+  const [zoneSystem, setZoneSystem] = useState<ZoneSystem>('rowing');
   const [c2UserId, setC2UserId] = useState<string | null>(null);
 
   // Strip C2 OAuth params from URL and auto-dismiss success banner
@@ -68,6 +70,8 @@ function ProfilePageInner() {
         setDisplayName(p.display_name ?? '');
         setC2UserId(p.c2_user_id);
         setMaxHr(p.max_heart_rate);
+        setRestingHr(p.resting_heart_rate);
+        setZoneSystem(p.zone_system ?? 'rowing');
         if (p.current_ftp_watts) {
           setFtpWatts(p.current_ftp_watts);
           const pace = wattsToPaceTenths(p.current_ftp_watts);
@@ -119,6 +123,8 @@ function ProfilePageInner() {
         display_name: displayName.trim() || null,
         current_ftp_watts: ftpWatts,
         max_heart_rate: maxHr,
+        resting_heart_rate: restingHr,
+        zone_system: zoneSystem,
       })
       .eq('id', user.user.id);
 
@@ -157,13 +163,16 @@ function ProfilePageInner() {
     setC2UserId(null);
   }
 
-  // HR zone calculator
+  // HR zone calculator — uses HRR when resting HR is available
+  const effectiveMaxHr = maxHr ?? 190;
+  const effectiveRestingHr = restingHr != null && restingHr >= 30 && restingHr <= 120 ? restingHr : null;
   const hrZones = maxHr
     ? HR_ZONES.map((zone, i) => ({
         zone: i + 1,
-        label: zone.label,
-        min: Math.round(maxHr * (zone.minPct / 100)),
-        max: Math.round(maxHr * (zone.maxPct / 100)),
+        label: zoneSystem === 'rowing' ? zone.rowingLabel : zone.label,
+        shortLabel: zoneSystem === 'rowing' ? zone.rowingShortLabel : zone.shortLabel,
+        min: pctToBpm(zone.minPct, effectiveMaxHr, effectiveRestingHr),
+        max: pctToBpm(zone.maxPct, effectiveMaxHr, effectiveRestingHr),
       }))
     : [];
 
@@ -246,10 +255,68 @@ function ProfilePageInner() {
           />
         </div>
 
+        {/* Resting HR */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-400">
+            Resting Heart Rate (bpm)
+            {restingHr != null && (
+              <span className="ml-2 font-normal text-gray-500">HRR enabled</span>
+            )}
+          </label>
+          <input
+            type="number"
+            min={30}
+            max={120}
+            value={restingHr ?? ''}
+            onChange={(e) => setRestingHr(e.target.value ? parseInt(e.target.value) : null)}
+            placeholder="60"
+            className="w-full rounded-lg border border-gray-700 bg-gray-800 px-4 py-2.5 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Enables heart rate reserve (Karvonen) calculation for more accurate zones
+          </p>
+        </div>
+
+        {/* Zone System */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-400">Zone Labels</label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setZoneSystem('standard')}
+              className={`flex-1 cursor-pointer rounded-lg border px-4 py-3 text-left transition-colors ${
+                zoneSystem === 'standard'
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+              }`}
+            >
+              <p className="text-sm font-semibold text-white">Standard</p>
+              <p className="text-xs text-gray-400">Z1 / Z2 / Z3 / Z4 / Z5</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoneSystem('rowing')}
+              className={`flex-1 cursor-pointer rounded-lg border px-4 py-3 text-left transition-colors ${
+                zoneSystem === 'rowing'
+                  ? 'border-blue-500 bg-blue-500/10'
+                  : 'border-gray-700 bg-gray-800 hover:border-gray-600'
+              }`}
+            >
+              <p className="text-sm font-semibold text-white">Rowing</p>
+              <p className="text-xs text-gray-400">UT2 / UT1 / AT / TR / AN</p>
+            </button>
+          </div>
+        </div>
+
         {/* HR Zone Calculator */}
         {hrZones.length > 0 && (
           <div>
-            <h3 className="mb-2 text-sm font-medium text-gray-400">HR Zones</h3>
+            <h3 className="mb-2 text-sm font-medium text-gray-400">
+              HR Zones
+              {effectiveRestingHr != null && (
+                <span className="ml-2 font-normal text-gray-500">(%HRR)</span>
+              )}
+            </h3>
             <div className="space-y-1.5">
               {hrZones.map((zone) => (
                 <div
@@ -257,10 +324,10 @@ function ProfilePageInner() {
                   className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2"
                 >
                   <span className="text-sm text-white">
-                    Z{zone.zone} {zone.label}
+                    {zone.shortLabel} {zone.label}
                   </span>
                   <span className="text-sm text-gray-400">
-                    {zone.min}–{zone.max} bpm
+                    {zone.min}&ndash;{zone.max} bpm
                   </span>
                 </div>
               ))}

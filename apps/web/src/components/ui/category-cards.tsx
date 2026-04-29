@@ -121,33 +121,33 @@ const ALL_CATEGORIES: CategoryItem[] = [
     bg: 'bg-gradient-to-br from-emerald-700 to-teal-900',
     ring: 'ring-emerald-400',
   },
-  // Zones — match HR zone colors
+  // Zones — keys match workout tags
   {
-    type: 'zone', key: 'recovery', label: 'Recovery', subtitle: 'Z1',
+    type: 'zone', key: 'recovery', label: 'Recovery', subtitle: 'Easy',
     icon: <Heart className="h-7 w-7" />,
     bg: 'bg-gradient-to-br from-green-600 to-green-800',
     ring: 'ring-green-400',
   },
   {
-    type: 'zone', key: 'aerobic', label: 'Aerobic', subtitle: 'Z2',
+    type: 'zone', key: 'aerobic', label: 'Aerobic', subtitle: 'UT2',
     icon: <Wind className="h-7 w-7" />,
     bg: 'bg-gradient-to-br from-sky-500 to-blue-700',
     ring: 'ring-sky-400',
   },
   {
-    type: 'zone', key: 'tempo', label: 'Tempo', subtitle: 'Z3',
+    type: 'zone', key: 'tempo', label: 'Tempo', subtitle: 'UT1',
     icon: <Activity className="h-7 w-7" />,
     bg: 'bg-gradient-to-br from-amber-500 to-amber-700',
     ring: 'ring-amber-400',
   },
   {
-    type: 'zone', key: 'threshold', label: 'Threshold', subtitle: 'Z4',
+    type: 'zone', key: 'threshold', label: 'Threshold', subtitle: 'AT',
     icon: <Flame className="h-7 w-7" />,
     bg: 'bg-gradient-to-br from-orange-500 to-orange-700',
     ring: 'ring-orange-400',
   },
   {
-    type: 'zone', key: 'vo2max', label: 'VO2max', subtitle: 'Z5',
+    type: 'zone', key: 'vo2max', label: 'VO2max', subtitle: 'TR/AN',
     icon: <Zap className="h-7 w-7" />,
     bg: 'bg-gradient-to-br from-red-500 to-red-700',
     ring: 'ring-red-400',

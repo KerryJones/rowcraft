@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../app/router.dart' show resetOnboardingCache;
+
 /// Watches the Supabase auth state stream.
 final authStateProvider = StreamProvider<AuthState>((ref) {
   return Supabase.instance.client.auth.onAuthStateChange;
@@ -46,5 +48,6 @@ final googleSignInProvider = FutureProvider<AuthResponse>((ref) async {
 
 /// Sign out the current user.
 final signOutProvider = FutureProvider<void>((ref) async {
+  resetOnboardingCache();
   await Supabase.instance.client.auth.signOut();
 });

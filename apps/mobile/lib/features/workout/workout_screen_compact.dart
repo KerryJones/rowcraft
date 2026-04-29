@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../services/local_db.dart';
 import '../../utils/pace_utils.dart';
+import '../../utils/hr_zones.dart';
 import '../../widgets/hr_zone_badge.dart';
 import 'hr_zone_gauge.dart';
 import 'workout_engine.dart';
@@ -605,8 +606,9 @@ class _HrTile extends StatelessWidget {
     if (isTablet(context)) {
       final segment = session.engineState.currentSegment;
       final targetZone = segment?.targetHrZone;
-      final zone = targetZone ?? estimateHrZone(hr, maxHr: maxHr);
-      final info = hrZoneInfo(zone);
+      final restHr = session.restingHeartRate;
+      final zone = targetZone ?? estimateHrZone(hr, maxHr, restingHr: restHr);
+      final info = zoneDisplayInfo(zone, session.zoneSystem);
       return _StatTile(
         label: 'HR',
         value: '$hr',
@@ -618,6 +620,7 @@ class _HrTile extends StatelessWidget {
           zone: zone,
           color: info.color,
           estimated: targetZone == null,
+          zoneSystem: session.zoneSystem,
         ),
         onTap: onTap,
         pageIndex: 0,
@@ -657,7 +660,12 @@ class _HrTile extends StatelessWidget {
               child: Center(
                 child: Transform.translate(
                   offset: const Offset(0, -6),
-                  child: HrZoneGauge(bpm: hr, maxHr: maxHr),
+                  child: HrZoneGauge(
+                    bpm: hr,
+                    maxHr: maxHr,
+                    restingHr: session.restingHeartRate,
+                    zoneSystem: session.zoneSystem,
+                  ),
                 ),
               ),
             ),

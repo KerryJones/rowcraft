@@ -8,6 +8,8 @@ import {
 	getHrZoneLabel,
 	getHrZoneNumber,
 	getHrZoneFromNumber,
+	pctToBpm,
+	intensityToHrZone,
 } from '../ftp';
 
 describe('wattsToPaceTenths', () => {
@@ -83,22 +85,30 @@ describe('HR_ZONES', () => {
 		}
 	});
 
-	it('starts at 0% and ends at 100%', () => {
-		expect(HR_ZONES[0].minPct).toBe(0);
+	it('starts at 55% and ends at 100%', () => {
+		expect(HR_ZONES[0].minPct).toBe(55);
 		expect(HR_ZONES[HR_ZONES.length - 1].maxPct).toBe(100);
 	});
 
 	it('zone names match expected values', () => {
 		const names = HR_ZONES.map((z) => z.name);
-		expect(names).toEqual(['recovery', 'aerobic', 'tempo', 'threshold', 'max']);
+		expect(names).toEqual(['aerobic', 'tempo', 'threshold', 'vo2max', 'max']);
 	});
 });
 
 describe('getHrZoneBpm', () => {
-	it('calculates BPM range for Z2 aerobic at 185 max HR', () => {
+	it('calculates BPM range for aerobic zone at 185 max HR (%HRmax fallback)', () => {
 		const bpm = getHrZoneBpm(185, 'aerobic');
-		expect(bpm.min).toBe(111); // 185 * 0.60
+		expect(bpm.min).toBe(102); // 185 * 0.55
 		expect(bpm.max).toBe(139); // 185 * 0.75 (rounded)
+	});
+
+	it('uses HRR/Karvonen when resting HR provided', () => {
+		// Kerry's numbers: max=175, resting=50
+		// UT2 ceiling = (175-50)*0.75 + 50 = 143.75 ≈ 144
+		const bpm = getHrZoneBpm(175, 'aerobic', 50);
+		expect(bpm.min).toBe(119); // (175-50)*0.55+50 = 118.75
+		expect(bpm.max).toBe(144); // (175-50)*0.75+50 = 143.75
 	});
 
 	it('returns {0, 0} for unknown zone', () => {
@@ -108,24 +118,41 @@ describe('getHrZoneBpm', () => {
 	});
 });
 
+describe('pctToBpm', () => {
+	it('uses %HRmax when no resting HR', () => {
+		expect(pctToBpm(75, 175)).toBe(131); // 175 * 0.75
+	});
+
+	it('uses Karvonen when resting HR provided', () => {
+		// (175-50)*0.75 + 50 = 143.75 ≈ 144
+		expect(pctToBpm(75, 175, 50)).toBe(144);
+	});
+});
+
 describe('getHrZoneLabel', () => {
-	it('returns human-readable labels', () => {
-		expect(getHrZoneLabel('recovery')).toBe('Recovery');
-		expect(getHrZoneLabel('aerobic')).toBe('Aerobic');
-		expect(getHrZoneLabel('threshold')).toBe('Threshold');
+	it('returns standard labels when system is standard', () => {
+		expect(getHrZoneLabel('aerobic', 'standard')).toBe('Aerobic');
+		expect(getHrZoneLabel('threshold', 'standard')).toBe('Threshold');
+	});
+
+	it('returns rowing labels when system is rowing', () => {
+		expect(getHrZoneLabel('aerobic', 'rowing')).toBe('Base Aerobic');
+		expect(getHrZoneLabel('threshold', 'rowing')).toBe('Threshold');
+		expect(getHrZoneLabel('vo2max', 'rowing')).toBe('VO2max');
+		expect(getHrZoneLabel('max', 'rowing')).toBe('Anaerobic');
 	});
 });
 
 describe('getHrZoneNumber / getHrZoneFromNumber', () => {
 	it('maps zone names to 1-indexed numbers', () => {
-		expect(getHrZoneNumber('recovery')).toBe(1);
-		expect(getHrZoneNumber('aerobic')).toBe(2);
+		expect(getHrZoneNumber('aerobic')).toBe(1);
+		expect(getHrZoneNumber('tempo')).toBe(2);
 		expect(getHrZoneNumber('max')).toBe(5);
 	});
 
 	it('maps numbers back to zone names', () => {
-		expect(getHrZoneFromNumber(1)).toBe('recovery');
-		expect(getHrZoneFromNumber(2)).toBe('aerobic');
+		expect(getHrZoneFromNumber(1)).toBe('aerobic');
+		expect(getHrZoneFromNumber(2)).toBe('tempo');
 		expect(getHrZoneFromNumber(5)).toBe('max');
 	});
 
@@ -139,5 +166,25 @@ describe('getHrZoneNumber / getHrZoneFromNumber', () => {
 			const num = getHrZoneNumber(zone.name);
 			expect(getHrZoneFromNumber(num)).toBe(zone.name);
 		}
+	});
+});
+
+describe('intensityToHrZone', () => {
+	it('returns null for low intensity', () => {
+		expect(intensityToHrZone(40)).toBeNull();
+		expect(intensityToHrZone(54)).toBeNull();
+	});
+
+	it('maps intensity to correct zones', () => {
+		expect(intensityToHrZone(60)).toBe(1);  // aerobic
+		expect(intensityToHrZone(80)).toBe(2);  // tempo
+		expect(intensityToHrZone(88)).toBe(3);  // threshold
+		expect(intensityToHrZone(95)).toBe(4);  // VO2max
+		expect(intensityToHrZone(99)).toBe(5);  // max
+	});
+
+	it('returns null for null/undefined', () => {
+		expect(intensityToHrZone(null)).toBeNull();
+		expect(intensityToHrZone(undefined)).toBeNull();
 	});
 });

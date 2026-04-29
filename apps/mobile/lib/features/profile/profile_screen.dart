@@ -14,6 +14,7 @@ import '../../widgets/user_avatar.dart';
 import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/plexo_service.dart';
+import '../../utils/hr_zones.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
 import '../ble/ble_provider.dart';
@@ -334,6 +335,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     error: (_, _) => const SizedBox.shrink(),
                   ),
                   const Divider(height: 1),
+                  // Resting Heart Rate
+                  profileAsync.when(
+                    data: (profile) => ListTile(
+                      leading: const Icon(Icons.monitor_heart_outlined),
+                      title: const Text('Resting Heart Rate'),
+                      subtitle: Text(
+                        profile.restingHeartRate != null
+                            ? '${profile.restingHeartRate} bpm'
+                            : 'Not set',
+                      ),
+                      onTap: () => _showEditRestingHrDialog(context, ref),
+                    ),
+                    loading: () => const ListTile(
+                      leading: Icon(Icons.monitor_heart_outlined),
+                      title: Text('Resting Heart Rate'),
+                      subtitle: Text('Loading...'),
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                  const Divider(height: 1),
+                  // Zone System
+                  profileAsync.when(
+                    data: (profile) {
+                      return ListTile(
+                        leading: const Icon(Icons.tune),
+                        title: const Text('Zone Labels'),
+                        subtitle: Text(
+                          profile.zoneSystem == ZoneSystem.rowing
+                              ? 'Rowing (UT2 / UT1 / AT / TR / AN)'
+                              : 'Standard (Z1 / Z2 / Z3 / Z4 / Z5)',
+                        ),
+                        onTap: () => _showZoneSystemDialog(context, ref),
+                      );
+                    },
+                    loading: () => const ListTile(
+                      leading: Icon(Icons.tune),
+                      title: Text('Zone Labels'),
+                      subtitle: Text('Loading...'),
+                    ),
+                    error: (_, _) => const SizedBox.shrink(),
+                  ),
+                  const Divider(height: 1),
                   ref.watch(appVersionProvider).when(
                     data: (version) => ListTile(
                       leading: const Icon(Icons.info_outline),
@@ -445,6 +488,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => _EditMaxHrDialog(ref: ref),
+    );
+  }
+
+  static void _showEditRestingHrDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _EditRestingHrDialog(ref: ref),
+    );
+  }
+
+  static void _showZoneSystemDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => _ZoneSystemDialog(ref: ref),
     );
   }
 
@@ -880,6 +937,178 @@ class _EditWeightDialogState extends State<_EditWeightDialog> {
             // Capture ref reads before async gap
             final service = widget.ref.read(supabaseServiceProvider);
             await service.updateProfileWeight(kg);
+            if (!context.mounted) return;
+            widget.ref.invalidate(profileProvider);
+            Navigator.of(context).pop();
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditRestingHrDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _EditRestingHrDialog({required this.ref});
+
+  @override
+  State<_EditRestingHrDialog> createState() => _EditRestingHrDialogState();
+}
+
+class _EditRestingHrDialogState extends State<_EditRestingHrDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.ref.read(profileProvider).value;
+    if (profile?.restingHeartRate != null) {
+      _controller.text = profile!.restingHeartRate.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Set Resting Heart Rate'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              hintText: 'Enter resting HR',
+              suffixText: 'bpm',
+            ),
+            autofocus: true,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Measure first thing in the morning, lying still for 2 min',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: RowCraftTheme.subtleGrey,
+                ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final value = int.tryParse(_controller.text);
+            if (value == null || value < 30 || value > 120) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Enter a value between 30-120')),
+                );
+              }
+              return;
+            }
+            final service = widget.ref.read(supabaseServiceProvider);
+            try {
+              await service.updateProfileRestingHr(value);
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Failed to update resting heart rate')),
+                );
+              }
+              return;
+            }
+            if (!context.mounted) return;
+            widget.ref.invalidate(profileProvider);
+            Navigator.of(context).pop();
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ZoneSystemDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const _ZoneSystemDialog({required this.ref});
+
+  @override
+  State<_ZoneSystemDialog> createState() => _ZoneSystemDialogState();
+}
+
+class _ZoneSystemDialogState extends State<_ZoneSystemDialog> {
+  late ZoneSystem _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = widget.ref.read(profileProvider).value;
+    _selected = profile?.zoneSystem ?? ZoneSystem.rowing;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Zone Labels'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SegmentedButton<ZoneSystem>(
+            segments: const [
+              ButtonSegment(
+                value: ZoneSystem.standard,
+                label: Text('Standard'),
+              ),
+              ButtonSegment(
+                value: ZoneSystem.rowing,
+                label: Text('Rowing'),
+              ),
+            ],
+            selected: {_selected},
+            onSelectionChanged: (s) => setState(() => _selected = s.first),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _selected == ZoneSystem.rowing
+                ? 'UT2 / UT1 / AT / TR / AN'
+                : 'Z1 / Z2 / Z3 / Z4 / Z5',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: RowCraftTheme.subtleGrey,
+                ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final service = widget.ref.read(supabaseServiceProvider);
+            try {
+              await service.updateProfileZoneSystem(
+                  _selected);
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Failed to update zone system')),
+                );
+              }
+              return;
+            }
             if (!context.mounted) return;
             widget.ref.invalidate(profileProvider);
             Navigator.of(context).pop();

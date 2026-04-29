@@ -93,15 +93,28 @@ export interface Profile {
 	c2_user_id: string | null;
 	current_ftp_watts: number | null;
 	max_heart_rate: number | null;
+	weight_kg: number | null;
+	resting_heart_rate: number | null;
+	zone_system: ZoneSystem;
+	onboarding_completed: boolean;
 	created_at: string;
 	updated_at: string;
 }
 
-export type HrZoneName = 'recovery' | 'aerobic' | 'tempo' | 'threshold' | 'max';
+export type ZoneSystem = 'standard' | 'rowing';
+
+export type HrZoneName = 'aerobic' | 'tempo' | 'threshold' | 'vo2max' | 'max';
 
 export interface HrZone {
 	name: HrZoneName;
+	/** Label for standard mode. */
 	label: string;
+	/** Short label for standard mode (Z1-Z5). */
+	shortLabel: string;
+	/** Label for rowing mode. */
+	rowingLabel: string;
+	/** Short label for rowing mode (UT2, UT1, AT, TR, AN). */
+	rowingShortLabel: string;
 	minPct: number;
 	maxPct: number;
 }

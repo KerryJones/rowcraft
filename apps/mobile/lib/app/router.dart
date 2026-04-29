@@ -9,6 +9,7 @@ import '../features/achievements/achievements_screen.dart';
 import '../features/auth/auth_screen.dart';
 import '../features/ble/connection_gate_screen.dart';
 import '../features/library/library_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/quick_start/quick_start_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
 import '../features/plans/plans_catalog.dart';
@@ -22,6 +23,20 @@ import '../models/workout_result.dart';
 import '../services/c2_logbook_service.dart';
 import '../app/theme.dart';
 import 'shell_screen.dart';
+
+/// Cached onboarding status — set to true after first successful check or
+/// after completing onboarding. Avoids repeated DB queries on every route.
+bool _onboardingCompleted = false;
+
+/// Mark onboarding as completed in the router cache.
+void markOnboardingCompleted() {
+  _onboardingCompleted = true;
+}
+
+/// Reset onboarding cache (call on sign-out so a different account triggers the check).
+void resetOnboardingCache() {
+  _onboardingCompleted = false;
+}
 
 /// Notifier that triggers go_router refresh on auth state changes.
 /// This ensures the redirect fires when the user returns from
@@ -52,7 +67,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/connect',
     refreshListenable: authNotifier,
-    redirect: (BuildContext context, GoRouterState state) {
+    redirect: (BuildContext context, GoRouterState state) async {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
 
@@ -65,13 +80,37 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       final isAuthRoute = state.matchedLocation == '/auth';
+      final isOnboardingRoute = state.matchedLocation == '/onboarding';
 
       if (!isLoggedIn && !isAuthRoute) {
         return '/auth';
       }
-      if (isLoggedIn && isAuthRoute) {
-        return '/connect';
+      if (!isLoggedIn) return null;
+
+      // User is logged in — check onboarding status
+      if (!_onboardingCompleted && !isOnboardingRoute) {
+        try {
+          final client = Supabase.instance.client;
+          final data = await client
+              .from('profiles')
+              .select('onboarding_completed')
+              .eq('id', client.auth.currentUser!.id)
+              .single();
+          _onboardingCompleted =
+              (data['onboarding_completed'] as bool?) ?? false;
+        } catch (_) {
+          // On transient error, don't cache — allow retry on next navigation
+          return null;
+        }
+        if (!_onboardingCompleted) return '/onboarding';
       }
+
+      // Redirect from auth route to connect (onboarding already passed)
+      if (isAuthRoute) return '/connect';
+
+      // Prevent returning to onboarding once completed
+      if (isOnboardingRoute && _onboardingCompleted) return '/connect';
+
       return null;
     },
     routes: [
@@ -82,7 +121,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AuthScreen(),
       ),
 
-      // Connection gate — first screen after auth
+      // Onboarding — shown once after first auth
+      GoRoute(
+        path: '/onboarding',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
+      // Connection gate — first screen after auth/onboarding
       GoRoute(
         path: '/connect',
         parentNavigatorKey: _rootNavigatorKey,

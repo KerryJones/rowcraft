@@ -16,6 +16,9 @@ Extends Supabase `auth.users`. Auto-created on signup via trigger.
 | current_ftp_watts | int | Power threshold |
 | max_heart_rate | int | For HR zone calculations |
 | weight_kg | float | Used for C2 Logbook calorie sync |
+| resting_heart_rate | int | For HRR/Karvonen zone calculation |
+| zone_system | text | 'standard' or 'rowing' (default: 'rowing') |
+| onboarding_completed | boolean | Controls onboarding redirect (default: false) |
 
 ### workouts
 | Column | Type | Notes |
@@ -113,3 +116,4 @@ One row per (user, achievement_type, threshold), inserted once.
 14. `014_admin_stats.sql` — admin statistics RPC
 15. `015_c2_detail_fields.sql` — C2 detail fields on workout_results
 16. `016_personal_records_achievements.sql` — personal_records + achievements tables with RLS
+17. `017_onboarding_fields.sql` — resting_heart_rate, zone_system, onboarding_completed on profiles
