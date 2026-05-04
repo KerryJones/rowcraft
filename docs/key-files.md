@@ -42,6 +42,8 @@
 | `app/delete-account/delete-form.tsx` | Delete confirmation form (type "delete all my data", calls `delete_user_account` RPC) |
 | `app/auth/callback/page.tsx` | Google OAuth callback (server-side token exchange) |
 | `app/api/c2/` | C2 Logbook OAuth + sync (server-side) |
+| `app/api/strava/` | Strava OAuth + TCX upload sync (server-side) |
+| `lib/utils/strava-tcx.ts` | TCX XML builder for Strava uploads |
 
 ## Mobile (`apps/mobile/lib/`)
 | Path | Purpose |
@@ -77,5 +79,6 @@
 | `services/local_db.dart` | Drift ORM (pending results, cached workouts, saved devices) |
 | `services/sync_service.dart` | Async result sync to Supabase |
 | `services/c2_logbook_service.dart` | Concept2 Logbook OAuth (throws on failure) + result sync API |
+| `services/strava_service.dart` | Strava OAuth + TCX upload sync via web API routes |
 | `app/router.dart` | GoRouter route definitions |
 | `app/theme.dart` | Dark theme colors + typography |

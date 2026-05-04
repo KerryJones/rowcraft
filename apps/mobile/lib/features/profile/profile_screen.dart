@@ -14,6 +14,7 @@ import '../../widgets/user_avatar.dart';
 import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/plexo_service.dart';
+import '../../services/strava_service.dart';
 import '../../utils/hr_zones.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
@@ -40,6 +41,12 @@ final c2LinkedProvider = FutureProvider<bool>((ref) async {
   return service.isLinked();
 });
 
+/// Provider for Strava link status.
+final stravaLinkedProvider = FutureProvider<bool>((ref) async {
+  final service = ref.watch(stravaServiceProvider);
+  return service.isLinked();
+});
+
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -59,6 +66,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with WidgetsBindingObserver {
   bool _c2Linking = false;
   bool _waitingForC2Auth = false;
+  bool _stravaLinking = false;
+  bool _waitingForStravaAuth = false;
   StreamSubscription<Uri>? _deepLinkSub;
 
   @override
@@ -80,16 +89,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     _deepLinkSub = appLinks.uriLinkStream.listen((uri) {
       if (!mounted) return;
       if (uri.scheme == 'com.rowcraft.app' && uri.host == 'login-callback') {
+        final service = uri.queryParameters['service'];
         _waitingForC2Auth = false;
+        _waitingForStravaAuth = false;
         ref.invalidate(c2LinkedProvider);
+        ref.invalidate(stravaLinkedProvider);
+        final label = service == 'strava' ? 'Strava' : 'Concept2 Logbook';
         if (uri.queryParameters['success'] == 'true') {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Concept2 Logbook connected!')),
+            SnackBar(content: Text('$label connected!')),
           );
         } else {
           final error = uri.queryParameters['error'] ?? 'Connection failed';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('C2 connection failed: $error')),
+            SnackBar(content: Text('$label connection failed: $error')),
           );
         }
       }
@@ -101,9 +114,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     // Refresh C2 status when returning from the browser OAuth flow,
     // as a fallback in case the deep link doesn't fire. Only fires when
     // we actually sent the user to the browser for C2 auth.
-    if (state == AppLifecycleState.resumed && _waitingForC2Auth) {
-      _waitingForC2Auth = false;
-      ref.invalidate(c2LinkedProvider);
+    if (state == AppLifecycleState.resumed) {
+      if (_waitingForC2Auth) {
+        _waitingForC2Auth = false;
+        ref.invalidate(c2LinkedProvider);
+      }
+      if (_waitingForStravaAuth) {
+        _waitingForStravaAuth = false;
+        ref.invalidate(stravaLinkedProvider);
+      }
     }
   }
 
@@ -125,11 +144,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
   }
 
+  Future<void> _linkStrava() async {
+    setState(() => _stravaLinking = true);
+    try {
+      final service = ref.read(stravaServiceProvider);
+      await service.authenticate();
+      _waitingForStravaAuth = true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _stravaLinking = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final profileAsync = ref.watch(profileProvider);
     final c2LinkedAsync = ref.watch(c2LinkedProvider);
+    final stravaLinkedAsync = ref.watch(stravaLinkedProvider);
     final currentUser = ref.watch(currentUserProvider);
     final bleState = ref.watch(bleProvider);
     final pm5Connected =
@@ -260,6 +297,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     color: RowCraftTheme.errorRose,
                   ),
                   title: Text('Concept2 Logbook'),
+                  subtitle: Text('Error loading status'),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Strava link
+            Card(
+              child: stravaLinkedAsync.when(
+                data: (isLinked) => ListTile(
+                  leading: Icon(
+                    Icons.link,
+                    color: isLinked
+                        ? const Color(0xFFFC4C02) // Strava brand orange
+                        : RowCraftTheme.subtleGrey,
+                  ),
+                  title: const Text('Strava'),
+                  subtitle: Text(isLinked ? 'Connected' : 'Not connected'),
+                  trailing: isLinked
+                      ? TextButton(
+                          onPressed: () async {
+                            final service = ref.read(stravaServiceProvider);
+                            await service.disconnect();
+                            ref.invalidate(stravaLinkedProvider);
+                          },
+                          child: const Text('Disconnect'),
+                        )
+                      : _stravaLinking
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : ElevatedButton(
+                          onPressed: _linkStrava,
+                          child: const Text('Link'),
+                        ),
+                ),
+                loading: () => const ListTile(
+                  leading: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  title: Text('Strava'),
+                  subtitle: Text('Checking...'),
+                ),
+                error: (_, _) => const ListTile(
+                  leading: Icon(
+                    Icons.error_outline,
+                    color: RowCraftTheme.errorRose,
+                  ),
+                  title: Text('Strava'),
                   subtitle: Text('Error loading status'),
                 ),
               ),

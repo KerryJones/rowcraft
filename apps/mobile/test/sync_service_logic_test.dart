@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rowcraft/models/workout_result.dart';
 import 'package:rowcraft/services/c2_logbook_service.dart';
+import 'package:rowcraft/services/strava_service.dart';
 import 'package:rowcraft/services/sync_service.dart' show SyncOutcome;
 
 // ── Fakes ──────────────────────────────────────────────────────────────
@@ -21,6 +22,7 @@ class FakeRow {
   bool syncedToSupabase;
   bool syncedToC2;
   bool syncedToPlexo;
+  bool syncedToStrava;
   int attempts;
 
   FakeRow({
@@ -29,6 +31,7 @@ class FakeRow {
     this.syncedToSupabase = false,
     this.syncedToC2 = false,
     this.syncedToPlexo = false,
+    this.syncedToStrava = false,
     this.attempts = 0,
   });
 }
@@ -46,13 +49,13 @@ class FakeLocalDb {
 
   Future<List<FakeRow>> getPendingResults() async {
     return _rows
-        .where((r) => !r.syncedToSupabase || !r.syncedToC2 || !r.syncedToPlexo)
+        .where((r) => !r.syncedToSupabase || !r.syncedToC2 || !r.syncedToPlexo || !r.syncedToStrava)
         .toList();
   }
 
   Future<int> getPendingCount() async {
     return _rows
-        .where((r) => !r.syncedToSupabase || !r.syncedToC2 || !r.syncedToPlexo)
+        .where((r) => !r.syncedToSupabase || !r.syncedToC2 || !r.syncedToPlexo || !r.syncedToStrava)
         .length;
   }
 
@@ -68,6 +71,10 @@ class FakeLocalDb {
     _rows.firstWhere((r) => r.id == id).syncedToPlexo = true;
   }
 
+  Future<void> markSyncedToStrava(int id) async {
+    _rows.firstWhere((r) => r.id == id).syncedToStrava = true;
+  }
+
   Future<void> updateResultJson(int id, String resultJson) async {
     _rows.firstWhere((r) => r.id == id).resultJson = resultJson;
   }
@@ -78,7 +85,7 @@ class FakeLocalDb {
 
   Future<int> cleanupSynced() async {
     final before = _rows.length;
-    _rows.removeWhere((r) => r.syncedToSupabase && r.syncedToC2 && r.syncedToPlexo);
+    _rows.removeWhere((r) => r.syncedToSupabase && r.syncedToC2 && r.syncedToPlexo && r.syncedToStrava);
     return before - _rows.length;
   }
 
@@ -137,6 +144,25 @@ class FakePlexoService {
   }
 }
 
+class FakeStravaService {
+  bool linked = false;
+  bool syncSuccess = true;
+  bool shouldThrowActionable = false;
+  String actionableMessage = '';
+  int syncCallCount = 0;
+
+  Future<bool> isLinked() async => linked;
+
+  Future<({bool success, String? error})> syncResult(WorkoutResult result) async {
+    syncCallCount++;
+    if (shouldThrowActionable) {
+      throw StravaActionableException(actionableMessage);
+    }
+    if (syncSuccess) return (success: true, error: null);
+    return (success: false, error: 'Strava sync failed');
+  }
+}
+
 // ── Adapter that wraps fakes into the interface SyncService expects ────
 
 /// Since SyncService depends on concrete types (LocalDatabase, SupabaseService,
@@ -147,6 +173,7 @@ class TestableSyncService {
   final FakeSupabaseService supabaseService;
   final FakeC2LogbookService c2LogbookService;
   final FakePlexoService plexoService;
+  final FakeStravaService stravaService;
 
   bool _syncing = false;
   String? lastError;
@@ -159,6 +186,7 @@ class TestableSyncService {
     required this.supabaseService,
     required this.c2LogbookService,
     required this.plexoService,
+    required this.stravaService,
   });
 
   Future<int> get pendingCount => db.getPendingCount();
@@ -181,6 +209,7 @@ class TestableSyncService {
         savedToSupabase: true,
         savedToC2: true,
         savedToPlexo: true,
+        savedToStrava: true,
         error: rowError,
       );
     }
@@ -192,12 +221,15 @@ class TestableSyncService {
       error = rowError ?? 'C2 Logbook sync failed — will retry';
     } else if (!row.syncedToPlexo) {
       error = rowError ?? 'Plexo sync failed — will retry';
+    } else if (!row.syncedToStrava) {
+      error = rowError ?? 'Strava sync failed — will retry';
     }
 
     return SyncOutcome(
       savedToSupabase: row.syncedToSupabase,
       savedToC2: row.syncedToC2,
       savedToPlexo: row.syncedToPlexo,
+      savedToStrava: row.syncedToStrava,
       error: error,
     );
   }
@@ -209,8 +241,15 @@ class TestableSyncService {
 
     try {
       final pending = await db.getPendingResults();
+      final c2Linked = await c2LogbookService.isLinked();
+      final plexoEnabled = await plexoService.isEnabled();
+      final stravaLinked = await stravaService.isLinked();
       for (final row in pending) {
-        await _syncSingleResult(row);
+        await _syncSingleResult(row,
+          c2Linked: c2Linked,
+          plexoEnabled: plexoEnabled,
+          stravaLinked: stravaLinked,
+        );
       }
       await db.cleanupSynced();
       final remaining = await pendingCount;
@@ -220,7 +259,11 @@ class TestableSyncService {
     }
   }
 
-  Future<void> _syncSingleResult(FakeRow row) async {
+  Future<void> _syncSingleResult(FakeRow row, {
+    required bool c2Linked,
+    required bool plexoEnabled,
+    required bool stravaLinked,
+  }) async {
     try {
       final resultMap =
           jsonDecode(row.resultJson) as Map<String, dynamic>;
@@ -235,8 +278,7 @@ class TestableSyncService {
 
       if (!row.syncedToC2) {
         try {
-          final isLinked = await c2LogbookService.isLinked();
-          if (isLinked) {
+          if (c2Linked) {
             if (result.id.isEmpty) {
               _rowErrors[row.id] = 'Missing result ID — will retry';
               return;
@@ -261,8 +303,7 @@ class TestableSyncService {
 
       if (!row.syncedToPlexo) {
         try {
-          final isEnabled = await plexoService.isEnabled();
-          if (isEnabled) {
+          if (plexoEnabled) {
             final plexoResult = await plexoService.syncResult(result);
             if (plexoResult.success) {
               await db.markSyncedToPlexo(row.id);
@@ -278,6 +319,31 @@ class TestableSyncService {
           final msg = 'Plexo sync error: $e';
           lastError = msg;
           _rowErrors[row.id] = msg;
+        }
+      }
+
+      if (!row.syncedToStrava) {
+        try {
+          if (stravaLinked) {
+            if (result.id.isEmpty) {
+              _rowErrors[row.id] = 'Missing result ID — will retry';
+              return;
+            }
+            final stravaResult = await stravaService.syncResult(result);
+            if (stravaResult.success) {
+              await db.markSyncedToStrava(row.id);
+            } else {
+              final msg = 'Strava sync failed: ${stravaResult.error}';
+              lastError = msg;
+              _rowErrors[row.id] = msg;
+            }
+          } else {
+            await db.markSyncedToStrava(row.id);
+          }
+        } on StravaActionableException catch (e) {
+          lastError = '$e';
+          _rowErrors[row.id] = '$e';
+          await db.markSyncedToStrava(row.id);
         }
       }
     } catch (e) {
@@ -314,12 +380,14 @@ TestableSyncService _buildService({
   FakeSupabaseService? supabase,
   FakeC2LogbookService? c2,
   FakePlexoService? plexo,
+  FakeStravaService? strava,
 }) {
   return TestableSyncService(
     db: db ?? FakeLocalDb(),
     supabaseService: supabase ?? FakeSupabaseService(),
     c2LogbookService: c2 ?? FakeC2LogbookService(),
     plexoService: plexo ?? FakePlexoService(),
+    stravaService: strava ?? FakeStravaService(),
   );
 }
 
@@ -463,6 +531,7 @@ void main() {
         syncedToSupabase: true,
         syncedToC2: false,
         syncedToPlexo: true,
+        syncedToStrava: true,
       ));
 
       final count = await db.getPendingCount();
@@ -477,6 +546,7 @@ void main() {
         syncedToSupabase: false,
         syncedToC2: true,
         syncedToPlexo: true,
+        syncedToStrava: true,
       ));
 
       final count = await db.getPendingCount();
@@ -491,6 +561,7 @@ void main() {
         syncedToSupabase: true,
         syncedToC2: true,
         syncedToPlexo: true,
+        syncedToStrava: true,
       ));
 
       final count = await db.getPendingCount();
@@ -543,10 +614,78 @@ void main() {
         syncedToSupabase: true,
         syncedToC2: true,
         syncedToPlexo: false,
+        syncedToStrava: true,
       ));
 
       final count = await db.getPendingCount();
       expect(count, 1, reason: 'Should count Plexo-unsynced rows too');
+    });
+  });
+
+  group('Strava sync', () {
+    test('Strava linked + sync succeeds: row cleaned up', () async {
+      final strava = FakeStravaService()..linked = true;
+      final service = _buildService(strava: strava);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToSupabase, isTrue);
+      expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isTrue);
+      expect(outcome.savedToStrava, isTrue);
+      expect(outcome.error, isNull);
+      expect(strava.syncCallCount, 1);
+    });
+
+    test('Strava linked + sync fails: error surfaces', () async {
+      final strava = FakeStravaService()
+        ..linked = true
+        ..syncSuccess = false;
+      final service = _buildService(strava: strava);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToSupabase, isTrue);
+      expect(outcome.savedToC2, isTrue);
+      expect(outcome.savedToPlexo, isTrue);
+      expect(outcome.savedToStrava, isFalse);
+      expect(outcome.error, contains('Strava'));
+    });
+
+    test('Strava not linked: marked as done without calling sync', () async {
+      final strava = FakeStravaService()..linked = false;
+      final service = _buildService(strava: strava);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToStrava, isTrue);
+      expect(strava.syncCallCount, 0);
+    });
+
+    test('Strava actionable error: surfaces and stops retrying', () async {
+      final strava = FakeStravaService()
+        ..linked = true
+        ..shouldThrowActionable = true
+        ..actionableMessage = 'Strava token expired — reconnect in Profile';
+      final service = _buildService(strava: strava);
+      final outcome = await service.queueResult(_makeResult());
+
+      expect(outcome.savedToStrava, isTrue); // marked done to stop retries
+      expect(outcome.error, contains('token expired'));
+    });
+  });
+
+  group('getPendingCount correctness', () {
+    test('counts rows where only Strava is unsynced', () async {
+      final db = FakeLocalDb();
+      db._rows.add(FakeRow(
+        id: 99,
+        resultJson: '{}',
+        syncedToSupabase: true,
+        syncedToC2: true,
+        syncedToPlexo: true,
+        syncedToStrava: false,
+      ));
+
+      final count = await db.getPendingCount();
+      expect(count, 1, reason: 'Should count Strava-unsynced rows too');
     });
   });
 

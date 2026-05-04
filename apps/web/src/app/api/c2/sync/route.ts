@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import truncate from 'lodash.truncate';
-import { createSupabaseServer } from '@/lib/supabase/server';
+import { getAuthenticatedUserId } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 import {
   type RowCraftWorkoutType,
@@ -14,24 +14,6 @@ import {
   buildStrokeData,
   buildIntervalStrokeData,
 } from '@/lib/utils/c2-payload';
-
-async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    // Mobile: verify token directly against Supabase Auth
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id ?? null;
-  }
-  // Web: cookie-based session
-  const supabase = await createSupabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id ?? null;
-}
 
 export async function POST(request: NextRequest) {
   const userId = await getAuthenticatedUserId(request);
@@ -285,7 +267,8 @@ export async function POST(request: NextRequest) {
   const { error: syncError } = await supabase
     .from('workout_results')
     .update({ synced_to_c2: true })
-    .eq('id', result_id);
+    .eq('id', result_id)
+    .eq('user_id', userId);
 
   if (syncError) {
     return NextResponse.json(

@@ -8,6 +8,7 @@ import 'local_db.dart';
 import 'supabase_service.dart';
 import 'c2_logbook_service.dart';
 import 'plexo_service.dart';
+import 'strava_service.dart';
 
 final syncServiceProvider = Provider<SyncService>((ref) {
   return SyncService(
@@ -15,6 +16,7 @@ final syncServiceProvider = Provider<SyncService>((ref) {
     supabaseService: ref.watch(supabaseServiceProvider),
     c2LogbookService: ref.watch(c2LogbookServiceProvider),
     plexoService: ref.watch(plexoServiceProvider),
+    stravaService: ref.watch(stravaServiceProvider),
   );
 });
 
@@ -23,6 +25,7 @@ class SyncOutcome {
   final bool savedToSupabase;
   final bool savedToC2;
   final bool savedToPlexo;
+  final bool savedToStrava;
   final String? error;
 
   /// The Supabase-generated result ID, if the save succeeded.
@@ -32,6 +35,7 @@ class SyncOutcome {
     required this.savedToSupabase,
     required this.savedToC2,
     required this.savedToPlexo,
+    required this.savedToStrava,
     this.error,
     this.resultId,
   });
@@ -48,6 +52,7 @@ class SyncService {
   final SupabaseService supabaseService;
   final C2LogbookService c2LogbookService;
   final PlexoService plexoService;
+  final StravaService stravaService;
 
   bool _syncing = false;
 
@@ -65,6 +70,7 @@ class SyncService {
     required this.supabaseService,
     required this.c2LogbookService,
     required this.plexoService,
+    required this.stravaService,
   });
 
   /// Number of results waiting to be synced.
@@ -103,6 +109,7 @@ class SyncService {
         savedToSupabase: true,
         savedToC2: true,
         savedToPlexo: true,
+        savedToStrava: true,
         error: rowError,
         resultId: resultId,
       );
@@ -115,12 +122,15 @@ class SyncService {
       error = rowError ?? 'C2 Logbook sync failed — will retry';
     } else if (!row.syncedToPlexo) {
       error = rowError ?? 'Plexo sync failed — will retry';
+    } else if (!row.syncedToStrava) {
+      error = rowError ?? 'Strava sync failed — will retry';
     }
 
     return SyncOutcome(
       savedToSupabase: row.syncedToSupabase,
       savedToC2: row.syncedToC2,
       savedToPlexo: row.syncedToPlexo,
+      savedToStrava: row.syncedToStrava,
       error: error,
       resultId: resultId,
     );
@@ -140,6 +150,7 @@ class SyncService {
         savedToSupabase: true,
         savedToC2: true,
         savedToPlexo: true,
+        savedToStrava: true,
       );
     }
 
@@ -151,6 +162,7 @@ class SyncService {
       savedToSupabase: row.syncedToSupabase,
       savedToC2: row.syncedToC2,
       savedToPlexo: row.syncedToPlexo,
+      savedToStrava: row.syncedToStrava,
       error: error,
       resultId: resultId,
     );
@@ -170,8 +182,18 @@ class SyncService {
     try {
       final pending = await db.getPendingResults();
 
+      // Check link status once before the loop to avoid N+1 queries
+      final c2Linked = await c2LogbookService.isLinked();
+      final plexoEnabled = await plexoService.isEnabled();
+      final stravaLinked = await stravaService.isLinked();
+
       for (final row in pending) {
-        await _syncSingleResult(row);
+        await _syncSingleResult(
+          row,
+          c2Linked: c2Linked,
+          plexoEnabled: plexoEnabled,
+          stravaLinked: stravaLinked,
+        );
       }
 
       // Clean up fully synced results
@@ -185,7 +207,12 @@ class SyncService {
     }
   }
 
-  Future<void> _syncSingleResult(PendingResult row) async {
+  Future<void> _syncSingleResult(
+    PendingResult row, {
+    required bool c2Linked,
+    required bool plexoEnabled,
+    required bool stravaLinked,
+  }) async {
     try {
       final resultMap =
           jsonDecode(row.resultJson) as Map<String, dynamic>;
@@ -208,8 +235,7 @@ class SyncService {
       // Step 2: Sync to C2 Logbook if linked and not yet done
       if (!row.syncedToC2) {
         try {
-          final isLinked = await c2LogbookService.isLinked();
-          if (isLinked) {
+          if (c2Linked) {
             if (result.id.isEmpty) {
               const msg = 'Missing result ID — will retry';
               _rowErrors[row.id] = msg;
@@ -241,8 +267,7 @@ class SyncService {
       // Step 3: Sync to Plexo if enabled and not yet done
       if (!row.syncedToPlexo) {
         try {
-          final isEnabled = await plexoService.isEnabled();
-          if (isEnabled) {
+          if (plexoEnabled) {
             final plexoResult = await plexoService.syncResult(result);
             if (plexoResult.success) {
               await db.markSyncedToPlexo(row.id);
@@ -261,6 +286,38 @@ class SyncService {
           lastError = msg;
           _rowErrors[row.id] = msg;
           debugPrint(msg);
+        }
+      }
+
+      // Step 4: Sync to Strava if linked and not yet done
+      if (!row.syncedToStrava) {
+        try {
+          if (stravaLinked) {
+            if (result.id.isEmpty) {
+              const msg = 'Missing result ID — will retry';
+              _rowErrors[row.id] = msg;
+              return;
+            }
+            final stravaResult = await stravaService.syncResult(result);
+            if (stravaResult.success) {
+              await db.markSyncedToStrava(row.id);
+            } else {
+              final msg = 'Strava sync failed: ${stravaResult.error}';
+              lastError = msg;
+              _rowErrors[row.id] = msg;
+              debugPrint(msg);
+            }
+          } else {
+            // Not linked to Strava — mark as "synced" so it gets cleaned up
+            await db.markSyncedToStrava(row.id);
+          }
+        } on StravaActionableException catch (e) {
+          // User-fixable error (e.g. token expired) — surface message,
+          // mark Strava as done to stop retrying.
+          lastError = '$e';
+          _rowErrors[row.id] = '$e';
+          debugPrint('Strava actionable error for row ${row.id}: $e');
+          await db.markSyncedToStrava(row.id);
         }
       }
     } catch (e) {

@@ -97,6 +97,7 @@ export interface Profile {
 	resting_heart_rate: number | null;
 	zone_system: ZoneSystem;
 	onboarding_completed: boolean;
+	strava_athlete_id: string | null;
 	created_at: string;
 	updated_at: string;
 }

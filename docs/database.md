@@ -19,6 +19,9 @@ Extends Supabase `auth.users`. Auto-created on signup via trigger.
 | resting_heart_rate | int | For HRR/Karvonen zone calculation |
 | zone_system | text | 'standard' or 'rowing' (default: 'rowing') |
 | onboarding_completed | boolean | Controls onboarding redirect (default: false) |
+| strava_athlete_id | text | Strava account ID |
+| strava_access_token, strava_refresh_token | text | Strava OAuth tokens |
+| strava_token_expires_at | bigint | Unix timestamp; Strava tokens expire every 6h |
 
 ### workouts
 | Column | Type | Notes |
@@ -45,6 +48,7 @@ Extends Supabase `auth.users`. Auto-created on signup via trigger.
 | avg_stroke_rate, avg_heart_rate, avg_watts, calories | int | |
 | splits | JSONB | Per-segment data array |
 | synced_to_c2 | bool | |
+| synced_to_strava | bool | |
 
 ### ftp_history
 Tracks FTP tests over time. Links to workout_results via source_result_id.
@@ -117,3 +121,4 @@ One row per (user, achievement_type, threshold), inserted once.
 15. `015_c2_detail_fields.sql` — C2 detail fields on workout_results
 16. `016_personal_records_achievements.sql` — personal_records + achievements tables with RLS
 17. `017_onboarding_fields.sql` — resting_heart_rate, zone_system, onboarding_completed on profiles
+18. `018_strava.sql` — Strava OAuth columns on profiles + synced_to_strava on workout_results

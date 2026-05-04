@@ -1,5 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { type NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
 
 export async function createSupabaseServer() {
@@ -39,6 +41,26 @@ export async function getUser() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   return user;
+}
+
+/**
+ * Authenticate an API route request from either mobile (Bearer token)
+ * or web (cookie session). Returns the user ID or null.
+ */
+export async function getAuthenticatedUserId(request: NextRequest): Promise<string | null> {
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    return user?.id ?? null;
+  }
+  const supabase = await createSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
 }
 
 export async function requireAuth() {
