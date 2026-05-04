@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.4.0...rowcraft-mobile-v0.5.0) (2026-05-04)
+
+
+### Features
+
+* add HR zone system with HRR/Karvonen, onboarding flow, and zone preferences ([2dda145](https://github.com/KerryJones/rowcraft/commit/2dda145d66e99151826431d56a6774b8a5fb4562))
+* add Strava integration for workout sync via TCX upload ([7e89aab](https://github.com/KerryJones/rowcraft/commit/7e89aabe818d8849c6cc9ea1b99c171f4edc8ed3))
+
 ## [0.4.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.3.4...rowcraft-mobile-v0.4.0) (2026-04-27)
 
 
