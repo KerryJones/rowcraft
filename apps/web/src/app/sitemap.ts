@@ -24,28 +24,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const blogPosts = getAllPosts();
 
-  const [workoutsRes, plansRes] = await Promise.all([
-    supabase
-      .from('workouts')
-      .select('id, updated_at')
-      .eq('is_public', true)
-      .order('updated_at', { ascending: false }),
-    supabase
-      .from('training_plans')
-      .select('slug, updated_at')
-      .eq('is_active', true)
-      .order('updated_at', { ascending: false }),
-  ]);
+  const plansRes = await supabase
+    .from('training_plans')
+    .select('slug, updated_at')
+    .eq('is_active', true)
+    .order('updated_at', { ascending: false });
 
-  if (workoutsRes.error) console.error('Sitemap: workouts query failed:', workoutsRes.error.message);
   if (plansRes.error) console.error('Sitemap: plans query failed:', plansRes.error.message);
 
-  const workoutPages: MetadataRoute.Sitemap = (workoutsRes.data ?? []).map((w) => ({
-    url: `${BASE_URL}/workouts/${w.id}`,
-    lastModified: w.updated_at,
-    changeFrequency: 'monthly',
-    priority: 0.6,
-  }));
+  // Individual workout pages are intentionally excluded from the sitemap.
+  // They are thin pages that Google deprioritises. The /workouts listing page
+  // is included above, and individual workout pages remain crawlable via
+  // internal links so Google can discover them organically.
 
   const planPages: MetadataRoute.Sitemap = (plansRes.data ?? []).map((p) => ({
     url: `${BASE_URL}/plans/${p.slug}`,
@@ -68,5 +58,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...workoutPages, ...planPages, ...blogPages, ...comparisonPages];
+  return [...staticPages, ...planPages, ...blogPages, ...comparisonPages];
 }

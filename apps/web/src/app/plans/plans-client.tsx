@@ -30,6 +30,14 @@ export function PlansClient({ plans, userId }: PlansClientProps) {
         )}
       </div>
 
+      {/* Blog link */}
+      <p className="mb-6 text-sm text-gray-500">
+        New to structured training?{' '}
+        <Link href="/blog/why-structured-rowing-training" className="text-blue-400 underline hover:text-blue-300">
+          Learn why random erg workouts don&apos;t work
+        </Link>{' '}and how plans fix that.
+      </p>
+
       {/* Plan grid */}
       {plans.length === 0 ? (
         <div className="py-16 text-center text-gray-500">

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createSupabaseServer, getUser } from '@/lib/supabase/server';
+import { createSupabaseAdmin } from '@/lib/supabase/admin';
 import type { TrainingPlan } from '@/lib/types';
 import { formatDifficulty } from '@/lib/utils/format';
 import { PlanWeeksAccordion } from './plan-weeks';
@@ -11,6 +12,15 @@ import { SITE_URL, ROWCRAFT_ORGANIZATION } from '@/lib/seo';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+  const supabase = createSupabaseAdmin();
+  const { data } = await supabase
+    .from('training_plans')
+    .select('slug')
+    .eq('is_active', true);
+  return (data ?? []).map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
