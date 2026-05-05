@@ -3,6 +3,12 @@ name: Release Please
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      mobile-tag:
+        description: 'Mobile release tag to deploy (e.g. rowcraft-mobile-v0.5.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -15,10 +21,20 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     outputs:
-      mobile-release-created: ${{ steps.release.outputs['apps/mobile--release_created'] }}
-      mobile-tag-name: ${{ steps.release.outputs['apps/mobile--tag_name'] }}
+      mobile-release-created: ${{ github.event_name == 'workflow_dispatch' || steps.release.outputs['apps/mobile--release_created'] == 'true' }}
+      mobile-tag-name: ${{ steps.release.outputs['apps/mobile--tag_name'] || inputs.mobile-tag }}
     steps:
-      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+      - name: Validate tag format
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          MOBILE_TAG: ${{ inputs.mobile-tag }}
+        run: |
+          if [[ ! "$MOBILE_TAG" =~ ^rowcraft-mobile-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid mobile-tag format: $MOBILE_TAG"
+            exit 1
+          fi
+      - if: github.event_name == 'push'
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,6 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.release-please.outputs.mobile-tag-name }}
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -55,6 +73,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.release-please.outputs.mobile-tag-name }}
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
