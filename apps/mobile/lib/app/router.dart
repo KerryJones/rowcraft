@@ -456,7 +456,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
               padding: const EdgeInsets.all(12),
               child: Table(
                 columnWidths: const {
-                  0: FixedColumnWidth(32),
+                  0: FixedColumnWidth(64),
                   1: FlexColumnWidth(),
                   2: FlexColumnWidth(),
                   3: FlexColumnWidth(),
@@ -474,19 +474,22 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                       _TableHeader('Watts'),
                     ],
                   ),
-                  for (var i = 0; i < result.splits.length; i++)
+                  for (final (i, split) in result.splits.indexed)
                     TableRow(
                       children: [
-                        _TableCell('${i + 1}', isIndex: true),
-                        _TableCell('${result.splits[i].distance.toInt()}m'),
-                        _TableCell(result.splits[i].paceFormatted),
-                        _TableCell('${result.splits[i].avgStrokeRate}'),
+                        _IndexCell(index: i + 1, isRest: split.isRest),
+                        _TableCell('${split.distance.toInt()}m',
+                            isRest: split.isRest),
+                        _TableCell(split.paceFormatted, isRest: split.isRest),
+                        _TableCell('${split.avgStrokeRate}',
+                            isRest: split.isRest),
                         _TableCell(
-                          (result.splits[i].avgHeartRate ?? 0) > 0
-                              ? '${result.splits[i].avgHeartRate}'
+                          (split.avgHeartRate ?? 0) > 0
+                              ? '${split.avgHeartRate}'
                               : '--',
+                          isRest: split.isRest,
                         ),
-                        _TableCell('${result.splits[i].avgWatts}'),
+                        _TableCell('${split.avgWatts}', isRest: split.isRest),
                       ],
                     ),
                 ],
@@ -561,18 +564,59 @@ class _TableHeader extends StatelessWidget {
 
 class _TableCell extends StatelessWidget {
   final String text;
-  final bool isIndex;
-  const _TableCell(this.text, {this.isIndex = false});
+  final bool isRest;
+  const _TableCell(this.text, {this.isRest = false});
 
   @override
   Widget build(BuildContext context) {
+    const baseColor = RowCraftTheme.metricWhite;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: isIndex ? RowCraftTheme.subtleGrey : RowCraftTheme.metricWhite,
+              color: isRest ? baseColor.withValues(alpha: 0.6) : baseColor,
             ),
+      ),
+    );
+  }
+}
+
+class _IndexCell extends StatelessWidget {
+  final int index;
+  final bool isRest;
+
+  const _IndexCell({required this.index, required this.isRest});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final indexColor = isRest
+        ? RowCraftTheme.subtleGrey.withValues(alpha: 0.6)
+        : RowCraftTheme.subtleGrey;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(
+            '$index',
+            style: theme.textTheme.bodySmall?.copyWith(color: indexColor),
+          ),
+          if (isRest) ...[
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'Rest',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: RowCraftTheme.segmentRest,
+                  fontWeight: FontWeight.w600,
+                ),
+                softWrap: false,
+                overflow: TextOverflow.clip,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

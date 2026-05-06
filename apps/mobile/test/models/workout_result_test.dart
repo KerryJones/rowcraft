@@ -15,6 +15,7 @@ void main() {
     int avgWatts = 200,
     int? avgHeartRate = 155,
     int calories = 30,
+    bool? isRest,
   }) =>
       {
         'segment_index': segmentIndex,
@@ -25,6 +26,7 @@ void main() {
         'avg_watts': avgWatts,
         'avg_heart_rate': ?avgHeartRate,
         'calories': calories,
+        'is_rest': ?isRest,
       };
 
   Map<String, dynamic> resultJson({
@@ -79,6 +81,18 @@ void main() {
         final split = SplitData.fromJson(json);
         expect(split.avgHeartRate, isNull);
       });
+
+      test('defaults isRest to false when missing', () {
+        final json = splitJson();
+        final split = SplitData.fromJson(json);
+        expect(split.isRest, isFalse);
+      });
+
+      test('reads isRest=true when present', () {
+        final json = splitJson(isRest: true);
+        final split = SplitData.fromJson(json);
+        expect(split.isRest, isTrue);
+      });
     });
 
     group('toJson', () {
@@ -107,6 +121,20 @@ void main() {
 
         expect(output['avg_heart_rate'], 160);
       });
+
+      test('omits is_rest when false', () {
+        final split = SplitData.fromJson(splitJson());
+        final output = split.toJson();
+
+        expect(output.containsKey('is_rest'), isFalse);
+      });
+
+      test('includes is_rest=true when set', () {
+        final split = SplitData.fromJson(splitJson(isRest: true));
+        final output = split.toJson();
+
+        expect(output['is_rest'], isTrue);
+      });
     });
 
     group('fromJson/toJson roundtrip', () {
@@ -133,6 +161,15 @@ void main() {
         final roundtripped = SplitData.fromJson(json);
 
         expect(roundtripped.avgHeartRate, isNull);
+      });
+
+      test('rest split survives roundtrip', () {
+        final original = splitJson(isRest: true);
+        final split = SplitData.fromJson(original);
+        final json = split.toJson();
+        final roundtripped = SplitData.fromJson(json);
+
+        expect(roundtripped.isRest, isTrue);
       });
     });
 

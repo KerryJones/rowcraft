@@ -11,6 +11,7 @@ class SplitData {
   final int? minHeartRate;
   final int? maxHeartRate;
   final int calories;
+  final bool isRest;
 
   const SplitData({
     required this.intervalIndex,
@@ -23,6 +24,7 @@ class SplitData {
     this.minHeartRate,
     this.maxHeartRate,
     required this.calories,
+    this.isRest = false,
   });
 
   factory SplitData.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class SplitData {
       minHeartRate: json['min_heart_rate'] as int?,
       maxHeartRate: json['max_heart_rate'] as int?,
       calories: json['calories'] as int,
+      isRest: (json['is_rest'] as bool?) ?? false,
     );
   }
 
@@ -52,6 +55,7 @@ class SplitData {
       if (minHeartRate != null) 'min_heart_rate': minHeartRate,
       if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
       'calories': calories,
+      if (isRest) 'is_rest': true,
     };
   }
 

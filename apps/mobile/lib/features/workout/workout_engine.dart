@@ -1083,6 +1083,7 @@ class WorkoutEngine {
       maxHeartRate: _splitMaxHr,
       calories:
           math.max(0, _state.latestData.calories - _splitStartCalories),
+      isRest: _state.currentSegment?.isRest ?? false,
     );
   }
 
@@ -1119,6 +1120,7 @@ class WorkoutEngine {
       minHeartRate: _segmentMinHr,
       maxHeartRate: _segmentMaxHr,
       calories: math.max(0, _state.latestData.calories - _segmentStartCalories),
+      isRest: _state.currentSegment?.isRest ?? false,
     );
     _completedSplits.add(split);
   }

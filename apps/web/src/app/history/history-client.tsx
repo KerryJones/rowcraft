@@ -126,17 +126,24 @@ function SplitDetails({ splits }: { splits: SplitData[] }) {
       </h4>
       <div className="space-y-1.5">
         {splits.map((split, i) => {
+          const isRest = split.is_rest === true;
           const label = isAutoSplit
             ? formatDistance(Math.round(cumDistances[i]))
-            : `Segment ${split.segment_index + 1}`;
+            : isRest
+              ? 'Rest'
+              : `Segment ${split.segment_index + 1}`;
 
           return (
             <div
               key={i}
-              className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-xs"
+              className={`flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-xs ${
+                isRest ? 'text-gray-500' : 'text-gray-300'
+              }`}
             >
-              <span className="text-gray-400">{label}</span>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-300">
+              <span className={isRest ? 'font-medium' : 'text-gray-400'}>
+                {label}
+              </span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
                 <span>{formatPace(split.avg_pace)}/500m</span>
                 <span>{formatDistance(split.distance)}</span>
                 <span>{formatTimeMs(split.time_ms)}</span>

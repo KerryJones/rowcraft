@@ -70,6 +70,7 @@ export interface SplitData {
 	calories?: number;
 	min_heart_rate?: number | null;
 	max_heart_rate?: number | null;
+	is_rest?: boolean;
 }
 
 export interface WorkoutResult {

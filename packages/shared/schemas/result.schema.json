@@ -29,7 +29,8 @@
           "min_heart_rate": { "type": ["integer", "null"] },
           "max_heart_rate": { "type": ["integer", "null"] },
           "avg_watts": { "type": "integer" },
-          "calories": { "type": "integer" }
+          "calories": { "type": "integer" },
+          "is_rest": { "type": "boolean" }
         }
       }
     }
