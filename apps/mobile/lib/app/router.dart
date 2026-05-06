@@ -19,6 +19,7 @@ import '../features/workout/workout_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/settings/pending_sync_screen.dart';
 import '../models/workout_result.dart';
 import '../services/c2_logbook_service.dart';
 import '../app/theme.dart';
@@ -202,6 +203,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/achievements',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const AchievementsScreen(),
+      ),
+
+      // Pending Sync — full-screen, accessible from Profile and home banner
+      GoRoute(
+        path: '/pending-sync',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PendingSyncScreen(),
       ),
 
       // Bottom nav shell with 4 tabs

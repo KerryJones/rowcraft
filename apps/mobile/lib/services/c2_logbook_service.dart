@@ -160,6 +160,13 @@ class C2LogbookService {
         return (success: false, error: 'API returned success=false');
       }
 
+      // C2 returns 409 "Duplicate Result" if the workout is already on
+      // their side — that's success from our perspective. The web API
+      // wraps the 409 inside a 502 with the C2 detail in the body.
+      if (response.body.contains('Duplicate Result')) {
+        return (success: true, error: null);
+      }
+
       // Surface actionable server errors so they reach the UI
       if (response.statusCode == 401) {
         throw const C2ActionableException(

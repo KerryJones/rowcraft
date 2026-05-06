@@ -10,6 +10,7 @@ import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
+import '../../widgets/pending_sync_banner.dart';
 import '../../widgets/row_craft_app_bar.dart';
 import '../../widgets/wod_card.dart';
 import '../../widgets/workout_graph.dart';
@@ -171,6 +172,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       appBar: const RowCraftAppBar(title: 'Workouts'),
       body: Column(
         children: [
+          const PendingSyncBanner(),
           // WOD slot — pinned at top, but suppressed when browsing "My
           // Workouts" (a public WOD above a private list is confusing).
           if (wod != null && !_mine)

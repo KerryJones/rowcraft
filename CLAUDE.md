@@ -23,6 +23,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 
 ### Pre-launch App
 - **No legacy/backward-compat code** — this app has not shipped. Never write migration shims, legacy expansion, or backward-compat wrappers without asking first. If you think old data needs handling, ask.
+- **Debug builds (`make install`) and Play Store builds use different signing certificates.** Android refuses to update across the boundary — testers must uninstall the debug-signed app before installing from the Play Store. The in-app debug banner reminds them.
 
 ### Research Before Guessing
 - **Never fabricate or guess external information** — if a task references external products, APIs, UI patterns, or industry standards, research them first (WebSearch, WebFetch, docs). Guessing and presenting it as informed analysis is a critical failure, not a minor shortcut.

@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
-import '../../models/workout_result.dart';
 import '../../widgets/content_constraint.dart';
+import '../../widgets/status_chip.dart';
 import 'history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -14,13 +14,13 @@ class HistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final resultsAsync = ref.watch(workoutHistoryProvider);
+    final entriesAsync = ref.watch(workoutHistoryEntriesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('History')),
-      body: resultsAsync.when(
-        data: (results) {
-          if (results.isEmpty) {
+      body: entriesAsync.when(
+        data: (entries) {
+          if (entries.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -47,8 +47,7 @@ class HistoryScreen extends ConsumerWidget {
             );
           }
 
-          // Group results by date
-          final grouped = _groupByDate(results);
+          final grouped = _groupByDate(entries);
 
           return ContentConstraint(
             child: RefreshIndicator(
@@ -60,7 +59,7 @@ class HistoryScreen extends ConsumerWidget {
                 itemCount: grouped.length,
                 itemBuilder: (context, index) {
                   final entry = grouped.entries.elementAt(index);
-                  return _DateGroup(date: entry.key, results: entry.value);
+                  return _DateGroup(date: entry.key, entries: entry.value);
                 },
               ),
             ),
@@ -90,13 +89,13 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  Map<String, List<WorkoutResult>> _groupByDate(List<WorkoutResult> results) {
-    final map = <String, List<WorkoutResult>>{};
+  Map<String, List<HistoryEntry>> _groupByDate(List<HistoryEntry> entries) {
+    final map = <String, List<HistoryEntry>>{};
     final formatter = DateFormat('EEEE, MMMM d');
 
-    for (final result in results) {
-      final key = formatter.format(result.startedAt);
-      map.putIfAbsent(key, () => []).add(result);
+    for (final e in entries) {
+      final key = formatter.format(e.result.startedAt);
+      map.putIfAbsent(key, () => []).add(e);
     }
     return map;
   }
@@ -104,9 +103,9 @@ class HistoryScreen extends ConsumerWidget {
 
 class _DateGroup extends StatelessWidget {
   final String date;
-  final List<WorkoutResult> results;
+  final List<HistoryEntry> entries;
 
-  const _DateGroup({required this.date, required this.results});
+  const _DateGroup({required this.date, required this.entries});
 
   @override
   Widget build(BuildContext context) {
@@ -124,32 +123,36 @@ class _DateGroup extends StatelessWidget {
             ),
           ),
         ),
-        ...results.map((result) => _ResultCard(result: result)),
+        ...entries.map((entry) => _ResultCard(entry: entry)),
       ],
     );
   }
 }
 
 class _ResultCard extends StatelessWidget {
-  final WorkoutResult result;
+  final HistoryEntry entry;
 
-  const _ResultCard({required this.result});
+  const _ResultCard({required this.entry});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final timeFormat = DateFormat('h:mm a');
+    final result = entry.result;
+    final isPending = entry.status != SyncStatus.synced;
 
     return Card(
       child: InkWell(
-        onTap: () => context.push('/history/${result.id}'),
+        // Pending rows have no Supabase id yet — detail screen looks up by id.
+        onTap: isPending && result.id.isEmpty
+            ? null
+            : () => context.push('/history/${result.id}'),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: time + sync status
               Row(
                 children: [
                   Text(
@@ -157,25 +160,13 @@ class _ResultCard extends StatelessWidget {
                     style: theme.textTheme.bodySmall,
                   ),
                   const Spacer(),
-                  if (result.syncedToC2)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: RowCraftTheme.successGreen.withValues(
-                          alpha: 0.2,
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'C2 Synced',
-                        style: TextStyle(
-                          color: RowCraftTheme.successGreen,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  _SyncBadge(status: entry.status),
+                  if (entry.status == SyncStatus.synced && result.syncedToC2)
+                    const Padding(
+                      padding: EdgeInsets.only(left: 6),
+                      child: StatusChip(
+                        label: 'C2 Synced',
+                        color: RowCraftTheme.successGreen,
                       ),
                     ),
                 ],
@@ -184,34 +175,25 @@ class _ResultCard extends StatelessWidget {
               Text(result.displayName, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
 
-              // Main metrics row
               Row(
                 children: [
-                  // Distance
                   _MetricCell(
                     value: '${result.totalDistance.toInt()}m',
                     label: 'Distance',
                   ),
                   const SizedBox(width: 24),
-
-                  // Time
                   _MetricCell(value: result.totalTimeFormatted, label: 'Time'),
                   const SizedBox(width: 24),
-
-                  // Avg split
                   _MetricCell(
                     value: result.avgSplitFormatted,
                     label: '',
                     highlight: true,
                   ),
                   const Spacer(),
-
-                  // Stroke rate
                   _MetricCell(value: '${result.avgStrokeRate}', label: 's/m'),
                 ],
               ),
 
-              // Split count
               if (result.splits.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -224,6 +206,29 @@ class _ResultCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SyncBadge extends StatelessWidget {
+  final SyncStatus status;
+  const _SyncBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (status) {
+      case SyncStatus.synced:
+        return const SizedBox.shrink();
+      case SyncStatus.pending:
+        return const StatusChip(
+          label: 'Syncing…',
+          color: RowCraftTheme.primaryBlue,
+        );
+      case SyncStatus.failed:
+        return const StatusChip(
+          label: 'Sync failed',
+          color: RowCraftTheme.errorRose,
+        );
+    }
   }
 }
 

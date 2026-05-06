@@ -186,6 +186,19 @@ class LocalDatabase extends _$LocalDatabase {
     ));
   }
 
+  /// Discard a queued result without uploading. Marks all targets as
+  /// synced and runs cleanup so the row is removed.
+  Future<void> discardPending(int id) async {
+    await (update(pendingResults)..where((r) => r.id.equals(id)))
+        .write(const PendingResultsCompanion(
+      syncedToSupabase: Value(true),
+      syncedToC2: Value(true),
+      syncedToPlexo: Value(true),
+      syncedToStrava: Value(true),
+    ));
+    await cleanupSynced();
+  }
+
   /// Remove fully synced results (Supabase, C2, Plexo, and Strava).
   Future<int> cleanupSynced() {
     return (delete(pendingResults)

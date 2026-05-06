@@ -5,7 +5,9 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app/router.dart';
+import 'app/sync_lifecycle.dart';
 import 'app/theme.dart';
+import 'widgets/debug_build_banner.dart';
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,7 @@ Future<void> main() async {
         options.attachScreenshot = false;
       },
       appRunner: () {
+        _wireSentryUserScope();
         FlutterNativeSplash.remove();
         runApp(const ProviderScope(child: RowCraftApp()));
       },
@@ -40,17 +43,39 @@ Future<void> main() async {
   }
 }
 
+/// Tag every Sentry event with the current Supabase user id so failures
+/// can be attributed to a specific tester. No-op if Sentry isn't enabled.
+void _wireSentryUserScope() {
+  final auth = Supabase.instance.client.auth;
+  final initial = auth.currentUser;
+  if (initial != null) {
+    Sentry.configureScope(
+      (scope) => scope.setUser(SentryUser(id: initial.id)),
+    );
+  }
+  auth.onAuthStateChange.listen((state) {
+    final user = state.session?.user;
+    Sentry.configureScope((scope) {
+      scope.setUser(user == null ? null : SentryUser(id: user.id));
+    });
+  });
+}
+
 class RowCraftApp extends ConsumerWidget {
   const RowCraftApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    return MaterialApp.router(
-      title: 'RowCraft',
-      theme: RowCraftTheme.dark,
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
+    return SyncLifecycleObserver(
+      child: MaterialApp.router(
+        title: 'RowCraft',
+        theme: RowCraftTheme.dark,
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) =>
+            DebugBuildBanner(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

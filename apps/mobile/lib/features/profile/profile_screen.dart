@@ -19,6 +19,7 @@ import '../../utils/hr_zones.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
 import '../ble/ble_provider.dart';
+import '../history/history_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../ble/pm5_service.dart';
@@ -244,6 +245,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     title: const Text('Achievements'),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => context.push('/achievements'),
+                  ),
+                  const Divider(height: 1),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final count =
+                          ref.watch(pendingSyncCountProvider).value ?? 0;
+                      return ListTile(
+                        leading: Badge(
+                          isLabelVisible: count > 0,
+                          label: Text('$count'),
+                          child: const Icon(Icons.cloud_upload_outlined),
+                        ),
+                        title: const Text('Pending Sync'),
+                        subtitle: Text(
+                          count == 0 ? 'All synced' : 'Tap to retry',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => context.push('/pending-sync'),
+                      );
+                    },
                   ),
                 ],
               ),
