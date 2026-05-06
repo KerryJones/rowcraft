@@ -461,6 +461,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                   2: FlexColumnWidth(),
                   3: FlexColumnWidth(),
                   4: FlexColumnWidth(),
+                  5: FlexColumnWidth(),
                 },
                 children: [
                   const TableRow(
@@ -469,6 +470,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                       _TableHeader('Dist'),
                       _TableHeader('Pace'),
                       _TableHeader('S/M'),
+                      _TableHeader('HR'),
                       _TableHeader('Watts'),
                     ],
                   ),
@@ -479,6 +481,11 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                         _TableCell('${result.splits[i].distance.toInt()}m'),
                         _TableCell(result.splits[i].paceFormatted),
                         _TableCell('${result.splits[i].avgStrokeRate}'),
+                        _TableCell(
+                          (result.splits[i].avgHeartRate ?? 0) > 0
+                              ? '${result.splits[i].avgHeartRate}'
+                              : '--',
+                        ),
                         _TableCell('${result.splits[i].avgWatts}'),
                       ],
                     ),
