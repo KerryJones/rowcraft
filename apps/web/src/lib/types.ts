@@ -62,11 +62,14 @@ export interface Workout {
 export interface SplitData {
 	segment_index: number;
 	distance: number;
-	time: number; // tenths of seconds
-	avg_split: number; // tenths of a second per 500m
+	time_ms: number; // milliseconds
+	avg_pace: number; // tenths of a second per 500m
 	avg_stroke_rate: number;
 	avg_heart_rate: number | null;
 	avg_watts: number;
+	calories?: number;
+	min_heart_rate?: number | null;
+	max_heart_rate?: number | null;
 }
 
 export interface WorkoutResult {

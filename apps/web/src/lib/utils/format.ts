@@ -28,6 +28,14 @@ export function formatDuration(seconds: number): string {
 }
 
 /**
+ * Format milliseconds as mm:ss.t or h:mm:ss.t
+ * Example: 1200000 -> "20:00.0"
+ */
+export function formatTimeMs(ms: number): string {
+	return formatTimeTenths(Math.floor(ms / 100));
+}
+
+/**
  * Format tenths of seconds as mm:ss.t or h:mm:ss.t
  * Example: 12000 -> "20:00.0"
  */

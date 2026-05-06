@@ -22,11 +22,14 @@
         "properties": {
           "segment_index": { "type": "integer" },
           "distance": { "type": "integer" },
-          "time": { "type": "integer" },
-          "avg_split": { "type": "integer" },
+          "time_ms": { "type": "integer", "description": "milliseconds" },
+          "avg_pace": { "type": "integer", "description": "pace per 500m in tenths of seconds" },
           "avg_stroke_rate": { "type": "integer" },
           "avg_heart_rate": { "type": ["integer", "null"] },
-          "avg_watts": { "type": "integer" }
+          "min_heart_rate": { "type": ["integer", "null"] },
+          "max_heart_rate": { "type": ["integer", "null"] },
+          "avg_watts": { "type": "integer" },
+          "calories": { "type": "integer" }
         }
       }
     }

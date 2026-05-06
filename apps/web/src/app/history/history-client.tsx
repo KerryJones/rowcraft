@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { SplitData, WorkoutResult } from '@/lib/types';
-import { formatTimeTenths, formatPace, formatDistance } from '@/lib/utils/format';
+import { formatTimeTenths, formatTimeMs, formatPace, formatDistance } from '@/lib/utils/format';
 import { Cloud, CloudOff, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface HistoryClientProps {
@@ -136,10 +136,10 @@ function SplitDetails({ splits }: { splits: SplitData[] }) {
               className="flex items-center justify-between rounded-lg bg-gray-800/50 px-3 py-2 text-xs"
             >
               <span className="text-gray-400">{label}</span>
-              <div className="flex gap-4 text-gray-300">
-                <span>{formatPace(split.avg_split)}/500m</span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-300">
+                <span>{formatPace(split.avg_pace)}/500m</span>
                 <span>{formatDistance(split.distance)}</span>
-                <span>{formatTimeTenths(split.time)}</span>
+                <span>{formatTimeMs(split.time_ms)}</span>
                 <span>{split.avg_stroke_rate}spm</span>
                 {split.avg_heart_rate && (
                   <span>{split.avg_heart_rate}bpm</span>
