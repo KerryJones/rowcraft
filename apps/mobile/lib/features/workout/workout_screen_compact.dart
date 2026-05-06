@@ -101,6 +101,52 @@ class _WorkoutScreenCompactBodyState
   Widget build(BuildContext context) {
     final session = widget.session;
     final engineState = session.engineState;
+    final isLandscapePhone =
+        MediaQuery.orientationOf(context) == Orientation.landscape &&
+            MediaQuery.sizeOf(context).shortestSide < 600;
+
+    final controls = IgnorePointer(
+      ignoring: widget.isLocked,
+      child: Opacity(
+        opacity: widget.isLocked ? 0.4 : 1.0,
+        child: WorkoutControls(
+          phase: engineState.phase,
+          onStart: widget.onStart,
+          onPause: widget.onPause,
+          onResume: widget.onResume,
+          onStop: widget.onStop,
+        ),
+      ),
+    );
+
+    if (isLandscapePhone) {
+      return Column(
+        children: [
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 45,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 5, 6),
+                    child: _statGrid(session),
+                  ),
+                ),
+                Expanded(
+                  flex: 55,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(5, 10, 10, 6),
+                    child: _heroAndGraph(session),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          controls,
+        ],
+      );
+    }
 
     return Column(
       children: [
@@ -109,103 +155,98 @@ class _WorkoutScreenCompactBodyState
           flex: 5,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _SegmentTile(
-                          session: session,
-                          countUp: _segmentCountUp,
-                          onTap: () => setState(
-                              () => _segmentCountUp = !_segmentCountUp),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _TotalTile(
-                          session: session,
-                          showRemaining: _totalShowRemaining,
-                          onTap: () => setState(
-                              () => _totalShowRemaining = !_totalShowRemaining),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TargetPaceTile(
-                          session: session,
-                          showAvg: _paceShowAvg,
-                          onTap: () =>
-                              setState(() => _paceShowAvg = !_paceShowAvg),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: _TargetSpmTile(session: session)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _HrTile(
-                          session: session,
-                          showAvg: _hrShowAvg,
-                          onTap: () =>
-                              setState(() => _hrShowAvg = !_hrShowAvg),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _CaloriesTile(
-                          session: session,
-                          showDistance: _calShowDistance,
-                          onTap: () => setState(
-                              () => _calShowDistance = !_calShowDistance),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            child: _statGrid(session),
           ),
         ),
 
         // Bottom half: existing hero visuals + segment graph
         Expanded(
           flex: 6,
-          child: Column(
+          child: _heroAndGraph(session),
+        ),
+
+        controls,
+      ],
+    );
+  }
+
+  Widget _statGrid(WorkoutSessionState session) {
+    return Column(
+      children: [
+        Expanded(
+          child: Row(
             children: [
-              Expanded(child: HeroSection(session: session, inlinePaceSuffix: true)),
-              if (session.expandedSegments.isNotEmpty)
-                WorkoutProfileGraph(session: session),
+              Expanded(
+                child: _SegmentTile(
+                  session: session,
+                  countUp: _segmentCountUp,
+                  onTap: () => setState(
+                      () => _segmentCountUp = !_segmentCountUp),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _TotalTile(
+                  session: session,
+                  showRemaining: _totalShowRemaining,
+                  onTap: () => setState(
+                      () => _totalShowRemaining = !_totalShowRemaining),
+                ),
+              ),
             ],
           ),
         ),
-
-        // Controls
-        IgnorePointer(
-          ignoring: widget.isLocked,
-          child: Opacity(
-            opacity: widget.isLocked ? 0.4 : 1.0,
-            child: WorkoutControls(
-              phase: engineState.phase,
-              onStart: widget.onStart,
-              onPause: widget.onPause,
-              onResume: widget.onResume,
-              onStop: widget.onStop,
-            ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _TargetPaceTile(
+                  session: session,
+                  showAvg: _paceShowAvg,
+                  onTap: () =>
+                      setState(() => _paceShowAvg = !_paceShowAvg),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _TargetSpmTile(session: session)),
+            ],
           ),
         ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(
+                child: _HrTile(
+                  session: session,
+                  showAvg: _hrShowAvg,
+                  onTap: () =>
+                      setState(() => _hrShowAvg = !_hrShowAvg),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _CaloriesTile(
+                  session: session,
+                  showDistance: _calShowDistance,
+                  onTap: () => setState(
+                      () => _calShowDistance = !_calShowDistance),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _heroAndGraph(WorkoutSessionState session) {
+    return Column(
+      children: [
+        Expanded(child: HeroSection(session: session, inlinePaceSuffix: true)),
+        if (session.expandedSegments.isNotEmpty)
+          WorkoutProfileGraph(session: session),
       ],
     );
   }
