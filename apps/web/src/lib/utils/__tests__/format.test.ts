@@ -8,6 +8,7 @@ import {
 	formatDifficulty,
 	formatSegmentDuration,
 	parsePace,
+	parseDuration,
 } from '../format';
 import type { WorkoutSegment } from '../../types';
 
@@ -66,6 +67,40 @@ describe('parsePace', () => {
 		const paces = [1200, 1340, 1050, 900, 1800];
 		for (const pace of paces) {
 			expect(parsePace(formatPace(pace))).toBe(pace);
+		}
+	});
+});
+
+describe('parseDuration', () => {
+	it('parses m:ss to seconds', () => {
+		expect(parseDuration('1:30')).toBe(90);
+		expect(parseDuration('12:00')).toBe(720);
+		expect(parseDuration('0:45')).toBe(45);
+	});
+
+	it('accepts bare integers as seconds', () => {
+		expect(parseDuration('45')).toBe(45);
+		expect(parseDuration('120')).toBe(120);
+	});
+
+	it('returns null for invalid input', () => {
+		expect(parseDuration(':30')).toBeNull();
+		expect(parseDuration('1:60')).toBeNull();
+		expect(parseDuration('')).toBeNull();
+		expect(parseDuration('abc')).toBeNull();
+		expect(parseDuration('1:2:3:4')).toBeNull();
+		expect(parseDuration('1:60:00')).toBeNull();
+	});
+
+	it('parses h:mm:ss to seconds', () => {
+		expect(parseDuration('1:00:00')).toBe(3600);
+		expect(parseDuration('1:01:01')).toBe(3661);
+	});
+
+	it('roundtrips with formatDuration across hour boundary', () => {
+		const seconds = [30, 90, 300, 720, 1800, 3600, 3661, 7200];
+		for (const s of seconds) {
+			expect(parseDuration(formatDuration(s))).toBe(s);
 		}
 	});
 });

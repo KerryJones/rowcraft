@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
+import '../../utils/hr_zones.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
 import '../../widgets/pending_sync_banner.dart';
@@ -117,7 +118,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       mine: _mine,
       sort: _sortOrder,
     )));
-    final userFtp = ref.watch(profileProvider).value?.currentFtpWatts ?? kDefaultFtpWatts;
+    final profile = ref.watch(profileProvider).value;
+    final userFtp = profile?.currentFtpWatts ?? kDefaultFtpWatts;
+    final zoneSystem = profile?.zoneSystem ?? ZoneSystem.rowing;
     // Watch at top of build so WOD fetch runs in parallel with the library
     // list fetch, instead of only starting after the list resolves.
     final wodAsync = ref.watch(wodWorkoutsProvider);
@@ -226,7 +229,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     _mine ? null : wod,
                     userFtp,
                   )
-                : _buildTilesGrid(context, userId),
+                : _buildTilesGrid(context, userId, zoneSystem),
           ),
         ],
       ),
@@ -235,7 +238,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   // ── Landing: tile grid ────────────────────────────────────────
 
-  Widget _buildTilesGrid(BuildContext context, String? userId) {
+  Widget _buildTilesGrid(BuildContext context, String? userId, ZoneSystem zoneSystem) {
     final tiles = _visibleTiles(userId: userId);
     final sizeClass = windowSizeClass(context);
     final columns = switch (sizeClass) {
@@ -254,10 +257,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       itemCount: tiles.length,
       itemBuilder: (context, index) {
         final tile = tiles[index];
+        String? subtitleOverride;
+        if (tile.type == _TileType.zone && tile.zone != null) {
+          subtitleOverride = zoneDisplayInfo(tile.zone!, zoneSystem).name;
+        }
         return _CategoryTile(
           tile: tile,
           active: _isTileActive(tile),
           onTap: () => _selectTile(tile),
+          subtitleOverride: subtitleOverride,
         );
       },
     );
@@ -602,10 +610,13 @@ class _CategoryTile extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
+  final String? subtitleOverride;
+
   const _CategoryTile({
     required this.tile,
     required this.active,
     required this.onTap,
+    this.subtitleOverride,
   });
 
   @override
@@ -648,7 +659,7 @@ class _CategoryTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  tile.subtitle,
+                  subtitleOverride ?? tile.subtitle,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.white.withValues(alpha: 0.7),

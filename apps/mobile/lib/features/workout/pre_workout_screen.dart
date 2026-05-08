@@ -9,11 +9,11 @@ import '../../models/workout_segment.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/pace_utils.dart'
     show formatPace, intensityToPaceTenths, kDefaultFtpWatts;
-import '../../utils/segment_color.dart';
 import '../../utils/segment_display.dart';
 import '../../utils/workout_utils.dart';
 import '../../widgets/connection_required_dialog.dart';
 import '../../widgets/difficulty_indicator.dart';
+import '../../widgets/hr_zone_donut.dart';
 import '../../widgets/workout_graph.dart';
 import '../ble/ble_provider.dart';
 import '../ble/pm5_service.dart';
@@ -366,7 +366,6 @@ class _SegmentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = segmentDisplayColor(segment);
     final paceLabel = segmentPaceLabel(segment, ftpWatts);
     final srLabel = segmentStrokeRateLabel(segment);
 
@@ -380,16 +379,9 @@ class _SegmentRow extends StatelessWidget {
         child: IntrinsicHeight(
           child: Row(
             children: [
-              Container(
-                width: 3,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(4),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
+              HrZoneTargetRing(targetZone: segment.targetHrZone),
+              const SizedBox(width: 10),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),

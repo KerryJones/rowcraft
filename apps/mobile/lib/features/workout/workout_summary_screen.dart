@@ -16,8 +16,10 @@ import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
 import '../../utils/hr_zones.dart' as hr_zones;
 import '../../utils/segment_color.dart';
+import '../../utils/time_in_zone.dart';
 import '../../models/workout_time_sample.dart';
 import '../../widgets/discard_workout_dialog.dart';
+import '../../widgets/hr_zone_donut.dart';
 import '../../widgets/save_discard_buttons.dart';
 import 'save_auto_nav_mixin.dart';
 import 'workout_provider.dart';
@@ -152,7 +154,14 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent>
                 // Per-segment table
                 if (splits.isNotEmpty) ...[
                   const _SectionHeader(title: 'SPLITS'),
-                  _SplitsTable(splits: splits, segments: segments),
+                  _SplitsTable(
+                    splits: splits,
+                    segments: segments,
+                    timeSamples: timeSamples ?? const <WorkoutTimeSample>[],
+                    maxHr: maxHr,
+                    restingHr: session.restingHeartRate,
+                    zoneSystem: session.zoneSystem,
+                  ),
                 ],
 
                 const SizedBox(height: 24),
@@ -645,10 +654,7 @@ class _HrZoneDistributionPainter extends CustomPainter {
 
       // Zone label inside the band (if wide enough)
       if (width > 30) {
-        final zoneNum = i + 1;
-        final zones = hr_zones.zonesForSystem(zoneSystem);
-        final zoneDef = zoneNum <= zones.length ? zones[zoneNum - 1] : null;
-        final label = zoneDef?.shortLabel ?? 'Z$zoneNum';
+        final label = hr_zones.zoneDisplayInfo(i + 1, zoneSystem).name;
         final tp = TextPainter(
           text: TextSpan(
             text: label,
@@ -706,8 +712,19 @@ class _HrZoneDistributionPainter extends CustomPainter {
 class _SplitsTable extends StatelessWidget {
   final List<SplitData> splits;
   final List<WorkoutSegment> segments;
+  final List<WorkoutTimeSample> timeSamples;
+  final int maxHr;
+  final int? restingHr;
+  final hr_zones.ZoneSystem zoneSystem;
 
-  const _SplitsTable({required this.splits, required this.segments});
+  const _SplitsTable({
+    required this.splits,
+    required this.segments,
+    required this.timeSamples,
+    required this.maxHr,
+    required this.restingHr,
+    required this.zoneSystem,
+  });
 
   /// Detect auto-splits: multiple splits all sharing the same segment index,
   /// which means they are sub-splits of a single distance segment.
@@ -732,6 +749,7 @@ class _SplitsTable extends StatelessWidget {
     );
 
     final isAutoSplit = _isAutoSplit;
+    final tizBySegment = timeInZoneBySegment(timeSamples, restingHr, maxHr);
 
     // Precompute cumulative distances for auto-split labels
     final cumDistances = isAutoSplit
@@ -760,7 +778,7 @@ class _SplitsTable extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                  SizedBox(width: 28, child: Text('#', style: headerStyle)),
+                  SizedBox(width: 36, child: Text('#', style: headerStyle)),
                   SizedBox(width: 48, child: Text(isAutoSplit ? 'SPLIT' : 'TYPE', style: headerStyle)),
                   Expanded(child: Text('DIST', style: headerStyle)),
                   Expanded(child: Text('TIME', style: headerStyle)),
@@ -792,7 +810,9 @@ class _SplitsTable extends StatelessWidget {
                 } else if (seg.isRest) {
                   typeLabel = 'Rest';
                 } else if (seg.targetHrZone != null) {
-                  typeLabel = 'Z${seg.targetHrZone}';
+                  typeLabel = hr_zones
+                      .zoneDisplayInfo(seg.targetHrZone!, zoneSystem)
+                      .name;
                 } else {
                   typeLabel = seg.durationType == DurationType.time
                       ? 'Free'
@@ -807,20 +827,14 @@ class _SplitsTable extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // # with color indicator
                     SizedBox(
-                      width: 28,
+                      width: 36,
                       child: Row(
                         children: [
-                          Container(
-                            width: 4,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
+                          HrZoneDonut(
+                            timeInZone: tizBySegment[segIndex] ?? const {},
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text('${i + 1}', style: cellStyle),
                         ],
                       ),

@@ -10,6 +10,7 @@ import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';
 import { BuilderHeader } from '@/components/ui/builder-header';
 import { BuilderSegmentItem, SEGMENT_GRID_COLS } from '@/components/ui/builder-segment-item';
+import { HrZoneLegend } from '@/components/ui/hr-zone-legend';
 import { validateWorkout } from '@/lib/utils/builder-validation';
 import { inferWorkoutType } from '@/lib/utils/workout';
 import { Plus, Save, Loader2, Dumbbell } from 'lucide-react';
@@ -308,6 +309,10 @@ export default function BuilderPage() {
           {/* Stats */}
           <div className="mb-6">
             <StatsBar segments={segments} ftpWatts={ftpWatts} />
+          </div>
+
+          <div className="mb-4">
+            <HrZoneLegend zoneSystem={profile?.zone_system ?? 'rowing'} />
           </div>
 
           {/* Segment list */}

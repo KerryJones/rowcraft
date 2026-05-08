@@ -117,6 +117,32 @@ export function parsePace(value: string): number | null {
 }
 
 /**
+ * Parse a duration string (m:ss or mm:ss) to seconds.
+ * Bare integers are accepted and treated as seconds.
+ * Returns null if the string is invalid.
+ * Example: "1:30" -> 90, "12:00" -> 720, "45" -> 45
+ */
+export function parseDuration(value: string): number | null {
+	const trimmed = value.trim();
+	if (trimmed === '') return null;
+	if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10);
+	const hms = trimmed.match(/^(\d+):(\d{1,2}):(\d{1,2})$/);
+	if (hms) {
+		const [, h, m, s] = hms;
+		const mm = parseInt(m, 10);
+		const ss = parseInt(s, 10);
+		if (mm >= 60 || ss >= 60) return null;
+		return parseInt(h, 10) * 3600 + mm * 60 + ss;
+	}
+	const ms = trimmed.match(/^(\d+):(\d{1,2})$/);
+	if (!ms) return null;
+	const [, mins, secs] = ms;
+	const s = parseInt(secs, 10);
+	if (s >= 60) return null;
+	return parseInt(mins, 10) * 60 + s;
+}
+
+/**
  * Get Tailwind CSS classes for a workout type badge.
  */
 const WORKOUT_TYPE_BADGE_COLORS: Record<string, string> = {

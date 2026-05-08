@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { ChevronUp, ChevronDown, Copy, Trash2 } from 'lucide-react';
 import type { WorkoutSegment, DurationType } from '@/lib/types';
-import { formatPace } from '@/lib/utils/format';
+import { formatDuration, formatPace, parseDuration } from '@/lib/utils/format';
 import { resolveIntensityToPace, getEffectiveFtp, intensityToHrZone } from '@/lib/utils/ftp';
 import { getSegmentDisplayColor } from '@/lib/utils/segment-color';
 import { Switch } from '@/components/ui/switch';
@@ -10,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 export const SEGMENT_GRID_COLS = '2rem 2.5rem 4.5rem 8rem 9rem 3.5rem';
 
 const DURATION_UNIT_LABELS: Record<DurationType, string> = {
-	time: 's',
+	time: '',
 	distance: 'm',
 	calories: 'cal',
 };
@@ -124,19 +125,27 @@ export function BuilderSegmentItem({
 				{/* Value + unit suffix */}
 				<div className="flex flex-col gap-0.5">
 					<span className="text-[10px] text-gray-500 sm:hidden">Value</span>
-					<div className="relative">
-						<input
-							type="number"
-							min={1}
-							value={segment.duration_value}
-							onChange={(e) => updateField('duration_value', Math.max(1, parseInt(e.target.value, 10) || 1))}
-							aria-label={`Segment ${index + 1} duration value`}
-							className="w-full rounded border border-gray-700 bg-gray-800/80 py-1 pl-1.5 pr-7 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+					{segment.duration_type === 'time' ? (
+						<TimeDurationInput
+							seconds={segment.duration_value}
+							onChange={(secs) => updateField('duration_value', secs)}
+							ariaLabel={`Segment ${index + 1} duration value`}
 						/>
-						<span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-500">
-							{DURATION_UNIT_LABELS[segment.duration_type]}
-						</span>
-					</div>
+					) : (
+						<div className="relative">
+							<input
+								type="number"
+								min={1}
+								value={segment.duration_value}
+								onChange={(e) => updateField('duration_value', Math.max(1, parseInt(e.target.value, 10) || 1))}
+								aria-label={`Segment ${index + 1} duration value`}
+								className="w-full rounded border border-gray-700 bg-gray-800/80 py-1 pl-1.5 pr-7 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+							/>
+							<span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[11px] text-gray-500">
+								{DURATION_UNIT_LABELS[segment.duration_type]}
+							</span>
+						</div>
+					)}
 				</div>
 
 				{/* % FTP + inline pace */}
@@ -231,5 +240,49 @@ export function BuilderSegmentItem({
 				</button>
 			</div>
 		</div>
+	);
+}
+
+interface TimeDurationInputProps {
+	seconds: number;
+	onChange: (seconds: number) => void;
+	ariaLabel: string;
+}
+
+function TimeDurationInput({ seconds, onChange, ariaLabel }: TimeDurationInputProps) {
+	const [draft, setDraft] = useState(() => formatDuration(seconds));
+	const focused = useRef(false);
+
+	useEffect(() => {
+		if (!focused.current) setDraft(formatDuration(seconds));
+	}, [seconds]);
+
+	function commit(value: string) {
+		const parsed = parseDuration(value);
+		if (parsed != null && parsed > 0) {
+			onChange(parsed);
+		} else {
+			setDraft(formatDuration(seconds));
+		}
+	}
+
+	return (
+		<input
+			type="text"
+			inputMode="numeric"
+			value={draft}
+			onChange={(e) => setDraft(e.target.value)}
+			onFocus={() => { focused.current = true; }}
+			onBlur={(e) => { focused.current = false; commit(e.target.value); }}
+			onKeyDown={(e) => {
+				if (e.key === 'Enter') {
+					e.preventDefault();
+					(e.target as HTMLInputElement).blur();
+				}
+			}}
+			placeholder="m:ss"
+			aria-label={ariaLabel}
+			className="w-full rounded border border-gray-700 bg-gray-800/80 px-1.5 py-1 text-xs text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+		/>
 	);
 }

@@ -1152,6 +1152,17 @@ class _CurrentSegment extends StatelessWidget {
     final hasSpmTarget = segment.targetStrokeRate != null;
     final data = session.pm5Data;
 
+    final String segmentName;
+    if (segment.isRest) {
+      segmentName = 'REST';
+    } else if (segment.targetHrZone != null) {
+      segmentName = zoneDisplayInfo(segment.targetHrZone!, session.zoneSystem)
+          .name
+          .toUpperCase();
+    } else {
+      segmentName = 'FREE ROW';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -1166,7 +1177,7 @@ class _CurrentSegment extends StatelessWidget {
           Row(
             children: [
               Text(
-                '${segment.isRest ? 'REST' : segment.targetHrZone != null ? 'Z${segment.targetHrZone}' : 'FREE ROW'} ${segment.durationLabel}'.trim(),
+                '$segmentName ${segment.durationLabel}'.trim(),
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
