@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.5.0...rowcraft-mobile-v0.6.0) (2026-05-06)
+
+
+### Features
+
+* add Avg HR column to history detail splits table ([a0b488a](https://github.com/KerryJones/rowcraft/commit/a0b488a23a6d6611affcf6cee2aaf28290106e40))
+* add landscape layout for active workout screen on phones ([8f26596](https://github.com/KerryJones/rowcraft/commit/8f26596c50a3b408d0003509549047cd5bbc6851))
+* harden offline-first sync with pending UI, Sentry, and lifecycle retry ([62e932e](https://github.com/KerryJones/rowcraft/commit/62e932eb69ba8471d0e4567a4bc50c40a0fda40a))
+* indicate rest segments in history split rows ([30c1e4a](https://github.com/KerryJones/rowcraft/commit/30c1e4a78bbc723e7034533b48e29fc9edc8d12d))
+
 ## [0.5.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.4.0...rowcraft-mobile-v0.5.0) (2026-05-04)
 
 
