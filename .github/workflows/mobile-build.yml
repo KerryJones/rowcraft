@@ -2,6 +2,7 @@ name: Mobile Build & Test
 
 on:
   push:
+    branches: [main]
     paths:
       - 'apps/mobile/**'
       - 'packages/shared/**'
@@ -12,6 +13,10 @@ on:
 
 env:
   FLUTTER_VERSION: '3.41.5'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -35,29 +40,3 @@ jobs:
       - name: Test
         working-directory: apps/mobile
         run: flutter test
-
-  build-android:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v5
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable'
-          cache: true
-      - name: Install dependencies
-        working-directory: apps/mobile
-        run: flutter pub get
-      - name: Generate code
-        working-directory: apps/mobile
-        run: dart run build_runner build --delete-conflicting-outputs
-      - name: Build AAB
-        working-directory: apps/mobile
-        run: flutter build appbundle --release --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-      - uses: actions/upload-artifact@v7
-        with:
-          name: android-aab
-          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
-
