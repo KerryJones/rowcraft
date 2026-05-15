@@ -8,7 +8,7 @@ LOCAL_IP := $(shell ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/nul
 LOCAL_SUPABASE_URL := http://$(LOCAL_IP):54321
 WEB_APP_URL ?= https://rowcraft.app
 
-.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed build-seeds apk install release release-build bump-version
+.PHONY: list setup setup-supabase setup-mobile setup-web dev dev-supabase dev-mobile dev-web test test-mobile test-web check clean db-reset db-push db-seed db-reseed build-seeds apk install release
 
 # ─── Help ────────────────────────────────────────────────────────────────────
 
@@ -41,8 +41,7 @@ list:
 	@echo "Build:"
 	@echo "  make build-seeds      Generate SQL seeds from YAML workout definitions"
 	@echo "  make apk              Build Android APK"
-	@echo "  make release          Show manual release runbook + current state"
-	@echo "  make release-build    Build signed AAB for Play Store (releases/*.aab)"
+	@echo "  make release          Build signed AAB for Play Store"
 	@echo ""
 	@echo "Utilities:"
 	@echo "  make clean            Clean all build artifacts"
@@ -188,7 +187,7 @@ bump-version:
 	sed -i '' "s/+$$CURRENT/+$$NEXT/" pubspec.yaml && \
 	echo "versionCode: $$CURRENT → $$NEXT"
 
-release-build:
+release: bump-version
 	cd apps/mobile && dart run build_runner build --delete-conflicting-outputs
 	cd apps/mobile && flutter build appbundle --release \
 		--dart-define=SUPABASE_URL=$(SUPABASE_URL) \
@@ -203,31 +202,3 @@ release-build:
 	@VERSION=$$(grep '^version:' apps/mobile/pubspec.yaml | sed 's/version: //') && \
 	cp apps/mobile/build/app/outputs/bundle/release/app-release.aab "releases/rowcraft-$$VERSION.aab" && \
 	echo "AAB at releases/rowcraft-$$VERSION.aab"
-
-release:
-	$(eval LAST_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null))
-	@echo "RowCraft release runbook"
-	@echo "========================"
-	@echo ""
-	@echo "Current version:  $$(grep '^version:' apps/mobile/pubspec.yaml | sed 's/version: //')"
-	@echo "Last git tag:     $(if $(LAST_TAG),$(LAST_TAG),(none))"
-	@echo ""
-	@echo "Commits since last tag (apps/mobile, packages/shared):"
-	@$(if $(LAST_TAG),git log $(LAST_TAG)..HEAD --oneline -- apps/mobile packages/shared,echo "  (no tags found)")
-	@echo ""
-	@echo "Full procedure: docs/releasing.md"
-	@echo ""
-	@echo "Mechanical sub-targets:"
-	@echo "  make release-build   # builds signed AAB → releases/rowcraft-X.Y.Z+B.aab"
-	@echo "  make bump-version    # bumps +buildnum only (for AAB re-rolls of same semver)"
-	@echo ""
-	@echo "Manual checklist (abridged — see docs/releasing.md for full detail):"
-	@echo "  1. Bump version in apps/mobile/pubspec.yaml (X.Y.Z and +buildnum)"
-	@echo "  2. Update apps/mobile/CHANGELOG.md"
-	@echo "  3. Update .release-please-manifest.json"
-	@echo "  4. git commit -am 'chore: release rowcraft-mobile X.Y.Z'"
-	@echo "  5. git tag rowcraft-mobile-vX.Y.Z"
-	@echo "  6. make release-build"
-	@echo "  7. git push && git push origin rowcraft-mobile-vX.Y.Z"
-	@echo "  8. gh release create rowcraft-mobile-vX.Y.Z releases/rowcraft-X.Y.Z+B.aab"
-	@echo "  9. Upload AAB to Play Console alpha track"
