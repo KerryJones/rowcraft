@@ -86,5 +86,6 @@ Read the relevant doc before starting a task. Don't pre-load all of them.
 | `docs/architecture.md` | System overview, data flows, tech stack |
 | `docs/database.md` | Schema, migrations, tables, RLS policies |
 | `docs/key-files.md` | File map with descriptions |
+| `docs/releasing.md` | Manual release runbook (release-please disabled) |
 
 After changing a subsystem, update the relevant `docs/` file. After changing a behavioral rule, update CLAUDE.md.
