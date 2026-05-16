@@ -100,3 +100,7 @@ make build-seeds        # regenerate SQL seeds from YAML workout definitions
 ## Pre-Built Workout Library
 
 ~137 workouts ship in `packages/shared/workouts/`, organized by category. Includes tests & benchmarks (2K, 5K, 10K, Half Marathon, FTP), Pete Plan, Wolverine Plan, and British Rowing sessions.
+
+## License
+
+**Source-available.** This repository is publicly visible for transparency. All rights reserved — no license granted for commercial use, redistribution, or derivative works.
