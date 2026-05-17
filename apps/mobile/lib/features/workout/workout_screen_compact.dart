@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -7,10 +9,12 @@ import '../../app/adaptive.dart';
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../services/local_db.dart';
+import '../../services/settings_service.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/hr_zones.dart';
 import '../../widgets/hr_zone_badge.dart';
 import 'hr_zone_gauge.dart';
+import 'widgets/pulsing_heart_icon.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
 import 'workout_screen.dart';
@@ -96,6 +100,34 @@ class _WorkoutScreenCompactBodyState
   bool _paceShowAvg = false;
   bool _hrShowAvg = false;
   bool _calShowDistance = true;
+  Timer? _calRotateTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCalRotate();
+  }
+
+  @override
+  void dispose() {
+    _calRotateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCalRotate() {
+    _calRotateTimer?.cancel();
+    _calRotateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) setState(() => _calShowDistance = !_calShowDistance);
+    });
+  }
+
+  void _onCalTap() {
+    setState(() => _calShowDistance = !_calShowDistance);
+    _calRotateTimer?.cancel();
+    _calRotateTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted) _startCalRotate();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,8 +262,7 @@ class _WorkoutScreenCompactBodyState
                 child: _CaloriesTile(
                   session: session,
                   showDistance: _calShowDistance,
-                  onTap: () => setState(
-                      () => _calShowDistance = !_calShowDistance),
+                  onTap: _onCalTap,
                 ),
               ),
             ],
@@ -242,9 +273,17 @@ class _WorkoutScreenCompactBodyState
   }
 
   Widget _heroAndGraph(WorkoutSessionState session) {
+    final showRowingAnim =
+        ref.watch(settingsProvider).value?.showRowingAnimation ?? true;
     return Column(
       children: [
-        Expanded(child: HeroSection(session: session, inlinePaceSuffix: true)),
+        Expanded(
+          child: HeroSection(
+            session: session,
+            inlinePaceSuffix: true,
+            showRowingAnimation: showRowingAnim,
+          ),
+        ),
         if (session.expandedSegments.isNotEmpty)
           WorkoutProfileGraph(session: session),
       ],
@@ -266,6 +305,8 @@ class _StatTile extends StatelessWidget {
   final IconData? icon;
   /// Optional color for the leading icon (defaults to subtleGrey).
   final Color? iconColor;
+  /// Optional pre-built leading widget — takes priority over [icon].
+  final Widget? leadingWidget;
   /// Show pagination dots when this tile has multiple views. 0-based index.
   final int? pageIndex;
   final int? pageCount;
@@ -282,6 +323,7 @@ class _StatTile extends StatelessWidget {
     this.onTap,
     this.icon,
     this.iconColor,
+    this.leadingWidget,
     this.pageIndex,
     this.pageCount,
     this.unitSuffix,
@@ -303,7 +345,10 @@ class _StatTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (icon != null) ...[
+              if (leadingWidget != null) ...[
+                leadingWidget!,
+                const SizedBox(width: 3),
+              ] else if (icon != null) ...[
                 Icon(icon, size: 11, color: iconColor ?? RowCraftTheme.subtleGrey),
                 const SizedBox(width: 3),
               ],
@@ -596,6 +641,7 @@ class _TargetSpmTile extends StatelessWidget {
     return _StatTile(
       label: 'TARGET S/M',
       value: isResting ? 'REST' : target != null ? '$target' : '--',
+      unitSuffix: (!isResting && target != null) ? 'SM' : null,
       valueColor: isResting ? RowCraftTheme.subtleGrey : target != null ? RowCraftTheme.successGreen : null,
     );
   }
@@ -616,12 +662,14 @@ class _HrTile extends StatelessWidget {
   Widget build(BuildContext context) {
     if (showAvg) {
       final avgHr = session.engineState.avgHeartRate;
+      // AVG HR variant intentionally stays static — too quick to read against
+      // a slowly-changing average.
       return _StatTile(
         label: 'AVG HR',
         value: (avgHr != null && avgHr > 0) ? '$avgHr' : '--',
         unitSuffix: (avgHr != null && avgHr > 0) ? 'bpm' : null,
-        icon: Icons.favorite,
-        iconColor: RowCraftTheme.errorRose,
+        leadingWidget:
+            const PulsingHeartIcon(color: RowCraftTheme.errorRose),
         onTap: onTap,
         pageIndex: 1,
         pageCount: 2,
@@ -636,8 +684,8 @@ class _HrTile extends StatelessWidget {
       return _StatTile(
         label: 'HR',
         value: '--',
-        icon: Icons.favorite,
-        iconColor: RowCraftTheme.errorRose,
+        leadingWidget:
+            const PulsingHeartIcon(color: RowCraftTheme.errorRose),
         onTap: onTap,
         pageIndex: 0,
         pageCount: 2,
@@ -655,8 +703,8 @@ class _HrTile extends StatelessWidget {
         value: '$hr',
         valueColor: info.color,
         unitSuffix: 'bpm',
-        icon: Icons.favorite,
-        iconColor: RowCraftTheme.errorRose,
+        leadingWidget:
+            PulsingHeartIcon(bpm: hr, color: RowCraftTheme.errorRose),
         trailing: HrZoneBadge(
           zone: zone,
           color: info.color,
@@ -682,7 +730,7 @@ class _HrTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.favorite, size: 11, color: RowCraftTheme.errorRose),
+                PulsingHeartIcon(bpm: hr, color: RowCraftTheme.errorRose),
                 const SizedBox(width: 3),
                 Text(
                   'HR',

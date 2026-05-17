@@ -20,6 +20,7 @@ import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/settings/pending_sync_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../models/workout_result.dart';
 import '../services/c2_logbook_service.dart';
 import '../app/theme.dart';
@@ -210,6 +211,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/pending-sync',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const PendingSyncScreen(),
+      ),
+
+      // Settings — full-screen, accessible from Profile
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
       ),
 
       // Bottom nav shell with 4 tabs

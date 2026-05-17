@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +9,39 @@ import '../../services/local_db.dart';
 import 'ble_permissions.dart';
 import 'hr_service.dart';
 import 'pm5_service.dart';
+
+/// Merge a newly discovered device into [list], dedup'd by non-empty
+/// case-folded name. On collision, keep whichever advertisement has the
+/// stronger RSSI (less negative). Devices with empty names fall back to
+/// dedup-by-id, so they still appear once each.
+///
+/// Polar straps rotate their BLE privacy address and advertise on both BLE
+/// and ANT+, surfacing the same physical strap as multiple `device.id`s.
+/// Name-keyed dedupe collapses those rows for the user without affecting
+/// connection logic (which still keys off `device.id`).
+///
+/// Returns `true` when [list] was modified — callers can skip state churn
+/// for redundant adverts during a busy scan.
+@visibleForTesting
+bool mergeDiscovered(List<DiscoveredDevice> list, DiscoveredDevice d) {
+  final name = d.name.trim();
+  if (name.isEmpty) {
+    if (list.any((e) => e.id == d.id)) return false;
+    list.add(d);
+    return true;
+  }
+  final key = name.toLowerCase();
+  final i = list.indexWhere((e) => e.name.trim().toLowerCase() == key);
+  if (i < 0) {
+    list.add(d);
+    return true;
+  }
+  if (d.rssi > list[i].rssi) {
+    list[i] = d;
+    return true;
+  }
+  return false;
+}
 
 /// Global PM5 service instance.
 final pm5ServiceProvider = Provider<PM5Service>((ref) {
@@ -265,10 +299,8 @@ class BleNotifier extends Notifier<BleState> {
     _pm5ScanSubscription?.cancel();
     _pm5ScanSubscription = pm5Service.scanForPM5().listen(
       (device) {
-        if (!pm5Devices.any((d) => d.id == device.id)) {
-          pm5Devices.add(device);
-          state =
-              state.copyWith(discoveredPm5Devices: List.from(pm5Devices));
+        if (mergeDiscovered(pm5Devices, device)) {
+          state = state.copyWith(discoveredPm5Devices: List.from(pm5Devices));
         }
       },
       onError: (e) {
@@ -285,8 +317,7 @@ class BleNotifier extends Notifier<BleState> {
     _hrScanSubscription?.cancel();
     _hrScanSubscription = hrService.scanForHrDevices().listen(
       (device) {
-        if (!hrDevices.any((d) => d.id == device.id)) {
-          hrDevices.add(device);
+        if (mergeDiscovered(hrDevices, device)) {
           state = state.copyWith(discoveredHrDevices: List.from(hrDevices));
         }
       },

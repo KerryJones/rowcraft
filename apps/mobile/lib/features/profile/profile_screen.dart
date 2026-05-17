@@ -266,6 +266,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       );
                     },
                   ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.settings_outlined),
+                    title: const Text('Settings'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/settings'),
+                  ),
                 ],
               ),
             ),

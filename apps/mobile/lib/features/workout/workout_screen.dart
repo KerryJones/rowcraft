@@ -10,6 +10,7 @@ import '../../app/adaptive.dart';
 import '../../app/theme.dart';
 import '../../models/workout_segment.dart';
 import '../../models/workout_time_sample.dart';
+import '../../services/settings_service.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
 import '../../utils/segment_color.dart';
@@ -408,7 +409,16 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
                   ),
 
                 // Hero section (pace, guide bar, stroke rate)
-                Expanded(child: HeroSection(session: session)),
+                Expanded(
+                  child: HeroSection(
+                    session: session,
+                    showRowingAnimation: ref
+                            .watch(settingsProvider)
+                            .value
+                            ?.showRowingAnimation ??
+                        true,
+                  ),
+                ),
 
                 // Current segment (merged target + progress)
                 _CurrentSegment(session: session),
@@ -1322,8 +1332,16 @@ class HeroSection extends StatelessWidget {
   final WorkoutSessionState session;
   /// When true, inline the "/500m" suffix on the pace row to save vertical space.
   final bool inlinePaceSuffix;
+  /// When false, suppress the rowing animation even if the current segment has
+  /// a target stroke rate. Controlled by user setting.
+  final bool showRowingAnimation;
 
-  const HeroSection({super.key, required this.session, this.inlinePaceSuffix = false});
+  const HeroSection({
+    super.key,
+    required this.session,
+    this.inlinePaceSuffix = false,
+    this.showRowingAnimation = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1424,16 +1442,6 @@ class HeroSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  if (!isWide) ...[
-                    Opacity(
-                      opacity: 0,
-                      child: Text(
-                        's/m',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                  ],
                   if (srChevron != null)
                     Text(
                       srChevron,
@@ -1455,7 +1463,7 @@ class HeroSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    's/m',
+                    'SM',
                     style: Theme.of(context)
                         .textTheme
                         .labelLarge
@@ -1482,6 +1490,7 @@ class HeroSection extends StatelessWidget {
 
         // Rowing animation widget
         Widget? rowingAnim() {
+          if (!showRowingAnimation) return null;
           if (segment?.targetStrokeRate == null) return null;
           return RowingAnimation(
             strokeRate: segment!.targetStrokeRate!,
