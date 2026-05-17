@@ -635,6 +635,40 @@ class SupabaseService {
     }
   }
 
+  /// Remove a plan session's completion. No-op if not currently completed.
+  ///
+  /// Shares the same read-modify-write caveat as [completePlanSession];
+  /// see the comment above that method.
+  Future<void> uncompletePlanSession(
+    String planId,
+    int week,
+    int session,
+  ) async {
+    try {
+      final userId = currentUserId;
+      if (userId == null) throw StateError('Not authenticated');
+
+      final existing = await getPlanProgress(planId);
+      if (existing == null || !existing.isCompleted(week, session)) return;
+
+      final filtered = existing.completedSessions
+          .where((cs) => !(cs.week == week && cs.session == session))
+          .map((cs) => cs.toJson())
+          .toList();
+
+      await _client
+          .from('user_plan_progress')
+          .update({
+            'completed_sessions': filtered,
+            'last_viewed_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', existing.id);
+    } catch (e, stack) {
+      _log('uncompletePlanSession', e, stack);
+      rethrow;
+    }
+  }
+
   // ── Personal Records ────────────────────────────────────────────────
 
   Future<List<PersonalRecord>> getPersonalRecords() async {

@@ -281,7 +281,7 @@ class _WeekSection extends ConsumerWidget {
                   const Divider(height: 1),
                   const SizedBox(height: 8),
                   for (int i = 0; i < week.sessions.length; i++)
-                    _SessionRow(
+                    SessionRow(
                       session: week.sessions[i],
                       weekNumber: week.weekNumber,
                       sessionIndex: i,
@@ -350,7 +350,14 @@ class _WeekProgressBar extends StatelessWidget {
   }
 }
 
-class _SessionRow extends StatelessWidget {
+/// Width reserved for the status-icon hit area (also used to indent the
+/// mini segment graph so it aligns under the session title).
+const double _kStatusIconHitSize = 48.0;
+const double _kStatusIconSize = 20.0;
+const double _kStatusIconPadding =
+    (_kStatusIconHitSize - _kStatusIconSize) / 2;
+
+class SessionRow extends ConsumerStatefulWidget {
   final PlanSession session;
   final int weekNumber;
   final int sessionIndex;
@@ -359,7 +366,8 @@ class _SessionRow extends StatelessWidget {
   final bool isNextUp;
   final Workout? workout;
 
-  const _SessionRow({
+  const SessionRow({
+    super.key,
     required this.session,
     required this.weekNumber,
     required this.sessionIndex,
@@ -370,9 +378,58 @@ class _SessionRow extends StatelessWidget {
   });
 
   @override
+  ConsumerState<SessionRow> createState() => _SessionRowState();
+}
+
+class _SessionRowState extends ConsumerState<SessionRow> {
+  bool _toggleInFlight = false;
+
+  Future<void> _toggleCompletion() async {
+    if (_toggleInFlight) return;
+    _toggleInFlight = true;
+    final service = ref.read(supabaseServiceProvider);
+    try {
+      if (widget.isCompleted) {
+        await service.uncompletePlanSession(
+            widget.planId, widget.weekNumber, widget.sessionIndex);
+      } else {
+        await service.completePlanSession(
+            widget.planId, widget.weekNumber, widget.sessionIndex, null);
+      }
+    } catch (_) {
+      // Mutation failed (e.g., offline). Invalidation below will refetch
+      // the actual server state so the icon reverts to its true value.
+    } finally {
+      _toggleInFlight = false;
+    }
+    if (!mounted) return;
+    ref.invalidate(planProgressProvider(widget.planId));
+    ref.invalidate(userPlanProgressProvider);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final session = widget.session;
+    final workout = widget.workout;
+    final planId = widget.planId;
+    final weekNumber = widget.weekNumber;
+    final sessionIndex = widget.sessionIndex;
+    final isCompleted = widget.isCompleted;
+    final isNextUp = widget.isNextUp;
     final workoutTitle = workout?.title ?? session.dayLabel;
+
+    final Widget statusIcon;
+    if (isCompleted) {
+      statusIcon = const Icon(Icons.check_circle,
+          size: _kStatusIconSize, color: RowCraftTheme.successGreen);
+    } else if (isNextUp) {
+      statusIcon = const Icon(Icons.play_circle_filled,
+          size: _kStatusIconSize, color: RowCraftTheme.primaryBlue);
+    } else {
+      statusIcon = const Icon(Icons.circle_outlined,
+          size: _kStatusIconSize, color: RowCraftTheme.subtleGrey);
+    }
 
     return InkWell(
       onTap: () {
@@ -404,18 +461,20 @@ class _SessionRow extends StatelessWidget {
           children: [
             Row(
               children: [
-                // Status icon
-                if (isCompleted)
-                  const Icon(Icons.check_circle,
-                      size: 20, color: RowCraftTheme.successGreen)
-                else if (isNextUp)
-                  const Icon(Icons.play_circle_filled,
-                      size: 20, color: RowCraftTheme.primaryBlue)
-                else
-                  const Icon(Icons.circle_outlined,
-                      size: 20, color: RowCraftTheme.subtleGrey),
-                const SizedBox(width: 12),
-                // Session info
+                // Opaque hit-test absorbs the tap so the outer InkWell
+                // does not also fire and navigate.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggleCompletion,
+                  child: Tooltip(
+                    message:
+                        isCompleted ? 'Mark as not done' : 'Mark as done',
+                    child: Padding(
+                      padding: const EdgeInsets.all(_kStatusIconPadding),
+                      child: statusIcon,
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,20 +499,21 @@ class _SessionRow extends StatelessWidget {
                 ),
                 // Duration + difficulty
                 if (workout != null) ...[
-                  _WorkoutMeta(workout: workout!),
+                  _WorkoutMeta(workout: workout),
                 ],
                 const SizedBox(width: 4),
                 const Icon(Icons.chevron_right, size: 20,
                     color: RowCraftTheme.subtleGrey),
               ],
             ),
-            // Mini segment graph
+            // Indent so the graph aligns under the session title (past the
+            // status-icon hit area).
             if (workout != null) ...[
               const SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.only(left: 32),
+                padding: const EdgeInsets.only(left: _kStatusIconHitSize),
                 child: WorkoutGraph(
-                    segments: workout!.segments, height: 24),
+                    segments: workout.segments, height: 24),
               ),
             ],
           ],
