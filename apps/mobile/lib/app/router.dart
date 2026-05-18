@@ -23,6 +23,8 @@ import '../features/settings/pending_sync_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../models/workout_result.dart';
 import '../services/c2_logbook_service.dart';
+import '../utils/time_in_zone.dart';
+import '../widgets/hr_zone_donut.dart';
 import '../app/theme.dart';
 import 'shell_screen.dart';
 
@@ -354,6 +356,12 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
     final result = widget.result;
     final theme = Theme.of(context);
     final c2LinkedAsync = ref.watch(c2LinkedProvider);
+    final profile = ref.watch(profileProvider).value;
+    final maxHr = profile?.maxHeartRate ?? 190;
+    final restingHr = profile?.restingHeartRate;
+    final summaryTiz = timeInZone(result.timeSamples, restingHr, maxHr);
+    final tizBySegment =
+        timeInZoneBySegment(result.timeSamples, restingHr, maxHr);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -365,14 +373,34 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  result.displayName,
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDateTime(result.startedAt),
-                  style: theme.textTheme.bodySmall,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            result.displayName,
+                            style: theme.textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatDateTime(result.startedAt),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (summaryTiz.isNotEmpty) ...[
+                      const SizedBox(width: 12),
+                      HrZoneDonut(
+                        timeInZone: summaryTiz,
+                        size: 48,
+                        strokeWidth: 6,
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 16),
                 // Metrics grid
@@ -472,7 +500,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
               padding: const EdgeInsets.all(12),
               child: Table(
                 columnWidths: const {
-                  0: FixedColumnWidth(64),
+                  0: FixedColumnWidth(88),
                   1: FlexColumnWidth(),
                   2: FlexColumnWidth(),
                   3: FlexColumnWidth(),
@@ -493,7 +521,12 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                   for (final (i, split) in result.splits.indexed)
                     TableRow(
                       children: [
-                        _IndexCell(index: i + 1, isRest: split.isRest),
+                        _IndexCell(
+                          index: i + 1,
+                          isRest: split.isRest,
+                          timeInZone:
+                              tizBySegment[split.intervalIndex] ?? const {},
+                        ),
                         _TableCell('${split.distance.toInt()}m',
                             isRest: split.isRest),
                         _TableCell(split.paceFormatted, isRest: split.isRest),
@@ -601,8 +634,13 @@ class _TableCell extends StatelessWidget {
 class _IndexCell extends StatelessWidget {
   final int index;
   final bool isRest;
+  final Map<int, double> timeInZone;
 
-  const _IndexCell({required this.index, required this.isRest});
+  const _IndexCell({
+    required this.index,
+    required this.isRest,
+    this.timeInZone = const {},
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -614,6 +652,8 @@ class _IndexCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
+          HrZoneDonut(timeInZone: timeInZone, size: 18, strokeWidth: 3),
+          const SizedBox(width: 6),
           Text(
             '$index',
             style: theme.textTheme.bodySmall?.copyWith(color: indexColor),

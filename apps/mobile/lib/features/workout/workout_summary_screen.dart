@@ -16,7 +16,7 @@ import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
 import '../../utils/hr_zones.dart' as hr_zones;
 import '../../utils/segment_color.dart';
-import '../../utils/time_in_zone.dart';
+import '../../utils/time_in_zone.dart' show timeInZone, timeInZoneBySegment;
 import '../../models/workout_time_sample.dart';
 import '../../widgets/discard_workout_dialog.dart';
 import '../../widgets/hr_zone_donut.dart';
@@ -130,22 +130,39 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent>
 
                 const SizedBox(height: 20),
 
-                // HR zone distribution bar (time spent in each zone)
+                // HR zone distribution: summary donut + horizontal stacked bar
                 if (hasHrData) ...[
                   const _SectionHeader(title: 'HR ZONE DISTRIBUTION'),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: SizedBox(
-                      height: 48,
-                      child: CustomPaint(
-                        size: const Size(double.infinity, 48),
-                        painter: _HrZoneDistributionPainter(
-                          samples: timeSamples,
-                          maxHr: maxHr,
-                          restingHr: session.restingHeartRate,
-                          zoneSystem: session.zoneSystem,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        HrZoneDonut(
+                          timeInZone: timeInZone(
+                            timeSamples,
+                            session.restingHeartRate,
+                            maxHr,
+                          ),
+                          size: 56,
+                          strokeWidth: 8,
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: CustomPaint(
+                              size: const Size(double.infinity, 48),
+                              painter: _HrZoneDistributionPainter(
+                                samples: timeSamples,
+                                maxHr: maxHr,
+                                restingHr: session.restingHeartRate,
+                                zoneSystem: session.zoneSystem,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 20),

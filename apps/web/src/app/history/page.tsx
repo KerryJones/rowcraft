@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { createSupabaseServer, requireAuth } from '@/lib/supabase/server';
 import type { WorkoutResult } from '@/lib/types';
-import { HistoryClient } from './history-client';
+import { HistoryClient, type HrProfile } from './history-client';
 
 export const metadata: Metadata = {
   title: 'History — RowCraft',
@@ -12,13 +12,24 @@ export default async function HistoryPage() {
   const user = await requireAuth();
   const supabase = await createSupabaseServer();
 
-  const { data: results } = await supabase
-    .from('workout_results')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('started_at', { ascending: false });
+  const [{ data: results }, { data: profile }] = await Promise.all([
+    supabase
+      .from('workout_results')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('started_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('max_heart_rate, resting_heart_rate')
+      .eq('id', user.id)
+      .maybeSingle(),
+  ]);
 
   const workoutResults: WorkoutResult[] = results ?? [];
+  const hrProfile: HrProfile = {
+    maxHr: profile?.max_heart_rate ?? null,
+    restingHr: profile?.resting_heart_rate ?? null,
+  };
 
   // Batch-fetch workout titles
   const workoutIds = [
@@ -43,5 +54,11 @@ export default async function HistoryPage() {
     }
   }
 
-  return <HistoryClient results={workoutResults} workoutTitles={workoutTitles} />;
+  return (
+    <HistoryClient
+      results={workoutResults}
+      workoutTitles={workoutTitles}
+      hrProfile={hrProfile}
+    />
+  );
 }

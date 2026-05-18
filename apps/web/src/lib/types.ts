@@ -73,6 +73,17 @@ export interface SplitData {
 	is_rest?: boolean;
 }
 
+/** Compact time-series sample stored in `workout_results.time_samples` JSONB.
+ *  Keys match the mobile producer (workout_time_sample.dart::toJson). */
+export interface WorkoutTimeSample {
+	t: number; // ms from start
+	d: number; // meters
+	p: number; // pace tenths/500m
+	spm: number;
+	hr?: number;
+	si: number; // segment index
+}
+
 export interface WorkoutResult {
 	id: string;
 	user_id: string;
@@ -87,6 +98,7 @@ export interface WorkoutResult {
 	avg_watts: number;
 	calories: number | null;
 	splits: SplitData[] | null;
+	time_samples?: WorkoutTimeSample[] | null;
 	synced_to_c2: boolean;
 	created_at: string;
 }

@@ -8,7 +8,7 @@ const HR_ZONE_COLORS: Record<number, string> = {
   5: '#EF5350', // VO2 max — red
 };
 
-const SEGMENT_REST_COLOR = '#6b7280'; // gray-500
+export const SEGMENT_REST_COLOR = '#6b7280'; // gray-500
 
 /** Color for a segment based on its stored HR zone. No zone = gray. */
 export function getSegmentDisplayColor(segment: WorkoutSegment): string {
