@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.6.0...rowcraft-mobile-v0.7.0) (2026-05-16)
+
+
+### Features
+
+* HR zone donuts, m:ss duration input, zone legend, system-aware labels ([74de43a](https://github.com/KerryJones/rowcraft/commit/74de43a4c752a5744dec9d4ddfa38436c9647192))
+
 ## [0.6.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.5.0...rowcraft-mobile-v0.6.0) (2026-05-06)
 
 
