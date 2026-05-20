@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.8.0...rowcraft-mobile-v0.9.0) (2026-05-20)
+
+
+### Features
+
+* dedicated Zone column for HR-zone donut in splits tables ([e70097d](https://github.com/KerryJones/rowcraft/commit/e70097d2fdb7390e30f86d0715e1e061a888b211))
+
 ## [0.8.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.7.0...rowcraft-mobile-v0.8.0) (2026-05-18)
 
 
