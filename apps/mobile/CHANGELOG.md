@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.7.0...rowcraft-mobile-v0.8.0) (2026-05-18)
+
+
+### Features
+
+* HR-zone donuts on workout history + web splits column headers ([c512666](https://github.com/KerryJones/rowcraft/commit/c512666c28818f394354b48909bbba683f7d7556))
+* tap status icon to toggle plan-session completion ([27d0e27](https://github.com/KerryJones/rowcraft/commit/27d0e276e7497157b611c5ff532c2295760b6d3d))
+* workout screen polish, settings toggle, Polar BLE de-dupe ([d9f9336](https://github.com/KerryJones/rowcraft/commit/d9f9336fa0cc70f7c98c7af0e962115cf0ae1d3a))
+
 ## [0.7.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.6.0...rowcraft-mobile-v0.7.0) (2026-05-16)
 
 
