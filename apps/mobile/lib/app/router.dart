@@ -500,12 +500,13 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
               padding: const EdgeInsets.all(12),
               child: Table(
                 columnWidths: const {
-                  0: FixedColumnWidth(88),
+                  0: FixedColumnWidth(64),
                   1: FlexColumnWidth(),
                   2: FlexColumnWidth(),
                   3: FlexColumnWidth(),
-                  4: FlexColumnWidth(),
+                  4: FixedColumnWidth(28),
                   5: FlexColumnWidth(),
+                  6: FlexColumnWidth(),
                 },
                 children: [
                   const TableRow(
@@ -514,6 +515,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                       _TableHeader('Dist'),
                       _TableHeader('Pace'),
                       _TableHeader('S/M'),
+                      _TableHeader('Zone'),
                       _TableHeader('HR'),
                       _TableHeader('Watts'),
                     ],
@@ -524,14 +526,16 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                         _IndexCell(
                           index: i + 1,
                           isRest: split.isRest,
-                          timeInZone:
-                              tizBySegment[split.intervalIndex] ?? const {},
                         ),
                         _TableCell('${split.distance.toInt()}m',
                             isRest: split.isRest),
                         _TableCell(split.paceFormatted, isRest: split.isRest),
                         _TableCell('${split.avgStrokeRate}',
                             isRest: split.isRest),
+                        _ZoneCell(
+                          timeInZone:
+                              tizBySegment[split.intervalIndex] ?? const {},
+                        ),
                         _TableCell(
                           (split.avgHeartRate ?? 0) > 0
                               ? '${split.avgHeartRate}'
@@ -634,12 +638,10 @@ class _TableCell extends StatelessWidget {
 class _IndexCell extends StatelessWidget {
   final int index;
   final bool isRest;
-  final Map<int, double> timeInZone;
 
   const _IndexCell({
     required this.index,
     required this.isRest,
-    this.timeInZone = const {},
   });
 
   @override
@@ -652,8 +654,6 @@ class _IndexCell extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          HrZoneDonut(timeInZone: timeInZone, size: 18, strokeWidth: 3),
-          const SizedBox(width: 6),
           Text(
             '$index',
             style: theme.textTheme.bodySmall?.copyWith(color: indexColor),
@@ -673,6 +673,26 @@ class _IndexCell extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _ZoneCell extends StatelessWidget {
+  final Map<int, double> timeInZone;
+
+  const _ZoneCell({required this.timeInZone});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Center(
+        child: HrZoneDonut(
+          timeInZone: timeInZone,
+          size: 18,
+          strokeWidth: 3,
+        ),
       ),
     );
   }

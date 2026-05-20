@@ -795,12 +795,13 @@ class _SplitsTable extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Row(
                 children: [
-                  SizedBox(width: 36, child: Text('#', style: headerStyle)),
+                  SizedBox(width: 24, child: Text('#', style: headerStyle)),
                   SizedBox(width: 48, child: Text(isAutoSplit ? 'SPLIT' : 'TYPE', style: headerStyle)),
                   Expanded(child: Text('DIST', style: headerStyle)),
                   Expanded(child: Text('TIME', style: headerStyle)),
                   Expanded(child: Text('PACE', style: headerStyle)),
                   SizedBox(width: 36, child: Text('S/M', style: headerStyle)),
+                  SizedBox(width: 28, child: Text('ZONE', style: headerStyle)),
                   SizedBox(width: 32, child: Text('HR', style: headerStyle)),
                 ],
               ),
@@ -845,16 +846,8 @@ class _SplitsTable extends StatelessWidget {
                 child: Row(
                   children: [
                     SizedBox(
-                      width: 36,
-                      child: Row(
-                        children: [
-                          HrZoneDonut(
-                            timeInZone: tizBySegment[segIndex] ?? const {},
-                          ),
-                          const SizedBox(width: 6),
-                          Text('${i + 1}', style: cellStyle),
-                        ],
-                      ),
+                      width: 24,
+                      child: Text('${i + 1}', style: cellStyle),
                     ),
                     SizedBox(
                       width: 48,
@@ -884,6 +877,16 @@ class _SplitsTable extends StatelessWidget {
                     SizedBox(
                       width: 36,
                       child: Text('${split.avgStrokeRate}', style: cellStyle),
+                    ),
+                    SizedBox(
+                      width: 28,
+                      child: Center(
+                        child: HrZoneDonut(
+                          timeInZone: tizBySegment[segIndex] ?? const {},
+                          size: 18,
+                          strokeWidth: 3,
+                        ),
+                      ),
                     ),
                     SizedBox(
                       width: 32,

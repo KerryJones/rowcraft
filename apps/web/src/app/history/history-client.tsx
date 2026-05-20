@@ -174,6 +174,7 @@ const SPLIT_COL = {
   dist: 'w-[3.5rem] text-right',
   time: 'w-[3.5rem] text-right',
   spm: 'w-[3rem] text-right',
+  zone: 'w-7 inline-flex justify-center',
   bpm: 'w-[3rem] text-right',
 } as const;
 
@@ -197,7 +198,6 @@ function SplitDetails({ splits, tizBySegment }: SplitDetailsProps) {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
           <span className="flex items-center gap-2">
-            <span className="inline-block w-4" aria-hidden />
             {isAutoSplit ? 'Split' : 'Segment'}
           </span>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -205,6 +205,7 @@ function SplitDetails({ splits, tizBySegment }: SplitDetailsProps) {
             <span className={SPLIT_COL.dist}>Dist</span>
             <span className={SPLIT_COL.time}>Time</span>
             <span className={SPLIT_COL.spm}>SPM</span>
+            <span className={SPLIT_COL.zone}>Zone</span>
             <span className={SPLIT_COL.bpm}>BPM</span>
           </div>
         </div>
@@ -224,17 +225,17 @@ function SplitDetails({ splits, tizBySegment }: SplitDetailsProps) {
                 isRest ? 'text-gray-500' : 'text-gray-300'
               }`}
             >
-              <span className="flex items-center gap-2">
-                <HrZoneDonut timeInZone={tiz} size={16} strokeWidth={3} />
-                <span className={isRest ? 'font-medium' : 'text-gray-400'}>
-                  {label}
-                </span>
+              <span className={isRest ? 'font-medium' : 'text-gray-400'}>
+                {label}
               </span>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono">
                 <span className={SPLIT_COL.pace}>{formatPace(split.avg_pace)}/500m</span>
                 <span className={SPLIT_COL.dist}>{formatDistance(split.distance)}</span>
                 <span className={SPLIT_COL.time}>{formatTimeMs(split.time_ms)}</span>
                 <span className={SPLIT_COL.spm}>{split.avg_stroke_rate}spm</span>
+                <span className={SPLIT_COL.zone}>
+                  <HrZoneDonut timeInZone={tiz} size={14} strokeWidth={2} />
+                </span>
                 <span className={SPLIT_COL.bpm}>
                   {split.avg_heart_rate ? `${split.avg_heart_rate}bpm` : '—'}
                 </span>
