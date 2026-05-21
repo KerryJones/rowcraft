@@ -67,6 +67,34 @@ WorkoutDisplayMode effectiveDisplayMode(
 }
 
 // ---------------------------------------------------------------------------
+// Tile display mode (auto-cycle vs locked variants)
+// ---------------------------------------------------------------------------
+
+enum TileDisplayMode { auto, primary, secondary }
+
+TileDisplayMode advanceTileMode(TileDisplayMode current) {
+  switch (current) {
+    case TileDisplayMode.auto:
+      return TileDisplayMode.primary;
+    case TileDisplayMode.primary:
+      return TileDisplayMode.secondary;
+    case TileDisplayMode.secondary:
+      return TileDisplayMode.auto;
+  }
+}
+
+bool tileShowsSecondary(TileDisplayMode mode, bool autoShowSecondary) {
+  switch (mode) {
+    case TileDisplayMode.auto:
+      return autoShowSecondary;
+    case TileDisplayMode.primary:
+      return false;
+    case TileDisplayMode.secondary:
+      return true;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Compact body
 // ---------------------------------------------------------------------------
 
@@ -96,37 +124,32 @@ class WorkoutScreenCompactBody extends ConsumerStatefulWidget {
 class _WorkoutScreenCompactBodyState
     extends ConsumerState<WorkoutScreenCompactBody> {
   bool _segmentCountUp = false;
-  bool _totalShowRemaining = false;
-  bool _paceShowAvg = false;
-  bool _hrShowAvg = false;
-  bool _calShowDistance = true;
-  Timer? _calRotateTimer;
+  TileDisplayMode _totalMode = TileDisplayMode.auto;
+  TileDisplayMode _paceMode = TileDisplayMode.auto;
+  TileDisplayMode _hrMode = TileDisplayMode.auto;
+  TileDisplayMode _calMode = TileDisplayMode.auto;
+  bool _autoShowSecondary = false;
+  Timer? _autoRotateTimer;
 
   @override
   void initState() {
     super.initState();
-    _startCalRotate();
+    _autoRotateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      // Skip the rebuild when every tile is user-locked — nothing would change.
+      final anyAuto = _totalMode == TileDisplayMode.auto ||
+          _paceMode == TileDisplayMode.auto ||
+          _hrMode == TileDisplayMode.auto ||
+          _calMode == TileDisplayMode.auto;
+      if (!anyAuto) return;
+      setState(() => _autoShowSecondary = !_autoShowSecondary);
+    });
   }
 
   @override
   void dispose() {
-    _calRotateTimer?.cancel();
+    _autoRotateTimer?.cancel();
     super.dispose();
-  }
-
-  void _startCalRotate() {
-    _calRotateTimer?.cancel();
-    _calRotateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) setState(() => _calShowDistance = !_calShowDistance);
-    });
-  }
-
-  void _onCalTap() {
-    setState(() => _calShowDistance = !_calShowDistance);
-    _calRotateTimer?.cancel();
-    _calRotateTimer = Timer(const Duration(seconds: 10), () {
-      if (mounted) _startCalRotate();
-    });
   }
 
   @override
@@ -220,9 +243,11 @@ class _WorkoutScreenCompactBodyState
               Expanded(
                 child: _TotalTile(
                   session: session,
-                  showRemaining: _totalShowRemaining,
+                  showRemaining:
+                      tileShowsSecondary(_totalMode, _autoShowSecondary),
+                  isAuto: _totalMode == TileDisplayMode.auto,
                   onTap: () => setState(
-                      () => _totalShowRemaining = !_totalShowRemaining),
+                      () => _totalMode = advanceTileMode(_totalMode)),
                 ),
               ),
             ],
@@ -235,9 +260,11 @@ class _WorkoutScreenCompactBodyState
               Expanded(
                 child: _TargetPaceTile(
                   session: session,
-                  showAvg: _paceShowAvg,
-                  onTap: () =>
-                      setState(() => _paceShowAvg = !_paceShowAvg),
+                  showAvg:
+                      tileShowsSecondary(_paceMode, _autoShowSecondary),
+                  isAuto: _paceMode == TileDisplayMode.auto,
+                  onTap: () => setState(
+                      () => _paceMode = advanceTileMode(_paceMode)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -252,17 +279,22 @@ class _WorkoutScreenCompactBodyState
               Expanded(
                 child: _HrTile(
                   session: session,
-                  showAvg: _hrShowAvg,
-                  onTap: () =>
-                      setState(() => _hrShowAvg = !_hrShowAvg),
+                  showAvg:
+                      tileShowsSecondary(_hrMode, _autoShowSecondary),
+                  isAuto: _hrMode == TileDisplayMode.auto,
+                  onTap: () => setState(
+                      () => _hrMode = advanceTileMode(_hrMode)),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _CaloriesTile(
                   session: session,
-                  showDistance: _calShowDistance,
-                  onTap: _onCalTap,
+                  showDistance:
+                      !tileShowsSecondary(_calMode, _autoShowSecondary),
+                  isAuto: _calMode == TileDisplayMode.auto,
+                  onTap: () => setState(
+                      () => _calMode = advanceTileMode(_calMode)),
                 ),
               ),
             ],
@@ -314,6 +346,8 @@ class _StatTile extends StatelessWidget {
   final String? unitSuffix;
   /// Optional trend arrow shown before the value: '▲' or '▼'.
   final String? chevron;
+  /// Auto-cycle indicator state. `null` = no indicator.
+  final bool? isAuto;
 
   const _StatTile({
     required this.label,
@@ -328,6 +362,7 @@ class _StatTile extends StatelessWidget {
     this.pageCount,
     this.unitSuffix,
     this.chevron,
+    this.isAuto,
   });
 
   @override
@@ -362,11 +397,12 @@ class _StatTile extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              ?trailing,
-              if (showDots) ...[
-                if (trailing != null) const SizedBox(width: 4),
-                _PageDots(index: pageIndex!, count: pageCount!),
-              ],
+              _TileHeaderTrailing(
+                trailing: trailing,
+                isAuto: isAuto,
+                pageIndex: showDots ? pageIndex : null,
+                pageCount: showDots ? pageCount : null,
+              ),
             ],
           ),
           const SizedBox(height: 2),
@@ -428,6 +464,67 @@ class _StatTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: content,
+    );
+  }
+}
+
+/// Right-side ornaments shared by the tile header row in `_StatTile` and the
+/// `_HrTile` phone-only render branch. Renders any present subset of:
+/// `trailing` widget → auto-cycle indicator → pagination dots, separated by a
+/// 4px gap. Keeps the spacing rules in one place so the two render paths can't
+/// drift.
+class _TileHeaderTrailing extends StatelessWidget {
+  final Widget? trailing;
+  final bool? isAuto;
+  final int? pageIndex;
+  final int? pageCount;
+
+  const _TileHeaderTrailing({
+    this.trailing,
+    this.isAuto,
+    this.pageIndex,
+    this.pageCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final showDots =
+        pageCount != null && pageCount! > 1 && pageIndex != null;
+    final auto = isAuto;
+    final ornaments = <Widget>[
+      ?trailing,
+      if (auto != null) _AutoCycleIndicator(isAuto: auto),
+      if (showDots) _PageDots(index: pageIndex!, count: pageCount!),
+    ];
+    if (ornaments.isEmpty) return const SizedBox.shrink();
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < ornaments.length; i++) ...[
+          if (i > 0) const SizedBox(width: 4),
+          ornaments[i],
+        ],
+      ],
+    );
+  }
+}
+
+/// Tiny autorenew glyph shown next to the page dots on auto-cycle-capable
+/// tiles. Bright when the tile is in auto mode, faded when the user has
+/// locked it to a specific variant.
+class _AutoCycleIndicator extends StatelessWidget {
+  final bool isAuto;
+
+  const _AutoCycleIndicator({required this.isAuto});
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.autorenew,
+      size: 12,
+      color: isAuto
+          ? RowCraftTheme.metricWhite
+          : RowCraftTheme.subtleGrey.withValues(alpha: 0.4),
     );
   }
 }
@@ -529,17 +626,19 @@ class _SegmentTile extends StatelessWidget {
 class _TotalTile extends StatelessWidget {
   final WorkoutSessionState session;
   final bool showRemaining;
+  final bool isAuto;
   final VoidCallback onTap;
 
   const _TotalTile({
     required this.session,
     required this.showRemaining,
+    required this.isAuto,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final label = showRemaining ? 'REMAINING' : 'TOTAL';
+    final label = showRemaining ? 'REMAINING' : 'TOTAL TIME';
     final value = showRemaining
         ? remainingWorkoutLabel(session)
         : session.pm5Data.elapsedFormatted;
@@ -549,6 +648,7 @@ class _TotalTile extends StatelessWidget {
       onTap: onTap,
       pageIndex: showRemaining ? 1 : 0,
       pageCount: 2,
+      isAuto: isAuto,
     );
   }
 }
@@ -556,11 +656,13 @@ class _TotalTile extends StatelessWidget {
 class _TargetPaceTile extends StatelessWidget {
   final WorkoutSessionState session;
   final bool showAvg;
+  final bool isAuto;
   final VoidCallback onTap;
 
   const _TargetPaceTile({
     required this.session,
     required this.showAvg,
+    required this.isAuto,
     required this.onTap,
   });
 
@@ -579,6 +681,7 @@ class _TargetPaceTile extends StatelessWidget {
         onTap: onTap,
         pageIndex: 1,
         pageCount: 2,
+        isAuto: isAuto,
       );
     }
 
@@ -623,6 +726,7 @@ class _TargetPaceTile extends StatelessWidget {
       onTap: onTap,
       pageIndex: 0,
       pageCount: 2,
+      isAuto: isAuto,
     );
   }
 }
@@ -650,11 +754,13 @@ class _TargetSpmTile extends StatelessWidget {
 class _HrTile extends StatelessWidget {
   final WorkoutSessionState session;
   final bool showAvg;
+  final bool isAuto;
   final VoidCallback onTap;
 
   const _HrTile({
     required this.session,
     required this.showAvg,
+    required this.isAuto,
     required this.onTap,
   });
 
@@ -662,8 +768,6 @@ class _HrTile extends StatelessWidget {
   Widget build(BuildContext context) {
     if (showAvg) {
       final avgHr = session.engineState.avgHeartRate;
-      // AVG HR variant intentionally stays static — too quick to read against
-      // a slowly-changing average.
       return _StatTile(
         label: 'AVG HR',
         value: (avgHr != null && avgHr > 0) ? '$avgHr' : '--',
@@ -673,6 +777,7 @@ class _HrTile extends StatelessWidget {
         onTap: onTap,
         pageIndex: 1,
         pageCount: 2,
+        isAuto: isAuto,
       );
     }
 
@@ -689,6 +794,7 @@ class _HrTile extends StatelessWidget {
         onTap: onTap,
         pageIndex: 0,
         pageCount: 2,
+        isAuto: isAuto,
       );
     }
 
@@ -714,6 +820,7 @@ class _HrTile extends StatelessWidget {
         onTap: onTap,
         pageIndex: 0,
         pageCount: 2,
+        isAuto: isAuto,
       );
     }
 
@@ -742,7 +849,11 @@ class _HrTile extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const _PageDots(index: 0, count: 2),
+                _TileHeaderTrailing(
+                  isAuto: isAuto,
+                  pageIndex: 0,
+                  pageCount: 2,
+                ),
               ],
             ),
             Expanded(
@@ -768,11 +879,13 @@ class _HrTile extends StatelessWidget {
 class _CaloriesTile extends StatelessWidget {
   final WorkoutSessionState session;
   final bool showDistance;
+  final bool isAuto;
   final VoidCallback onTap;
 
   const _CaloriesTile({
     required this.session,
     required this.showDistance,
+    required this.isAuto,
     required this.onTap,
   });
 
@@ -788,8 +901,9 @@ class _CaloriesTile extends StatelessWidget {
       icon: showDistance ? Icons.straighten : Icons.local_fire_department,
       iconColor: showDistance ? null : const Color(0xFFFF9800),
       onTap: onTap,
-      pageIndex: showDistance ? 1 : 0,
+      pageIndex: showDistance ? 0 : 1,
       pageCount: 2,
+      isAuto: isAuto,
     );
   }
 }

@@ -83,7 +83,7 @@ void main() {
       );
 
       expect(find.text('SEGMENT'), findsOneWidget);
-      expect(find.text('TOTAL'), findsOneWidget);
+      expect(find.text('TOTAL TIME'), findsOneWidget);
       expect(find.text('TARGET PACE'), findsOneWidget);
       expect(find.text('TARGET S/M'), findsOneWidget);
       expect(find.text('HR'), findsOneWidget);
@@ -131,7 +131,7 @@ void main() {
       expect(find.text('2:15'), findsOneWidget);
     });
 
-    testWidgets('tile tap-cycles: TOTAL, TARGET PACE, HR, CALORIES',
+    testWidgets('tile tap-cycles: TOTAL TIME, TARGET PACE, HR, CALORIES',
         (tester) async {
       const segment = WorkoutSegment(
         durationType: DurationType.time,
@@ -175,33 +175,55 @@ void main() {
         ),
       );
 
-      // TOTAL → REMAINING
-      expect(find.text('TOTAL'), findsOneWidget);
-      await tester.tap(find.text('TOTAL'));
+      // Each tile starts in auto mode showing primary (since
+      // _autoShowSecondary starts false). Tap cycle is auto → primary →
+      // secondary → auto. First tap locks on primary (no visible change);
+      // second tap advances to secondary.
+
+      // TOTAL TIME → (lock primary) → REMAINING → (back to auto, primary)
+      expect(find.text('TOTAL TIME'), findsOneWidget);
+      await tester.tap(find.text('TOTAL TIME'));
+      await tester.pump();
+      expect(find.text('TOTAL TIME'), findsOneWidget); // primary, locked
+      await tester.tap(find.text('TOTAL TIME'));
       await tester.pump();
       expect(find.text('REMAINING'), findsOneWidget);
       // 180s segment, 25% done = 135s = 2:15 remaining (only one segment in stub)
       expect(find.text('2:15'), findsWidgets);
+      // Third tap returns to auto. _autoShowSecondary starts false, so the
+      // visible variant snaps back to primary (TOTAL TIME).
+      await tester.tap(find.text('REMAINING'));
+      await tester.pump();
+      expect(find.text('TOTAL TIME'), findsOneWidget);
 
-      // TARGET PACE → AVG PACE
+      // TARGET PACE → (lock primary) → AVG PACE
+      expect(find.text('TARGET PACE'), findsOneWidget);
+      await tester.tap(find.text('TARGET PACE'));
+      await tester.pump();
       expect(find.text('TARGET PACE'), findsOneWidget);
       await tester.tap(find.text('TARGET PACE'));
       await tester.pump();
       expect(find.text('AVG PACE'), findsOneWidget);
       expect(find.text('1:48'), findsOneWidget);
 
-      // HR → AVG HR
+      // HR → (lock primary) → AVG HR
       expect(find.text('HR'), findsOneWidget);
       // current HR is 162
       expect(find.text('162'), findsOneWidget);
       await tester.tap(find.text('HR'));
       await tester.pump();
+      expect(find.text('HR'), findsOneWidget);
+      await tester.tap(find.text('HR'));
+      await tester.pump();
       expect(find.text('AVG HR'), findsOneWidget);
       expect(find.text('155'), findsOneWidget);
 
-      // DISTANCE → CALORIES (default is distance)
+      // DISTANCE → (lock primary) → CALORIES
       expect(find.text('DISTANCE'), findsOneWidget);
       expect(find.text(session.pm5Data.distanceFormatted), findsOneWidget);
+      await tester.tap(find.text('DISTANCE'));
+      await tester.pump();
+      expect(find.text('DISTANCE'), findsOneWidget);
       await tester.tap(find.text('DISTANCE'));
       await tester.pump();
       expect(find.text('CALORIES'), findsOneWidget);
