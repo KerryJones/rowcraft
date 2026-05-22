@@ -30,6 +30,7 @@ weeks:
         workout_id: "f1000000-0000-0000-0003-000000000002"
       - day_label: "Day 3"
         workout_id: "f1000000-0000-0000-0003-000000000003"
+  # Race Week serves as the deload (Friel race-prep convention): taper volume, prime intensity, peak on race day.
   - title: "Race Week"
     sessions:
       - day_label: "Day 1"

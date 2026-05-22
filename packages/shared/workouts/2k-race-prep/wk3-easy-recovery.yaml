@@ -1,15 +1,15 @@
 id: f1000000-0000-0000-0003-000000000003
 title: "2K Prep Wk3 Easy Recovery"
-description: "Week 3: 20-minute easy recovery row at Z1."
+description: "Week 3: 20-minute easy recovery row at 55% (recovery)."
 difficulty: advanced
 tags: [2k-race-prep, recovery, week-3]
 segments:
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20
   - duration: "20:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20

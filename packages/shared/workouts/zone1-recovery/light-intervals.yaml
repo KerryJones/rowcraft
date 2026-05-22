@@ -5,7 +5,7 @@ difficulty: beginner
 tags: [recovery, intervals]
 segments:
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20
   - type: interval
     reps: 4
@@ -16,5 +16,5 @@ segments:
     rest:
       duration: "1:00"
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20

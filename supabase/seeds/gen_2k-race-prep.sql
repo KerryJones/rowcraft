@@ -4,7 +4,7 @@
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0001-000000000003',
   '2K Prep Wk1 Easy 5K',
-  'Week 1: Easy 5K at low Z2 for recovery and volume.',
+  'Week 1: Easy 5K at 70% (aerobic base) for recovery and volume.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":5000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,endurance,week-1}',
@@ -24,7 +24,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0001-000000000001',
   '2K Prep Wk1 Steady',
-  'Week 1: 30-minute steady state at Z2 to build aerobic base.',
+  'Week 1: 30-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1800,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,steady-state,week-1}',
@@ -34,7 +34,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0002-000000000003',
   '2K Prep Wk2 Easy 6K',
-  'Week 2: Easy 6K at low Z2 for recovery and volume.',
+  'Week 2: Easy 6K at 70% (aerobic base) for recovery and volume.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":6000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,endurance,week-2}',
@@ -64,9 +64,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0003-000000000003',
   '2K Prep Wk3 Easy Recovery',
-  'Week 3: 20-minute easy recovery row at Z1.',
+  'Week 3: 20-minute easy recovery row at 55% (recovery).',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,recovery,week-3}',
   true
 );
@@ -84,9 +84,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0003-000000000001',
   '2K Prep Wk3 Threshold 2x1500m',
-  'Week 3: 2x1500m at threshold intensity with 5-minute rest.',
+  'Week 3: 2x1500m at threshold (95%) with 2-minute rest. Tight rest preserves the lactate-clearance adaptation.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":1500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":1500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":1500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":1500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,threshold,week-3}',
   true
 );
@@ -94,9 +94,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'f1000000-0000-0000-0004-000000000002',
   '2K Prep Wk4 Openers',
-  'Week 4: 4x250m openers at race pace+ with full 4-minute recovery.',
+  'Week 4: 4x250m openers at race pace (112%) with 2-minute recovery. Openers prime the system; they don''t fatigue it.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":250,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{2k-race-prep,race-pace,openers,week-4}',
   true
 );

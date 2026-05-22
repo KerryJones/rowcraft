@@ -1,6 +1,6 @@
 id: f1000000-0000-0000-0003-000000000001
 title: "2K Prep Wk3 Threshold 2x1500m"
-description: "Week 3: 2x1500m at threshold intensity with 5-minute rest."
+description: "Week 3: 2x1500m at threshold (95%) with 2-minute rest. Tight rest preserves the lactate-clearance adaptation."
 difficulty: advanced
 tags: [2k-race-prep, threshold, week-3]
 segments:
@@ -14,7 +14,7 @@ segments:
       intensity: 95%
       stroke_rate: 26
     rest:
-      duration: "5:00"
+      duration: "2:00"
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

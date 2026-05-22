@@ -1,6 +1,6 @@
 id: e1000000-0000-0000-0003-000000000001
 title: "FTP Builder Wk3 Threshold"
-description: "Week 3: 5x5min threshold intervals at Z4 with 2-minute rest."
+description: "Week 3: 5x5min threshold intervals at 95% with 2-minute rest."
 difficulty: intermediate
 tags: [ftp-builder, threshold, week-3]
 segments:

@@ -5,11 +5,11 @@ difficulty: beginner
 tags: [recovery, distance]
 segments:
   - duration: 500m
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20
   - duration: 3000m
     intensity: 55%
     stroke_rate: 20
   - duration: 500m
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20

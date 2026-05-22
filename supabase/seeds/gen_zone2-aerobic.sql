@@ -44,9 +44,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   '20000000-0000-0000-0000-000000000003',
   'Negative Split 30',
-  'Start easy, finish stronger. Build into the second half.',
+  'Aerobic steady state at 70%. Hold the same pace throughout; lift the stroke rate from 20 to 22 spm in the second half.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":900,"target_intensity":66,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":600,"target_intensity":74,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":900,"target_intensity":70,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":600,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{aerobic,negative-split}',
   true
 );
@@ -94,9 +94,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   '20000000-0000-0000-0000-00000000000a',
   'Two-Pace Aerobic',
-  'Alternate moderate and easy aerobic blocks.',
+  'Alternate aerobic (70%) and tempo (83%) 5-minute blocks. Four pairs between warmup and cooldown.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":66,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":74,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":66,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":74,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":66,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":74,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":66,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":74,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{aerobic,steady-state}',
   true
 );

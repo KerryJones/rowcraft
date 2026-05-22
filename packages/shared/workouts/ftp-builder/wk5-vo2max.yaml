@@ -1,6 +1,6 @@
 id: e1000000-0000-0000-0005-000000000002
 title: "FTP Builder Wk5 VO2max"
-description: "Week 5: 4x4min VO2max intervals at Z5 with 4-minute rest."
+description: "Week 5: 4x4min VO2max (112%) intervals with 3-minute rest. Near-1:1 work:rest, capped at the 3:00 PM5 ceiling."
 difficulty: intermediate
 tags: [ftp-builder, vo2max, week-5]
 segments:
@@ -14,7 +14,7 @@ segments:
       intensity: 112%
       stroke_rate: 30
     rest:
-      duration: "4:00"
+      duration: "3:00"
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

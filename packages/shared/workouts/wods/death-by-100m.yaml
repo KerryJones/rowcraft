@@ -20,16 +20,16 @@ segments:
     stroke_rate: 26
   - duration: "30"
   - duration: 100m
-    intensity: 102%
-    stroke_rate: 28
+    intensity: 112%
+    stroke_rate: 30
   - duration: "30"
   - duration: 100m
     intensity: 112%
     stroke_rate: 30
   - duration: "30"
   - duration: 100m
-    intensity: 122%
-    stroke_rate: 30
+    intensity: 120%
+    stroke_rate: 32
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

@@ -11,8 +11,8 @@ segments:
     reps: 4
     work:
       duration: "1:00"
-      intensity: 105%
-      stroke_rate: 28
+      intensity: 112%
+      stroke_rate: 30
     rest:
       duration: "3:00"
   - duration: "5:00"

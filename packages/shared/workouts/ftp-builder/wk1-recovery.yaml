@@ -1,15 +1,15 @@
 id: e1000000-0000-0000-0001-000000000003
 title: "FTP Builder Wk1 Recovery"
-description: "Week 1: Easy 20-minute recovery row at Z1."
+description: "Week 1: Easy 20-minute recovery row at 55% (recovery)."
 difficulty: intermediate
 tags: [ftp-builder, recovery, week-1]
 segments:
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20
   - duration: "20:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20

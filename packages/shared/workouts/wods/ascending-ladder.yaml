@@ -1,6 +1,6 @@
 id: 60000000-0000-0000-0000-000000000008
 title: "Ascending Ladder"
-description: "1 to 5 minute ladder. Rest equals work."
+description: "1 to 5 minute ladder. Rest equals work, capped at 3 minutes."
 difficulty: advanced
 tags: [ladder, ascending, time]
 segments:
@@ -22,11 +22,11 @@ segments:
   - duration: "4:00"
     intensity: 95%
     stroke_rate: 26
-  - duration: "4:00"
+  - duration: "3:00"
   - duration: "5:00"
     intensity: 95%
     stroke_rate: 26
-  - duration: "5:00"
+  - duration: "3:00"
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

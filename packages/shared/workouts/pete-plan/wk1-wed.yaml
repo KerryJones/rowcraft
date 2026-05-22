@@ -1,6 +1,6 @@
 id: b0000000-0000-0000-0000-000000000002
 title: "Pete Plan Wk1 Wed — 8x500m"
-description: "Week 1 Wednesday: 8x500m intervals with 3:30 rest."
+description: "Week 1 Wednesday: 8x500m intervals with 2-minute rest. Pete Plan canonical."
 difficulty: beginner
 tags: [pete-plan, intervals, speed, week-1]
 segments:
@@ -14,7 +14,7 @@ segments:
       intensity: 95%
       stroke_rate: 26
     rest:
-      duration: "3:30"
+      duration: "2:00"
   - duration: "3:00"
     intensity: 60%
     stroke_rate: 20

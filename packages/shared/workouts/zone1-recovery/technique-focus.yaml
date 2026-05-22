@@ -5,7 +5,7 @@ difficulty: beginner
 tags: [recovery, technique]
 segments:
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20
   - duration: "2:00"
     intensity: 55%
@@ -44,5 +44,5 @@ segments:
     intensity: 55%
     stroke_rate: 20
   - duration: "3:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20

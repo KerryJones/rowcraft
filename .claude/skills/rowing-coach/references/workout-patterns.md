@@ -73,7 +73,7 @@ segments:
     stroke_rate: 20
 ```
 
-**Closest reference:** `packages/shared/workouts/ftp-builder/wk5-threshold.yaml` (currently has a rest-cap violation — see SKILL.md).
+**Closest reference:** `packages/shared/workouts/ftp-builder/wk5-threshold.yaml`.
 
 **Progression options:**
 - Add a rep: 2×12 → 3×12
@@ -183,7 +183,7 @@ segments:
   - duration: "4:00"
     intensity: 95%
     stroke_rate: 26
-  - duration: "3:00"      # rest CAPPED at 3:00 (was 4:00 in old version)
+  - duration: "3:00"      # rest capped at 3:00 (work was 4:00)
   - duration: "5:00"
     intensity: 95%
     stroke_rate: 26
@@ -192,7 +192,7 @@ segments:
     stroke_rate: 20
 ```
 
-**Closest reference:** `packages/shared/workouts/wods/ascending-ladder.yaml` (currently has rest-cap violations — see SKILL.md).
+**Closest reference:** `packages/shared/workouts/wods/ascending-ladder.yaml`.
 
 **Important:** Ladder rests don't have to equal the preceding work duration. The classic "rest = work" pattern breaks at 4:00+ work pieces. For longer pieces, hold rest at 3:00.
 
@@ -218,7 +218,7 @@ segments:
     stroke_rate: 20
 ```
 
-**Closest reference:** `packages/shared/workouts/2k-race-prep/wk4-openers.yaml` (currently has a rest-cap violation — see SKILL.md).
+**Closest reference:** `packages/shared/workouts/2k-race-prep/wk4-openers.yaml`.
 
 ## Recovery Row
 
@@ -230,12 +230,14 @@ segments:
     intensity: 60%
     stroke_rate: 20
   - duration: "20:00"    # adjust 20–30 min
-    intensity: 60%
+    intensity: 55%
     stroke_rate: 20
   - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
 ```
+
+The main set runs at 55% (intensity floor) while warmup/cooldown bookends sit at 60% per the Hard Constraint rule.
 
 **Closest reference:** `packages/shared/workouts/zone1-recovery/active-recovery-30.yaml`
 
@@ -243,7 +245,7 @@ The warmup/cooldown segments still apply: the Hard Constraint has no recovery-wo
 
 ## Benchmark Tests
 
-**Intent:** Measure fitness. Open and close plans with the same test.
+**Intent:** Measure fitness. Athletes choose their own test cadence (no requirement to bookend plans).
 
 ### 2K Test
 

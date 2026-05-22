@@ -14,7 +14,7 @@ segments:
       intensity: 95%
       stroke_rate: 26
     rest:
-      duration: "4:00"
+      duration: "2:00"
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

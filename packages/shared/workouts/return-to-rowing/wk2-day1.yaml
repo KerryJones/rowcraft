@@ -1,15 +1,15 @@
 id: f0000000-0000-0000-0002-000000000001
 title: "Return to Rowing Wk2 Day1"
-description: "Week 2 Day 1: 15 minutes at easy Z2 pace."
+description: "Week 2 Day 1: 15 minutes at 70% (aerobic base) pace."
 difficulty: beginner
 tags: [return-to-rowing, steady-state, week-2]
 segments:
-  - duration: "2:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
   - duration: "15:00"
     intensity: 70%
     stroke_rate: 22
-  - duration: "2:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20

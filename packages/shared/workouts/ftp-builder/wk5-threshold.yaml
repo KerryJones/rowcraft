@@ -1,6 +1,6 @@
 id: e1000000-0000-0000-0005-000000000001
 title: "FTP Builder Wk5 Threshold"
-description: "Week 5: 2x12min threshold intervals at Z4 with 4-minute rest."
+description: "Week 5: 2x12min threshold (95%) intervals with 2-minute rest. Canonical 6:1 work:rest."
 difficulty: intermediate
 tags: [ftp-builder, threshold, week-5]
 segments:
@@ -14,7 +14,7 @@ segments:
       intensity: 95%
       stroke_rate: 26
     rest:
-      duration: "4:00"
+      duration: "2:00"
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

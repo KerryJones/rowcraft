@@ -5,11 +5,11 @@ difficulty: beginner
 tags: [recovery, post-race]
 segments:
   - duration: "5:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20
   - duration: "15:00"
     intensity: 55%
     stroke_rate: 20
   - duration: "5:00"
-    intensity: 50%
+    intensity: 60%
     stroke_rate: 20

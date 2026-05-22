@@ -1,6 +1,6 @@
 id: c0000000-0000-0000-0000-000000000001
 title: "Wolverine WOD 1"
-description: "Wolverine Plan workout: 4x2000m steady state intervals with 5-minute rest."
+description: "Wolverine Plan workout: 4x2000m steady-state intervals at 70% (aerobic base) with 1-minute rest — a rhythm break, not recovery."
 difficulty: intermediate
 tags: [wolverine-plan, endurance, long-intervals]
 segments:
@@ -14,7 +14,7 @@ segments:
       intensity: 70%
       stroke_rate: 22
     rest:
-      duration: "5:00"
+      duration: "1:00"
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

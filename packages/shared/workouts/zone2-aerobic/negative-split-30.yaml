@@ -1,6 +1,6 @@
 id: 20000000-0000-0000-0000-000000000003
 title: "Negative Split 30"
-description: "Start easy, finish stronger. Build into the second half."
+description: "Aerobic steady state at 70%. Hold the same pace throughout; lift the stroke rate from 20 to 22 spm in the second half."
 difficulty: beginner
 tags: [aerobic, negative-split]
 segments:
@@ -8,10 +8,10 @@ segments:
     intensity: 60%
     stroke_rate: 20
   - duration: "15:00"
-    intensity: 66%
+    intensity: 70%
     stroke_rate: 20
   - duration: "10:00"
-    intensity: 74%
+    intensity: 70%
     stroke_rate: 22
   - duration: "5:00"
     intensity: 60%

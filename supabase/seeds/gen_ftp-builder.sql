@@ -4,9 +4,9 @@
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0001-000000000003',
   'FTP Builder Wk1 Recovery',
-  'Week 1: Easy 20-minute recovery row at Z1.',
+  'Week 1: Easy 20-minute recovery row at 55% (recovery).',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,recovery,week-1}',
   true
 );
@@ -14,7 +14,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0001-000000000002',
   'FTP Builder Wk1 Steady',
-  'Week 1: 30-minute steady state at Z2 to build aerobic base.',
+  'Week 1: 30-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1800,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,steady-state,week-1}',
@@ -24,9 +24,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0001-000000000001',
   'FTP Builder Wk1 Threshold Intro',
-  'Week 1: Threshold introduction. Short threshold intervals to ease into the training zones before the build begins.',
+  'Week 1: Threshold introduction. 3x3min tempo intervals at 83% to ease into the training zones before true threshold work begins in week 2.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":90,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":90,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":90,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":3},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":83,"target_watts":null,"target_stroke_rate":24,"target_hr_zone":2},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,threshold,week-1}',
   true
 );
@@ -34,7 +34,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0002-000000000003',
   'FTP Builder Wk2 Steady',
-  'Week 2: 35-minute steady state at Z2.',
+  'Week 2: 35-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":2100,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,steady-state,week-2}',
@@ -44,7 +44,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0002-000000000001',
   'FTP Builder Wk2 Threshold',
-  'Week 2: 4x5min threshold intervals at Z4 with 2-minute rest.',
+  'Week 2: 4x5min threshold intervals at 95% with 2-minute rest.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,threshold,week-2}',
@@ -54,7 +54,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0002-000000000002',
   'FTP Builder Wk2 VO2max',
-  'Week 2: 6x2min VO2max intervals at Z5 with 2-minute rest.',
+  'Week 2: 6x2min VO2max intervals at 112% with 2-minute rest.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":120,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,vo2max,week-2}',
@@ -64,7 +64,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0003-000000000003',
   'FTP Builder Wk3 Steady',
-  'Week 3: 40-minute steady state at Z2.',
+  'Week 3: 40-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":2400,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,steady-state,week-3}',
@@ -74,7 +74,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0003-000000000001',
   'FTP Builder Wk3 Threshold',
-  'Week 3: 5x5min threshold intervals at Z4 with 2-minute rest.',
+  'Week 3: 5x5min threshold intervals at 95% with 2-minute rest.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":300,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,threshold,week-3}',
@@ -84,7 +84,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0003-000000000002',
   'FTP Builder Wk3 VO2max',
-  'Week 3: 8x90s VO2max intervals at Z5 with 90s rest.',
+  'Week 3: 8x90s VO2max intervals at 112% with 90s rest.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":90,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":90,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,vo2max,week-3}',
@@ -94,7 +94,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0004-000000000003',
   'FTP Builder Wk4 Steady',
-  'Week 4: 40-minute steady state at Z2.',
+  'Week 4: 40-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":2400,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,steady-state,week-4}',
@@ -104,7 +104,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0004-000000000001',
   'FTP Builder Wk4 Threshold',
-  'Week 4: 3x8min threshold intervals at Z4 with 3-minute rest.',
+  'Week 4: 3x8min threshold intervals at 95% with 3-minute rest.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":480,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":480,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":480,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,threshold,week-4}',
@@ -114,7 +114,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0004-000000000002',
   'FTP Builder Wk4 VO2max',
-  'Week 4: 5x3min VO2max intervals at Z5 with 3-minute rest.',
+  'Week 4: 5x3min VO2max intervals at 112% with 3-minute rest.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":180,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,vo2max,week-4}',
@@ -124,7 +124,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0005-000000000003',
   'FTP Builder Wk5 Steady',
-  'Week 5: 35-minute steady state at Z2.',
+  'Week 5: 35-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":2100,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,steady-state,week-5}',
@@ -134,9 +134,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0005-000000000001',
   'FTP Builder Wk5 Threshold',
-  'Week 5: 2x12min threshold intervals at Z4 with 4-minute rest.',
+  'Week 5: 2x12min threshold (95%) intervals with 2-minute rest. Canonical 6:1 work:rest.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":720,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":720,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":720,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":720,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,threshold,week-5}',
   true
 );
@@ -144,9 +144,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0005-000000000002',
   'FTP Builder Wk5 VO2max',
-  'Week 5: 4x4min VO2max intervals at Z5 with 4-minute rest.',
+  'Week 5: 4x4min VO2max (112%) intervals with 3-minute rest. Near-1:1 work:rest, capped at the 3:00 PM5 ceiling.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":240,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":240,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,vo2max,week-5}',
   true
 );
@@ -156,7 +156,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
   'FTP Builder Wk6 Openers',
   'Week 6: Short sharp efforts to stay primed during taper week. Keeps the legs sharp without accumulating fatigue before your FTP retest.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":105,"target_watts":null,"target_stroke_rate":28,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":105,"target_watts":null,"target_stroke_rate":28,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":105,"target_watts":null,"target_stroke_rate":28,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":105,"target_watts":null,"target_stroke_rate":28,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":180,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"time","duration_value":60,"target_intensity":112,"target_watts":null,"target_stroke_rate":30,"target_hr_zone":5},{"duration_type":"time","duration_value":300,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,activation,week-6}',
   true
 );
@@ -164,9 +164,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0006-000000000001',
   'FTP Builder Wk6 Recovery',
-  'Week 6: Easy 20-minute recovery row at Z1.',
+  'Week 6: Easy 20-minute recovery row at 55% (recovery).',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":50,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":50,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":null}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":55,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,recovery,week-6}',
   true
 );
@@ -174,7 +174,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e1000000-0000-0000-0006-000000000002',
   'FTP Builder Wk6 Steady',
-  'Week 6: 25-minute steady state at Z2.',
+  'Week 6: 25-minute steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1500,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{ftp-builder,steady-state,week-6}',

@@ -1,6 +1,6 @@
 id: 50000000-0000-0000-0000-000000000005
 title: "Descending Ladder"
-description: "2K/1.5K/1K/500m — shorter gets faster. Generous rest between pieces."
+description: "Descending distance with stepped intensity: threshold pieces (95%) give way to VO2max (112%) and sprint (120%) as the pieces shorten."
 difficulty: advanced
 tags: [vo2max, ladder, descending]
 segments:
@@ -8,20 +8,20 @@ segments:
     intensity: 60%
     stroke_rate: 20
   - duration: 2000m
-    intensity: 112%
-    stroke_rate: 30
-  - duration: "7:00"
+    intensity: 95%
+    stroke_rate: 26
+  - duration: "2:00"
   - duration: 1500m
-    intensity: 112%
-    stroke_rate: 30
-  - duration: "5:00"
+    intensity: 95%
+    stroke_rate: 26
+  - duration: "2:00"
   - duration: 1000m
     intensity: 112%
     stroke_rate: 30
-  - duration: "4:00"
+  - duration: "2:00"
   - duration: 500m
-    intensity: 112%
-    stroke_rate: 30
+    intensity: 120%
+    stroke_rate: 32
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

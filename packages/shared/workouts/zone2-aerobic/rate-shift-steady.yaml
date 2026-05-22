@@ -1,3 +1,4 @@
+# Intentional low-spm rate drill (Müller stroke-rate convention). Low spm at 70% is by design.
 id: 20000000-0000-0000-0000-000000000002
 title: "Rate Shift Steady"
 description: "Same pace, different rates. Feel how rate affects the stroke."

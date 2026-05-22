@@ -1,6 +1,6 @@
 id: 20000000-0000-0000-0000-00000000000a
 title: "Two-Pace Aerobic"
-description: "Alternate moderate and easy aerobic blocks."
+description: "Alternate aerobic (70%) and tempo (83%) 5-minute blocks. Four pairs between warmup and cooldown."
 difficulty: beginner
 tags: [aerobic, steady-state]
 segments:
@@ -8,29 +8,29 @@ segments:
     intensity: 60%
     stroke_rate: 20
   - duration: "5:00"
-    intensity: 66%
-    stroke_rate: 20
-  - duration: "5:00"
-    intensity: 74%
+    intensity: 70%
     stroke_rate: 22
   - duration: "5:00"
-    intensity: 66%
-    stroke_rate: 20
+    intensity: 83%
+    stroke_rate: 24
   - duration: "5:00"
-    intensity: 74%
+    intensity: 70%
     stroke_rate: 22
   - duration: "5:00"
-    intensity: 66%
-    stroke_rate: 20
+    intensity: 83%
+    stroke_rate: 24
   - duration: "5:00"
-    intensity: 74%
+    intensity: 70%
     stroke_rate: 22
   - duration: "5:00"
-    intensity: 66%
-    stroke_rate: 20
+    intensity: 83%
+    stroke_rate: 24
   - duration: "5:00"
-    intensity: 74%
+    intensity: 70%
     stroke_rate: 22
+  - duration: "5:00"
+    intensity: 83%
+    stroke_rate: 24
   - duration: "5:00"
     intensity: 60%
     stroke_rate: 20

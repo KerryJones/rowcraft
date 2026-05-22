@@ -1,10 +1,10 @@
 id: f0000000-0000-0000-0001-000000000002
 title: "Return to Rowing Wk1 Day2"
-description: "Week 1 Day 2: 3x3min intervals at easy Z2 with 1-minute rest."
+description: "Week 1 Day 2: 3x3min intervals at 70% (aerobic base) with 1-minute rest."
 difficulty: beginner
 tags: [return-to-rowing, intervals, week-1]
 segments:
-  - duration: "2:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20
   - type: interval
@@ -15,6 +15,6 @@ segments:
       stroke_rate: 22
     rest:
       duration: "1:00"
-  - duration: "2:00"
+  - duration: "3:00"
     intensity: 60%
     stroke_rate: 20

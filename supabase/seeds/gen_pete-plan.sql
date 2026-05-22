@@ -4,7 +4,7 @@
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'b0000000-0000-0000-0000-000000000003',
   'Pete Plan Wk1 Fri — 20min Steady',
-  'Week 1 Friday: 20 minutes steady state at Z2.',
+  'Week 1 Friday: 20 minutes steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-1}',
@@ -14,7 +14,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'b0000000-0000-0000-0000-000000000001',
   'Pete Plan Wk1 Mon — 5000m',
-  'Week 1 Monday: 5000m steady state at Z2 pace.',
+  'Week 1 Monday: 5000m steady state at 70% (aerobic base) pace.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":5000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-1}',
@@ -24,9 +24,9 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'b0000000-0000-0000-0000-000000000002',
   'Pete Plan Wk1 Wed — 8x500m',
-  'Week 1 Wednesday: 8x500m intervals with 3:30 rest.',
+  'Week 1 Wednesday: 8x500m intervals with 2-minute rest. Pete Plan canonical.',
   'variable_intervals',
-  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":210,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
+  '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":120,"target_intensity":null,"target_watts":null,"target_stroke_rate":null,"target_hr_zone":null,"is_rest":true},{"duration_type":"distance","duration_value":500,"target_intensity":95,"target_watts":null,"target_stroke_rate":26,"target_hr_zone":4},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,intervals,speed,week-1}',
   true
 );
@@ -34,7 +34,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0003-000000000001',
   'Pete Plan Wk2 Fri — 22min Steady',
-  'Week 2 Friday: 22 minutes steady state at Z2.',
+  'Week 2 Friday: 22 minutes steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1320,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-2}',
@@ -44,7 +44,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0001-000000000001',
   'Pete Plan Wk2 Mon — 5500m',
-  'Week 2 Monday: 5500m steady state at Z2 pace.',
+  'Week 2 Monday: 5500m steady state at 70% (aerobic base) pace.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":5500,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-2}',
@@ -64,7 +64,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0003-000000000002',
   'Pete Plan Wk3 Fri — 24min Steady',
-  'Week 3 Friday: 24 minutes steady state at Z2.',
+  'Week 3 Friday: 24 minutes steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1440,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-3}',
@@ -74,7 +74,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0001-000000000002',
   'Pete Plan Wk3 Mon — 6000m',
-  'Week 3 Monday: 6000m steady state at Z2 pace.',
+  'Week 3 Monday: 6000m steady state at 70% (aerobic base) pace.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":6000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-3}',
@@ -94,7 +94,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0003-000000000003',
   'Pete Plan Wk4 Fri — 20min Steady',
-  'Week 4 Friday: 20 minutes steady state at Z2.',
+  'Week 4 Friday: 20 minutes steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1200,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-4}',
@@ -104,7 +104,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0001-000000000003',
   'Pete Plan Wk4 Mon — 6500m',
-  'Week 4 Monday: 6500m steady state at Z2 pace.',
+  'Week 4 Monday: 6500m steady state at 70% (aerobic base) pace.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":6500,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-4}',
@@ -124,7 +124,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0003-000000000004',
   'Pete Plan Wk5 Fri — 22min Steady',
-  'Week 5 Friday: 22 minutes steady state at Z2.',
+  'Week 5 Friday: 22 minutes steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1320,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-5}',
@@ -134,7 +134,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0001-000000000004',
   'Pete Plan Wk5 Mon — 7000m',
-  'Week 5 Monday: 7000m steady state at Z2 pace.',
+  'Week 5 Monday: 7000m steady state at 70% (aerobic base) pace.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":7000,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-5}',
@@ -154,7 +154,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0003-000000000005',
   'Pete Plan Wk6 Fri — 24min Steady',
-  'Week 6 Friday: 24 minutes steady state at Z2.',
+  'Week 6 Friday: 24 minutes steady state at 70% (aerobic base).',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"time","duration_value":1440,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-6}',
@@ -164,7 +164,7 @@ insert into public.workouts (id, title, description, workout_type, segments, tag
 insert into public.workouts (id, title, description, workout_type, segments, tags, is_public) values (
   'e0000000-0000-0000-0001-000000000005',
   'Pete Plan Wk6 Mon — 7500m',
-  'Week 6 Monday: 7500m steady state at Z2 pace.',
+  'Week 6 Monday: 7500m steady state at 70% (aerobic base) pace.',
   'variable_intervals',
   '[{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1},{"duration_type":"distance","duration_value":7500,"target_intensity":70,"target_watts":null,"target_stroke_rate":22,"target_hr_zone":1},{"duration_type":"time","duration_value":180,"target_intensity":60,"target_watts":null,"target_stroke_rate":20,"target_hr_zone":1}]'::jsonb,
   '{pete-plan,steady-state,week-6}',

@@ -43,7 +43,7 @@ Each name maps to one or more YAML-decisions the skill makes. Full citations wit
 - **Jack Daniels — VDOT zone math.** Backs FTP-anchored zone targeting (a single fitness number drives all paces).
 - **Eddie Fletcher — "go slow more, go fast less."** Backs aerobic volume emphasis in beginner/intermediate plans.
 - **Mike Caviston — Wolverine Plan intensity structure.** Backs 2K-specific work blocks.
-- **Pete Marston — Pete Plan continuous progression.** Backs beginner plan structure (3 sessions/week, weekly progression, conservative pacing).
+- **Pete Marston — Pete Plan continuous progression.** Backs beginner plan structure (3 sessions/week, weekly progression, conservative pacing). The Pete Plan deliberately skips explicit deload weeks — continuous progression is the model, so it is the documented exception to the "deload per 4-week mesocycle" rule.
 - **Xeno Müller — technique-led training.** Backs explicit `stroke_rate` on every segment and lower-rate steady work for advanced athletes.
 - **Hal Higdon — accessible plan structure.** Backs single-role-per-session simplicity in beginner / return-to-rowing plans.
 - **Pete Pfitzinger — threshold-anchored periodization.** Backs the non-default threshold-heavy distribution option for advanced athletes targeting LT improvement.
@@ -149,7 +149,7 @@ weeks:
 
 ## Workflow B — Author a Multi-Week Plan
 
-1. **Clarify**: goal (with metric), weeks, sessions/week, athlete level, opening/closing tests.
+1. **Clarify**: goal (with metric), weeks, sessions/week, athlete level.
 2. **Pick the periodization model**:
    - **4 weeks** → single block (Issurin) — one adaptation in concentrated form.
    - **6–8 weeks** → classical base → build → peak (Bompa / Friel) — see `references/periodization-templates.md`.
@@ -174,7 +174,7 @@ weeks:
 1. **Schema check** — required fields, additionalProperties violations, value-range bounds.
 2. **Hard-constraints check** — every rest ≤3:00, warmup ≥3min at 60%/20 spm, cooldown ≥3min at 60%/20 spm, intensity 55–200%, spm 10–50.
 3. **Physiological check** — work:rest ratios reasonable (see table below), stroke rate matches intensity (e.g., not 30 spm at 60% intensity), zone progression coherent.
-4. **Periodization check (plans only)** — week-over-week volume change ≤10%, deload present per mesocycle, opens and closes with the same test, sessions_per_week matches actual count.
+4. **Periodization check (plans only)** — week-over-week volume change ≤10%, deload present per mesocycle (race-week taper counts as deload for race-prep plans per Friel), sessions_per_week matches the count of non-optional sessions per week.
 5. **Report findings as a punch list**, severity-labeled: **blocker** (schema or PM5 violation), **warning** (physiological concern), **suggestion** (improvement).
 
 ## Work:Rest Ratio Quick Reference
@@ -212,12 +212,11 @@ Workout shape
 [ ] Workout has a clear single intent (one adaptation targeted)
 
 Plan shape (plans only)
-[ ] Opens with a test, closes with the same test
 [ ] Volume change week-over-week ≤10%
-[ ] At least one deload week per 4-week mesocycle (~30–50% volume drop)
+[ ] At least one deload week per 4-week mesocycle (~30–50% volume drop); race-week taper counts as the deload for race-prep plans (Friel)
 [ ] Intensity distribution honors 80/20 unless explicitly justified
 [ ] Every session.workout_id points to a workout that exists in the same PR
-[ ] sessions_per_week matches the count in each week's `sessions` array
+[ ] sessions_per_week equals the count of non-optional sessions per week. Sessions labeled `(Optional)` in `day_label` count as bonus and do not increment the declared value.
 
 Citations
 [ ] Every coach / framework named in output has a URL in references/methodologies.md
@@ -230,8 +229,7 @@ Citations
 - ✗ Stroke rate mismatched to intensity (e.g., 30 spm at 60%)
 - ✗ Workout without warmup or cooldown
 - ✗ Workout without a clear single intent
-- ✗ Plan with no opening or closing test
-- ✗ Plan with no deload per 4-week mesocycle
+- ✗ Plan with no deload per 4-week mesocycle (race-week taper counts as deload for race-prep plans)
 - ✗ Volume ramp >10% week-over-week
 - ✗ Threshold-heavy block with no aerobic base phase first
 - ✗ Intensity ranges like "90–95%" in YAML — use a single midpoint
@@ -242,24 +240,9 @@ Citations
 - ✗ Editing generated SQL in `supabase/seeds/generated/` directly — YAML is source of truth
 - ✗ Reusing zone-library workouts inside a plan — plans get their own custom workouts (matches existing convention)
 
-## Existing Rest-Duration Violations (separate PR)
+## Tests vs. Rest
 
-Ten workouts currently violate the 3:00 rest cap and need fixing in a separate PR. Recommend the fix when reviewing them.
-
-| File | Violation |
-|---|---|
-| `packages/shared/workouts/2k-race-prep/wk3-threshold-2x1500m.yaml` | interval rest 5:00 |
-| `packages/shared/workouts/2k-race-prep/wk4-openers.yaml` | interval rest 4:00 |
-| `packages/shared/workouts/ftp-builder/wk5-threshold.yaml` | interval rest 4:00 (trigger for this skill) |
-| `packages/shared/workouts/ftp-builder/wk5-vo2max.yaml` | interval rest 4:00 |
-| `packages/shared/workouts/pete-plan/wk1-wed.yaml` | interval rest 3:30 (30s over) |
-| `packages/shared/workouts/wods/ascending-ladder.yaml` | flat rest segments 4:00 and 5:00 |
-| `packages/shared/workouts/wolverine/wod-1.yaml` | interval rest 5:00 |
-| `packages/shared/workouts/zone4-threshold/cruise-intervals-2x12.yaml` | flat rest 4:00 |
-| `packages/shared/workouts/zone4-threshold/threshold-3x8.yaml` | interval rest 4:00 |
-| `packages/shared/workouts/zone5-vo2max/descending-ladder.yaml` | flat rest segments 7:00, 5:00, 4:00 |
-
-The `tests/` workouts (`just-row.yaml` 120:00, `20-minute-ftp-test.yaml` 20:00, `4min.yaml` 4:00) have long flat segments that are the *workout itself*, not rest — they are not violations.
+The `tests/` workouts (`just-row.yaml` 120:00, `20-minute-ftp-test.yaml` 20:00, `4min.yaml` 4:00) have long flat segments that are the *workout itself*, not rest — they are not 3:00-cap violations.
 
 ## Remember
 
