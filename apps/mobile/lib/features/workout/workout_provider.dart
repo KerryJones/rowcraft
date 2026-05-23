@@ -573,7 +573,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       totalTime: data.elapsedTime,
       avgSplit: avgSplit,
       avgStrokeRate: avgSR,
-      avgHeartRate: data.heartRate,
+      avgHeartRate: _engine!.currentState.avgHeartRate,
       minHeartRate: _engine!.overallMinHr,
       maxHeartRate: _engine!.overallMaxHr,
       endingHeartRate: _engine!.endingHeartRate,

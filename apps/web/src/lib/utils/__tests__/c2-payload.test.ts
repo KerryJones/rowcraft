@@ -83,6 +83,7 @@ describe('buildSplits', () => {
     avg_heart_rate: 155,
     min_heart_rate: 140,
     max_heart_rate: 168,
+    ending_heart_rate: 162,
     calories: 30,
   };
 
@@ -100,6 +101,7 @@ describe('buildSplits', () => {
       average: 155,
       min: 140,
       max: 168,
+      ending: 162,
     });
   });
 
@@ -112,6 +114,7 @@ describe('buildSplits', () => {
       avg_heart_rate: undefined,
       min_heart_rate: undefined,
       max_heart_rate: undefined,
+      ending_heart_rate: undefined,
     };
     const result = buildSplits([emptySplit]);
     const c2 = result[0];
@@ -198,6 +201,51 @@ describe('buildIntervals', () => {
 
     const { intervals } = buildIntervals(splits, segments);
     expect(intervals[0].rest_time).toBe(0);
+  });
+
+  it('forwards ending_heart_rate into each work interval heart_rate.ending', () => {
+    const segments: C2Segment[] = [
+      { duration_type: 'time', duration_value: 120 },
+      { duration_type: 'time', duration_value: 60, is_rest: true },
+      { duration_type: 'time', duration_value: 120 },
+      { duration_type: 'time', duration_value: 60, is_rest: true },
+    ];
+
+    const splits: SplitJson[] = [
+      {
+        segment_index: 0, distance: 500, time_ms: 120000, avg_pace: 1200,
+        avg_stroke_rate: 28, avg_watts: 200, calories: 30,
+        avg_heart_rate: 145, min_heart_rate: 130, max_heart_rate: 160, ending_heart_rate: 158,
+      },
+      {
+        segment_index: 1, distance: 10, time_ms: 60000, avg_pace: 0,
+        avg_stroke_rate: 0, avg_watts: 0, calories: 0,
+      },
+      {
+        segment_index: 2, distance: 500, time_ms: 120000, avg_pace: 1210,
+        avg_stroke_rate: 28, avg_watts: 195, calories: 28,
+        avg_heart_rate: 152, min_heart_rate: 142, max_heart_rate: 168, ending_heart_rate: 166,
+      },
+      {
+        segment_index: 3, distance: 10, time_ms: 60000, avg_pace: 0,
+        avg_stroke_rate: 0, avg_watts: 0, calories: 0,
+      },
+    ];
+
+    const { intervals } = buildIntervals(splits, segments);
+    expect(intervals).toHaveLength(2);
+    expect(intervals[0].heart_rate).toEqual({
+      average: 145,
+      min: 130,
+      max: 160,
+      ending: 158,
+    });
+    expect(intervals[1].heart_rate).toEqual({
+      average: 152,
+      min: 142,
+      max: 168,
+      ending: 166,
+    });
   });
 });
 

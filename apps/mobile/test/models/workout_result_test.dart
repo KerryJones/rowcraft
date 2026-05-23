@@ -570,4 +570,28 @@ void main() {
       expect(output.containsKey('max_heart_rate'), isFalse);
     });
   });
+
+  group('SplitData ending heart rate', () {
+    test('roundtrips ending_heart_rate', () {
+      final json = splitJson();
+      json['ending_heart_rate'] = 168;
+
+      final split = SplitData.fromJson(json);
+      expect(split.endingHeartRate, 168);
+
+      final output = split.toJson();
+      expect(output['ending_heart_rate'], 168);
+
+      final roundtripped = SplitData.fromJson(output);
+      expect(roundtripped.endingHeartRate, 168);
+    });
+
+    test('omits ending_heart_rate when null', () {
+      final split = SplitData.fromJson(splitJson());
+      expect(split.endingHeartRate, isNull);
+
+      final output = split.toJson();
+      expect(output.containsKey('ending_heart_rate'), isFalse);
+    });
+  });
 }

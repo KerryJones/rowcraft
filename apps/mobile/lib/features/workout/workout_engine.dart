@@ -209,6 +209,7 @@ class WorkoutEngine {
   int _sampleCount = 0;
   int? _segmentMinHr;
   int? _segmentMaxHr;
+  int? _segmentEndingHr;
 
   // Overall accumulators (across all segments)
   int _totalPaceSum = 0;
@@ -264,6 +265,7 @@ class WorkoutEngine {
   int _splitHrCount = 0;
   int? _splitMinHr;
   int? _splitMaxHr;
+  int? _splitEndingHr;
   int _splitStartCalories = 0;
   double _splitStartDistance = 0;
   DateTime? _splitStartTime;
@@ -712,6 +714,7 @@ class WorkoutEngine {
     _sampleCount = 0;
     _segmentMinHr = null;
     _segmentMaxHr = null;
+    _segmentEndingHr = null;
     _outOfRangeSince = null;
     _lastStrokeCount = _state.latestData.strokeCount;
     _lastActivityAt = null;
@@ -870,6 +873,7 @@ class WorkoutEngine {
       _hrCount++;
       _segmentMinHr = _trackMin(_segmentMinHr, hr);
       _segmentMaxHr = _trackMax(_segmentMaxHr, hr);
+      _segmentEndingHr = hr;
       _totalHrSum += hr;
       _totalHrCount++;
       _overallMinHr = _trackMin(_overallMinHr, hr);
@@ -895,6 +899,7 @@ class WorkoutEngine {
         _splitHrCount++;
         _splitMinHr = _trackMin(_splitMinHr, hr);
         _splitMaxHr = _trackMax(_splitMaxHr, hr);
+        _splitEndingHr = hr;
       }
     }
 
@@ -1057,6 +1062,7 @@ class WorkoutEngine {
     _splitHrCount = 0;
     _splitMinHr = null;
     _splitMaxHr = null;
+    _splitEndingHr = null;
     _splitStartCalories = _state.latestData.calories;
     _splitStartDistance = _state.latestData.distance - _segmentStartDistance;
     _splitStartTime = clock.now();
@@ -1081,6 +1087,7 @@ class WorkoutEngine {
       avgHeartRate: _splitHrCount > 0 ? _splitHrSum ~/ _splitHrCount : null,
       minHeartRate: _splitMinHr,
       maxHeartRate: _splitMaxHr,
+      endingHeartRate: _splitEndingHr,
       calories:
           math.max(0, _state.latestData.calories - _splitStartCalories),
       isRest: _state.currentSegment?.isRest ?? false,
@@ -1119,6 +1126,7 @@ class WorkoutEngine {
       avgHeartRate: _hrCount > 0 ? _hrSum ~/ _hrCount : null,
       minHeartRate: _segmentMinHr,
       maxHeartRate: _segmentMaxHr,
+      endingHeartRate: _segmentEndingHr,
       calories: math.max(0, _state.latestData.calories - _segmentStartCalories),
       isRest: _state.currentSegment?.isRest ?? false,
     );

@@ -10,6 +10,7 @@ class SplitData {
   final int? avgHeartRate;
   final int? minHeartRate;
   final int? maxHeartRate;
+  final int? endingHeartRate;
   final int calories;
   final bool isRest;
 
@@ -23,6 +24,7 @@ class SplitData {
     this.avgHeartRate,
     this.minHeartRate,
     this.maxHeartRate,
+    this.endingHeartRate,
     required this.calories,
     this.isRest = false,
   });
@@ -38,6 +40,7 @@ class SplitData {
       avgHeartRate: json['avg_heart_rate'] as int?,
       minHeartRate: json['min_heart_rate'] as int?,
       maxHeartRate: json['max_heart_rate'] as int?,
+      endingHeartRate: json['ending_heart_rate'] as int?,
       calories: json['calories'] as int,
       isRest: (json['is_rest'] as bool?) ?? false,
     );
@@ -54,6 +57,7 @@ class SplitData {
       if (avgHeartRate != null) 'avg_heart_rate': avgHeartRate,
       if (minHeartRate != null) 'min_heart_rate': minHeartRate,
       if (maxHeartRate != null) 'max_heart_rate': maxHeartRate,
+      if (endingHeartRate != null) 'ending_heart_rate': endingHeartRate,
       'calories': calories,
       if (isRest) 'is_rest': true,
     };

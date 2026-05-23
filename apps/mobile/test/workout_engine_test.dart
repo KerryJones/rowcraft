@@ -2463,4 +2463,82 @@ void main() {
       expect(engine.completedSplits.length, splitsAtComplete);
     });
   });
+
+  group('Per-segment ending heart rate', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    test('captures last HR sample of each segment into SplitData', () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+            targetIntensity: 80,
+          ),
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 100,
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      engine.start();
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Segment 1: HR ramps 140 -> 150 -> 160, then segment completes at 100m.
+      final hrs1 = [140, 150, 160];
+      for (var i = 0; i < hrs1.length; i++) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: 10 + i * 5),
+          distance: 30.0 + i * 35,
+          pace: 1200,
+          strokeRate: 28,
+          strokeRateUpdated: true,
+          watts: 210,
+          calories: 5 + i,
+          strokeCount: 10 + i * 5,
+          intervalCount: 1,
+          heartRate: hrs1[i],
+        ));
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+
+      // Segment 2: HR ramps 145 -> 158 -> 170 (final value should land as ending).
+      final hrs2 = [145, 158, 170];
+      for (var i = 0; i < hrs2.length; i++) {
+        pm5Controller.add(PM5Data(
+          elapsedTime: Duration(seconds: 30 + i * 5),
+          distance: 130.0 + i * 35,
+          pace: 1200,
+          strokeRate: 28,
+          strokeRateUpdated: true,
+          watts: 210,
+          calories: 8 + i,
+          strokeCount: 25 + i * 5,
+          intervalCount: 2,
+          heartRate: hrs2[i],
+        ));
+        await Future.delayed(const Duration(milliseconds: 20));
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect(engine.completedSplits.length, 2);
+      expect(engine.completedSplits[0].endingHeartRate, 160);
+      expect(engine.completedSplits[1].endingHeartRate, 170);
+    });
+  });
 }

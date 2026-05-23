@@ -23,6 +23,7 @@ export interface SplitJson {
   avg_heart_rate?: number;
   min_heart_rate?: number;
   max_heart_rate?: number;
+  ending_heart_rate?: number;
   calories: number;
 }
 
@@ -81,7 +82,12 @@ export function buildHeartRateObject(
 }
 
 function buildSplitHeartRate(split: SplitJson): Record<string, number> | undefined {
-  return buildHeartRateObject(split.avg_heart_rate, split.min_heart_rate, split.max_heart_rate);
+  return buildHeartRateObject(
+    split.avg_heart_rate,
+    split.min_heart_rate,
+    split.max_heart_rate,
+    split.ending_heart_rate,
+  );
 }
 
 export function buildSplits(splits: SplitJson[]): Record<string, unknown>[] {
