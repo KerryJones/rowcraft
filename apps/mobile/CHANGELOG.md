@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.9.0...rowcraft-mobile-v0.10.0) (2026-05-23)
+
+
+### Features
+
+* auto-cycle metric tiles on active workout screen ([aab9ad8](https://github.com/KerryJones/rowcraft/commit/aab9ad839b99d15fe524b1041bf178fd9ce68e04))
+
 ## [0.9.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.8.0...rowcraft-mobile-v0.9.0) (2026-05-20)
 
 
