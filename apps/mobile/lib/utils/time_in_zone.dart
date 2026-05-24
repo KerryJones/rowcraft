@@ -49,6 +49,20 @@ Map<int, Map<int, double>> timeInZoneBySegment(
   return grouped.map((k, v) => MapEntry(k, timeInZone(v, restingHr, maxHr)));
 }
 
+/// Sum `timeInZone` seconds across multiple sample sets (e.g. every workout).
+Map<int, double> aggregateTimeInZone(
+  Iterable<List<WorkoutTimeSample>> sampleSets,
+  int? restingHr,
+  int maxHr,
+) {
+  final total = <int, double>{};
+  for (final samples in sampleSets) {
+    final tiz = timeInZone(samples, restingHr, maxHr);
+    tiz.forEach((k, v) => total.update(k, (x) => x + v, ifAbsent: () => v));
+  }
+  return total;
+}
+
 double _median(List<double> xs) {
   final sorted = [...xs]..sort();
   final n = sorted.length;

@@ -222,6 +222,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    leading: const Icon(Icons.bar_chart),
+                    title: const Text('Statistics'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/statistics'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
                     leading: Badge(
                       isLabelVisible: pm5Connected,
                       backgroundColor: RowCraftTheme.successGreen,

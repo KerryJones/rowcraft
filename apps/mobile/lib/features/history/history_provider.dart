@@ -7,6 +7,8 @@ import '../../models/workout_result.dart';
 import '../../services/local_db.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
+import '../../utils/pace_utils.dart';
+import '../../utils/workout_utils.dart';
 
 enum SyncStatus { synced, pending, failed }
 
@@ -126,6 +128,10 @@ class HistorySummary {
   final Duration totalTime;
   final int? bestSplit;
   final double avgStrokeRate;
+  final int activeDays;
+  final int totalCalories;
+  final int avgWatts;
+  final int avgPaceWeighted;
 
   const HistorySummary({
     required this.totalWorkouts,
@@ -133,6 +139,10 @@ class HistorySummary {
     required this.totalTime,
     this.bestSplit,
     required this.avgStrokeRate,
+    required this.activeDays,
+    required this.totalCalories,
+    required this.avgWatts,
+    required this.avgPaceWeighted,
   });
 
   factory HistorySummary.fromResults(List<WorkoutResult> results) {
@@ -142,18 +152,39 @@ class HistorySummary {
         totalDistance: 0,
         totalTime: Duration.zero,
         avgStrokeRate: 0,
+        activeDays: 0,
+        totalCalories: 0,
+        avgWatts: 0,
+        avgPaceWeighted: 0,
       );
     }
 
     double totalDist = 0;
     Duration totalTime = Duration.zero;
     int? bestSplit;
-    int srSum = 0;
+    int totalCalories = 0;
+    final activeDates = <DateTime>{};
+    // Duration-weighted accumulators — match workout_provider.dart aggregation.
+    double paceWeighted = 0;
+    double srWeighted = 0;
+    double wattsWeighted = 0;
+    double totalMs = 0;
 
     for (final r in results) {
       totalDist += r.totalDistance;
       totalTime += r.totalTime;
-      srSum += r.avgStrokeRate;
+      totalCalories += r.calories;
+
+      final localDay = r.startedAt.toLocal();
+      activeDates.add(DateTime(localDay.year, localDay.month, localDay.day));
+
+      final ms = r.totalTime.inMilliseconds.toDouble();
+      if (ms > 0) {
+        paceWeighted += r.avgSplit * ms;
+        srWeighted += r.avgStrokeRate * ms;
+        wattsWeighted += r.avgWatts * ms;
+        totalMs += ms;
+      }
 
       if (r.avgSplit > 0) {
         if (bestSplit == null || r.avgSplit < bestSplit) {
@@ -162,12 +193,17 @@ class HistorySummary {
       }
     }
 
+    final hasDuration = totalMs > 0;
     return HistorySummary(
       totalWorkouts: results.length,
       totalDistance: totalDist,
       totalTime: totalTime,
       bestSplit: bestSplit,
-      avgStrokeRate: srSum / results.length,
+      avgStrokeRate: hasDuration ? srWeighted / totalMs : 0,
+      activeDays: activeDates.length,
+      totalCalories: totalCalories,
+      avgWatts: hasDuration ? (wattsWeighted / totalMs).round() : 0,
+      avgPaceWeighted: hasDuration ? (paceWeighted / totalMs).round() : 0,
     );
   }
 
@@ -181,11 +217,9 @@ class HistorySummary {
     return '${totalDistance.toInt()}m';
   }
 
-  String get bestSplitFormatted {
-    if (bestSplit == null) return '--:--';
-    final minutes = bestSplit! ~/ 600;
-    final remaining = bestSplit! % 600;
-    final seconds = remaining ~/ 10;
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
-  }
+  String get bestSplitFormatted => formatPace(bestSplit ?? 0);
+
+  String get avgPaceWeightedFormatted => formatPace(avgPaceWeighted);
+
+  String get totalTimeFormatted => formatDuration(totalTime.inSeconds);
 }

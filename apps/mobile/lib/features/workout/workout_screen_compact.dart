@@ -182,14 +182,14 @@ class _WorkoutScreenCompactBodyState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  flex: 45,
+                  flex: 40,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(10, 10, 5, 6),
                     child: _statGrid(session),
                   ),
                 ),
                 Expanded(
-                  flex: 55,
+                  flex: 60,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(5, 10, 10, 6),
                     child: _heroAndGraph(session),
@@ -207,7 +207,7 @@ class _WorkoutScreenCompactBodyState
       children: [
         // Top half: 3x2 stat grid
         Expanded(
-          flex: 5,
+          flex: 4,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
             child: _statGrid(session),
@@ -593,12 +593,20 @@ class _SegmentTile extends StatelessWidget {
       onTap: onTap,
       pageIndex: countUp ? 1 : 0,
       pageCount: 2,
-      trailing: Text(
-        '$current/$total',
-        style: GoogleFonts.inter(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: RowCraftTheme.subtleGrey,
+      trailing: Text.rich(
+        TextSpan(
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: RowCraftTheme.subtleGrey,
+          ),
+          children: [
+            TextSpan(
+              text: '$current',
+              style: const TextStyle(color: RowCraftTheme.successGreen),
+            ),
+            TextSpan(text: '/$total'),
+          ],
         ),
       ),
     );

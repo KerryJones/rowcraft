@@ -19,12 +19,14 @@ import '../features/workout/workout_screen.dart';
 import '../features/history/history_screen.dart';
 import '../features/history/history_provider.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/statistics/statistics_screen.dart';
 import '../features/settings/pending_sync_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../models/workout_result.dart';
 import '../services/c2_logbook_service.dart';
 import '../utils/time_in_zone.dart';
 import '../widgets/hr_zone_donut.dart';
+import '../widgets/metric_tile.dart';
 import '../app/theme.dart';
 import 'shell_screen.dart';
 
@@ -191,6 +193,12 @@ final routerProvider = Provider<GoRouter>((ref) {
             },
           ),
         ],
+      ),
+
+      GoRoute(
+        path: '/statistics',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const StatisticsScreen(),
       ),
 
       // Devices — full-screen, accessible from Profile and AppBar
@@ -406,39 +414,45 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                 // Metrics grid
                 Row(
                   children: [
-                    _MetricTile(
+                    MetricTile(
                       label: 'Distance',
                       value: '${result.totalDistance.toInt()}m',
+                      icon: Icons.straighten,
                     ),
-                    _MetricTile(
+                    MetricTile(
                       label: 'Time',
                       value: result.totalTimeFormatted,
+                      icon: Icons.schedule,
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _MetricTile(
+                    MetricTile(
                       label: 'Avg Split',
                       value: '${result.avgSplitFormatted}/500m',
+                      icon: Icons.speed,
                     ),
-                    _MetricTile(
+                    MetricTile(
                       label: 'Avg S/M',
                       value: '${result.avgStrokeRate}',
+                      icon: Icons.sync,
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    _MetricTile(
+                    MetricTile(
                       label: 'Avg Watts',
                       value: '${result.avgWatts}',
+                      icon: Icons.bolt,
                     ),
-                    _MetricTile(
+                    MetricTile(
                       label: 'Calories',
                       value: '${result.calories}',
+                      icon: Icons.local_fire_department,
                     ),
                   ],
                 ),
@@ -446,13 +460,15 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _MetricTile(
+                      MetricTile(
                         label: 'Avg HR',
                         value: '${result.avgHeartRate} bpm',
+                        icon: Icons.favorite,
                       ),
-                      _MetricTile(
+                      MetricTile(
                         label: 'C2 Synced',
                         value: _syncedToC2 ? 'Yes' : 'No',
+                        icon: Icons.cloud_done,
                       ),
                     ],
                   ),
@@ -562,38 +578,6 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
     final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return '${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day}, ${dt.year} '
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-}
-
-class _MetricTile extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MetricTile({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: RowCraftTheme.subtleGrey,
-                ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: RowCraftTheme.metricWhite,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

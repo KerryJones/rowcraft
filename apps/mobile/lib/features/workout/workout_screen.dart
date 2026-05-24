@@ -1402,17 +1402,6 @@ class HeroSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  if (!isWide) ...[
-                    // Invisible counterweight so pace number stays centered
-                    Opacity(
-                      opacity: 0,
-                      child: Text(
-                        '/500m',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
                   Text(
                     data.paceFormatted,
                     style: GoogleFonts.jetBrainsMono(
@@ -1529,13 +1518,22 @@ class HeroSection extends StatelessWidget {
           );
         }
 
-        // Phone: vertical stack (existing layout)
+        // Phone: pace + stroke rate on one row to free vertical space for the chart.
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              paceDisplay(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(child: paceDisplay()),
+                  const SizedBox(width: 16),
+                  Flexible(child: strokeRateDisplay()),
+                ],
+              ),
               if (guide != null) ...[
                 const SizedBox(height: 10),
                 guide,
@@ -1544,8 +1542,6 @@ class HeroSection extends StatelessWidget {
                 const SizedBox(height: 8),
                 anim,
               ],
-              const SizedBox(height: 8),
-              strokeRateDisplay(),
             ],
           ),
         );
