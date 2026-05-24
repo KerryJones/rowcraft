@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.10.0...rowcraft-mobile-v0.11.0) (2026-05-24)
+
+
+### Features
+
+* add statistics screen and apply tester layout feedback ([9c6df9c](https://github.com/KerryJones/rowcraft/commit/9c6df9c57019239e9e43fc8ddc0473e524e2f17b))
+
+
+### Bug Fixes
+
+* send per-interval ending HR to Concept2 Logbook ([313b940](https://github.com/KerryJones/rowcraft/commit/313b940aca1b2c98e67d8471ecd62e666bef5877))
+
 ## [0.10.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.9.0...rowcraft-mobile-v0.10.0) (2026-05-23)
 
 
