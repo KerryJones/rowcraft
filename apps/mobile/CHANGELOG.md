@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.12.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.11.0...rowcraft-mobile-v0.12.0) (2026-05-25)
+
+
+### Features
+
+* apply tester feedback round 3 (history card + workout layout) ([675fa05](https://github.com/KerryJones/rowcraft/commit/675fa05b15d03f1de469bc011c3ee2fc62e47eab))
+
+
+### Bug Fixes
+
+* apply tester feedback round 2 and fix Quick Start tab bug ([f29e932](https://github.com/KerryJones/rowcraft/commit/f29e9328d9a98dbc0becc397f8e57986de424e38))
+
 ## [0.11.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.10.0...rowcraft-mobile-v0.11.0) (2026-05-24)
 
 
