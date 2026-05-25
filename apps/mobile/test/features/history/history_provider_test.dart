@@ -125,4 +125,37 @@ void main() {
       expect(s.bestSplit, 980);
     });
   });
+
+  group('HistorySummary.totalDistanceFormatted', () {
+    HistorySummary withDistance(double meters) => HistorySummary(
+      totalWorkouts: 1,
+      totalDistance: meters,
+      totalTime: const Duration(minutes: 10),
+      avgStrokeRate: 0,
+      activeDays: 1,
+      totalCalories: 0,
+      avgWatts: 0,
+      avgPaceWeighted: 0,
+    );
+
+    test('under 1km renders meters with no separator', () {
+      expect(withDistance(999).totalDistanceFormatted, '999m');
+    });
+
+    test('exactly 1km switches to km with one decimal', () {
+      expect(withDistance(1000).totalDistanceFormatted, '1.0km');
+    });
+
+    test('mid-range km uses one-decimal format without separator', () {
+      expect(withDistance(999499).totalDistanceFormatted, '999.5km');
+    });
+
+    test('at 1000km switches to integer km with thousands separator', () {
+      expect(withDistance(1000000).totalDistanceFormatted, '1,000km');
+    });
+
+    test('large km values include thousands separators', () {
+      expect(withDistance(12345000).totalDistanceFormatted, '12,345km');
+    });
+  });
 }

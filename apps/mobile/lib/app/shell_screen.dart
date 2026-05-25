@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/quick_start/quick_start_screen.dart' show justRowWorkoutId;
 import 'adaptive.dart';
 import 'shell_app_bar_actions_provider.dart';
 
@@ -36,8 +37,21 @@ class ShellScreen extends ConsumerStatefulWidget {
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   late int _previousIndex = widget.navigationShell.currentIndex;
 
+  void _launchJustRow() {
+    context.push('/workout/$justRowWorkoutId').then((_) {
+      if (!mounted) return;
+      widget.navigationShell.goBranch(0);
+      // Sync _previousIndex so the next tab tap still clears AppBar actions.
+      ref.read(shellAppBarActionsProvider.notifier).state = [];
+      _previousIndex = 0;
+    });
+  }
+
   void _onDestinationSelected(int index) {
-    // Clear per-screen actions when switching tabs
+    if (index == 2) {
+      _launchJustRow();
+      return;
+    }
     if (index != _previousIndex) {
       ref.read(shellAppBarActionsProvider.notifier).state = [];
       _previousIndex = index;
@@ -53,10 +67,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     final tablet = isTablet(context);
 
     return PopScope(
-      canPop: widget.navigationShell.currentIndex == 2,
+      canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
-          widget.navigationShell.goBranch(2, initialLocation: true);
+          _launchJustRow();
         }
       },
       child: Scaffold(

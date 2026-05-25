@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme.dart';
 import '../../utils/hr_zones.dart';
+import '../../utils/number_format.dart';
 import '../../utils/time_in_zone.dart';
 import '../../widgets/content_constraint.dart';
 import '../../widgets/hr_zone_donut.dart';
@@ -104,12 +105,12 @@ class _StatisticsBody extends StatelessWidget {
                   children: [
                     MetricTile(
                       label: 'Active Days',
-                      value: '${summary.activeDays}',
+                      value: formatThousandsIfLarge(summary.activeDays),
                       icon: Icons.calendar_today,
                     ),
                     MetricTile(
                       label: 'Total Calories',
-                      value: '${summary.totalCalories}',
+                      value: formatThousandsIfLarge(summary.totalCalories),
                       icon: Icons.local_fire_department,
                     ),
                   ],

@@ -7,6 +7,7 @@ import '../../models/workout_result.dart';
 import '../../services/local_db.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
+import '../../utils/number_format.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
 
@@ -209,12 +210,12 @@ class HistorySummary {
 
   String get totalDistanceFormatted {
     if (totalDistance >= 1000000) {
-      return '${(totalDistance / 1000).toStringAsFixed(0)}km';
+      return '${formatThousands((totalDistance / 1000).round())}km';
     }
     if (totalDistance >= 1000) {
       return '${(totalDistance / 1000).toStringAsFixed(1)}km';
     }
-    return '${totalDistance.toInt()}m';
+    return '${formatThousandsIfLarge(totalDistance.toInt())}m';
   }
 
   String get bestSplitFormatted => formatPace(bestSplit ?? 0);

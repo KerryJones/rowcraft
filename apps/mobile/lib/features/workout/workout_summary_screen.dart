@@ -16,7 +16,7 @@ import '../../models/workout_result.dart';
 import '../../models/workout_segment.dart';
 import '../../utils/hr_zones.dart' as hr_zones;
 import '../../utils/segment_color.dart';
-import '../../utils/time_in_zone.dart' show timeInZone, timeInZoneBySegment;
+import '../../utils/time_in_zone.dart' show timeInZone;
 import '../../models/workout_time_sample.dart';
 import '../../widgets/discard_workout_dialog.dart';
 import '../../widgets/hr_zone_donut.dart';
@@ -174,9 +174,6 @@ class _WorkoutSummaryContentState extends ConsumerState<WorkoutSummaryContent>
                   _SplitsTable(
                     splits: splits,
                     segments: segments,
-                    timeSamples: timeSamples ?? const <WorkoutTimeSample>[],
-                    maxHr: maxHr,
-                    restingHr: session.restingHeartRate,
                     zoneSystem: session.zoneSystem,
                   ),
                 ],
@@ -255,6 +252,7 @@ class _StatsGrid extends StatelessWidget {
                 child: _StatCell(
                   label: 'DISTANCE',
                   value: _formatDistance(totalDistance),
+                  icon: Icons.straighten,
                 ),
               ),
               const SizedBox(width: 8),
@@ -262,6 +260,7 @@ class _StatsGrid extends StatelessWidget {
                 child: _StatCell(
                   label: 'TIME',
                   value: _formatDuration(totalTime),
+                  icon: Icons.schedule,
                 ),
               ),
               const SizedBox(width: 8),
@@ -269,6 +268,7 @@ class _StatsGrid extends StatelessWidget {
                 child: _StatCell(
                   label: 'AVG PACE',
                   value: '${formatPace(avgPace)}/500m',
+                  icon: Icons.speed,
                 ),
               ),
             ],
@@ -277,18 +277,27 @@ class _StatsGrid extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _StatCell(label: 'AVG S/M', value: '$avgSR'),
+                child: _StatCell(
+                  label: 'AVG S/M',
+                  value: '$avgSR',
+                  icon: Icons.sync,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _StatCell(
                   label: 'AVG HR',
                   value: avgHR != null ? '$avgHR' : '--',
+                  icon: Icons.favorite,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _StatCell(label: 'CALORIES', value: '$calories'),
+                child: _StatCell(
+                  label: 'CALORIES',
+                  value: '$calories',
+                  icon: Icons.local_fire_department,
+                ),
               ),
             ],
           ),
@@ -298,11 +307,19 @@ class _StatsGrid extends StatelessWidget {
   }
 }
 
+/// Value-first stat cell for the end-of-workout summary: large metric on top,
+/// labelled icon underneath. Distinct from [MetricTile], which is label-first
+/// for the bare-row layout used on the history detail screen.
 class _StatCell extends StatelessWidget {
   final String label;
   final String value;
+  final IconData icon;
 
-  const _StatCell({required this.label, required this.value});
+  const _StatCell({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -327,14 +344,21 @@ class _StatCell extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: RowCraftTheme.subtleGrey,
-              letterSpacing: 0.8,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: RowCraftTheme.subtleGrey),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: RowCraftTheme.subtleGrey,
+                  letterSpacing: 0.8,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -729,17 +753,11 @@ class _HrZoneDistributionPainter extends CustomPainter {
 class _SplitsTable extends StatelessWidget {
   final List<SplitData> splits;
   final List<WorkoutSegment> segments;
-  final List<WorkoutTimeSample> timeSamples;
-  final int maxHr;
-  final int? restingHr;
   final hr_zones.ZoneSystem zoneSystem;
 
   const _SplitsTable({
     required this.splits,
     required this.segments,
-    required this.timeSamples,
-    required this.maxHr,
-    required this.restingHr,
     required this.zoneSystem,
   });
 
@@ -766,7 +784,6 @@ class _SplitsTable extends StatelessWidget {
     );
 
     final isAutoSplit = _isAutoSplit;
-    final tizBySegment = timeInZoneBySegment(timeSamples, restingHr, maxHr);
 
     // Precompute cumulative distances for auto-split labels
     final cumDistances = isAutoSplit
@@ -799,10 +816,9 @@ class _SplitsTable extends StatelessWidget {
                   SizedBox(width: 48, child: Text(isAutoSplit ? 'SPLIT' : 'TYPE', style: headerStyle)),
                   Expanded(child: Text('DIST', style: headerStyle)),
                   Expanded(child: Text('TIME', style: headerStyle)),
-                  Expanded(child: Text('PACE', style: headerStyle)),
+                  Expanded(flex: 2, child: Text('PACE', style: headerStyle)),
                   SizedBox(width: 36, child: Text('S/M', style: headerStyle)),
-                  SizedBox(width: 28, child: Text('ZONE', style: headerStyle)),
-                  SizedBox(width: 32, child: Text('HR', style: headerStyle)),
+                  SizedBox(width: 40, child: Text('HR', style: headerStyle)),
                 ],
               ),
             ),
@@ -869,8 +885,9 @@ class _SplitsTable extends StatelessWidget {
                       ),
                     ),
                     Expanded(
+                      flex: 2,
                       child: Text(
-                        '${formatPace(split.avgPace)}/500m',
+                        formatPace(split.avgPace),
                         style: cellStyle,
                       ),
                     ),
@@ -879,17 +896,7 @@ class _SplitsTable extends StatelessWidget {
                       child: Text('${split.avgStrokeRate}', style: cellStyle),
                     ),
                     SizedBox(
-                      width: 28,
-                      child: Center(
-                        child: HrZoneDonut(
-                          timeInZone: tizBySegment[segIndex] ?? const {},
-                          size: 18,
-                          strokeWidth: 3,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 32,
+                      width: 40,
                       child: Text(
                         split.avgHeartRate != null
                             ? '${split.avgHeartRate}'

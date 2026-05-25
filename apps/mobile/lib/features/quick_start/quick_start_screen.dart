@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// The Just Row workout UUID from seed data.
-const _justRowWorkoutId = 'a0000000-0000-0000-0000-000000000007';
+/// The Just Row workout UUID from seed data. Exported so the shell can launch
+/// the same workout directly from the Quick Start nav tap.
+const justRowWorkoutId = 'a0000000-0000-0000-0000-000000000007';
 
-/// Quick Start tab — immediately navigates to the Just Row pre-workout screen
-/// so it uses the same app bar, connection modal, and "BEGIN WORKOUT" flow
-/// as all other workouts. Re-navigates whenever the user returns to this tab.
+/// Deep-link fallback for `/quick-start`. The Quick Start nav tap is
+/// intercepted by ShellScreen and never activates this branch in normal
+/// flow — this screen only renders if something navigates to the route
+/// directly (e.g. an external deep link).
 class QuickStartScreen extends StatefulWidget {
   const QuickStartScreen({super.key});
 
@@ -28,7 +30,7 @@ class _QuickStartScreenState extends State<QuickStartScreen> {
     _pushed = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.push('/workout/$_justRowWorkoutId').then((_) {
+        context.push('/workout/$justRowWorkoutId').then((_) {
           _pushed = false;
           if (mounted) {
             StatefulNavigationShell.maybeOf(context)?.goBranch(0);

@@ -368,8 +368,6 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
     final maxHr = profile?.maxHeartRate ?? 190;
     final restingHr = profile?.restingHeartRate;
     final summaryTiz = timeInZone(result.timeSamples, restingHr, maxHr);
-    final tizBySegment =
-        timeInZoneBySegment(result.timeSamples, restingHr, maxHr);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -520,9 +518,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                   1: FlexColumnWidth(),
                   2: FlexColumnWidth(),
                   3: FlexColumnWidth(),
-                  4: FixedColumnWidth(28),
-                  5: FlexColumnWidth(),
-                  6: FlexColumnWidth(),
+                  4: FlexColumnWidth(),
                 },
                 children: [
                   const TableRow(
@@ -531,9 +527,7 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                       _TableHeader('Dist'),
                       _TableHeader('Pace'),
                       _TableHeader('S/M'),
-                      _TableHeader('Zone'),
                       _TableHeader('HR'),
-                      _TableHeader('Watts'),
                     ],
                   ),
                   for (final (i, split) in result.splits.indexed)
@@ -548,17 +542,12 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
                         _TableCell(split.paceFormatted, isRest: split.isRest),
                         _TableCell('${split.avgStrokeRate}',
                             isRest: split.isRest),
-                        _ZoneCell(
-                          timeInZone:
-                              tizBySegment[split.intervalIndex] ?? const {},
-                        ),
                         _TableCell(
                           (split.avgHeartRate ?? 0) > 0
                               ? '${split.avgHeartRate}'
                               : '--',
                           isRest: split.isRest,
                         ),
-                        _TableCell('${split.avgWatts}', isRest: split.isRest),
                       ],
                     ),
                 ],
@@ -662,22 +651,3 @@ class _IndexCell extends StatelessWidget {
   }
 }
 
-class _ZoneCell extends StatelessWidget {
-  final Map<int, double> timeInZone;
-
-  const _ZoneCell({required this.timeInZone});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Center(
-        child: HrZoneDonut(
-          timeInZone: timeInZone,
-          size: 18,
-          strokeWidth: 3,
-        ),
-      ),
-    );
-  }
-}
