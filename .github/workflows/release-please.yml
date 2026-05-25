@@ -125,3 +125,35 @@ jobs:
           track: alpha
           status: completed
           releaseName: ${{ needs.release-please.outputs.mobile-tag-name }}
+
+  notify-discord:
+    needs: [release-please, deploy-play-store]
+    if: ${{ needs.release-please.outputs.mobile-release-created == 'true' && needs.deploy-play-store.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.release-please.outputs.mobile-tag-name }}
+    steps:
+      - name: Fetch release notes
+        id: notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          DELIM="EOF_$(openssl rand -hex 16)"
+          {
+            echo "body<<$DELIM"
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body -q .body
+            echo "$DELIM"
+          } >> "$GITHUB_OUTPUT"
+      - name: Post to Discord
+        uses: sarisia/actions-status-discord@5ddf3b8c3231d4e97c2c50e1ed4cfb1d1bcec6fc # v1.15.3
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          nodetail: true
+          title: "🚣 ${{ env.TAG }} is live on Play Store"
+          description: "${{ steps.notes.outputs.body }}"
+          url: "https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}"
+          color: 0x00C49A
+          username: RowCraft Releases
