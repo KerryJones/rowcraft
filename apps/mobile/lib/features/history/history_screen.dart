@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
+import '../../utils/time_in_zone.dart';
 import '../../widgets/content_constraint.dart';
+import '../../widgets/hr_zone_donut.dart';
 import '../../widgets/status_chip.dart';
+import '../profile/profile_screen.dart';
 import 'history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -129,17 +132,26 @@ class _DateGroup extends StatelessWidget {
   }
 }
 
-class _ResultCard extends StatelessWidget {
+class _ResultCard extends ConsumerWidget {
   final HistoryEntry entry;
 
   const _ResultCard({required this.entry});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final timeFormat = DateFormat('h:mm a');
     final result = entry.result;
     final isPending = entry.status != SyncStatus.synced;
+    final profile = ref.watch(profileProvider).value;
+    final maxHr = profile?.maxHeartRate;
+    final canShowDonut = maxHr != null &&
+        maxHr > 0 &&
+        hasHrSamples(result.timeSamples);
+    final zoneDist = canShowDonut
+        ? timeInZone(result.timeSamples, profile?.restingHeartRate, maxHr)
+        : const <int, double>{};
+    final canRedo = result.workoutId != null;
 
     return Card(
       child: InkWell(
@@ -181,16 +193,38 @@ class _ResultCard extends StatelessWidget {
                     value: '${result.totalDistance.toInt()}m',
                     label: 'Distance',
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 16),
                   _MetricCell(value: result.totalTimeFormatted, label: 'Time'),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: 16),
                   _MetricCell(
                     value: result.avgSplitFormatted,
-                    label: '',
+                    label: 'Avg pace',
                     highlight: true,
                   ),
                   const Spacer(),
                   _MetricCell(value: '${result.avgStrokeRate}', label: 's/m'),
+                  if (canShowDonut) ...[
+                    const SizedBox(width: 8),
+                    HrZoneDonut(
+                      timeInZone: zoneDist,
+                      size: 28,
+                      strokeWidth: 4,
+                    ),
+                  ],
+                  if (canRedo)
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: IconButton(
+                        icon: const Icon(Icons.replay),
+                        iconSize: 20,
+                        color: RowCraftTheme.subtleGrey,
+                        tooltip: 'Redo workout',
+                        padding: EdgeInsets.zero,
+                        onPressed: () =>
+                            context.push('/workout/${result.workoutId}'),
+                      ),
+                    ),
                 ],
               ),
 

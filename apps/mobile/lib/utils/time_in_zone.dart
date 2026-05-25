@@ -1,6 +1,16 @@
 import '../models/workout_time_sample.dart';
 import 'hr_zones.dart';
 
+/// True when at least one sample carries a positive HR reading. Cheap O(N)
+/// early-out so callers can skip the full zone aggregation when there's no
+/// HR data at all (history list, summary screens).
+bool hasHrSamples(List<WorkoutTimeSample> samples) {
+  for (final s in samples) {
+    if (s.heartRate != null && s.heartRate! > 0) return true;
+  }
+  return false;
+}
+
 /// Time spent in each HR zone (1–5), in seconds, for the given samples.
 ///
 /// Each sample is weighted by the timestamp delta to the next sample; the

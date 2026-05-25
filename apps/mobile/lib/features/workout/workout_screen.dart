@@ -1394,7 +1394,8 @@ class HeroSection extends StatelessWidget {
         final srFontSize = isTiny ? 30.0 : isSmall ? 36.0 : isWide ? 56.0 : 44.0;
         final animHeight = isTiny ? 40.0 : isSmall ? 50.0 : 70.0;
 
-        // Pace display widget (reused in both layouts)
+        // In the stacked phone branch the invisible "/500m" counterweight
+        // mirrors the visible suffix so the pace digits stay optically centered.
         Widget paceDisplay() => FittedBox(
               fit: BoxFit.scaleDown,
               child: Row(
@@ -1402,6 +1403,16 @@ class HeroSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
+                  if (!isWide) ...[
+                    Opacity(
+                      opacity: 0,
+                      child: Text(
+                        '/500m',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   Text(
                     data.paceFormatted,
                     style: GoogleFonts.jetBrainsMono(
@@ -1518,22 +1529,18 @@ class HeroSection extends StatelessWidget {
           );
         }
 
-        // Phone: pace + stroke rate on one row to free vertical space for the chart.
+        // Narrow container (phone portrait + landscape compact, where the
+        // hero column only gets ~60% width): stack so SM can't get pushed
+        // into the chart area below.
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Flexible(child: paceDisplay()),
-                  const SizedBox(width: 16),
-                  Flexible(child: strokeRateDisplay()),
-                ],
-              ),
+              paceDisplay(),
+              const SizedBox(height: 8),
+              strokeRateDisplay(),
               if (guide != null) ...[
                 const SizedBox(height: 10),
                 guide,
