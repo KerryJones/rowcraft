@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.12.0...rowcraft-mobile-v0.13.0) (2026-06-03)
+
+
+### Features
+
+* apply tester feedback round 4 ([0081929](https://github.com/KerryJones/rowcraft/commit/00819299d297577e6c0c15e78f2d8f2c947ffa09))
+
 ## [0.12.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.11.0...rowcraft-mobile-v0.12.0) (2026-05-25)
 
 
