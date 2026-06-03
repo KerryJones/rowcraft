@@ -1,6 +1,7 @@
 /// PR type identifiers — each maps to a specific performance metric.
 enum PrType {
   fastest500m('fastest_500m', 'Fastest 500m', true),
+  fastest1k('fastest_1k', 'Fastest 1K', true),
   fastest2k('fastest_2k', 'Fastest 2K', true),
   fastest5k('fastest_5k', 'Fastest 5K', true),
   fastest6k('fastest_6k', 'Fastest 6K', true),

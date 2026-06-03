@@ -171,10 +171,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       });
     }
 
+    final isLandscapeCompact =
+        MediaQuery.of(context).orientation == Orientation.landscape &&
+            windowSizeClass(context) == WindowSizeClass.compact;
+
     return Scaffold(
       appBar: const RowCraftAppBar(title: 'Workouts'),
-      body: Column(
-        children: [
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
           const PendingSyncBanner(),
           // WOD slot — pinned at top, but suppressed when browsing "My
           // Workouts" (a public WOD above a private list is confusing).
@@ -185,6 +191,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 workout: wod,
                 canShuffle: wodPoolLength > 1,
                 ftpWatts: userFtp,
+                compact: isLandscapeCompact,
                 onTap: () => context.push('/workout/${wod.id}'),
                 onShuffle: () {
                   setState(() => _wodShuffleOffset++);
@@ -232,6 +239,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 : _buildTilesGrid(context, userId, zoneSystem),
           ),
         ],
+        ),
       ),
     );
   }

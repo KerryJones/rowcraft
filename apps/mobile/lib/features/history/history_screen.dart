@@ -211,20 +211,6 @@ class _ResultCard extends ConsumerWidget {
                       strokeWidth: 4,
                     ),
                   ],
-                  if (canRedo)
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: IconButton(
-                        icon: const Icon(Icons.replay),
-                        iconSize: 20,
-                        color: RowCraftTheme.subtleGrey,
-                        tooltip: 'Redo workout',
-                        padding: EdgeInsets.zero,
-                        onPressed: () =>
-                            context.push('/workout/${result.workoutId}'),
-                      ),
-                    ),
                 ],
               ),
 
@@ -233,6 +219,21 @@ class _ResultCard extends ConsumerWidget {
                 Text(
                   '${result.splits.length} splits',
                   style: theme.textTheme.bodySmall,
+                ),
+              ],
+              if (canRedo) ...[
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.replay, size: 18),
+                    label: const Text('Repeat workout'),
+                    onPressed: () =>
+                        context.push('/workout/${result.workoutId}'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: RowCraftTheme.primaryBlue,
+                    ),
+                  ),
                 ),
               ],
             ],

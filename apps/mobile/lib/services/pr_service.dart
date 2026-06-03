@@ -14,6 +14,7 @@ final prServiceProvider = Provider<PrService>((ref) {
 /// fastest_500m has no upper bound — any workout >= 500m qualifies.
 const _distanceRanges = <PrType, (int, int?)>{
   PrType.fastest500m: (500, null),
+  PrType.fastest1k: (1000, 1500),
   PrType.fastest2k: (2000, 2500),
   PrType.fastest5k: (5000, 5500),
   PrType.fastest6k: (6000, 6500),

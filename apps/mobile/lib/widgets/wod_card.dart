@@ -14,6 +14,7 @@ class WodCard extends StatelessWidget {
   final VoidCallback onShuffle;
   final bool canShuffle;
   final int ftpWatts;
+  final bool compact;
 
   const WodCard({
     super.key,
@@ -22,6 +23,7 @@ class WodCard extends StatelessWidget {
     required this.onShuffle,
     this.canShuffle = true,
     this.ftpWatts = kDefaultFtpWatts,
+    this.compact = false,
   });
 
   @override
@@ -141,10 +143,10 @@ class WodCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-
-            // Segment graph
-            WorkoutGraph(segments: workout.segments, height: 80),
+            if (!compact) ...[
+              const SizedBox(height: 12),
+              WorkoutGraph(segments: workout.segments, height: 80),
+            ],
 
           ],
         ),

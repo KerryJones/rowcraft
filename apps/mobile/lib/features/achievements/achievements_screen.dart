@@ -82,6 +82,7 @@ class _PrTile extends StatelessWidget {
 
   IconData get _icon => switch (prType) {
         PrType.fastest500m => Icons.speed,
+        PrType.fastest1k => Icons.timer,
         PrType.fastest2k => Icons.timer,
         PrType.fastest5k => Icons.timer,
         PrType.fastest6k => Icons.timer,

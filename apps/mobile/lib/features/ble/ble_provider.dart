@@ -179,6 +179,9 @@ class BleNotifier extends Notifier<BleState> {
   StreamSubscription<HrConnectionState>? _hrConnectionSubscription;
   Timer? _scanTimer;
   String? _pendingPm5Name;
+  bool _autoConnectPm5Attempted = false;
+  bool _autoConnectHrAttempted = false;
+  bool _scanExtended = false;
 
   @override
   BleState build() {
@@ -187,6 +190,8 @@ class BleNotifier extends Notifier<BleState> {
 
     _pm5ConnectionSubscription?.cancel();
     _pm5ConnectionSubscription = pm5Service.connectionState.listen((s) {
+      final wasConnecting =
+          state.pm5ConnectionState == PM5ConnectionState.connecting;
       state = state.copyWith(pm5ConnectionState: s);
       // Prompt to remember PM5 device on confirmed connection
       if (s == PM5ConnectionState.connected &&
@@ -206,14 +211,24 @@ class BleNotifier extends Notifier<BleState> {
           );
           _pendingPm5Name = null;
         }
-      } else if (s == PM5ConnectionState.error) {
+      } else if (s == PM5ConnectionState.error ||
+          (s == PM5ConnectionState.disconnected && wasConnecting)) {
+        // Connection attempt failed (BLE timeout fires `disconnected` from
+        // `connecting`) — allow auto-connect to retry on next advertisement.
         _pendingPm5Name = null;
+        _autoConnectPm5Attempted = false;
       }
     });
 
     _hrConnectionSubscription?.cancel();
     _hrConnectionSubscription = hrService.connectionState.listen((s) {
+      final wasConnecting =
+          state.hrConnectionState == HrConnectionState.connecting;
       state = state.copyWith(hrConnectionState: s);
+      if (s == HrConnectionState.error ||
+          (s == HrConnectionState.disconnected && wasConnecting)) {
+        _autoConnectHrAttempted = false;
+      }
     });
 
     // Prompt to remember HR device on confirmed connection (via callback)
@@ -277,6 +292,9 @@ class BleNotifier extends Notifier<BleState> {
     final hrService = ref.read(hrServiceProvider);
     final pm5Devices = <DiscoveredDevice>[];
     final hrDevices = <DiscoveredDevice>[];
+    _autoConnectPm5Attempted = false;
+    _autoConnectHrAttempted = false;
+    _scanExtended = false;
 
     final pm5Connected =
         state.pm5ConnectionState == PM5ConnectionState.connected;
@@ -302,6 +320,22 @@ class BleNotifier extends Notifier<BleState> {
         if (mergeDiscovered(pm5Devices, device)) {
           state = state.copyWith(discoveredPm5Devices: List.from(pm5Devices));
         }
+        if (!_autoConnectPm5Attempted &&
+            state.pm5ConnectionState == PM5ConnectionState.scanning &&
+            state.connectingPm5DeviceId == null) {
+          SavedDevice? matched;
+          for (final d in state.savedDevices) {
+            if (d.deviceType == 'pm5' && d.deviceId == device.id) {
+              matched = d;
+              break;
+            }
+          }
+          if (matched != null) {
+            _autoConnectPm5Attempted = true;
+            connectToPm5(device.id,
+                deviceName: matched.deviceName, stopScanning: false);
+          }
+        }
       },
       onError: (e) {
         if (!pm5Connected) {
@@ -320,6 +354,28 @@ class BleNotifier extends Notifier<BleState> {
         if (mergeDiscovered(hrDevices, device)) {
           state = state.copyWith(discoveredHrDevices: List.from(hrDevices));
         }
+        if (!_autoConnectHrAttempted &&
+            state.hrConnectionState == HrConnectionState.scanning &&
+            state.connectingHrDeviceId == null) {
+          final discoveredName = device.name.trim().toLowerCase();
+          SavedDevice? matched;
+          if (discoveredName.isNotEmpty) {
+            for (final d in state.savedDevices) {
+              if (d.deviceType == 'hr' &&
+                  d.deviceName.trim().toLowerCase() == discoveredName) {
+                matched = d;
+                break;
+              }
+            }
+          }
+          if (matched != null) {
+            _autoConnectHrAttempted = true;
+            connectToHrDevice(device.id,
+                deviceName:
+                    device.name.isNotEmpty ? device.name : matched.deviceName,
+                stopScanning: false);
+          }
+        }
       },
       onError: (e) {
         state = state.copyWith(
@@ -329,10 +385,26 @@ class BleNotifier extends Notifier<BleState> {
       },
     );
 
-    // Auto-stop scan after 10 seconds (cancellable)
+    // Auto-stop scan after 10 seconds; extends once if a saved device hasn't
+    // been seen yet (slow-to-wake PM5 gets ~20s before "No devices found").
     _scanTimer?.cancel();
     _scanTimer = Timer(const Duration(seconds: 10), () {
-      if (state.isScanning) {
+      if (!state.isScanning) return;
+      // Extend only when an attempt hasn't fired yet — connecting/connected
+      // state doesn't persist the "already tried" fact across transitions.
+      final needsMoreTime = !_scanExtended &&
+          ((state.pm5ConnectionState == PM5ConnectionState.scanning &&
+                  !_autoConnectPm5Attempted &&
+                  state.savedDevices.any((d) => d.deviceType == 'pm5')) ||
+              (state.hrConnectionState == HrConnectionState.scanning &&
+                  !_autoConnectHrAttempted &&
+                  state.savedDevices.any((d) => d.deviceType == 'hr')));
+      if (needsMoreTime) {
+        _scanExtended = true;
+        _scanTimer = Timer(const Duration(seconds: 10), () {
+          if (state.isScanning) stopScan();
+        });
+      } else {
         stopScan();
       }
     });
@@ -362,9 +434,10 @@ class BleNotifier extends Notifier<BleState> {
   }
 
   /// Connect to a PM5 device. Device is saved to DB only on confirmed connection.
-  Future<void> connectToPm5(String deviceId, {String? deviceName}) async {
+  Future<void> connectToPm5(String deviceId,
+      {String? deviceName, bool stopScanning = true}) async {
     _pendingPm5Name = deviceName;
-    stopScan();
+    if (stopScanning) stopScan();
     state = state.copyWith(
       pm5ConnectionState: PM5ConnectionState.connecting,
       connectingPm5DeviceId: deviceId,
@@ -387,8 +460,8 @@ class BleNotifier extends Notifier<BleState> {
 
   /// Connect to an HR monitor device. Device is saved to DB only on confirmed connection.
   Future<void> connectToHrDevice(String deviceId,
-      {String? deviceName}) async {
-    stopScan();
+      {String? deviceName, bool stopScanning = true}) async {
+    if (stopScanning) stopScan();
     state = state.copyWith(
       hrConnectionState: HrConnectionState.connecting,
       connectingHrDeviceId: deviceId,
@@ -448,32 +521,13 @@ class BleNotifier extends Notifier<BleState> {
     await _loadSavedDevices();
   }
 
-  /// Attempt to auto-reconnect to previously saved devices.
+  /// Attempt to auto-reconnect to previously saved devices by scanning and
+  /// connecting on discovery — avoids blind connect to non-advertising devices.
   Future<void> autoReconnect() async {
     final granted = await requestBlePermissions();
     if (!granted) return;
-
-    final db = ref.read(localDatabaseProvider);
-    final devices = await db.getSavedDevices();
-
-    for (final device in devices) {
-      if (device.deviceType == 'pm5' &&
-          state.pm5ConnectionState == PM5ConnectionState.disconnected) {
-        try {
-          await connectToPm5(device.deviceId, deviceName: device.deviceName);
-        } catch (_) {
-          // Auto-reconnect failures are silent
-        }
-      } else if (device.deviceType == 'hr' &&
-          state.hrConnectionState == HrConnectionState.disconnected) {
-        try {
-          await connectToHrDevice(device.deviceId,
-              deviceName: device.deviceName);
-        } catch (_) {
-          // Auto-reconnect failures are silent
-        }
-      }
-    }
+    await _loadSavedDevices();
+    await startScan();
   }
 }
 

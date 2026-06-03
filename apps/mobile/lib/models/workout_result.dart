@@ -212,7 +212,8 @@ class WorkoutResult {
       id: (json['id'] as String?) ?? '',
       userId: json['user_id'] as String,
       workoutId: json['workout_id'] as String?,
-      workoutName: (json['workouts'] as Map<String, dynamic>?)?['title'] as String?,
+      workoutName: (json['workout_name'] as String?) ??
+          (json['workouts'] as Map<String, dynamic>?)?['title'] as String?,
       startedAt: DateTime.parse(json['started_at'] as String),
       finishedAt: DateTime.parse(json['finished_at'] as String),
       totalDistance: (json['total_distance'] as num).toDouble(),
@@ -246,6 +247,7 @@ class WorkoutResult {
       if (id.isNotEmpty) 'id': id,
       'user_id': userId,
       if (workoutId != null) 'workout_id': workoutId,
+      if (workoutName != null) 'workout_name': workoutName,
       'started_at': startedAt.toIso8601String(),
       'finished_at': finishedAt.toIso8601String(),
       'total_distance': totalDistance.toInt(),
