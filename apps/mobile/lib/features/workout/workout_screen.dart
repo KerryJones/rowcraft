@@ -1328,6 +1328,8 @@ class _CurrentSegment extends StatelessWidget {
 // Hero Section — pace, guide bar, stroke rate
 // ---------------------------------------------------------------------------
 
+enum HeroAlign { center, end }
+
 class HeroSection extends StatelessWidget {
   final WorkoutSessionState session;
   /// When true, inline the "/500m" suffix on the pace row to save vertical space.
@@ -1335,12 +1337,14 @@ class HeroSection extends StatelessWidget {
   /// When false, suppress the rowing animation even if the current segment has
   /// a target stroke rate. Controlled by user setting.
   final bool showRowingAnimation;
+  final HeroAlign verticalAlign;
 
   const HeroSection({
     super.key,
     required this.session,
     this.inlinePaceSuffix = false,
     this.showRowingAnimation = true,
+    this.verticalAlign = HeroAlign.center,
   });
 
   @override
@@ -1532,11 +1536,16 @@ class HeroSection extends StatelessWidget {
         // Narrow container (phone portrait + landscape compact, where the
         // hero column only gets ~60% width): stack so SM can't get pushed
         // into the chart area below.
+        final isEnd = verticalAlign == HeroAlign.end;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment:
+                isEnd ? MainAxisAlignment.end : MainAxisAlignment.center,
+            // MainAxisSize.min in the center case keeps the legacy phone
+            // portrait shrink-to-fit behaviour; for end alignment the column
+            // must fill its slot so the children can sit against the bottom.
+            mainAxisSize: isEnd ? MainAxisSize.max : MainAxisSize.min,
             children: [
               paceDisplay(),
               const SizedBox(height: 8),

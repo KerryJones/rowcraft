@@ -171,9 +171,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       });
     }
 
-    final isLandscapeCompact =
-        MediaQuery.of(context).orientation == Orientation.landscape &&
-            windowSizeClass(context) == WindowSizeClass.compact;
+    final isLandscapeCompact = isLandscapePhone(context);
 
     return Scaffold(
       appBar: const RowCraftAppBar(title: 'Workouts'),
@@ -236,7 +234,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     _mine ? null : wod,
                     userFtp,
                   )
-                : _buildTilesGrid(context, userId, zoneSystem),
+                : _buildTilesGrid(context, userId, zoneSystem,
+                    isLandscapeCompact: isLandscapeCompact),
           ),
         ],
         ),
@@ -246,21 +245,31 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
   // ── Landing: tile grid ────────────────────────────────────────
 
-  Widget _buildTilesGrid(BuildContext context, String? userId, ZoneSystem zoneSystem) {
+  Widget _buildTilesGrid(
+    BuildContext context,
+    String? userId,
+    ZoneSystem zoneSystem, {
+    required bool isLandscapeCompact,
+  }) {
     final tiles = _visibleTiles(userId: userId);
     final sizeClass = windowSizeClass(context);
-    final columns = switch (sizeClass) {
-      WindowSizeClass.compact => 2,
-      WindowSizeClass.medium => 3,
-      WindowSizeClass.expanded => 4,
-    };
+    // Landscape phone gets a wide-strip layout regardless of width-derived
+    // sizeClass (a phone in landscape reports as medium/expanded by width).
+    final columns = isLandscapeCompact
+        ? 4
+        : switch (sizeClass) {
+            WindowSizeClass.compact => 2,
+            WindowSizeClass.medium => 3,
+            WindowSizeClass.expanded => 4,
+          };
+    final aspectRatio = isLandscapeCompact ? 1.3 : 1.0;
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, isLandscapeCompact ? 16 : 80),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columns,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1,
+        childAspectRatio: aspectRatio,
       ),
       itemCount: tiles.length,
       itemBuilder: (context, index) {

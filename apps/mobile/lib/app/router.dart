@@ -14,6 +14,7 @@ import '../features/quick_start/quick_start_screen.dart';
 import '../features/plans/plan_detail_screen.dart';
 import '../features/plans/plans_catalog.dart';
 import '../features/workout/pre_workout_screen.dart';
+import '../features/workout/widgets/combined_chart_view.dart';
 import '../features/workout/workout_screen.dart';
 
 import '../features/history/history_screen.dart';
@@ -504,6 +505,22 @@ class _ResultDetailContentState extends ConsumerState<_ResultDetailContent> {
           ),
         ),
         const SizedBox(height: 16),
+
+        // Pace + HR timeline chart. Historical results don't carry the
+        // original workout segments, so per-segment zone coloring is
+        // unavailable — bars fall back to the default color.
+        if (result.timeSamples.isNotEmpty) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: CombinedChartView(
+                samples: result.timeSamples,
+                segments: const [],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
 
         // Splits table
         if (result.splits.isNotEmpty) ...[

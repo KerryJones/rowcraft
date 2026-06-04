@@ -94,6 +94,77 @@ bool tileShowsSecondary(TileDisplayMode mode, bool autoShowSecondary) {
   }
 }
 
+/// Which compact-screen tile a display-mode setting belongs to. Used as the
+/// stable identifier for persistence and for [TileDisplaySettingsNotifier.setMode].
+enum TileField { total, pace, hr, cal }
+
+typedef TileDisplaySettings = ({
+  TileDisplayMode total,
+  TileDisplayMode pace,
+  TileDisplayMode hr,
+  TileDisplayMode cal,
+});
+
+const _tileModeKeys = {
+  TileField.total: 'tile_mode_total',
+  TileField.pace: 'tile_mode_pace',
+  TileField.hr: 'tile_mode_hr',
+  TileField.cal: 'tile_mode_cal',
+};
+
+const TileDisplaySettings _defaultTileSettings = (
+  total: TileDisplayMode.auto,
+  pace: TileDisplayMode.auto,
+  hr: TileDisplayMode.auto,
+  cal: TileDisplayMode.auto,
+);
+
+TileDisplayMode _parseTileMode(String? raw) {
+  if (raw == null) return TileDisplayMode.auto;
+  return TileDisplayMode.values.firstWhere(
+    (m) => m.name == raw,
+    orElse: () => TileDisplayMode.auto,
+  );
+}
+
+class TileDisplaySettingsNotifier extends StateNotifier<TileDisplaySettings> {
+  TileDisplaySettingsNotifier(this._db) : super(_defaultTileSettings) {
+    _load();
+  }
+
+  final LocalDatabase _db;
+
+  Future<void> _load() async {
+    final raw = await Future.wait([
+      _db.getSyncMeta(_tileModeKeys[TileField.total]!),
+      _db.getSyncMeta(_tileModeKeys[TileField.pace]!),
+      _db.getSyncMeta(_tileModeKeys[TileField.hr]!),
+      _db.getSyncMeta(_tileModeKeys[TileField.cal]!),
+    ]);
+    state = (
+      total: _parseTileMode(raw[0]),
+      pace: _parseTileMode(raw[1]),
+      hr: _parseTileMode(raw[2]),
+      cal: _parseTileMode(raw[3]),
+    );
+  }
+
+  Future<void> setMode(TileField field, TileDisplayMode mode) async {
+    state = switch (field) {
+      TileField.total => (total: mode, pace: state.pace, hr: state.hr, cal: state.cal),
+      TileField.pace => (total: state.total, pace: mode, hr: state.hr, cal: state.cal),
+      TileField.hr => (total: state.total, pace: state.pace, hr: mode, cal: state.cal),
+      TileField.cal => (total: state.total, pace: state.pace, hr: state.hr, cal: mode),
+    };
+    await _db.setSyncMeta(_tileModeKeys[field]!, mode.name);
+  }
+}
+
+final tileDisplaySettingsProvider = StateNotifierProvider<
+    TileDisplaySettingsNotifier, TileDisplaySettings>((ref) {
+  return TileDisplaySettingsNotifier(ref.watch(localDatabaseProvider));
+});
+
 // ---------------------------------------------------------------------------
 // Compact body
 // ---------------------------------------------------------------------------
@@ -124,23 +195,20 @@ class WorkoutScreenCompactBody extends ConsumerStatefulWidget {
 class _WorkoutScreenCompactBodyState
     extends ConsumerState<WorkoutScreenCompactBody> {
   bool _segmentCountUp = false;
-  TileDisplayMode _totalMode = TileDisplayMode.auto;
-  TileDisplayMode _paceMode = TileDisplayMode.auto;
-  TileDisplayMode _hrMode = TileDisplayMode.auto;
-  TileDisplayMode _calMode = TileDisplayMode.auto;
   bool _autoShowSecondary = false;
   Timer? _autoRotateTimer;
 
   @override
   void initState() {
     super.initState();
-    _autoRotateTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _autoRotateTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted) return;
+      final settings = ref.read(tileDisplaySettingsProvider);
       // Skip the rebuild when every tile is user-locked — nothing would change.
-      final anyAuto = _totalMode == TileDisplayMode.auto ||
-          _paceMode == TileDisplayMode.auto ||
-          _hrMode == TileDisplayMode.auto ||
-          _calMode == TileDisplayMode.auto;
+      final anyAuto = settings.total == TileDisplayMode.auto ||
+          settings.pace == TileDisplayMode.auto ||
+          settings.hr == TileDisplayMode.auto ||
+          settings.cal == TileDisplayMode.auto;
       if (!anyAuto) return;
       setState(() => _autoShowSecondary = !_autoShowSecondary);
     });
@@ -156,9 +224,7 @@ class _WorkoutScreenCompactBodyState
   Widget build(BuildContext context) {
     final session = widget.session;
     final engineState = session.engineState;
-    final isLandscapePhone =
-        MediaQuery.orientationOf(context) == Orientation.landscape &&
-            MediaQuery.sizeOf(context).shortestSide < 600;
+    final landscapePhone = isLandscapePhone(context);
 
     final controls = IgnorePointer(
       ignoring: widget.isLocked,
@@ -174,7 +240,7 @@ class _WorkoutScreenCompactBodyState
       ),
     );
 
-    if (isLandscapePhone) {
+    if (landscapePhone) {
       return Column(
         children: [
           Expanded(
@@ -192,7 +258,7 @@ class _WorkoutScreenCompactBodyState
                   flex: 60,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(5, 10, 10, 6),
-                    child: _heroAndGraph(session),
+                    child: _heroAndGraph(session, landscapePhone: true),
                   ),
                 ),
               ],
@@ -217,7 +283,7 @@ class _WorkoutScreenCompactBodyState
         // Bottom half: existing hero visuals + segment graph
         Expanded(
           flex: 6,
-          child: _heroAndGraph(session),
+          child: _heroAndGraph(session, landscapePhone: false),
         ),
 
         controls,
@@ -226,6 +292,8 @@ class _WorkoutScreenCompactBodyState
   }
 
   Widget _statGrid(WorkoutSessionState session) {
+    final tileSettings = ref.watch(tileDisplaySettingsProvider);
+    final notifier = ref.read(tileDisplaySettingsProvider.notifier);
     return Column(
       children: [
         Expanded(
@@ -244,10 +312,10 @@ class _WorkoutScreenCompactBodyState
                 child: _TotalTile(
                   session: session,
                   showRemaining:
-                      tileShowsSecondary(_totalMode, _autoShowSecondary),
-                  isAuto: _totalMode == TileDisplayMode.auto,
-                  onTap: () => setState(
-                      () => _totalMode = advanceTileMode(_totalMode)),
+                      tileShowsSecondary(tileSettings.total, _autoShowSecondary),
+                  isAuto: tileSettings.total == TileDisplayMode.auto,
+                  onTap: () => notifier.setMode(
+                      TileField.total, advanceTileMode(tileSettings.total)),
                 ),
               ),
             ],
@@ -261,10 +329,10 @@ class _WorkoutScreenCompactBodyState
                 child: _TargetPaceTile(
                   session: session,
                   showAvg:
-                      tileShowsSecondary(_paceMode, _autoShowSecondary),
-                  isAuto: _paceMode == TileDisplayMode.auto,
-                  onTap: () => setState(
-                      () => _paceMode = advanceTileMode(_paceMode)),
+                      tileShowsSecondary(tileSettings.pace, _autoShowSecondary),
+                  isAuto: tileSettings.pace == TileDisplayMode.auto,
+                  onTap: () => notifier.setMode(
+                      TileField.pace, advanceTileMode(tileSettings.pace)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -280,10 +348,10 @@ class _WorkoutScreenCompactBodyState
                 child: _HrTile(
                   session: session,
                   showAvg:
-                      tileShowsSecondary(_hrMode, _autoShowSecondary),
-                  isAuto: _hrMode == TileDisplayMode.auto,
-                  onTap: () => setState(
-                      () => _hrMode = advanceTileMode(_hrMode)),
+                      tileShowsSecondary(tileSettings.hr, _autoShowSecondary),
+                  isAuto: tileSettings.hr == TileDisplayMode.auto,
+                  onTap: () => notifier.setMode(
+                      TileField.hr, advanceTileMode(tileSettings.hr)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -291,10 +359,10 @@ class _WorkoutScreenCompactBodyState
                 child: _CaloriesTile(
                   session: session,
                   showDistance:
-                      !tileShowsSecondary(_calMode, _autoShowSecondary),
-                  isAuto: _calMode == TileDisplayMode.auto,
-                  onTap: () => setState(
-                      () => _calMode = advanceTileMode(_calMode)),
+                      !tileShowsSecondary(tileSettings.cal, _autoShowSecondary),
+                  isAuto: tileSettings.cal == TileDisplayMode.auto,
+                  onTap: () => notifier.setMode(
+                      TileField.cal, advanceTileMode(tileSettings.cal)),
                 ),
               ),
             ],
@@ -304,7 +372,8 @@ class _WorkoutScreenCompactBodyState
     );
   }
 
-  Widget _heroAndGraph(WorkoutSessionState session) {
+  Widget _heroAndGraph(WorkoutSessionState session,
+      {required bool landscapePhone}) {
     final showRowingAnim =
         ref.watch(settingsProvider).value?.showRowingAnimation ?? true;
     return Column(
@@ -314,10 +383,17 @@ class _WorkoutScreenCompactBodyState
             session: session,
             inlinePaceSuffix: true,
             showRowingAnimation: showRowingAnim,
+            // Bottom-align in landscape so the hero hugs the graph below and
+            // doesn't leave a vertical gap between the SM digit and the chart.
+            verticalAlign:
+                landscapePhone ? HeroAlign.end : HeroAlign.center,
           ),
         ),
         if (session.expandedSegments.isNotEmpty)
-          WorkoutProfileGraph(session: session),
+          WorkoutProfileGraph(
+            session: session,
+            height: landscapePhone ? 96 : 64,
+          ),
       ],
     );
   }

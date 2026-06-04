@@ -16,6 +16,14 @@ WindowSizeClass windowSizeClass(BuildContext context) {
 bool isTablet(BuildContext context) =>
     windowSizeClass(context) != WindowSizeClass.compact;
 
+/// True when the device is a phone (`shortestSide < 600`) currently held in
+/// landscape. Uses `shortestSide` rather than [windowSizeClass] because in
+/// landscape a phone's width crosses the 600dp threshold and would report as
+/// medium/expanded, defeating the check.
+bool isLandscapePhone(BuildContext context) =>
+    MediaQuery.orientationOf(context) == Orientation.landscape &&
+    MediaQuery.sizeOf(context).shortestSide < 600;
+
 double contentMaxWidth(BuildContext context) =>
     isTablet(context) ? 640 : double.infinity;
 
