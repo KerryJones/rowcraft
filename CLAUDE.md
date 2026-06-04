@@ -72,6 +72,7 @@ Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing 
 - **Commit messages as plain text** — no quotes, backticks, or code fences when presenting a commit message.
 - **Conventional Commits** — all commit messages must use the format `type: description`. Types: `feat:` (new feature), `fix:` (bug fix), `refactor:`, `chore:`, `docs:`, `test:`. Use `feat!:` or `fix!:` for breaking changes. release-please uses these prefixes to auto-generate changelogs and version bumps.
 - **Pick the commit type carefully — it drives the version bump.** `feat:` → minor (0.8.0 → 0.9.0), `fix:` → patch (0.8.0 → 0.8.1), `refactor:` / `chore:` → no bump. Reserve `feat:` for genuinely new functionality. UX corrections, repositioning, restyling, or refinements of an existing feature are `fix:` (if user-reported) or `refactor:` (if internal). When in doubt, the smaller bump is the safer default.
+- **Propose commit type and title in chat before running `git commit`.** Even when the user has said "please commit", state the chosen type + title and a one-line rationale for the type (especially the feat/fix call), then wait for explicit approval before invoking the commit. "Please commit" approves the act of committing — not the type.
 
 ### Memory Discipline
 - Do NOT save architecture, file paths, code patterns, or project structure to MEMORY.md.
