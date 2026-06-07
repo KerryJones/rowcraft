@@ -948,7 +948,6 @@ class _WorkoutProfilePainter extends CustomPainter {
       final pacePath = Path();
       var started = false;
       final paceRange = paceMax - paceMin;
-      Offset? lastPacePoint;
 
       for (final sample in timeSamples!) {
         if (sample.pace <= 0) continue;
@@ -988,15 +987,14 @@ class _WorkoutProfilePainter extends CustomPainter {
         } else {
           pacePath.lineTo(px, py);
         }
-        lastPacePoint = Offset(px, py);
       }
 
       canvas.drawPath(
         pacePath,
         Paint()
-          ..color = Colors.white.withValues(alpha: 0.85)
+          ..color = Colors.white.withValues(alpha: 0.9)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2.5
+          ..strokeWidth = 1.5
           ..strokeJoin = StrokeJoin.round,
       );
 
@@ -1051,39 +1049,30 @@ class _WorkoutProfilePainter extends CustomPainter {
         }
       }
 
-      // Draw playhead dot at the last pace point (Zwift-style)
-      if (lastPacePoint != null &&
-          phase != WorkoutPhase.idle &&
-          phase != WorkoutPhase.finished &&
-          phase != WorkoutPhase.structuredComplete) {
-        // Subtle glow
-        canvas.drawCircle(
-          lastPacePoint,
-          8,
-          Paint()..color = Colors.white.withValues(alpha: 0.15),
-        );
-        // White dot
-        canvas.drawCircle(
-          lastPacePoint,
-          4,
-          Paint()..color = RowCraftTheme.metricWhite,
-        );
-      }
     }
 
-    // Draw playhead dot (fallback when no pace data yet)
-    if ((timeSamples == null || timeSamples!.isEmpty) &&
-        phase != WorkoutPhase.idle &&
+    // X driven by engine segmentProgress (not pace samples) so the cursor
+    // advances smoothly and stays visible even when actual pace is off-chart.
+    if (phase != WorkoutPhase.idle &&
         phase != WorkoutPhase.finished &&
         phase != WorkoutPhase.structuredComplete) {
-      final fallback = Offset(math.max(playheadX, leftPad), size.height * 0.5);
-      canvas.drawCircle(
-        fallback,
-        8,
-        Paint()..color = Colors.white.withValues(alpha: 0.15),
+      final cursorX = math.max(playheadX, leftPad);
+      const topY = 6.0;
+
+      canvas.drawLine(
+        Offset(cursorX, 4),
+        Offset(cursorX, size.height - 4),
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.55)
+          ..strokeWidth = 1.0,
       );
       canvas.drawCircle(
-        fallback,
+        Offset(cursorX, topY),
+        7,
+        Paint()..color = Colors.white.withValues(alpha: 0.20),
+      );
+      canvas.drawCircle(
+        Offset(cursorX, topY),
         4,
         Paint()..color = RowCraftTheme.metricWhite,
       );

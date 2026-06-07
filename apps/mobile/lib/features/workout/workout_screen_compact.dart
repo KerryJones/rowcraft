@@ -250,14 +250,14 @@ class _WorkoutScreenCompactBodyState
                 Expanded(
                   flex: 40,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 5, 6),
+                    padding: const EdgeInsets.fromLTRB(10, 10, 5, 12),
                     child: _statGrid(session),
                   ),
                 ),
                 Expanded(
                   flex: 60,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(5, 10, 10, 6),
+                    padding: const EdgeInsets.fromLTRB(5, 10, 10, 12),
                     child: _heroAndGraph(session, landscapePhone: true),
                   ),
                 ),
