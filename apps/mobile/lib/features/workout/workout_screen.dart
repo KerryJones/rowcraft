@@ -763,11 +763,18 @@ class _WorkoutProfilePainter extends CustomPainter {
     const barGap = 1.5;
     const minHeightFraction = 0.15;
     const leftPad = 44.0;
-    final hasHrData = timeSamples?.any((s) {
-      if (s.heartRate == null || s.heartRate! <= 0) return false;
-      final si = s.segmentIndex;
-      return si >= 0 && si < segments.length && !segments[si].isRest;
-    }) ?? false;
+    var hasHrData = false;
+    int hrMin = 999, hrMax = 0;
+    if (timeSamples != null) {
+      for (final s in timeSamples!) {
+        if (s.heartRate == null || s.heartRate! <= 0) continue;
+        final si = s.segmentIndex;
+        if (si < 0 || si >= segments.length) continue;
+        hasHrData = true;
+        if (s.heartRate! < hrMin) hrMin = s.heartRate!;
+        if (s.heartRate! > hrMax) hrMax = s.heartRate!;
+      }
+    }
     final rightPad = hasHrData ? 36.0 : 8.0;
 
     final durations = segments.map((s) => effectiveDuration(s, ftpWatts)).toList();
@@ -881,38 +888,26 @@ class _WorkoutProfilePainter extends CustomPainter {
       }
 
       // HR Y-axis labels on right side (using same coordinate space as pace bars)
-      if (hasHrData && timeSamples != null) {
-        int minHr = 999, maxHr = 0;
-        for (final s in timeSamples!) {
-          if (s.heartRate == null || s.heartRate! <= 0) continue;
-          final si = s.segmentIndex;
-          if (si < 0 || si >= segments.length || segments[si].isRest) continue;
-          if (s.heartRate! < minHr) minHr = s.heartRate!;
-          if (s.heartRate! > maxHr) maxHr = s.heartRate!;
-        }
-        if (maxHr > minHr) {
-          final hrLabelStyle = GoogleFonts.jetBrainsMono(
-            fontSize: 9,
-            color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
-          );
-          for (var i = 0; i < 3; i++) {
-            final frac = i / 2.0;
-            final bpm = maxHr - frac * (maxHr - minHr);
-            // Map to same coordinate space as pace bars (minHeightFraction → 1.0)
-            final hrNorm = (maxHr - minHr) > 0
-                ? (bpm - minHr) / (maxHr - minHr) // 1.0 at maxHr, 0.0 at minHr
-                : 0.5;
-            final heightFrac = minHeightFraction + hrNorm * (1 - minHeightFraction);
-            final y = size.height - heightFrac * size.height;
-            final tp = TextPainter(
-              text: TextSpan(
-                text: '${bpm.round()}',
-                style: hrLabelStyle,
-              ),
-              textDirection: TextDirection.ltr,
-            )..layout();
-            tp.paint(canvas, Offset(size.width - tp.width - 2, (y - tp.height / 2).clamp(0.0, size.height - tp.height)));
-          }
+      if (hasHrData && hrMax > hrMin) {
+        final hrLabelStyle = GoogleFonts.jetBrainsMono(
+          fontSize: 9,
+          color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
+        );
+        for (var i = 0; i < 3; i++) {
+          final frac = i / 2.0;
+          final bpm = hrMax - frac * (hrMax - hrMin);
+          // Map to same coordinate space as pace bars (minHeightFraction → 1.0)
+          final hrNorm = (bpm - hrMin) / (hrMax - hrMin); // 1.0 at hrMax, 0.0 at hrMin
+          final heightFrac = minHeightFraction + hrNorm * (1 - minHeightFraction);
+          final y = size.height - heightFrac * size.height;
+          final tp = TextPainter(
+            text: TextSpan(
+              text: '${bpm.round()}',
+              style: hrLabelStyle,
+            ),
+            textDirection: TextDirection.ltr,
+          )..layout();
+          tp.paint(canvas, Offset(size.width - tp.width - 2, (y - tp.height / 2).clamp(0.0, size.height - tp.height)));
         }
       }
     }
@@ -953,7 +948,8 @@ class _WorkoutProfilePainter extends CustomPainter {
         if (sample.pace <= 0) continue;
         final si = sample.segmentIndex;
         if (si < 0 || si >= segments.length) continue;
-        // Skip rest segments
+        // PM5 reports pace ~0 during rest, so the pace line skips rest segments.
+        // (The HR overlay below intentionally does not — HR is meaningful during recovery.)
         if (segments[si].isRest) {
           started = false;
           continue;
@@ -999,54 +995,39 @@ class _WorkoutProfilePainter extends CustomPainter {
       );
 
       // Draw HR polyline overlay (red line, matching summary chart)
-      if (hasHrData) {
-        int minHr = 999, maxHr = 0;
-        for (final s in timeSamples!) {
-          if (s.heartRate == null || s.heartRate! <= 0) continue;
-          final si = s.segmentIndex;
-          if (si < 0 || si >= segments.length || segments[si].isRest) continue;
-          if (s.heartRate! < minHr) minHr = s.heartRate!;
-          if (s.heartRate! > maxHr) maxHr = s.heartRate!;
-        }
-        if (maxHr > minHr) {
-          final hrPath = Path();
-          var hrStarted = false;
-          for (final sample in timeSamples!) {
-            if (sample.heartRate == null || sample.heartRate! <= 0) continue;
-            final si = sample.segmentIndex;
-            if (si < 0 || si >= segments.length) continue;
-            if (!segSeen[si]) continue;
-            if (segments[si].isRest) {
-              hrStarted = false;
-              continue;
-            }
+      if (hasHrData && hrMax > hrMin) {
+        final hrPath = Path();
+        var hrStarted = false;
+        for (final sample in timeSamples!) {
+          if (sample.heartRate == null || sample.heartRate! <= 0) continue;
+          final si = sample.segmentIndex;
+          if (si < 0 || si >= segments.length) continue;
 
-            final segDurPlanned = durations[si];
-            final segFrac = segDurPlanned > 0
-                ? ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurPlanned).clamp(0.0, 1.0)
-                : 0.5;
-            final hx = segStarts[si] + segFrac * segWidths[si];
+          final segDurPlanned = durations[si];
+          final segFrac = segDurPlanned > 0
+              ? ((sample.timestamp.inSeconds - segFirstTs[si]) / segDurPlanned).clamp(0.0, 1.0)
+              : 0.5;
+          final hx = segStarts[si] + segFrac * segWidths[si];
 
-            final hrNorm = (sample.heartRate! - minHr) / (maxHr - minHr);
-            final heightFrac = minHeightFraction + hrNorm * (1 - minHeightFraction);
-            final hy = (size.height - heightFrac * size.height).clamp(0.0, size.height);
+          final hrNorm = (sample.heartRate! - hrMin) / (hrMax - hrMin);
+          final heightFrac = minHeightFraction + hrNorm * (1 - minHeightFraction);
+          final hy = (size.height - heightFrac * size.height).clamp(0.0, size.height);
 
-            if (!hrStarted) {
-              hrPath.moveTo(hx, hy);
-              hrStarted = true;
-            } else {
-              hrPath.lineTo(hx, hy);
-            }
+          if (!hrStarted) {
+            hrPath.moveTo(hx, hy);
+            hrStarted = true;
+          } else {
+            hrPath.lineTo(hx, hy);
           }
-          canvas.drawPath(
-            hrPath,
-            Paint()
-              ..color = RowCraftTheme.errorRose.withValues(alpha: 0.7)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.5
-              ..strokeJoin = StrokeJoin.round,
-          );
         }
+        canvas.drawPath(
+          hrPath,
+          Paint()
+            ..color = RowCraftTheme.errorRose.withValues(alpha: 0.7)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5
+            ..strokeJoin = StrokeJoin.round,
+        );
       }
 
     }
