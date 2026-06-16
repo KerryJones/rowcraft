@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.14.1...rowcraft-mobile-v0.15.0) (2026-06-16)
+
+
+### Features
+
+* add START countdown, fix category filter and private workout visibility ([eb30dcd](https://github.com/KerryJones/rowcraft/commit/eb30dcdf02f01a27d3dfb60e8c8a612491652980))
+
 ## [0.14.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.14.0...rowcraft-mobile-v0.14.1) (2026-06-10)
 
 
