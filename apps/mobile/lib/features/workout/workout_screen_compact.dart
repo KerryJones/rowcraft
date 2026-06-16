@@ -393,6 +393,7 @@ class _WorkoutScreenCompactBodyState
           WorkoutProfileGraph(
             session: session,
             height: landscapePhone ? 96 : 64,
+            landscapePhone: landscapePhone,
           ),
       ],
     );

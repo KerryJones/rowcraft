@@ -712,11 +712,15 @@ class _OverallStatsBar extends StatelessWidget {
 class WorkoutProfileGraph extends StatelessWidget {
   final WorkoutSessionState session;
   final double height;
+  /// When true, the painter draws axis labels noticeably bigger and bolder so
+  /// the rower can read them at arm's length in landscape.
+  final bool landscapePhone;
 
   const WorkoutProfileGraph({
     super.key,
     required this.session,
     this.height = 64,
+    this.landscapePhone = false,
   });
 
   @override
@@ -733,6 +737,7 @@ class WorkoutProfileGraph extends StatelessWidget {
           phase: session.engineState.phase,
           ftpWatts: session.ftpWatts,
           timeSamples: session.timeSamples,
+          landscapePhone: landscapePhone,
         ),
       ),
     );
@@ -746,6 +751,7 @@ class _WorkoutProfilePainter extends CustomPainter {
   final WorkoutPhase phase;
   final int ftpWatts;
   final List<WorkoutTimeSample>? timeSamples;
+  final bool landscapePhone;
 
   _WorkoutProfilePainter({
     required this.segments,
@@ -754,6 +760,7 @@ class _WorkoutProfilePainter extends CustomPainter {
     required this.phase,
     required this.ftpWatts,
     this.timeSamples,
+    this.landscapePhone = false,
   });
 
   @override
@@ -858,7 +865,8 @@ class _WorkoutProfilePainter extends CustomPainter {
         ..strokeWidth = 0.5;
       final paceRange = paceMax - paceMin;
       final labelStyle = GoogleFonts.jetBrainsMono(
-        fontSize: 9,
+        fontSize: landscapePhone ? 14 : 9,
+        fontWeight: landscapePhone ? FontWeight.w700 : FontWeight.w400,
         color: RowCraftTheme.subtleGrey,
       );
       if (paceRange > 0) {
@@ -890,7 +898,8 @@ class _WorkoutProfilePainter extends CustomPainter {
       // HR Y-axis labels on right side (using same coordinate space as pace bars)
       if (hasHrData && hrMax > hrMin) {
         final hrLabelStyle = GoogleFonts.jetBrainsMono(
-          fontSize: 9,
+          fontSize: landscapePhone ? 14 : 9,
+          fontWeight: landscapePhone ? FontWeight.w700 : FontWeight.w400,
           color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
         );
         for (var i = 0; i < 3; i++) {
@@ -1067,7 +1076,8 @@ class _WorkoutProfilePainter extends CustomPainter {
         (old.segmentProgress - segmentProgress).abs() > 0.005 ||
         old.phase != phase ||
         old.ftpWatts != ftpWatts ||
-        old.timeSamples != timeSamples;
+        old.timeSamples != timeSamples ||
+        old.landscapePhone != landscapePhone;
   }
 }
 
@@ -1321,6 +1331,10 @@ class HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final data = session.pm5Data;
     final segment = session.engineState.currentSegment;
+    final phase = session.engineState.phase;
+    final countdown = session.engineState.startCountdown;
+    final isCountingDown =
+        phase == WorkoutPhase.countingDown && countdown > 0;
 
     // Pace color based on target — uses 5% tolerance range for feedback
     Color splitColor = RowCraftTheme.metricWhite;
@@ -1370,43 +1384,63 @@ class HeroSection extends StatelessWidget {
 
         // In the stacked phone branch the invisible "/500m" counterweight
         // mirrors the visible suffix so the pace digits stay optically centered.
-        Widget paceDisplay() => FittedBox(
+        // While the 3-2-1 START countdown is running we swap the pace digits
+        // for the countdown number — same font, same weight, supersized —
+        // so the user can settle on the seat without scanning for the cue.
+        Widget paceDisplay() {
+          if (isCountingDown) {
+            return FittedBox(
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  if (!isWide) ...[
-                    Opacity(
-                      opacity: 0,
-                      child: Text(
-                        '/500m',
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    data.paceFormatted,
-                    style: GoogleFonts.jetBrainsMono(
-                      fontSize: paceFontSize,
-                      fontWeight: FontWeight.w700,
-                      color: splitColor,
-                      letterSpacing: -2,
-                      height: 1.0,
+              child: Text(
+                '$countdown',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: paceFontSize * 1.6,
+                  fontWeight: FontWeight.w700,
+                  color: RowCraftTheme.warningAmber,
+                  letterSpacing: -2,
+                  height: 1.0,
+                ),
+              ),
+            );
+          }
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                if (!isWide) ...[
+                  Opacity(
+                    opacity: 0,
+                    child: Text(
+                      '/500m',
+                      style: Theme.of(context).textTheme.labelLarge,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Text(
-                    '/500m',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: RowCraftTheme.subtleGrey,
-                        ),
-                  ),
                 ],
-              ),
-            );
+                Text(
+                  data.paceFormatted,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: paceFontSize,
+                    fontWeight: FontWeight.w700,
+                    color: splitColor,
+                    letterSpacing: -2,
+                    height: 1.0,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '/500m',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: RowCraftTheme.subtleGrey,
+                      ),
+                ),
+              ],
+            ),
+          );
+        }
 
         // Stroke rate display widget (reused in both layouts)
         Widget strokeRateDisplay() => FittedBox(
@@ -1477,19 +1511,24 @@ class HeroSection extends StatelessWidget {
         final anim = rowingAnim();
 
         if (isWide) {
-          // Tablet: pace and stroke rate side-by-side
+          // Tablet: pace and stroke rate side-by-side. During the START
+          // countdown the giant amber digit owns the row — the live stroke
+          // rate is irrelevant (rower hasn't started), and "0 SM" beside the
+          // countdown reads as a broken half-state.
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    paceDisplay(),
-                    strokeRateDisplay(),
-                  ],
-                ),
+                isCountingDown
+                    ? Center(child: paceDisplay())
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          paceDisplay(),
+                          strokeRateDisplay(),
+                        ],
+                      ),
                 if (guide != null) ...[
                   const SizedBox(height: 10),
                   guide,
@@ -1518,8 +1557,10 @@ class HeroSection extends StatelessWidget {
             mainAxisSize: isEnd ? MainAxisSize.max : MainAxisSize.min,
             children: [
               paceDisplay(),
-              const SizedBox(height: 8),
-              strokeRateDisplay(),
+              if (!isCountingDown) ...[
+                const SizedBox(height: 8),
+                strokeRateDisplay(),
+              ],
               if (guide != null) ...[
                 const SizedBox(height: 10),
                 guide,

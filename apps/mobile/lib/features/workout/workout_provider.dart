@@ -482,10 +482,17 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     }
   }
 
-  /// Start the workout.
+  /// Start the workout. Runs a 3-2-1 audible countdown before segment 1 so
+  /// the rower can settle on the seat. First-stroke auto-start (detected via
+  /// PM5) skips the countdown and begins segment 1 immediately.
+  ///
+  /// `_startedAt` is intentionally NOT set here — the engine listener stamps
+  /// it on the first transition into rowing/resting (3s later, after the
+  /// countdown completes). Setting it now would back-date the workout by the
+  /// countdown duration, inflating `finishedAt - startedAt` vs PM5 elapsed
+  /// time.
   void start() {
-    _startedAt = DateTime.now();
-    _engine?.start();
+    _engine?.start(countdownSeconds: 3);
   }
 
   /// Pause the workout.

@@ -6,6 +6,7 @@ import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
+import '../auth/auth_provider.dart' show currentUserProvider;
 import '../profile/profile_screen.dart' show profileProvider;
 
 enum LibrarySortOrder { newest, duration, mostForked }
@@ -35,23 +36,60 @@ const Set<String> kPlanTags = {
   'return-to-rowing',
 };
 
+/// HR zone → workout tag. Matches the web category card keys in
+/// apps/web/src/components/ui/category-cards.tsx (Recovery, Aerobic, Tempo,
+/// Threshold, VO2max). The category chip filters on these tags rather than
+/// on segment-level `targetHrZone`, mirroring web behavior.
+const Map<int, String> kZoneTags = {
+  1: 'recovery',
+  2: 'aerobic',
+  3: 'tempo',
+  4: 'threshold',
+  5: 'vo2max',
+};
+
 /// Increment to force a library refresh (e.g. pull-to-refresh).
 final workoutRefreshTriggerProvider = StateProvider<int>((ref) => 0);
 
-/// All public workouts, served from cache.
-///
-/// Returns cached workouts immediately. If the cache is non-empty, a background
-/// refresh runs silently. If the cache is empty (first launch), waits for the
-/// network before returning.
+/// All workouts visible to the current user: public + user-owned (private
+/// included). Mirrors web's `is_public.eq.true,author_id.eq.<uid>` OR clause
+/// by merging two repository calls and de-duping by id. Re-fires on auth
+/// state change via `currentUserProvider` so private workouts appear/vanish
+/// when the user signs in or out.
 final workoutLibraryProvider = FutureProvider<List<Workout>>((ref) async {
-  // Re-run when refresh is triggered.
+  // Re-run when refresh is triggered, and when auth state changes.
   ref.watch(workoutRefreshTriggerProvider);
-
+  final userId = ref.watch(currentUserProvider)?.id;
   final repo = ref.watch(workoutRepositoryProvider);
-  final cached = await repo.getWorkouts(isPublic: true);
 
-  if (cached.isNotEmpty) {
-    // Return cache immediately; refresh in background.
+  List<Workout> merge(List<Workout> public, List<Workout> own) {
+    if (own.isEmpty) return public;
+    final seen = <String>{};
+    final out = <Workout>[];
+    for (final w in public) {
+      if (seen.add(w.id)) out.add(w);
+    }
+    for (final w in own) {
+      if (seen.add(w.id)) out.add(w);
+    }
+    return out;
+  }
+
+  final (cachedPublic, cachedOwn) = await (
+    repo.getWorkouts(isPublic: true),
+    userId == null
+        ? Future.value(const <Workout>[])
+        : repo.getWorkouts(authorId: userId),
+  ).wait;
+
+  // Cache short-circuit only when both halves the current user expects are
+  // present. For signed-in users that means BOTH public AND own caches must
+  // be populated — otherwise the user could see a half-populated library
+  // (e.g. just signed in: public cached, own empty → fetch own synchronously
+  // so private workouts appear in the first render, not after pull-to-refresh).
+  final ownReady = userId == null || cachedOwn.isNotEmpty;
+  if (cachedPublic.isNotEmpty && ownReady) {
+    // Return cache immediately; refresh both lists in the background.
     // minInterval prevents a redundant network call when pull-to-refresh
     // has just run and re-triggered the provider.
     repo
@@ -60,12 +98,26 @@ final workoutLibraryProvider = FutureProvider<List<Workout>>((ref) async {
           minInterval: const Duration(minutes: 5),
         )
         .ignore();
-    return cached;
+    if (userId != null) {
+      repo
+          .refreshWorkouts(
+            authorId: userId,
+            minInterval: const Duration(minutes: 5),
+          )
+          .ignore();
+    }
+    return merge(cachedPublic, cachedOwn);
   }
 
-  // First launch or empty cache — wait for network.
-  final fresh = await repo.refreshWorkouts(isPublic: true);
-  return fresh ?? [];
+  // First launch, empty cache, or post-sign-in — fetch both in parallel so
+  // signed-in cold start is no slower than anonymous cold start.
+  final (freshPublic, freshOwn) = await (
+    repo.refreshWorkouts(isPublic: true),
+    userId == null
+        ? Future<List<Workout>?>.value(const <Workout>[])
+        : repo.refreshWorkouts(authorId: userId),
+  ).wait;
+  return merge(freshPublic ?? cachedPublic, freshOwn ?? cachedOwn);
 });
 
 /// Workouts for WOD selection. Network-first, falls back to cache on failure.
@@ -216,11 +268,14 @@ final filteredWorkoutsProvider = FutureProvider.family<
     }).toList();
   }
 
-  // Filter by HR zone — workouts containing at least one segment in that zone
+  // Filter by HR zone — match the workout's tag (recovery, aerobic, tempo,
+  // threshold, vo2max). Mirrors web's category-card filter; consistent with
+  // typing the same word into the search field.
   if (filter.hrZone != null) {
-    filtered = filtered
-        .where((w) => w.segments.any((s) => s.targetHrZone == filter.hrZone))
-        .toList();
+    final tag = kZoneTags[filter.hrZone!];
+    filtered = tag == null
+        ? const []
+        : filtered.where((w) => w.tags.contains(tag)).toList();
   }
 
   // Filter by collection (tag-set overlap against kCollectionTags).

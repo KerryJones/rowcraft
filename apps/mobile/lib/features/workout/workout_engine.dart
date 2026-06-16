@@ -44,6 +44,11 @@ class WorkoutEngineState {
   final Duration pausedDuration;
   final int segmentElapsedCalories;
 
+  /// 3 / 2 / 1 while [phase] is [WorkoutPhase.countingDown] (the post-START
+  /// settle window). `0` means no active countdown. The hero metric swaps in
+  /// this number while the countdown runs.
+  final int startCountdown;
+
   /// How many consecutive seconds the rower has been outside the target
   /// pace window. Resets to 0 when back in range. Used by the UI to
   /// show a warning before auto-stop.
@@ -82,6 +87,7 @@ class WorkoutEngineState {
     this.finishReason,
     this.avgPace = 0,
     this.avgHeartRate,
+    this.startCountdown = 0,
   });
 
   WorkoutEngineState copyWith({
@@ -102,6 +108,7 @@ class WorkoutEngineState {
     FinishReason? finishReason,
     int? avgPace,
     int? avgHeartRate,
+    int? startCountdown,
   }) {
     return WorkoutEngineState(
       phase: phase ?? this.phase,
@@ -123,6 +130,7 @@ class WorkoutEngineState {
       finishReason: finishReason ?? this.finishReason,
       avgPace: avgPace ?? this.avgPace,
       avgHeartRate: avgHeartRate ?? this.avgHeartRate,
+      startCountdown: startCountdown ?? this.startCountdown,
     );
   }
 }
@@ -189,6 +197,10 @@ class WorkoutEngine {
   Timer? _countdownBeepTimer;
   DateTime? _segmentWallStart;
   int _countdownBeepsRemaining = -1;
+
+  /// 3-2-1 countdown after the user taps START (settle window before
+  /// segment 0). Distinct from the per-segment end-of-segment beep timer.
+  Timer? _startCountdownTimer;
 
   /// The list of segments to execute.
   late final List<WorkoutSegment> _expandedSegments;
@@ -325,6 +337,7 @@ class WorkoutEngine {
       currentSegmentIndex: 0,
       currentSegment: _expandedSegments[0],
       paceFailThreshold: paceFailThreshold,
+      startCountdown: 0,
     );
     _emit();
 
@@ -333,15 +346,92 @@ class WorkoutEngine {
     _pm5Subscription = pm5Stream.listen(_onPM5Data);
   }
 
-  /// Start the workout immediately (manual fallback).
-  void start() {
+  /// Manually start the workout.
+  ///
+  /// When [countdownSeconds] > 0, runs a settle countdown (with audible beeps
+  /// via [countdownBeepStream]) before entering segment 0. The default of 0
+  /// matches historical behavior — begin immediately. Production code passes
+  /// 3 so the user hears a 3-2-1 cue after tapping START. The first-stroke
+  /// auto-start path in [_onPM5Data] always skips this and goes straight to
+  /// segment 0 — only the explicit START tap triggers beeps.
+  ///
+  /// During the countdown the PM5 subscription is paused; strokes, HR, and
+  /// drag-factor frames arriving in those 3 seconds are dropped. The
+  /// subscription is re-armed by [_beginSegment] at T-0.
+  ///
+  /// Only valid from [WorkoutPhase.idle] or [WorkoutPhase.ready]. Calls from
+  /// any other phase (including a double-tap during countingDown) are
+  /// ignored — without this guard a stray second tap would cancel the live
+  /// countdown timer and restart it from N, silently extending the wait.
+  void start({int countdownSeconds = 0}) {
     if (_expandedSegments.isEmpty) return;
+    if (_state.phase != WorkoutPhase.idle &&
+        _state.phase != WorkoutPhase.ready) {
+      return;
+    }
+
+    if (countdownSeconds <= 0) {
+      _pm5Subscription?.cancel();
+      _beginSegment(0);
+      return;
+    }
+
     _pm5Subscription?.cancel();
-    _beginSegment(0);
+    _startCountdownTimer?.cancel();
+
+    _state = _state.copyWith(
+      phase: WorkoutPhase.countingDown,
+      currentSegmentIndex: 0,
+      currentSegment: _expandedSegments[0],
+      startCountdown: countdownSeconds,
+    );
+    _emit();
+    // Immediate first beep at T-N (low beep — same sound as 3,2,1 below).
+    if (!_countdownBeepController.isClosed) {
+      _countdownBeepController.add(countdownSeconds);
+    }
+
+    var remaining = countdownSeconds;
+    _startCountdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_state.phase != WorkoutPhase.countingDown) {
+        timer.cancel();
+        _startCountdownTimer = null;
+        return;
+      }
+      remaining--;
+      if (remaining > 0) {
+        if (!_countdownBeepController.isClosed) {
+          _countdownBeepController.add(remaining);
+        }
+        _state = _state.copyWith(startCountdown: remaining);
+        _emit();
+      } else {
+        // High beep at T-0, then begin segment 0.
+        if (!_countdownBeepController.isClosed) {
+          _countdownBeepController.add(0);
+        }
+        timer.cancel();
+        _startCountdownTimer = null;
+        _state = _state.copyWith(startCountdown: 0);
+        _beginSegment(0);
+      }
+    });
   }
 
   /// Pause the workout (manual).
   void pause() {
+    // Pausing during the post-START 3-2-1 settle cancels the countdown and
+    // returns to ready — the segment never started, so there's nothing to
+    // resume from. A subsequent start() will re-run the full countdown; a
+    // first stroke detected via PM5 also still triggers segment 0. Delegate
+    // to ready() so any future state reset added there applies to the
+    // cancel path too.
+    if (_state.phase == WorkoutPhase.countingDown) {
+      _startCountdownTimer?.cancel();
+      _startCountdownTimer = null;
+      ready();
+      return;
+    }
     if (_state.phase != WorkoutPhase.rowing &&
         _state.phase != WorkoutPhase.resting) {
       return;
@@ -676,6 +766,22 @@ class WorkoutEngine {
 
   /// Stop the workout and finalize results.
   void stop() {
+    // Stopping during the post-START 3-2-1 settle: segment 0 was never
+    // actually started, so do NOT record a phantom zero-valued split.
+    // Without this guard, _finishCurrentSegment() would append a SplitData
+    // {distance: 0, time: 0, all-zero averages} and the empty-result guard
+    // in WorkoutSessionNotifier._buildPendingResult would fail to fire,
+    // letting a meaningless WorkoutResult get saved.
+    if (_state.phase == WorkoutPhase.countingDown) {
+      _state = _state.copyWith(
+        phase: WorkoutPhase.finished,
+        finishReason: FinishReason.userStopped,
+        startCountdown: 0,
+      );
+      _emit();
+      _cleanup();
+      return;
+    }
     _accumulatePausedDuration();
     _finishCurrentSegment();
     _state = _state.copyWith(
@@ -1152,6 +1258,8 @@ class WorkoutEngine {
     _workCompletionTimer?.cancel();
     _workCompletionTimer = null;
     _cancelCountdownBeeps();
+    _startCountdownTimer?.cancel();
+    _startCountdownTimer = null;
     _autoPauseTimer?.cancel();
     _autoPauseTimer = null;
     _autoPauseFinishTimer?.cancel();

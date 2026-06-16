@@ -2072,6 +2072,237 @@ void main() {
     });
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // START button settle countdown (3-2-1-0 audible cue after tapping START,
+  // independent of the per-segment end-of-segment countdown above).
+  // ─────────────────────────────────────────────────────────────────────────
+  group('start() settle countdown', () {
+    late StreamController<PM5Data> pm5Controller;
+    late WorkoutEngine engine;
+
+    setUp(() {
+      pm5Controller = StreamController<PM5Data>.broadcast();
+    });
+
+    tearDown(() {
+      engine.dispose();
+      pm5Controller.close();
+    });
+
+    test('emits 3,2,1,0 then begins segment 0', () {
+      fakeAsync((async) {
+        engine = WorkoutEngine(
+          workout: _makeWorkout([
+            const WorkoutSegment(
+              durationType: DurationType.time,
+              durationValue: 60,
+              targetIntensity: 80,
+            ),
+          ]),
+          pm5Stream: pm5Controller.stream,
+          paceFailThreshold: 0,
+        );
+
+        final beeps = <int>[];
+        final phases = <WorkoutPhase>[];
+        engine.countdownBeepStream.listen(beeps.add);
+        engine.stateStream.listen((s) => phases.add(s.phase));
+
+        engine.start(countdownSeconds: 3);
+        async.flushMicrotasks();
+
+        // Counting down immediately, first low beep at T-3 fires.
+        expect(engine.currentState.phase, WorkoutPhase.countingDown);
+        expect(engine.currentState.startCountdown, 3);
+        expect(beeps, [3]);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(beeps, [3, 2]);
+        expect(engine.currentState.startCountdown, 2);
+
+        async.elapse(const Duration(seconds: 1));
+        expect(beeps, [3, 2, 1]);
+        expect(engine.currentState.startCountdown, 1);
+
+        // Final tick — high beep (0) and transition into segment 0.
+        async.elapse(const Duration(seconds: 1));
+        expect(beeps, [3, 2, 1, 0]);
+        expect(engine.currentState.phase, WorkoutPhase.rowing);
+        expect(engine.currentState.startCountdown, 0);
+        // Phase transitions must come in order, with rowing as the terminal
+        // state — `contains` alone would pass even if rowing fired first.
+        expect(phases, containsAllInOrder(
+            [WorkoutPhase.countingDown, WorkoutPhase.rowing]));
+        expect(phases.last, WorkoutPhase.rowing);
+      });
+    });
+
+    test('first PM5 stroke from ready phase begins segment 0 with no beeps',
+        () async {
+      engine = WorkoutEngine(
+        workout: _makeWorkout([
+          const WorkoutSegment(
+            durationType: DurationType.distance,
+            durationValue: 500,
+            targetIntensity: 80,
+          ),
+        ]),
+        pm5Stream: pm5Controller.stream,
+        paceFailThreshold: 0,
+      );
+
+      final beeps = <int>[];
+      engine.countdownBeepStream.listen(beeps.add);
+
+      engine.ready();
+      await Future.delayed(const Duration(milliseconds: 20));
+      expect(engine.currentState.phase, WorkoutPhase.ready);
+
+      // First stroke from the rower — auto-start path. No settle countdown.
+      pm5Controller.add(const PM5Data(
+        elapsedTime: Duration(seconds: 1),
+        distance: 2,
+        pace: 1200,
+        strokeRate: 24,
+        strokeRateUpdated: true,
+        watts: 180,
+        calories: 0,
+        strokeCount: 1,
+        intervalCount: 1,
+      ));
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(engine.currentState.phase, WorkoutPhase.rowing);
+      expect(beeps, isEmpty);
+    });
+
+    test('double-tap on start() does not restart the countdown', () {
+      fakeAsync((async) {
+        engine = WorkoutEngine(
+          workout: _makeWorkout([
+            const WorkoutSegment(
+              durationType: DurationType.time,
+              durationValue: 60,
+              targetIntensity: 80,
+            ),
+          ]),
+          pm5Stream: pm5Controller.stream,
+          paceFailThreshold: 0,
+        );
+
+        final beeps = <int>[];
+        engine.countdownBeepStream.listen(beeps.add);
+
+        engine.start(countdownSeconds: 3);
+        async.flushMicrotasks();
+        async.elapse(const Duration(milliseconds: 1500));
+        expect(beeps, [3, 2]); // 1.5s in — beeps so far are 3 and 2.
+        expect(engine.currentState.startCountdown, 2);
+
+        // Stray second tap during the countdown. The guard rejects it —
+        // no extra '3' beep, no restart, countdown carries on from 2.
+        engine.start(countdownSeconds: 3);
+        async.flushMicrotasks();
+        expect(beeps, [3, 2]); // unchanged
+        expect(engine.currentState.startCountdown, 2);
+
+        // Countdown completes normally on the original schedule.
+        async.elapse(const Duration(milliseconds: 1500));
+        expect(beeps, [3, 2, 1, 0]);
+        expect(engine.currentState.phase, WorkoutPhase.rowing);
+      });
+    });
+
+    test('stop during settle countdown finishes cleanly with no phantom split',
+        () {
+      fakeAsync((async) {
+        engine = WorkoutEngine(
+          workout: _makeWorkout([
+            const WorkoutSegment(
+              durationType: DurationType.time,
+              durationValue: 60,
+              targetIntensity: 80,
+            ),
+          ]),
+          pm5Stream: pm5Controller.stream,
+          paceFailThreshold: 0,
+        );
+
+        engine.start(countdownSeconds: 3);
+        async.flushMicrotasks();
+        expect(engine.currentState.phase, WorkoutPhase.countingDown);
+
+        async.elapse(const Duration(milliseconds: 1500));
+        engine.stop();
+
+        // Finished with the right reason, and — crucially — no phantom
+        // zero-valued split sneaks into completedSplits. If one did, the
+        // empty-result guard in WorkoutSessionNotifier would fail to fire
+        // and a meaningless WorkoutResult would be saved.
+        expect(engine.currentState.phase, WorkoutPhase.finished);
+        expect(engine.currentState.finishReason, FinishReason.userStopped);
+        expect(engine.currentState.startCountdown, 0);
+        expect(engine.completedSplits, isEmpty);
+
+        // Timer ticks after stop() must not re-emit state changes.
+        final phaseAfterStop = engine.currentState.phase;
+        async.elapse(const Duration(seconds: 5));
+        expect(engine.currentState.phase, phaseAfterStop);
+      });
+    });
+
+    test('pause during settle countdown returns to ready and re-arms PM5',
+        () {
+      fakeAsync((async) {
+        engine = WorkoutEngine(
+          workout: _makeWorkout([
+            const WorkoutSegment(
+              durationType: DurationType.time,
+              durationValue: 60,
+              targetIntensity: 80,
+            ),
+          ]),
+          pm5Stream: pm5Controller.stream,
+          paceFailThreshold: 0,
+        );
+
+        engine.start(countdownSeconds: 3);
+        async.flushMicrotasks();
+        expect(engine.currentState.phase, WorkoutPhase.countingDown);
+
+        // Mid-countdown pause.
+        async.elapse(const Duration(milliseconds: 1500));
+        engine.pause();
+
+        // Specific phase, not "anything but rowing" — a regression that
+        // demoted to idle/paused/finished must not pass silently.
+        expect(engine.currentState.phase, WorkoutPhase.ready);
+        expect(engine.currentState.startCountdown, 0);
+
+        // Let the would-be remaining ticks fire — engine must not transition
+        // into rowing or emit further countdown updates.
+        async.elapse(const Duration(seconds: 5));
+        expect(engine.currentState.phase, WorkoutPhase.ready);
+
+        // PM5 subscription must be live after the cancel so first-stroke
+        // auto-start still works.
+        pm5Controller.add(const PM5Data(
+          elapsedTime: Duration(seconds: 1),
+          distance: 2,
+          pace: 1200,
+          strokeRate: 24,
+          strokeRateUpdated: true,
+          watts: 180,
+          calories: 0,
+          strokeCount: 1,
+          intervalCount: 1,
+        ));
+        async.elapse(const Duration(milliseconds: 50));
+        expect(engine.currentState.phase, WorkoutPhase.rowing);
+      });
+    });
+  });
+
   group('autoSplitDistance()', () {
     test('2000m returns 500m (C2 exception)', () {
       expect(autoSplitDistance(2000), 500);
