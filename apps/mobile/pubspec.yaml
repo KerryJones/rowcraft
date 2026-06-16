@@ -1,7 +1,7 @@
 name: rowcraft
 description: "RowCraft - Structured rowing workouts for Concept2"
 publish_to: 'none'
-version: 0.14.0+25
+version: 0.14.1+26
 
 environment:
   sdk: '>=3.8.0 <4.0.0'

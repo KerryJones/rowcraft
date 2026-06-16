@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.14.0...rowcraft-mobile-v0.14.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* draw HR line continuously through rest periods in live workout chart ([e2f7ef8](https://github.com/KerryJones/rowcraft/commit/e2f7ef8a08aced9ca9c8b40182215effb79883f8))
+* landscape workout UI clipping and progress cursor visibility ([d411240](https://github.com/KerryJones/rowcraft/commit/d4112407630969701a28bd465079dff15d279585))
+
 ## [0.14.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.13.0...rowcraft-mobile-v0.14.0) (2026-06-04)
 
 
