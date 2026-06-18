@@ -131,8 +131,8 @@ class CombinedChartPainter extends CustomPainter {
       fontSize: 9,
       color: RowCraftTheme.subtleGrey,
     );
-    for (var i = 0; i < 3; i++) {
-      final frac = i / 2.0;
+    for (var i = 0; i < 5; i++) {
+      final frac = i / 4.0;
       final pace = displayMinPace + frac * displayPaceRange;
       final y = topPad + frac * chartHeight;
       final tp = TextPainter(
@@ -204,8 +204,8 @@ class CombinedChartPainter extends CustomPainter {
           fontSize: 9,
           color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
         );
-        for (var i = 0; i < 3; i++) {
-          final frac = i / 2.0;
+        for (var i = 0; i < 5; i++) {
+          final frac = i / 4.0;
           final bpm = displayMinHr + frac * displayHrRange;
           final y = topPad + (1.0 - frac) * chartHeight;
           final tp = TextPainter(
