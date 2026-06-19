@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.15.0...rowcraft-mobile-v0.15.1) (2026-06-19)
+
+
+### Bug Fixes
+
+* first START tap no longer aborts the 3-2-1 countdown ([d628174](https://github.com/KerryJones/rowcraft/commit/d628174f60b10e5df05dac21cad0c567e3e3d625))
+* show 5 Y-axis labels on workout detail chart instead of 3 ([ed81279](https://github.com/KerryJones/rowcraft/commit/ed812791a204e472bdbdc6e76bdd1e3f9201ea90))
+
 ## [0.15.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.14.1...rowcraft-mobile-v0.15.0) (2026-06-16)
 
 
