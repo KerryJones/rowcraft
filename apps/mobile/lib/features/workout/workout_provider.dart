@@ -449,6 +449,14 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         }
       });
 
+      // Enter ready phase before flipping isLoading: false so the engine is
+      // already armed when the START button becomes tappable. Otherwise a tap
+      // during the ~2s PM5 reset window transitions idle→countingDown, then
+      // the late ready() call clobbers it back to ready and the countdown
+      // silently aborts. BLE is suppressed during reset (see _suppressBleData),
+      // so the engine sees no frames until reset completes.
+      _engine?.ready();
+
       state = state.copyWith(
         workoutTitle: workout.title,
         expandedSegments: _engine!.expandedSegments,
@@ -469,9 +477,6 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
       if (_loadGeneration != myGen) return; // Superseded during PM5 reset
       state = state.copyWith(pm5Data: const PM5Data.zero());
-
-      // Enter ready phase — workout starts when rower takes first stroke
-      _engine?.ready();
     } catch (e) {
       if (_loadGeneration != myGen) return;
       _suppressBleData = false;
