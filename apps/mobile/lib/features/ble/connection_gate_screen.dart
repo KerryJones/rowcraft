@@ -32,7 +32,7 @@ class _ConnectionGateScreenState extends ConsumerState<ConnectionGateScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final notifier = ref.read(bleProvider.notifier);
-      await notifier.autoReconnect();
+      await notifier.connectSavedDevices();
       if (!mounted) return;
       final bleState = ref.read(bleProvider);
       final pm5Connected =

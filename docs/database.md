@@ -11,17 +11,16 @@ Extends Supabase `auth.users`. Auto-created on signup via trigger.
 |--------|------|-------|
 | id | UUID PK | References auth.users |
 | display_name | text | |
-| c2_user_id | text | Concept2 account ID |
-| c2_access_token, c2_refresh_token | text | C2 OAuth tokens |
+| c2_user_id | text | Concept2 account ID (link status only) |
 | current_ftp_watts | int | Power threshold |
 | max_heart_rate | int | For HR zone calculations |
 | weight_kg | float | Used for C2 Logbook calorie sync |
 | resting_heart_rate | int | For HRR/Karvonen zone calculation |
 | zone_system | text | 'standard' or 'rowing' (default: 'rowing') |
 | onboarding_completed | boolean | Controls onboarding redirect (default: false) |
-| strava_athlete_id | text | Strava account ID |
-| strava_access_token, strava_refresh_token | text | Strava OAuth tokens |
-| strava_token_expires_at | bigint | Unix timestamp; Strava tokens expire every 6h |
+| strava_athlete_id | text | Strava account ID (link status only) |
+
+OAuth tokens live in `integration_tokens` (service-role only), not on profiles.
 
 ### workouts
 | Column | Type | Notes |
@@ -91,6 +90,17 @@ One row per (user, achievement_type, threshold), inserted once.
 | achieved_at | timestamptz | |
 | result_id | UUID FK | → workout_results (nullable) |
 
+### integration_tokens
+C2/Strava OAuth tokens, one row per (user_id, provider). RLS enabled with
+**no policies** — only the service role (web API routes) can read/write.
+Users sever their own link via the `disconnect_integration(provider)`
+security-definer RPC. `expires_at` is Unix seconds (Strava convention).
+
+### oauth_handoff
+One-time short-lived handoff ids for the mobile OAuth kick-off (the browser
+URL carries this id instead of the Supabase access token). Service-role only;
+rows are deleted on redemption and expire after 10 minutes.
+
 ## RLS Policies
 
 - **Profiles**: own row only
@@ -101,6 +111,7 @@ One row per (user, achievement_type, threshold), inserted once.
 - **Plan Progress**: own only
 - **Personal Records**: own only (select/insert/update)
 - **Achievements**: own only (select/insert)
+- **integration_tokens / oauth_handoff**: no policies — service role only
 
 ## Migrations
 
@@ -122,3 +133,7 @@ One row per (user, achievement_type, threshold), inserted once.
 16. `016_personal_records_achievements.sql` — personal_records + achievements tables with RLS
 17. `017_onboarding_fields.sql` — resting_heart_rate, zone_system, onboarding_completed on profiles
 18. `018_strava.sql` — Strava OAuth columns on profiles + synced_to_strava on workout_results
+19. `019_workout_results_name.sql` — workout_name on workout_results
+20. `020_hardening.sql` — FK indexes, CHECK constraints on pr_type/achievement_type, admin_* functions restricted to service role
+21. `021_oauth_handoff.sql` — oauth_handoff table for mobile OAuth kick-off
+22. `022_integration_tokens.sql` — move C2/Strava tokens off profiles into service-role-only integration_tokens + `disconnect_integration()` RPC

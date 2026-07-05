@@ -1,26 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { consumeOAuthHandoff } from '@/lib/oauth-handoff';
 import { createSupabaseServer } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   const source = request.nextUrl.searchParams.get('source');
-  const token = request.nextUrl.searchParams.get('token');
+  const handoff = request.nextUrl.searchParams.get('handoff');
 
   let userId: string;
 
-  if (source === 'mobile' && token) {
-    // Mobile: verify the Supabase access token passed as a query param
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      { global: { headers: { Authorization: `Bearer ${token}` } } },
-    );
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+  if (source === 'mobile' && handoff) {
+    // Mobile: redeem the one-time handoff id minted by /api/c2/auth/start.
+    // The browser URL never carries the Supabase access token.
+    const handoffUserId = await consumeOAuthHandoff(handoff, 'c2');
+    if (!handoffUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    userId = user.id;
+    userId = handoffUserId;
   } else {
     // Web: use cookie-based session
     const supabase = await createSupabaseServer();

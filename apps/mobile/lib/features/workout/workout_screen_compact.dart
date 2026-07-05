@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../app/adaptive.dart';
@@ -17,7 +16,10 @@ import 'hr_zone_gauge.dart';
 import 'widgets/pulsing_heart_icon.dart';
 import 'workout_engine.dart';
 import 'workout_provider.dart';
-import 'workout_screen.dart';
+import 'widgets/hero_section.dart';
+import 'widgets/session_format.dart';
+import 'widgets/workout_controls.dart';
+import 'widgets/workout_profile_graph.dart';
 
 // ---------------------------------------------------------------------------
 // Display mode provider
@@ -27,12 +29,15 @@ enum WorkoutDisplayMode { classic, compact }
 
 const _displayModePrefKey = 'workout_display_mode';
 
-class WorkoutDisplayModeNotifier extends StateNotifier<WorkoutDisplayMode?> {
-  WorkoutDisplayModeNotifier(this._db) : super(null) {
-    _load();
-  }
+class WorkoutDisplayModeNotifier extends Notifier<WorkoutDisplayMode?> {
+  late LocalDatabase _db;
 
-  final LocalDatabase _db;
+  @override
+  WorkoutDisplayMode? build() {
+    _db = ref.watch(localDatabaseProvider);
+    _load();
+    return null; // null until loaded so UI can pick a size-aware default
+  }
 
   Future<void> _load() async {
     final raw = await _db.getSyncMeta(_displayModePrefKey);
@@ -50,10 +55,8 @@ class WorkoutDisplayModeNotifier extends StateNotifier<WorkoutDisplayMode?> {
 }
 
 final workoutDisplayModeProvider =
-    StateNotifierProvider<WorkoutDisplayModeNotifier, WorkoutDisplayMode?>(
-        (ref) {
-  return WorkoutDisplayModeNotifier(ref.watch(localDatabaseProvider));
-});
+    NotifierProvider<WorkoutDisplayModeNotifier, WorkoutDisplayMode?>(
+        WorkoutDisplayModeNotifier.new);
 
 /// Resolve the effective display mode. If the user has no saved preference,
 /// default to compact on phones (shortest side < 600dp) and classic on tablets.
@@ -127,12 +130,15 @@ TileDisplayMode _parseTileMode(String? raw) {
   );
 }
 
-class TileDisplaySettingsNotifier extends StateNotifier<TileDisplaySettings> {
-  TileDisplaySettingsNotifier(this._db) : super(_defaultTileSettings) {
-    _load();
-  }
+class TileDisplaySettingsNotifier extends Notifier<TileDisplaySettings> {
+  late LocalDatabase _db;
 
-  final LocalDatabase _db;
+  @override
+  TileDisplaySettings build() {
+    _db = ref.watch(localDatabaseProvider);
+    _load();
+    return _defaultTileSettings;
+  }
 
   Future<void> _load() async {
     final raw = await Future.wait([
@@ -160,10 +166,9 @@ class TileDisplaySettingsNotifier extends StateNotifier<TileDisplaySettings> {
   }
 }
 
-final tileDisplaySettingsProvider = StateNotifierProvider<
-    TileDisplaySettingsNotifier, TileDisplaySettings>((ref) {
-  return TileDisplaySettingsNotifier(ref.watch(localDatabaseProvider));
-});
+final tileDisplaySettingsProvider =
+    NotifierProvider<TileDisplaySettingsNotifier, TileDisplaySettings>(
+        TileDisplaySettingsNotifier.new);
 
 // ---------------------------------------------------------------------------
 // Compact body

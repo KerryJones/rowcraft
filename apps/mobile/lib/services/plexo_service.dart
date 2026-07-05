@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/workout_result.dart';
+import '../utils/app_log.dart';
 
 const _plexoApiUrl = String.fromEnvironment(
   'PLEXO_API_URL',
@@ -38,13 +38,13 @@ class PlexoService {
   /// and the current user's display_name matches the allowlist.
   Future<bool> isEnabled() async {
     if (_plexoApiKey.isEmpty || _plexoUserId.isEmpty) {
-      debugPrint('Plexo disabled: API key or user ID not configured');
+      AppLog.info('plexo', 'Disabled: API key or user ID not configured');
       return false;
     }
 
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
-      debugPrint('Plexo disabled: no authenticated user');
+      AppLog.info('plexo', 'Disabled: no authenticated user');
       return false;
     }
 
@@ -58,12 +58,12 @@ class PlexoService {
       final displayName = response['display_name'];
       // Gated to Kerry's account until Plexo integration is broadly enabled.
       if (displayName != 'kerryjones21') {
-        debugPrint('Plexo disabled: display_name "$displayName" not in allowlist');
+        AppLog.info('plexo', 'Disabled: display_name "$displayName" not in allowlist');
         return false;
       }
       return true;
     } catch (e) {
-      debugPrint('Plexo disabled: error checking profile: $e');
+      AppLog.warn('plexo', 'Disabled: error checking profile', e);
       return false;
     }
   }
@@ -115,7 +115,7 @@ class PlexoService {
         error: 'HTTP ${response.statusCode}: ${response.body}',
       );
     } catch (e) {
-      debugPrint('Plexo sync error: $e');
+      AppLog.warn('plexo', 'Sync error', e);
       return (success: false, error: '$e');
     }
   }

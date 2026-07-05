@@ -8,6 +8,7 @@ import '../../models/plan_progress.dart';
 import '../../models/training_plan.dart';
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/app_log.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
 import '../../widgets/difficulty_indicator.dart';
@@ -396,9 +397,10 @@ class _SessionRowState extends ConsumerState<SessionRow> {
         await service.completePlanSession(
             widget.planId, widget.weekNumber, widget.sessionIndex, null);
       }
-    } catch (_) {
+    } catch (e) {
       // Mutation failed (e.g., offline). Invalidation below will refetch
       // the actual server state so the icon reverts to its true value.
+      AppLog.warn('plans', 'Plan session toggle failed', e);
     } finally {
       _toggleInFlight = false;
     }

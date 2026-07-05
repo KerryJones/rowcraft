@@ -85,6 +85,7 @@ export default async function LandingPage() {
       ]} />
       {/* Hero */}
       <section className="flex flex-col items-center py-24 text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element -- static SVG logo, next/image adds nothing */}
         <img src="/logo_gold.svg" alt="RowCraft" className="mb-6 h-16 w-auto" fetchPriority="high" />
         <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl">
           RowCraft

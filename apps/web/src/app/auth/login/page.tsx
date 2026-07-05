@@ -60,6 +60,7 @@ function LoginPageInner() {
         {/* Header */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white">
+            {/* eslint-disable-next-line @next/next/no-img-element -- static SVG logo, next/image adds nothing */}
             <img src="/logo_gold.svg" alt="RowCraft" className="h-8 w-auto" />
             RowCraft
           </Link>

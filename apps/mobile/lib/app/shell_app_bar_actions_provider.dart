@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Provider that individual screens can override to inject extra action
-/// widgets into the shared AppBar (e.g., sort button when browsing).
-final shellAppBarActionsProvider = StateProvider<List<Widget>>((ref) => []);
+/// Extra action widgets that individual screens inject into the shared
+/// AppBar (e.g., sort button when browsing).
+class ShellAppBarActionsNotifier extends Notifier<List<Widget>> {
+  @override
+  List<Widget> build() => const [];
+
+  void set(List<Widget> actions) => state = actions;
+}
+
+final shellAppBarActionsProvider =
+    NotifierProvider<ShellAppBarActionsNotifier, List<Widget>>(
+        ShellAppBarActionsNotifier.new);

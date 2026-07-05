@@ -4,6 +4,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element -- static SVG logo, next/image adds nothing */}
         <img src="/logo_gold.svg" alt="RowCraft" className="mx-auto mb-4 h-16 w-auto opacity-40" />
         <h2 className="mb-2 text-4xl font-bold text-white">404</h2>
         <p className="mb-6 text-sm text-gray-400">

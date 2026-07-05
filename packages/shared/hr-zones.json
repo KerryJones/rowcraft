@@ -1,0 +1,4 @@
+{
+  "$comment": "Single source of truth for the 5-zone model boundaries. Used both for intensity (% of FTP) → target_hr_zone derivation and for HR zone display (%HRR / %HRmax). Below boundaries[0] is 'no zone'. Consumed directly by scripts/build-seeds.ts; apps/web/src/lib/utils/ftp.ts and apps/mobile/lib/utils/hr_zones.dart mirror these values and are held in sync by apps/web/src/lib/utils/__tests__/hr-zone-boundaries.test.ts and apps/mobile/test/utils/hr_zones_boundaries_test.dart.",
+  "boundaries": [55, 75, 85, 92, 97]
+}

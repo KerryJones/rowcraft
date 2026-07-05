@@ -25,6 +25,7 @@ import '../features/settings/pending_sync_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../models/workout_result.dart';
 import '../services/c2_logbook_service.dart';
+import '../utils/app_log.dart';
 import '../utils/time_in_zone.dart';
 import '../widgets/hr_zone_donut.dart';
 import '../widgets/metric_tile.dart';
@@ -105,8 +106,9 @@ final routerProvider = Provider<GoRouter>((ref) {
               .single();
           _onboardingCompleted =
               (data['onboarding_completed'] as bool?) ?? false;
-        } catch (_) {
+        } catch (e) {
           // On transient error, don't cache — allow retry on next navigation
+          AppLog.warn('router', 'Onboarding status fetch failed', e);
           return null;
         }
         if (!_onboardingCompleted) return '/onboarding';

@@ -1,8 +1,7 @@
-import 'dart:developer' as dev;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../utils/app_log.dart';
 import '../utils/hr_zones.dart' show ZoneSystem;
 import '../models/achievement.dart';
 import '../models/personal_record.dart';
@@ -147,8 +146,7 @@ class SupabaseService {
   String? get currentUserId => _client.auth.currentUser?.id;
 
   void _log(String method, Object error, [StackTrace? stack]) {
-    dev.log('SupabaseService.$method failed: $error',
-        name: 'rowcraft', error: error, stackTrace: stack);
+    AppLog.warn('supabase', 'SupabaseService.$method failed', error);
   }
 
   // ── Workouts ──────────────────────────────────────────────────────────

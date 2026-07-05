@@ -1,0 +1,39 @@
+name: Seeds Drift Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/shared/**'
+      - 'scripts/**'
+      - 'supabase/seeds/**'
+      - 'supabase/seed.sql'
+  pull_request:
+    paths:
+      - 'packages/shared/**'
+      - 'scripts/**'
+      - 'supabase/seeds/**'
+      - 'supabase/seed.sql'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - name: Install dependencies
+        working-directory: scripts
+        run: npm ci
+      - name: Rebuild seeds from YAML
+        working-directory: scripts
+        run: npm run build-seeds
+      - name: Fail if generated SQL drifted
+        run: git diff --exit-code -- supabase/seeds supabase/seed.sql

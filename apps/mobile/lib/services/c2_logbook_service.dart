@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -10,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/workout_result.dart';
+import '../utils/app_log.dart';
 
 /// Error that requires user action to resolve (e.g. set weight in profile).
 class C2ActionableException implements Exception {
@@ -80,8 +80,25 @@ class C2LogbookService {
     final session = _client.auth.currentSession;
     if (session == null) throw StateError('Not signed in');
 
+    // Mint a one-time handoff id (token goes in the Authorization header)
+    // so the browser URL never carries the Supabase access token.
+    final startResponse = await http.post(
+      Uri.parse('$_webAppUrl/api/c2/auth/start'),
+      headers: {'Authorization': 'Bearer ${session.accessToken}'},
+    );
+    if (startResponse.statusCode != 200) {
+      throw StateError(
+        'Failed to start C2 authentication (${startResponse.statusCode})',
+      );
+    }
+    final handoff = (jsonDecode(startResponse.body)
+        as Map<String, dynamic>)['handoff'] as String?;
+    if (handoff == null) {
+      throw StateError('Failed to start C2 authentication');
+    }
+
     final authUrl = Uri.parse(
-      '$_webAppUrl/api/c2/auth?source=mobile&token=${session.accessToken}',
+      '$_webAppUrl/api/c2/auth?source=mobile&handoff=$handoff',
     );
 
     await launchUrl(authUrl, mode: LaunchMode.externalApplication);
@@ -119,7 +136,8 @@ class C2LogbookService {
         'device_os_version': deviceOsVersion,
       };
       return _cachedDeviceMetadata!;
-    } catch (_) {
+    } catch (e) {
+      AppLog.warn('c2', 'Device metadata lookup failed', e);
       return {};
     }
   }
@@ -184,21 +202,22 @@ class C2LogbookService {
         error: 'HTTP ${response.statusCode}: ${response.body}',
       );
     } catch (e) {
-      assert(() { debugPrint('C2 sync error: $e'); return true; }());
+      AppLog.warn('c2', 'Sync error', e);
       if (e is C2ActionableException) rethrow;
       return (success: false, error: '$e');
     }
   }
 
-  /// Disconnect the C2 Logbook account by clearing tokens.
+  /// Disconnect the C2 Logbook account by deleting tokens and clearing
+  /// the link id. Tokens live in the service-role-only integration_tokens
+  /// table, deleted via the security-definer RPC.
   Future<void> disconnect() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
 
-    await _client.from('profiles').update({
-      'c2_user_id': null,
-      'c2_access_token': null,
-      'c2_refresh_token': null,
-    }).eq('id', userId);
+    await _client.rpc('disconnect_integration', params: {'p_provider': 'c2'});
+    await _client
+        .from('profiles')
+        .update({'c2_user_id': null}).eq('id', userId);
   }
 }

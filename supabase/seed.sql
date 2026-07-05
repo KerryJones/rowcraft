@@ -15,5 +15,5 @@
 -- Workouts (generated from packages/shared/workouts/*.yaml)
 \ir seeds/gen_all_workouts.sql
 
--- Training plans (hand-maintained)
-\ir seeds/90_training_plans.sql
+-- Training plans (generated from packages/shared/plans/*.yaml)
+\ir seeds/gen_training_plans.sql

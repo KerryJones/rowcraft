@@ -89,20 +89,32 @@ export async function GET(request: NextRequest) {
     appUserId = user.id;
   }
 
-  // Service role client to store tokens — mobile has no cookie session,
-  // so we need elevated access to update the profile row
+  // Service role client — tokens live in the service-role-only
+  // integration_tokens table, and mobile has no cookie session anyway.
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
+  const { error: tokenError } = await supabaseAdmin
+    .from('integration_tokens')
+    .upsert(
+      {
+        user_id: appUserId,
+        provider: 'c2',
+        access_token,
+        refresh_token: refresh_token ?? null,
+      },
+      { onConflict: 'user_id,provider' },
+    );
+
+  if (tokenError) {
+    return errorRedirect('c2_save_failed');
+  }
+
   const { error: updateError } = await supabaseAdmin
     .from('profiles')
-    .update({
-      c2_access_token: access_token,
-      c2_refresh_token: refresh_token,
-      c2_user_id: c2UserId,
-    })
+    .update({ c2_user_id: c2UserId })
     .eq('id', appUserId);
 
   if (updateError) {

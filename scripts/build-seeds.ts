@@ -103,18 +103,22 @@ interface YamlPlan {
 
 // ── HR Zone Derivation ───────────────────────────────────────────────────────
 
+/** Zone boundaries loaded from the shared single source of truth. */
+const HR_ZONE_BOUNDARIES: number[] = JSON.parse(
+  readFileSync(join(ROOT, 'packages/shared/hr-zones.json'), 'utf-8'),
+).boundaries;
+
 /**
  * Derive HR zone (1-5) from intensity % of FTP.
- * Boundaries match the HR_ZONES definition in apps/web/src/lib/utils/ftp.ts.
- * Returns 0 for intensities below 55% (no zone / rest).
+ * Boundaries come from packages/shared/hr-zones.json (55/75/85/92/97).
+ * Returns null for intensities below the first boundary (no zone / rest).
  */
 function intensityToHrZone(intensityPct: number): number | null {
-  if (intensityPct < 55) return null; // below zone
-  if (intensityPct < 75) return 1;    // aerobic / UT2
-  if (intensityPct < 85) return 2;    // tempo / UT1
-  if (intensityPct < 92) return 3;    // threshold / AT
-  if (intensityPct < 97) return 4;    // VO2max / TR
-  return 5;                            // max / AN
+  if (intensityPct < HR_ZONE_BOUNDARIES[0]) return null; // below zone
+  for (let zone = 1; zone < HR_ZONE_BOUNDARIES.length; zone++) {
+    if (intensityPct < HR_ZONE_BOUNDARIES[zone]) return zone;
+  }
+  return HR_ZONE_BOUNDARIES.length;
 }
 
 // ── Parsers ─────────────────────────────────────────────────────────────────

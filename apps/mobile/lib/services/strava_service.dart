@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/workout_result.dart';
+import '../utils/app_log.dart';
 
 /// Error that requires user action to resolve (e.g. reconnect Strava).
 class StravaActionableException implements Exception {
@@ -58,8 +58,25 @@ class StravaService {
     final session = _client.auth.currentSession;
     if (session == null) throw StateError('Not signed in');
 
+    // Mint a one-time handoff id (token goes in the Authorization header)
+    // so the browser URL never carries the Supabase access token.
+    final startResponse = await http.post(
+      Uri.parse('$_webAppUrl/api/strava/auth/start'),
+      headers: {'Authorization': 'Bearer ${session.accessToken}'},
+    );
+    if (startResponse.statusCode != 200) {
+      throw StateError(
+        'Failed to start Strava authentication (${startResponse.statusCode})',
+      );
+    }
+    final handoff = (jsonDecode(startResponse.body)
+        as Map<String, dynamic>)['handoff'] as String?;
+    if (handoff == null) {
+      throw StateError('Failed to start Strava authentication');
+    }
+
     final authUrl = Uri.parse(
-      '$_webAppUrl/api/strava/auth?source=mobile&token=${session.accessToken}',
+      '$_webAppUrl/api/strava/auth?source=mobile&handoff=$handoff',
     );
 
     await launchUrl(authUrl, mode: LaunchMode.externalApplication);
@@ -115,22 +132,23 @@ class StravaService {
         error: 'HTTP ${response.statusCode}: ${response.body}',
       );
     } catch (e) {
-      assert(() { debugPrint('Strava sync error: $e'); return true; }());
+      AppLog.warn('strava', 'Sync error', e);
       if (e is StravaActionableException) rethrow;
       return (success: false, error: '$e');
     }
   }
 
-  /// Disconnect the Strava account by clearing tokens.
+  /// Disconnect the Strava account by deleting tokens and clearing the
+  /// link id. Tokens live in the service-role-only integration_tokens
+  /// table, deleted via the security-definer RPC.
   Future<void> disconnect() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
 
-    await _client.from('profiles').update({
-      'strava_athlete_id': null,
-      'strava_access_token': null,
-      'strava_refresh_token': null,
-      'strava_token_expires_at': null,
-    }).eq('id', userId);
+    await _client
+        .rpc('disconnect_integration', params: {'p_provider': 'strava'});
+    await _client
+        .from('profiles')
+        .update({'strava_athlete_id': null}).eq('id', userId);
   }
 }

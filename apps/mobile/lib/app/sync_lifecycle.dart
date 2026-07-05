@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/sync_service.dart';
+import '../utils/app_log.dart';
 
 /// Drives [SyncService.syncPendingResults] from app lifecycle events.
 ///
@@ -57,8 +58,10 @@ class _SyncLifecycleObserverState extends ConsumerState<SyncLifecycleObserver>
     _lastAttempt = now;
     try {
       await ref.read(syncServiceProvider).syncPendingResults();
-    } catch (e) {
-      debugPrint('SyncLifecycle: syncPendingResults threw: $e');
+    } catch (e, st) {
+      // syncPendingResults handles per-row failures internally — an
+      // uncaught throw here is unexpected.
+      AppLog.error('sync', 'Background sync pass threw', e, st);
     }
   }
 

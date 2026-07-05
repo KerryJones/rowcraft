@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ChevronUp, ChevronDown, Copy, Trash2 } from 'lucide-react';
 import type { WorkoutSegment, DurationType } from '@/lib/types';
 import { formatDuration, formatPace, parseDuration } from '@/lib/utils/format';
@@ -251,11 +251,15 @@ interface TimeDurationInputProps {
 
 function TimeDurationInput({ seconds, onChange, ariaLabel }: TimeDurationInputProps) {
 	const [draft, setDraft] = useState(() => formatDuration(seconds));
-	const focused = useRef(false);
+	const [focused, setFocused] = useState(false);
+	const [prevSeconds, setPrevSeconds] = useState(seconds);
 
-	useEffect(() => {
-		if (!focused.current) setDraft(formatDuration(seconds));
-	}, [seconds]);
+	// Sync the draft when the segment's value changes externally (e.g. undo,
+	// reorder) — but not while the user is typing in this input.
+	if (seconds !== prevSeconds) {
+		setPrevSeconds(seconds);
+		if (!focused) setDraft(formatDuration(seconds));
+	}
 
 	function commit(value: string) {
 		const parsed = parseDuration(value);
@@ -272,8 +276,8 @@ function TimeDurationInput({ seconds, onChange, ariaLabel }: TimeDurationInputPr
 			inputMode="numeric"
 			value={draft}
 			onChange={(e) => setDraft(e.target.value)}
-			onFocus={() => { focused.current = true; }}
-			onBlur={(e) => { focused.current = false; commit(e.target.value); }}
+			onFocus={() => setFocused(true)}
+			onBlur={(e) => { setFocused(false); commit(e.target.value); }}
 			onKeyDown={(e) => {
 				if (e.key === 'Enter') {
 					e.preventDefault();

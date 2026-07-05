@@ -90,14 +90,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Workout result not found' }, { status: 404 });
   }
 
-  // Fetch user's Strava tokens
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('strava_athlete_id, strava_access_token, strava_refresh_token, strava_token_expires_at')
-    .eq('id', userId)
-    .single();
+  // Fetch the user's Strava link id, and their tokens from the
+  // service-role-only integration_tokens table.
+  const [{ data: profile, error: profileError }, { data: tokens, error: tokenError }] =
+    await Promise.all([
+      supabase
+        .from('profiles')
+        .select('strava_athlete_id')
+        .eq('id', userId)
+        .single(),
+      supabase
+        .from('integration_tokens')
+        .select('access_token, refresh_token, expires_at')
+        .eq('user_id', userId)
+        .eq('provider', 'strava')
+        .maybeSingle(),
+    ]);
 
-  if (profileError || !profile?.strava_access_token || !profile?.strava_athlete_id) {
+  if (profileError || tokenError || !tokens?.access_token || !profile?.strava_athlete_id) {
     return NextResponse.json({ error: 'Not connected to Strava' }, { status: 400 });
   }
 
@@ -106,13 +116,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Check if token needs refresh (expires_at is Unix timestamp in seconds)
-  let accessToken = profile.strava_access_token as string;
-  const expiresAt = profile.strava_token_expires_at as number | null;
+  let accessToken = tokens.access_token as string;
+  const expiresAt = tokens.expires_at as number | null;
   const nowUnix = Math.floor(Date.now() / 1000);
 
   if (expiresAt != null && expiresAt < nowUnix + 60) {
     // Token expired or expiring within 60s — refresh
-    const refreshToken = profile.strava_refresh_token as string | null;
+    const refreshToken = tokens.refresh_token as string | null;
     if (!refreshToken) {
       return NextResponse.json(
         { error: 'Strava token expired — reconnect in Profile' },
@@ -130,13 +140,14 @@ export async function POST(request: NextRequest) {
 
     // Persist refreshed tokens (best-effort)
     await supabase
-      .from('profiles')
+      .from('integration_tokens')
       .update({
-        strava_access_token: refreshed.access_token,
-        strava_refresh_token: refreshed.refresh_token,
-        strava_token_expires_at: refreshed.expires_at,
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token,
+        expires_at: refreshed.expires_at,
       })
-      .eq('id', userId);
+      .eq('user_id', userId)
+      .eq('provider', 'strava');
 
     accessToken = refreshed.access_token;
   }

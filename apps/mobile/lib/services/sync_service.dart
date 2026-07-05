@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../models/workout_result.dart';
+import '../utils/app_log.dart';
 import 'local_db.dart';
 import 'supabase_service.dart';
 import 'c2_logbook_service.dart';
@@ -102,7 +102,7 @@ class SyncService {
     try {
       return await fn();
     } catch (e, stack) {
-      debugPrint('sync: $stage failed: $e');
+      AppLog.warn('sync', '$stage check failed', e);
       _captureSync(e, stack, stage: stage);
       return false;
     }
@@ -242,7 +242,7 @@ class SyncService {
       if (remaining == 0) lastError = null;
     } catch (e, stack) {
       lastError = 'Sync pass failed: $e';
-      debugPrint(lastError!);
+      AppLog.warn('sync', lastError!, e);
       _captureSync(e, stack, stage: 'sync_pass');
     } finally {
       _syncing = false;
@@ -290,7 +290,7 @@ class SyncService {
               final msg = 'C2 sync failed: ${c2Result.error}';
               lastError = msg;
               _rowErrors[row.id] = msg;
-              debugPrint(msg);
+              AppLog.warn('sync', msg);
             }
           } else {
             // Not linked to C2 — mark as "synced" so it gets cleaned up
@@ -301,7 +301,7 @@ class SyncService {
           // mark C2 as done to stop retrying.
           lastError = '$e';
           _rowErrors[row.id] = '$e';
-          debugPrint('C2 actionable error for row ${row.id}: $e');
+          AppLog.warn('sync', 'C2 actionable error for row ${row.id}', e);
           await db.markSyncedToC2(row.id);
         }
       }
@@ -317,7 +317,7 @@ class SyncService {
               final msg = 'Plexo sync failed: ${plexoResult.error}';
               lastError = msg;
               _rowErrors[row.id] = msg;
-              debugPrint(msg);
+              AppLog.warn('sync', msg);
             }
           } else {
             // Not enabled — mark as done so cleanup proceeds
@@ -327,7 +327,7 @@ class SyncService {
           final msg = 'Plexo sync error: $e';
           lastError = msg;
           _rowErrors[row.id] = msg;
-          debugPrint(msg);
+          AppLog.warn('sync', msg);
         }
       }
 
@@ -347,7 +347,7 @@ class SyncService {
               final msg = 'Strava sync failed: ${stravaResult.error}';
               lastError = msg;
               _rowErrors[row.id] = msg;
-              debugPrint(msg);
+              AppLog.warn('sync', msg);
             }
           } else {
             // Not linked to Strava — mark as "synced" so it gets cleaned up
@@ -358,7 +358,7 @@ class SyncService {
           // mark Strava as done to stop retrying.
           lastError = '$e';
           _rowErrors[row.id] = '$e';
-          debugPrint('Strava actionable error for row ${row.id}: $e');
+          AppLog.warn('sync', 'Strava actionable error for row ${row.id}', e);
           await db.markSyncedToStrava(row.id);
         }
       }
@@ -366,7 +366,7 @@ class SyncService {
       final msg = 'Sync failed for row ${row.id}: $e';
       lastError = msg;
       _rowErrors[row.id] = msg;
-      debugPrint(msg);
+      AppLog.warn('sync', msg);
       _captureSync(
         e,
         stack,

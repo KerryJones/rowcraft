@@ -30,6 +30,14 @@ export function formatWatts(watts: number): string {
 }
 
 /**
+ * Zone boundaries for the unified 5-zone model.
+ * Mirrors packages/shared/hr-zones.json (the single source of truth) — kept
+ * as a literal here so the web bundle never imports outside the app root;
+ * __tests__/hr-zone-boundaries.test.ts fails CI if the two drift.
+ */
+export const HR_ZONE_BOUNDARIES = [55, 75, 85, 92, 97] as const;
+
+/**
  * Unified HR zones — boundaries shared by both standard and rowing systems.
  * Zone boundaries: 55 / 75 / 85 / 92 / 97 / 100 (%HRR or %HRmax fallback).
  * Below 55% is "Recovery" (standard) or "Below UT2" (rowing).
@@ -41,8 +49,8 @@ export const HR_ZONES: HrZone[] = [
 		shortLabel: 'Z1',
 		rowingLabel: 'Base Aerobic',
 		rowingShortLabel: 'UT2',
-		minPct: 55,
-		maxPct: 75,
+		minPct: HR_ZONE_BOUNDARIES[0],
+		maxPct: HR_ZONE_BOUNDARIES[1],
 	},
 	{
 		name: 'tempo',
@@ -50,8 +58,8 @@ export const HR_ZONES: HrZone[] = [
 		shortLabel: 'Z2',
 		rowingLabel: 'Aerobic Power',
 		rowingShortLabel: 'UT1',
-		minPct: 75,
-		maxPct: 85,
+		minPct: HR_ZONE_BOUNDARIES[1],
+		maxPct: HR_ZONE_BOUNDARIES[2],
 	},
 	{
 		name: 'threshold',
@@ -59,8 +67,8 @@ export const HR_ZONES: HrZone[] = [
 		shortLabel: 'Z3',
 		rowingLabel: 'Threshold',
 		rowingShortLabel: 'AT',
-		minPct: 85,
-		maxPct: 92,
+		minPct: HR_ZONE_BOUNDARIES[2],
+		maxPct: HR_ZONE_BOUNDARIES[3],
 	},
 	{
 		name: 'vo2max',
@@ -68,8 +76,8 @@ export const HR_ZONES: HrZone[] = [
 		shortLabel: 'Z4',
 		rowingLabel: 'VO2max',
 		rowingShortLabel: 'TR',
-		minPct: 92,
-		maxPct: 97,
+		minPct: HR_ZONE_BOUNDARIES[3],
+		maxPct: HR_ZONE_BOUNDARIES[4],
 	},
 	{
 		name: 'max',
@@ -77,7 +85,7 @@ export const HR_ZONES: HrZone[] = [
 		shortLabel: 'Z5',
 		rowingLabel: 'Anaerobic',
 		rowingShortLabel: 'AN',
-		minPct: 97,
+		minPct: HR_ZONE_BOUNDARIES[4],
 		maxPct: 100,
 	},
 ];
@@ -195,10 +203,9 @@ export function getEffectiveFtp(ftpWatts: number | null): number {
  */
 export function intensityToHrZone(intensityPct: number | null | undefined): number | null {
 	if (intensityPct == null) return null;
-	if (intensityPct < 55) return null;
-	if (intensityPct < 75) return 1; // aerobic / UT2
-	if (intensityPct < 85) return 2; // tempo / UT1
-	if (intensityPct < 92) return 3; // threshold / AT
-	if (intensityPct < 97) return 4; // VO2max / TR
-	return 5; // max / AN
+	if (intensityPct < HR_ZONE_BOUNDARIES[0]) return null;
+	for (let zone = 1; zone < HR_ZONE_BOUNDARIES.length; zone++) {
+		if (intensityPct < HR_ZONE_BOUNDARIES[zone]) return zone;
+	}
+	return HR_ZONE_BOUNDARIES.length; // max / AN
 }

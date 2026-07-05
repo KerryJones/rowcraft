@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/workout_result.dart';
 import '../../services/local_db.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
+import '../../utils/app_log.dart';
 import '../../utils/number_format.dart';
 import '../../utils/pace_utils.dart';
 import '../../utils/workout_utils.dart';
@@ -73,7 +73,7 @@ final workoutHistoryEntriesProvider =
         attempts: row.attempts,
       ));
     } catch (e) {
-      debugPrint('history: failed to decode pending row ${row.id}: $e');
+      AppLog.warn('history', 'Failed to decode pending row ${row.id}', e);
     }
   }
 
@@ -91,11 +91,10 @@ final workoutHistoryEntriesProvider =
 final workoutResultProvider =
     FutureProvider.family<WorkoutResult?, String>((ref, resultId) async {
   final entries = await ref.watch(workoutHistoryEntriesProvider.future);
-  try {
-    return entries.firstWhere((e) => e.result.id == resultId).result;
-  } catch (_) {
-    return null;
+  for (final e in entries) {
+    if (e.result.id == resultId) return e.result;
   }
+  return null;
 });
 
 /// Live count of pending (locally-queued, not-yet-synced) results.

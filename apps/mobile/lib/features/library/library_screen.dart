@@ -160,14 +160,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       _lastSortOrder = _sortOrder;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        ref.read(shellAppBarActionsProvider.notifier).state = _isBrowsing
+        ref.read(shellAppBarActionsProvider.notifier).set(_isBrowsing
             ? <Widget>[
                 _SortButton(
                   current: _sortOrder,
                   onSelected: (order) => setState(() => _sortOrder = order),
                 ),
               ]
-            : <Widget>[];
+            : <Widget>[]);
       });
     }
 
@@ -310,7 +310,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         Future<void> onRefresh() async {
           final repo = ref.read(workoutRepositoryProvider);
           await repo.refreshWorkouts(isPublic: true);
-          ref.read(workoutRefreshTriggerProvider.notifier).state++;
+          ref.read(workoutRefreshTriggerProvider.notifier).bump();
         }
 
         return Column(

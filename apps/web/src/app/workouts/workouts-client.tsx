@@ -99,7 +99,7 @@ export function WorkoutsClient({ workouts, userId, ftpWatts }: WorkoutsClientPro
     }
 
     return result;
-  }, [workouts, search, filters, userId, sortKey]);
+  }, [workouts, search, filters, userId, sortKey, ftp]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);

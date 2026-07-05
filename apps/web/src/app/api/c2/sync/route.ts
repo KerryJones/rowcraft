@@ -46,14 +46,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Workout result not found' }, { status: 404 });
   }
 
-  // Fetch user's C2 tokens and weight
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('c2_access_token, c2_refresh_token, c2_user_id, weight_kg')
-    .eq('id', userId)
-    .single();
+  // Fetch the user's C2 link id + weight, and their tokens from the
+  // service-role-only integration_tokens table.
+  const [{ data: profile, error: profileError }, { data: tokens, error: tokenError }] =
+    await Promise.all([
+      supabase
+        .from('profiles')
+        .select('c2_user_id, weight_kg')
+        .eq('id', userId)
+        .single(),
+      supabase
+        .from('integration_tokens')
+        .select('access_token, refresh_token')
+        .eq('user_id', userId)
+        .eq('provider', 'c2')
+        .maybeSingle(),
+    ]);
 
-  if (profileError || !profile?.c2_access_token || !profile?.c2_user_id) {
+  if (profileError || tokenError || !tokens?.access_token || !profile?.c2_user_id) {
     return NextResponse.json({ error: 'Not connected to C2' }, { status: 400 });
   }
 
@@ -178,21 +188,21 @@ export async function POST(request: NextRequest) {
     {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${profile.c2_access_token}`,
+        Authorization: `Bearer ${tokens.access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(c2Payload),
     },
   );
 
-  if (c2Response.status === 401 && profile.c2_refresh_token) {
+  if (c2Response.status === 401 && tokens.refresh_token) {
     // Attempt to refresh the access token
     const refreshResponse = await fetch(`${process.env.C2_BASE_URL}/oauth/access_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: profile.c2_refresh_token,
+        refresh_token: tokens.refresh_token,
         client_id: process.env.C2_CLIENT_ID!,
         client_secret: process.env.C2_CLIENT_SECRET!,
       }),
@@ -218,12 +228,13 @@ export async function POST(request: NextRequest) {
 
     // Persist refreshed tokens (best-effort)
     await supabase
-      .from('profiles')
+      .from('integration_tokens')
       .update({
-        c2_access_token: newAccessToken,
-        ...(newRefreshToken ? { c2_refresh_token: newRefreshToken } : {}),
+        access_token: newAccessToken,
+        ...(newRefreshToken ? { refresh_token: newRefreshToken } : {}),
       })
-      .eq('id', userId);
+      .eq('user_id', userId)
+      .eq('provider', 'c2');
 
     // Retry with the new token
     const retryResponse = await fetch(

@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,6 +12,7 @@ import '../../services/supabase_service.dart';
 import '../../services/c2_logbook_service.dart';
 import '../../services/plexo_service.dart';
 import '../../services/strava_service.dart';
+import '../../utils/app_log.dart';
 import '../../utils/hr_zones.dart';
 import '../../utils/pace_utils.dart';
 import '../auth/auth_provider.dart';
@@ -69,45 +67,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   bool _waitingForC2Auth = false;
   bool _stravaLinking = false;
   bool _waitingForStravaAuth = false;
-  StreamSubscription<Uri>? _deepLinkSub;
+
+  // OAuth callback deep links are handled app-wide by DeepLinkObserver —
+  // this screen only keeps the resume-fallback refresh below.
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _listenForDeepLinks();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _deepLinkSub?.cancel();
     super.dispose();
-  }
-
-  void _listenForDeepLinks() {
-    final appLinks = AppLinks();
-    _deepLinkSub = appLinks.uriLinkStream.listen((uri) {
-      if (!mounted) return;
-      if (uri.scheme == 'com.rowcraft.app' && uri.host == 'login-callback') {
-        final service = uri.queryParameters['service'];
-        _waitingForC2Auth = false;
-        _waitingForStravaAuth = false;
-        ref.invalidate(c2LinkedProvider);
-        ref.invalidate(stravaLinkedProvider);
-        final label = service == 'strava' ? 'Strava' : 'Concept2 Logbook';
-        if (uri.queryParameters['success'] == 'true') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$label connected!')),
-          );
-        } else {
-          final error = uri.queryParameters['error'] ?? 'Connection failed';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$label connection failed: $error')),
-          );
-        }
-      }
-    });
   }
 
   @override
@@ -681,7 +654,8 @@ class _DeleteAccountDialogState extends ConsumerState<_DeleteAccountDialog> {
                     // Sign out clears the session; the router's auth redirect
                     // handles navigation to /auth automatically.
                     await ref.read(signOutProvider.future);
-                  } catch (_) {
+                  } catch (e, st) {
+                    AppLog.error('profile', 'Account deletion failed', e, st);
                     if (mounted) setState(() => _isDeleting = false);
                     if (context.mounted) {
                       Navigator.of(context).pop();
@@ -1144,7 +1118,8 @@ class _EditRestingHrDialogState extends State<_EditRestingHrDialog> {
             final service = widget.ref.read(supabaseServiceProvider);
             try {
               await service.updateProfileRestingHr(value);
-            } catch (_) {
+            } catch (e) {
+              AppLog.warn('profile', 'Resting HR update failed', e);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -1225,7 +1200,8 @@ class _ZoneSystemDialogState extends State<_ZoneSystemDialog> {
             try {
               await service.updateProfileZoneSystem(
                   _selected);
-            } catch (_) {
+            } catch (e) {
+              AppLog.warn('profile', 'Zone system update failed', e);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -1303,7 +1279,8 @@ class _EditMaxHrDialogState extends State<_EditMaxHrDialog> {
             final service = widget.ref.read(supabaseServiceProvider);
             try {
               await service.updateProfileMaxHr(value);
-            } catch (_) {
+            } catch (e) {
+              AppLog.warn('profile', 'Max HR update failed', e);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Failed to update max heart rate')),

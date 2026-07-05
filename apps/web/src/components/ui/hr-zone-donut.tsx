@@ -55,7 +55,14 @@ export function HrZoneDonut({
 	// and grows clockwise. strokeDashoffset is *negated* because SVG's default
 	// dash direction is counter-clockwise from the start — a negative offset
 	// advances the start clockwise, which is what we want for stacking sections.
+	const sections: { zone: number; pct: number; offset: number }[] = [];
 	let offset = 0;
+	for (const { zone, seconds } of entries) {
+		const pct = (seconds / total) * 100;
+		sections.push({ zone, pct, offset });
+		offset += pct;
+	}
+
 	return (
 		<svg
 			className={className}
@@ -65,26 +72,20 @@ export function HrZoneDonut({
 			aria-hidden="true"
 		>
 			<g transform={`rotate(-90 ${cx} ${cy})`}>
-				{entries.map(({ zone, seconds }) => {
-					const pct = (seconds / total) * 100;
-					const dash = `${pct} ${100 - pct}`;
-					const node = (
-						<circle
-							key={zone}
-							cx={cx}
-							cy={cy}
-							r={radius}
-							fill="none"
-							stroke={HR_ZONE_COLORS[zone] ?? SEGMENT_REST_COLOR}
-							strokeWidth={strokeWidth}
-							pathLength={100}
-							strokeDasharray={dash}
-							strokeDashoffset={-offset}
-						/>
-					);
-					offset += pct;
-					return node;
-				})}
+				{sections.map(({ zone, pct, offset: sectionOffset }) => (
+					<circle
+						key={zone}
+						cx={cx}
+						cy={cy}
+						r={radius}
+						fill="none"
+						stroke={HR_ZONE_COLORS[zone] ?? SEGMENT_REST_COLOR}
+						strokeWidth={strokeWidth}
+						pathLength={100}
+						strokeDasharray={`${pct} ${100 - pct}`}
+						strokeDashoffset={-sectionOffset}
+					/>
+				))}
 			</g>
 		</svg>
 	);

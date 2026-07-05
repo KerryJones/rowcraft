@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/app_version_provider.dart';
+import '../../utils/app_log.dart';
 
 const _lastSeenVersionKey = 'notifications_last_seen_version';
 
@@ -112,8 +113,9 @@ class NotificationNotifier extends AsyncNotifier<NotificationState> {
         if (releaseNotes != null) {
           body = _buildSummary(releaseNotes);
         }
-      } catch (_) {
+      } catch (e) {
         // Asset not found or parse error — fall back to generic message
+        AppLog.warn('notifications', 'Changelog parse failed', e);
       }
 
       notifications.add(AppNotification(

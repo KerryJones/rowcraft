@@ -27,7 +27,7 @@ rowcraft/
 │       ├── components/  # shared UI components
 │       └── lib/         # supabase clients (server/client), utils, types
 ├── packages/shared/     # JSON schemas, pre-built workouts
-└── supabase/migrations/ # 13 SQL migrations
+└── supabase/migrations/ # SQL migrations (numbered, applied via gated CI)
 ```
 
 ## Data Flows
@@ -37,6 +37,20 @@ User builds in `/builder` → saves segments as JSONB to `workouts` table → ca
 
 ### Workout Execution (Mobile)
 Select workout → pair PM5 via BLE → receive real-time data via notifications → track against targets → save result to Drift (offline) → sync to Supabase + C2 Logbook.
+
+During an active session an Android foreground service (`connectedDevice` type)
+holds the process alive so BLE survives backgrounding/screen lock, a crash-recovery
+snapshot of the partial result is written to disk every ~10s (offered for save on
+next launch if the session dies), and unexpected BLE drops trigger a bounded
+backoff reconnect loop (direct reconnect to the last PM5, then scan).
+
+### Integration OAuth (C2 / Strava)
+Mobile POSTs to `/api/<provider>/auth/start` with the Supabase token in the
+Authorization header, receives a one-time `oauth_handoff` id, and opens the
+browser at `/api/<provider>/auth?source=mobile&handoff=<id>` — the URL never
+carries the Supabase token. The callback route exchanges the code and stores
+tokens in the service-role-only `integration_tokens` table; sync routes read
+and refresh them there.
 
 ### Workout Library Loading
 `workoutLibraryProvider` → `WorkoutRepository.getWorkouts()` reads from `CachedWorkouts` SQLite table (instant). If cache is non-empty, a background `refreshWorkouts()` call updates it silently. If empty (first launch), waits for network. Pull-to-refresh forces an explicit refresh then re-reads cache.

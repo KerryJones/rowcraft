@@ -1,9 +1,8 @@
-import 'dart:developer' as dev;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/personal_record.dart';
 import '../models/workout_result.dart';
+import '../utils/app_log.dart';
 import 'supabase_service.dart';
 
 final prServiceProvider = Provider<PrService>((ref) {
@@ -45,7 +44,7 @@ class PrService {
       }
       _loaded = true;
     } catch (e) {
-      dev.log('PrService.load failed: $e', name: 'rowcraft');
+      AppLog.warn('pr', 'Load failed', e);
     }
   }
 
@@ -126,9 +125,9 @@ class PrService {
       candidates.map((r) async {
         try {
           return await _supabaseService.upsertPersonalRecord(r);
-        } catch (e) {
-          dev.log('PrService.checkAndUpdatePRs(${r.prType}) failed: $e',
-              name: 'rowcraft');
+        } catch (e, st) {
+          // A silently dropped PR erodes trust in the stats.
+          AppLog.error('pr', 'PR upsert ${r.prType} failed', e, st);
           return null;
         }
       }),
@@ -166,8 +165,8 @@ class PrService {
       final saved = await _supabaseService.upsertPersonalRecord(record);
       _cache[PrType.highestFtp] = saved;
       return saved;
-    } catch (e) {
-      dev.log('PrService.checkFtpPR failed: $e', name: 'rowcraft');
+    } catch (e, st) {
+      AppLog.error('pr', 'FTP PR upsert failed', e, st);
       return null;
     }
   }
@@ -256,8 +255,7 @@ class PrService {
         try {
           return await _supabaseService.upsertPersonalRecord(r);
         } catch (e) {
-          dev.log('PrService.backfill(${r.prType}) failed: $e',
-              name: 'rowcraft');
+          AppLog.warn('pr', 'Backfill ${r.prType} failed', e);
           return null;
         }
       }),

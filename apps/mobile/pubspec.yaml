@@ -21,8 +21,6 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.0
   path_provider: ^2.1.0
   intl: ^0.20.0
-  freezed_annotation: ^3.0.0
-  json_annotation: ^4.11.0
   google_fonts: ^8.0.0
   flutter_svg: ^2.0.0
   http: ^1.2.0
@@ -41,6 +39,7 @@ dependencies:
   shared_preferences: ^2.3.0
   flutter_markdown: ^0.7.7+1
   fl_chart: ^1.2.0
+  flutter_foreground_task: ^9.2.2
 
 dev_dependencies:
   flutter_test:
@@ -49,8 +48,6 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   build_runner: ^2.13.0
   drift_dev: ^2.32.0
-  freezed: ^3.2.0
-  json_serializable: ^6.13.0
   flutter_launcher_icons: ^0.14.0
 
 flutter_native_splash:

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../../models/achievement.dart';
@@ -13,10 +12,13 @@ import '../../models/workout_time_sample.dart';
 import '../../services/achievement_service.dart';
 import '../../services/audio_service.dart';
 import '../../services/c2_logbook_service.dart';
+import '../../services/foreground_session_service.dart';
 import '../../services/pr_service.dart';
+import '../../services/session_recovery_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/workout_repository.dart';
+import '../../utils/app_log.dart';
 import '../../utils/hr_zones.dart' show ZoneSystem;
 import '../../utils/pace_utils.dart';
 import '../ble/ble_provider.dart';
@@ -213,13 +215,24 @@ class WorkoutSessionState {
   }
 }
 
-class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
-  final SupabaseService _supabaseService;
-  final SyncService _syncService;
-  final WorkoutRepository _workoutRepository;
-  final Ref _ref;
+class WorkoutSessionNotifier extends Notifier<WorkoutSessionState> {
+  late SupabaseService _supabaseService;
+  late SyncService _syncService;
+  late WorkoutRepository _workoutRepository;
+  late ForegroundSessionService _foregroundService;
+  late SessionRecoveryService _recoveryService;
 
   WorkoutEngine? _engine;
+
+  /// True while the workout foreground service is running.
+  bool _foregroundServiceRunning = false;
+
+  /// Last time a recovery snapshot was written (throttled to every few
+  /// seconds — writing on every engine tick would hammer the disk).
+  DateTime? _lastSnapshotAt;
+
+  /// Minimum interval between recovery snapshots.
+  static const _snapshotInterval = Duration(seconds: 10);
 
   /// Supabase-assigned result ID, set after successful save.
   String? _savedResultId;
@@ -232,8 +245,6 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   StreamSubscription<int>? _hrBleSubscription;
   StreamSubscription<HrConnectionState>? _hrConnectionSub;
   StreamSubscription<PM5ConnectionState>? _pm5ConnectionSub;
-  DateTime? _lastPm5ReconnectAttempt;
-  DateTime? _lastHrReconnectAttempt;
 
   /// The latest standalone HR value for merging with PM5 data.
   int? _lastStandaloneHr;
@@ -250,13 +261,19 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// BLE data stream controller — feeds into the workout engine.
   final _pm5Controller = StreamController<PM5Data>.broadcast();
 
-  WorkoutSessionNotifier(
-    this._supabaseService,
-    this._syncService,
-    this._workoutRepository,
-    this._ref,
-  ) : super(const WorkoutSessionState()) {
+  @override
+  WorkoutSessionState build() {
+    // read (not watch): these are stable singletons. Watching them would
+    // re-run build() on invalidation after _cleanup closed _pm5Controller,
+    // leaving the new subscriptions feeding a closed controller.
+    _supabaseService = ref.read(supabaseServiceProvider);
+    _syncService = ref.read(syncServiceProvider);
+    _workoutRepository = ref.read(workoutRepositoryProvider);
+    _foregroundService = ref.read(foregroundSessionServiceProvider);
+    _recoveryService = ref.read(sessionRecoveryServiceProvider);
+    ref.onDispose(_cleanup);
     _subscribeToBle();
+    return const WorkoutSessionState();
   }
 
   /// When true, incoming BLE data is ignored (during PM5 reset sequence).
@@ -265,7 +282,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// Subscribe to BLE PM5 data, standalone HR, and HR connection state.
   void _subscribeToBle() {
     // Listen to PM5 BLE data
-    final pm5Stream = _ref.read(pm5ServiceProvider).pm5DataStream;
+    final pm5Stream = ref.read(pm5ServiceProvider).pm5DataStream;
     _pm5BleSubscription = pm5Stream.listen((pm5Data) {
       // Ignore stale data while PM5 is being reset
       if (_suppressBleData) return;
@@ -284,7 +301,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     });
 
     // Listen to standalone HR data
-    final hrStream = _ref.read(hrServiceProvider).heartRateStream;
+    final hrStream = ref.read(hrServiceProvider).heartRateStream;
     _hrBleSubscription = hrStream.listen((hr) {
       _lastStandaloneHr = hr;
 
@@ -295,42 +312,32 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
     });
 
-    // Clear stale HR and auto-reconnect when the HR monitor disconnects
-    final hrService = _ref.read(hrServiceProvider);
+    // Clear stale HR and auto-reconnect when the HR monitor disconnects.
+    // BleNotifier.autoReconnect runs a bounded backoff loop and ignores
+    // reentrant calls, so no caller-side cooldown is needed.
+    final hrService = ref.read(hrServiceProvider);
     _hrConnectionSub = hrService.connectionState.listen((connState) {
       if (connState == HrConnectionState.disconnected) {
         _lastStandaloneHr = null;
         // Only auto-reconnect on unexpected drops, not intentional disconnects.
         // Delay to let BleNotifier process the event first (subscription ordering).
         if (!hrService.intentionalDisconnect) {
-          Future.microtask(() {
-            final now = DateTime.now();
-            final cooldown = _lastHrReconnectAttempt == null ||
-                now.difference(_lastHrReconnectAttempt!).inSeconds >= 10;
-            if (cooldown) {
-              _lastHrReconnectAttempt = now;
-              _ref.read(bleProvider.notifier).autoReconnect();
-            }
-          });
+          Future.microtask(
+            () => ref.read(bleProvider.notifier).autoReconnect(),
+          );
         }
       }
     });
 
-    // Auto-reconnect PM5 if it disconnects mid-workout (with cooldown).
+    // Auto-reconnect PM5 if it disconnects mid-workout.
     // Delay to let BleNotifier process the event first (subscription ordering).
-    final pm5Service = _ref.read(pm5ServiceProvider);
+    final pm5Service = ref.read(pm5ServiceProvider);
     _pm5ConnectionSub = pm5Service.connectionState.listen((connState) {
       if (connState == PM5ConnectionState.disconnected &&
           !pm5Service.intentionalDisconnect) {
-        Future.microtask(() {
-          final now = DateTime.now();
-          final cooldown = _lastPm5ReconnectAttempt == null ||
-              now.difference(_lastPm5ReconnectAttempt!).inSeconds >= 10;
-          if (cooldown) {
-            _lastPm5ReconnectAttempt = now;
-            _ref.read(bleProvider.notifier).autoReconnect();
-          }
-        });
+        Future.microtask(
+          () => ref.read(bleProvider.notifier).autoReconnect(),
+        );
       }
     });
   }
@@ -344,7 +351,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
   /// Send CSAFE commands to fully reset the PM5 and clear any previous session.
   /// Uses the full state transition: goFinished → goIdle → reset → goReady.
   Future<void> _resetPm5() async {
-    final pm5 = _ref.read(pm5ServiceProvider);
+    final pm5 = ref.read(pm5ServiceProvider);
     final deviceId = pm5.connectedDeviceId;
     if (deviceId == null) return;
     try {
@@ -355,8 +362,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       await pm5.sendCsafeCommand(CsafeCommands.reset(), deviceId);
       await Future.delayed(const Duration(milliseconds: 800));
       await pm5.sendCsafeCommand(CsafeCommands.goReady(), deviceId);
-    } catch (_) {
+    } catch (e) {
       // Non-critical — PM5 may not respond if not connected
+      AppLog.warn('workout', 'PM5 reset sequence failed', e);
     }
   }
 
@@ -380,7 +388,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _savedResultId = null;
     _suppressBleData = true;
     _lastStandaloneHr = null;
-    _timezone = await FlutterTimezone.getLocalTimezone();
+    _lastSnapshotAt = null;
+    _stopForegroundService();
+    // A new load implicitly abandons any previous unsaved session.
+    unawaited(_recoveryService.clear());
+    try {
+      _timezone = await FlutterTimezone.getLocalTimezone();
+    } catch (e) {
+      AppLog.warn('workout', 'Timezone lookup failed, defaulting to UTC', e);
+      _timezone = 'UTC';
+    }
     _loadGeneration++;
     final myGen = _loadGeneration;
 
@@ -409,8 +426,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         if (profile.currentFtpWatts != null && profile.currentFtpWatts! > 0) {
           ftpWatts = profile.currentFtpWatts!;
         }
-      } catch (_) {
+      } catch (e) {
         // Non-critical — fall back to defaults
+        AppLog.warn('workout', 'Profile fetch failed, using default zones/FTP', e);
       }
       if (_loadGeneration != myGen) return; // Superseded by a newer load
 
@@ -440,6 +458,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
           engineState: engineState,
           timeSamples: engine.timeSamples,
         );
+
+        // Keep the Android foreground service in step with the session so
+        // BLE survives backgrounding, and periodically snapshot progress
+        // for crash recovery.
+        _syncForegroundService(engineState.phase);
+        _maybeSnapshot(engineState.phase);
 
         // When engine finishes on its own (all segments complete or pace fail),
         // build the pending result so the summary screen appears.
@@ -536,20 +560,84 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _buildPendingResult();
   }
 
+  /// Phases during which a workout session is considered live — the
+  /// foreground service must be running to keep BLE alive.
+  static bool _isSessionActive(WorkoutPhase phase) =>
+      phase == WorkoutPhase.countingDown ||
+      phase == WorkoutPhase.rowing ||
+      phase == WorkoutPhase.paused ||
+      phase == WorkoutPhase.resting ||
+      phase == WorkoutPhase.structuredComplete;
+
+  /// Start/stop the foreground service on session phase transitions.
+  void _syncForegroundService(WorkoutPhase phase) {
+    if (_isSessionActive(phase)) {
+      if (!_foregroundServiceRunning) {
+        _foregroundServiceRunning = true;
+        unawaited(_foregroundService.start(workoutTitle: state.workoutTitle));
+      }
+    } else if (phase == WorkoutPhase.finished) {
+      _stopForegroundService();
+    }
+  }
+
+  void _stopForegroundService() {
+    if (!_foregroundServiceRunning) return;
+    _foregroundServiceRunning = false;
+    unawaited(_foregroundService.stop());
+  }
+
+  /// Write a crash-recovery snapshot at most every [_snapshotInterval]
+  /// while actively rowing/resting.
+  void _maybeSnapshot(WorkoutPhase phase) {
+    if (phase != WorkoutPhase.rowing && phase != WorkoutPhase.resting) return;
+    final now = DateTime.now();
+    if (_lastSnapshotAt != null &&
+        now.difference(_lastSnapshotAt!) < _snapshotInterval) {
+      return;
+    }
+    final result = _composeResult();
+    if (result == null) return;
+    _lastSnapshotAt = now;
+    unawaited(_recoveryService.saveSnapshot(result));
+  }
+
   /// Build WorkoutResult from engine data and store as pendingResult.
   /// Safe to call multiple times — no-ops if already built.
   void _buildPendingResult() {
     if (_engine == null || state.pendingResult != null) return;
 
+    final result = _composeResult();
+    if (result == null) return;
+
+    state = state.copyWith(
+      pendingResult: result,
+      timeSamples: _engine!.timeSamples,
+    );
+
+    // Final snapshot — an app kill on the summary screen (before the user
+    // taps Save) must still be recoverable.
+    unawaited(_recoveryService.saveSnapshot(result));
+
+    _detectFtpTest();
+  }
+
+  /// Compose a [WorkoutResult] from the current engine data, or null when
+  /// there is nothing worth saving yet.
+  WorkoutResult? _composeResult() {
+    if (_engine == null) return null;
+
     final userId = _supabaseService.currentUserId;
-    if (userId == null) return;
+    if (userId == null) return null;
 
     final now = DateTime.now();
     final data = state.pm5Data;
     final splits = _engine!.completedSplits;
 
     // Don't save empty results (stopped before any rowing at all)
-    if (splits.isEmpty && data.distance == 0 && data.elapsedTime == Duration.zero) return;
+    if (splits.isEmpty && data.distance == 0 && data.elapsedTime == Duration.zero) {
+      return null;
+    }
 
     // Use recorded start time (not back-computed from BLE frame)
     final startedAt = _startedAt ?? now.subtract(data.elapsedTime);
@@ -598,12 +686,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       timeSamples: _engine!.timeSamples,
     );
 
-    state = state.copyWith(
-      pendingResult: result,
-      timeSamples: _engine!.timeSamples,
-    );
+    return result;
+  }
 
-    // Detect FTP test
+  /// If this workout was an FTP test, compute the new FTP for the summary.
+  void _detectFtpTest() {
+    if (_engine == null) return;
+    final splits = _engine!.completedSplits;
     final tags = state.workoutTags;
     if (tags.contains('ftp') && splits.isNotEmpty) {
       final isRamp = tags.contains('ramp');
@@ -670,7 +759,11 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         outcome = await _syncService.queueResult(result!);
         _resultQueued = true;
         _savedResultId = outcome.resultId;
-        _ref.invalidate(workoutHistoryProvider);
+        ref.invalidate(workoutHistoryProvider);
+
+        // The result is safely queued in SQLite — the crash-recovery
+        // snapshot is no longer needed.
+        unawaited(_recoveryService.clear());
 
         // Record plan progress (once only)
         if (state.planId != null &&
@@ -683,10 +776,16 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
               state.planSession!,
               null,
             );
-            _ref.invalidate(planProgressProvider(state.planId!));
-            _ref.invalidate(userPlanProgressProvider);
-          } catch (_) {
-            // Non-critical — don't block workout completion
+            ref.invalidate(planProgressProvider(state.planId!));
+            ref.invalidate(userPlanProgressProvider);
+          } catch (e, st) {
+            // Don't block workout completion, but surface it — the user's
+            // plan won't show this session as done.
+            AppLog.error('workout', 'Failed to record plan progress', e, st);
+            state = state.copyWith(
+              syncError: 'Workout saved, but plan progress could not be '
+                  'recorded — it will not show as completed in your plan.',
+            );
           }
         }
 
@@ -694,8 +793,13 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         if (ftpWatts != null && ftpWatts > 0) {
           try {
             await saveFtp(ftpWatts);
-          } catch (_) {
-            // FTP save failed — workout was already saved
+          } catch (e, st) {
+            // Workout was already saved — surface the FTP failure.
+            AppLog.error('workout', 'FTP save failed after workout save', e, st);
+            state = state.copyWith(
+              syncError: 'Workout saved, but your new FTP could not be '
+                  'saved. You can set it manually in your profile.',
+            );
           }
         }
       } else {
@@ -715,8 +819,8 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
         // Check for new PRs and achievements after successful cloud save
         if (result != null && _savedResultId != null) {
           try {
-            final prService = _ref.read(prServiceProvider);
-            final achievementService = _ref.read(achievementServiceProvider);
+            final prService = ref.read(prServiceProvider);
+            final achievementService = ref.read(achievementServiceProvider);
 
             // Ensure services are loaded
             if (!prService.isLoaded) await prService.load();
@@ -727,12 +831,12 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
             // Get cumulative stats for achievement checks
             final results =
-                await _ref.read(workoutHistoryProvider.future);
+                await ref.read(workoutHistoryProvider.future);
             final totalDistance =
                 results.fold(0.0, (sum, r) => sum + r.totalDistance);
             final totalWorkouts = results.length;
             final completedPlanCount =
-                await _ref.read(completedPlanCountProvider.future);
+                await ref.read(completedPlanCountProvider.future);
 
             final achievements = await achievementService.checkAchievements(
               userId: result.userId,
@@ -749,8 +853,10 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
                 newAchievements: [...state.newAchievements, ...achievements],
               );
             }
-          } catch (_) {
-            // Non-critical — don't block save completion
+          } catch (e, st) {
+            // Non-critical — don't block save completion, but report it:
+            // silently missing PRs/achievements erode trust in the stats.
+            AppLog.error('workout', 'PR/achievement check failed', e, st);
           }
         }
       } else if (outcome.error != null) {
@@ -761,7 +867,7 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       // Not-linked is encoded as savedToC2: true (marked done) with no error.
       if (outcome.savedToC2 && outcome.error == null) {
         // Either synced successfully or user is not C2-linked
-        final c2Service = _ref.read(c2LogbookServiceProvider);
+        final c2Service = ref.read(c2LogbookServiceProvider);
         final isLinked = await c2Service.isLinked();
         state = state.copyWith(
           c2SyncStatus: isLinked ? C2SyncStatus.synced : C2SyncStatus.notLinked,
@@ -774,13 +880,20 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
       }
 
       state = state.copyWith(saveProgress: SaveProgress.done);
-    } catch (e) {
-      state = state.copyWith(saveProgress: SaveProgress.error);
+    } catch (e, st) {
+      // The most important failure in the app — a finished workout that
+      // could not be persisted. Always report and tell the user.
+      AppLog.error('workout', 'Saving workout result failed', e, st);
+      state = state.copyWith(
+        saveProgress: SaveProgress.error,
+        syncError: 'Saving failed: $e',
+      );
     }
   }
 
   /// Discard the pending result without saving.
   void discardResult() {
+    unawaited(_recoveryService.clear());
     state = state.copyWith(
       pendingResult: null,
       timeSamples: null,
@@ -809,19 +922,21 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
 
     // Check for FTP PR
     try {
-      final prService = _ref.read(prServiceProvider);
+      final prService = ref.read(prServiceProvider);
       if (!prService.isLoaded) await prService.load();
       final ftpPr = await prService.checkFtpPR(watts, userId, _savedResultId);
       if (ftpPr != null) {
         state = state.copyWith(newPRs: [...state.newPRs, ftpPr]);
       }
-    } catch (_) {
-      // Non-critical
+    } catch (e, st) {
+      // Non-critical — the FTP itself was saved.
+      AppLog.error('workout', 'FTP PR check failed', e, st);
     }
   }
 
-  @override
-  void dispose() {
+  /// Registered via ref.onDispose in [build].
+  void _cleanup() {
+    _stopForegroundService();
     _engineSub?.cancel();
     _countdownBeepSub?.cancel();
     _engine?.dispose();
@@ -830,16 +945,9 @@ class WorkoutSessionNotifier extends StateNotifier<WorkoutSessionState> {
     _hrBleSubscription?.cancel();
     _hrConnectionSub?.cancel();
     _pm5ConnectionSub?.cancel();
-    super.dispose();
   }
 }
 
 final workoutSessionProvider =
-    StateNotifierProvider<WorkoutSessionNotifier, WorkoutSessionState>((ref) {
-  return WorkoutSessionNotifier(
-    ref.watch(supabaseServiceProvider),
-    ref.watch(syncServiceProvider),
-    ref.watch(workoutRepositoryProvider),
-    ref,
-  );
-});
+    NotifierProvider<WorkoutSessionNotifier, WorkoutSessionState>(
+        WorkoutSessionNotifier.new);
