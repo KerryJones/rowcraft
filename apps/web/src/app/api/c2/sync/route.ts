@@ -226,8 +226,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Persist refreshed tokens (best-effort)
-    await supabase
+    // Persist the refreshed tokens. If C2 rotated the refresh token, a
+    // failed write leaves the stored token invalid and every future sync
+    // breaks — surface it so the user reconnects rather than losing access
+    // silently. The result stays queued on the client and retries.
+    const { error: tokenWriteError } = await supabase
       .from('integration_tokens')
       .update({
         access_token: newAccessToken,
@@ -235,6 +238,13 @@ export async function POST(request: NextRequest) {
       })
       .eq('user_id', userId)
       .eq('provider', 'c2');
+
+    if (tokenWriteError) {
+      return NextResponse.json(
+        { error: 'C2 token expired — reconnect in Profile' },
+        { status: 401 },
+      );
+    }
 
     // Retry with the new token
     const retryResponse = await fetch(

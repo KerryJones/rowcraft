@@ -27,6 +27,10 @@ class _FakePM5Service extends Fake implements PM5Service {
   /// (simulating a PM5 that is off / out of range).
   bool connectSucceeds = true;
 
+  /// When true, connect() emits `error` immediately (simulating a BLE
+  /// stack that rejects the connection right away).
+  bool connectEmitsError = false;
+
   @override
   Stream<PM5ConnectionState> get connectionState =>
       connectionController.stream;
@@ -49,7 +53,9 @@ class _FakePM5Service extends Fake implements PM5Service {
   @override
   Future<void> connect(String deviceId) async {
     connectCalls.add(deviceId);
-    if (connectSucceeds) {
+    if (connectEmitsError) {
+      connectionController.add(PM5ConnectionState.error);
+    } else if (connectSucceeds) {
       _connectedDeviceId = deviceId;
       connectionController.add(PM5ConnectionState.connected);
     }
@@ -181,6 +187,29 @@ void main() {
       container.read(bleProvider).error,
       contains('Could not reconnect'),
     );
+  });
+
+  test('an immediate connect error short-circuits the attempt window',
+      () async {
+    // Widen the window so the difference between waiting it out and
+    // short-circuiting is unambiguous in wall-clock terms.
+    BleNotifier.reconnectAttemptWindow = const Duration(milliseconds: 200);
+    await establishAndDrop();
+    pm5.connectEmitsError = true; // connect() rejects right away
+
+    final sw = Stopwatch()..start();
+    await container.read(bleProvider.notifier).autoReconnect();
+    sw.stop();
+
+    // Every attempt still runs (one direct connect per round) and the loop
+    // gives up with an error.
+    expect(pm5.connectCalls.length, BleNotifier.maxReconnectAttempts);
+    expect(container.read(bleProvider).error, contains('Could not reconnect'));
+
+    // With the fast-fail, only the scan waits consume the window
+    // (~2 × 200ms). Without it, the direct-connect waits would double that
+    // to ~800ms. A 650ms bound sits cleanly between the two.
+    expect(sw.elapsedMilliseconds, lessThan(650));
   });
 
   test('reentrant autoReconnect calls are ignored while a loop runs',

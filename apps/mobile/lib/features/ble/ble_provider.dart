@@ -573,6 +573,15 @@ class BleNotifier extends Notifier<BleState> {
 
   bool get _needsReconnect => _pm5NeedsReconnect || _hrNeedsReconnect;
 
+  /// True while a reconnect attempt is actively in flight (scanning or
+  /// connecting). Once every device has settled into a terminal state
+  /// (connected/error/disconnected), there is nothing left to wait for.
+  bool get _reconnectAttemptActive =>
+      state.pm5ConnectionState == PM5ConnectionState.scanning ||
+      state.pm5ConnectionState == PM5ConnectionState.connecting ||
+      state.hrConnectionState == HrConnectionState.scanning ||
+      state.hrConnectionState == HrConnectionState.connecting;
+
   /// Recover from an unexpected mid-session drop.
   ///
   /// Bounded retry with exponential backoff. Each attempt first tries a
@@ -651,6 +660,10 @@ class BleNotifier extends Notifier<BleState> {
     final deadline = DateTime.now().add(window);
     while (DateTime.now().isBefore(deadline)) {
       if (!_needsReconnect) return;
+      // Don't burn the whole window when the attempt has already settled
+      // into failure (e.g. an immediate BLE connect() rejection). Fall
+      // through to the next attempt / scan fallback right away.
+      if (!_reconnectAttemptActive) return;
       await Future<void>.delayed(reconnectPollInterval);
     }
   }

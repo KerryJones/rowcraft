@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/quick_start/quick_start_screen.dart' show justRowWorkoutId;
 import '../features/workout/session_recovery_prompt.dart';
+import '../utils/app_log.dart';
 import 'adaptive.dart';
 import 'shell_app_bar_actions_provider.dart';
 
@@ -44,7 +45,12 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
     // Offer to save a workout that was interrupted by a crash/app kill.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      maybePromptSessionRecovery(context, ref);
+      maybePromptSessionRecovery(context, ref).catchError((
+        Object e,
+        StackTrace st,
+      ) {
+        AppLog.error('session_recovery', 'Recovery prompt failed', e, st);
+      });
     });
   }
 

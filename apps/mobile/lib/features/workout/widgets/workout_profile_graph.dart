@@ -106,7 +106,12 @@ class _WorkoutProfilePainter extends CustomPainter {
       final range = paceMax - paceMin;
       if (range == 0) return 0.7;
       final normalized = 1 - (pace - paceMin) / range;
-      return minHeightFraction + normalized * (1 - minHeightFraction);
+      final heightFraction =
+          minHeightFraction + normalized * (1 - minHeightFraction);
+      // Segments outside the 40%-130% anchor (deep warmup, all-out sprint)
+      // would otherwise render taller than the canvas or with a negative
+      // height — pin them to the chart bounds instead.
+      return heightFraction.clamp(minHeightFraction, 1.0);
     }
 
     final totalGapWidth = barGap * (segments.length - 1);

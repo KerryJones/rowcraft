@@ -574,7 +574,13 @@ class WorkoutSessionNotifier extends Notifier<WorkoutSessionState> {
     if (_isSessionActive(phase)) {
       if (!_foregroundServiceRunning) {
         _foregroundServiceRunning = true;
-        unawaited(_foregroundService.start(workoutTitle: state.workoutTitle));
+        unawaited(
+          _foregroundService
+              .start(workoutTitle: state.workoutTitle)
+              .catchError((Object e, StackTrace st) {
+            AppLog.error('workout', 'Foreground service start failed', e, st);
+          }),
+        );
       }
     } else if (phase == WorkoutPhase.finished) {
       _stopForegroundService();
@@ -584,7 +590,11 @@ class WorkoutSessionNotifier extends Notifier<WorkoutSessionState> {
   void _stopForegroundService() {
     if (!_foregroundServiceRunning) return;
     _foregroundServiceRunning = false;
-    unawaited(_foregroundService.stop());
+    unawaited(
+      _foregroundService.stop().catchError((Object e, StackTrace st) {
+        AppLog.warn('workout', 'Foreground service stop failed', e);
+      }),
+    );
   }
 
   /// Write a crash-recovery snapshot at most every [_snapshotInterval]

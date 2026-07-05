@@ -138,8 +138,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Persist refreshed tokens (best-effort)
-    await supabase
+    // Persist the rotated tokens. Strava invalidates the old refresh token
+    // on every refresh, so if this write fails the stored token is already
+    // dead — fail the sync so the user reconnects instead of syncing once
+    // and silently losing access on the next attempt. The result stays
+    // queued on the client and retries after reconnect.
+    const { error: tokenWriteError } = await supabase
       .from('integration_tokens')
       .update({
         access_token: refreshed.access_token,
@@ -148,6 +152,13 @@ export async function POST(request: NextRequest) {
       })
       .eq('user_id', userId)
       .eq('provider', 'strava');
+
+    if (tokenWriteError) {
+      return NextResponse.json(
+        { error: 'Strava token expired — reconnect in Profile' },
+        { status: 401 },
+      );
+    }
 
     accessToken = refreshed.access_token;
   }

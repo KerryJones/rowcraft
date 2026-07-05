@@ -40,7 +40,12 @@ class SessionRecoveryService {
         'saved_at': DateTime.now().toIso8601String(),
         'result': result.toJson(),
       });
-      await file.writeAsString(payload, flush: true);
+      // Write-then-rename so a crash mid-write can't truncate the live
+      // snapshot — rename on the same filesystem is atomic, so a reader
+      // always sees either the previous snapshot or the complete new one.
+      final tmp = File('${file.path}.tmp');
+      await tmp.writeAsString(payload, flush: true);
+      await tmp.rename(file.path);
     } catch (e) {
       AppLog.warn('recovery', 'saveSnapshot failed', e);
     }

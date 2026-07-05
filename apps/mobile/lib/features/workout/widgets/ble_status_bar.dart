@@ -20,7 +20,11 @@ class BleStatusBar extends ConsumerWidget {
     final bleState = ref.watch(bleProvider);
     final connState = bleState.pm5ConnectionState;
     final isConnected = connState == PM5ConnectionState.connected;
-    final isReconnecting = connState == PM5ConnectionState.connecting;
+    // Treat an active scan the same as connecting: show the amber
+    // "reconnecting" state and hide Retry, so a tap can't restart the
+    // in-flight scan and wipe its discovered devices.
+    final isReconnecting = connState == PM5ConnectionState.connecting ||
+        connState == PM5ConnectionState.scanning;
 
     final Color dotColor;
     final Color bgColor;
@@ -111,7 +115,8 @@ class BluetoothStatusIcon extends ConsumerWidget {
     final Color color;
     if (connState == PM5ConnectionState.connected) {
       color = RowCraftTheme.successGreen;
-    } else if (connState == PM5ConnectionState.connecting) {
+    } else if (connState == PM5ConnectionState.connecting ||
+        connState == PM5ConnectionState.scanning) {
       color = RowCraftTheme.warningAmber;
     } else {
       color = RowCraftTheme.errorRose;
@@ -121,7 +126,7 @@ class BluetoothStatusIcon extends ConsumerWidget {
       tooltip: 'Devices',
       onPressed: () => GoRouter.of(context).push('/devices'),
       padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(minWidth: 36),
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
     );
   }
 }
