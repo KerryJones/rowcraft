@@ -60,6 +60,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-xl font-bold text-white">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG logo, next/image adds nothing */}
           <img src="/logo_gold.svg" className="h-7 w-7" alt="RowCraft" />
           RowCraft
         </Link>

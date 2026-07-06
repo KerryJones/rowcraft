@@ -59,6 +59,8 @@
 | `features/workout/workout_provider.dart` | Workout session Riverpod notifier; wraps engine, PM5 reset on load, continueWithFreeRow/finishFromStructuredComplete |
 | `features/workout/workout_screen.dart` | Active workout UI (classic mode): stats bar, hero pace, segment detail, up-next preview with fade, completion modal, countdown beeps |
 | `features/workout/workout_screen_compact.dart` | Active workout UI (compact mode): 3×2 stat tile grid, HR zone gauge tile |
+| `features/workout/widgets/` | Widgets shared by classic + compact screens: hero_section, workout_controls, workout_profile_graph, ble_status_bar, session_format helpers |
+| `features/workout/session_recovery_prompt.dart` | Startup dialog offering to save an interrupted (crashed/killed) session |
 | `features/workout/hr_zone_gauge.dart` | Garmin-style HR zone gauge (Syncfusion SfRadialGauge): 270° arc with 5 colored zone ranges, active zone highlighted, marker pointer, BPM + zone name centered inside |
 | `features/workout/workout_summary_screen.dart` | Post-workout summary (stats grid, combined pace+HR timeline chart, HR zone distribution bar, splits, save/discard) |
 | `features/workout/ftp_result_screen.dart` | FTP test result screen (save FTP toggle, combined workout save/discard, save progress overlay) |
@@ -78,6 +80,9 @@
 | `services/supabase_service.dart` | Supabase queries |
 | `services/local_db.dart` | Drift ORM (pending results, cached workouts, saved devices) |
 | `services/sync_service.dart` | Async result sync to Supabase |
+| `services/foreground_session_service.dart` | Android foreground service (connectedDevice type) keeping BLE alive while backgrounded |
+| `services/session_recovery_service.dart` | Crash-recovery snapshots of in-progress workouts (JSON file, written every ~10s) |
+| `utils/app_log.dart` | Structured logging (info/warn local, error → Sentry) |
 | `services/c2_logbook_service.dart` | Concept2 Logbook OAuth (throws on failure) + result sync API |
 | `services/strava_service.dart` | Strava OAuth + TCX upload sync via web API routes |
 | `app/router.dart` | GoRouter route definitions |

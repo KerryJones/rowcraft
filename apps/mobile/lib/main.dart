@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'app/deep_link_observer.dart';
 import 'app/router.dart';
 import 'app/sync_lifecycle.dart';
 import 'app/theme.dart';
@@ -12,6 +14,9 @@ import 'widgets/debug_build_banner.dart';
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Communication port for the workout-session foreground service.
+  FlutterForegroundTask.initCommunicationPort();
 
   await Supabase.initialize(
     url: const String.fromEnvironment('SUPABASE_URL'),
@@ -68,13 +73,16 @@ class RowCraftApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     return SyncLifecycleObserver(
-      child: MaterialApp.router(
-        title: 'RowCraft',
-        theme: RowCraftTheme.dark,
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) =>
-            DebugBuildBanner(child: child ?? const SizedBox.shrink()),
+      child: DeepLinkObserver(
+        child: MaterialApp.router(
+          title: 'RowCraft',
+          theme: RowCraftTheme.dark,
+          routerConfig: router,
+          scaffoldMessengerKey: rootScaffoldMessengerKey,
+          debugShowCheckedModeBanner: false,
+          builder: (context, child) =>
+              DebugBuildBanner(child: child ?? const SizedBox.shrink()),
+        ),
       ),
     );
   }

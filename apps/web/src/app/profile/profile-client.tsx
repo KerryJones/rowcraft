@@ -151,11 +151,20 @@ function ProfilePageInner() {
     const { data: user } = await supabase.auth.getUser();
     if (!user.user) return;
 
+    // Tokens live in the service-role-only integration_tokens table —
+    // delete them via the security-definer RPC. Short-circuit so a token
+    // deletion that succeeded isn't followed by a stale "connected" state.
+    const { error: tokenError } = await supabase.rpc('disconnect_integration', {
+      p_provider: 'c2',
+    });
+    if (tokenError) {
+      setError('Failed to disconnect C2 Logbook');
+      return;
+    }
     const { error } = await supabase
       .from('profiles')
-      .update({ c2_user_id: null, c2_access_token: null, c2_refresh_token: null })
+      .update({ c2_user_id: null })
       .eq('id', user.user.id);
-
     if (error) {
       setError('Failed to disconnect C2 Logbook');
       return;

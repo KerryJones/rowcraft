@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { createSupabaseServer, getUser } from '@/lib/supabase/server';
 import type { Workout } from '@/lib/types';
 import { normalizeWorkoutSegments } from '@/lib/types';
-import { formatWorkoutType, getWorkoutTypeBadgeColor, formatDate, formatSegmentDuration } from '@/lib/utils/format';
+import { formatWorkoutType, getWorkoutTypeBadgeColor, formatDate } from '@/lib/utils/format';
 import { isRestSegment } from '@/lib/types';
 import { WorkoutGraph } from '@/components/workout-graph';
 import { StatsBar } from '@/components/ui/stats-bar';

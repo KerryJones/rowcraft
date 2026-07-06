@@ -35,6 +35,9 @@ class HrZoneDefinition {
 }
 
 /// Standard zones (Z1-Z5). Below Z1 is "Recovery".
+///
+/// Boundary values mirror packages/shared/hr-zones.json (the single source
+/// of truth) — test/utils/hr_zones_boundaries_test.dart fails if they drift.
 const standardZones = [
   HrZoneDefinition(
     number: 1,

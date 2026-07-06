@@ -30,7 +30,7 @@ android {
 
     defaultConfig {
         applicationId = "com.rowcraft.app"
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName

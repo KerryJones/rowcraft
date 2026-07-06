@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/workout.dart';
+import '../utils/app_log.dart';
 import 'local_db.dart';
 import 'supabase_service.dart';
 
@@ -136,7 +137,9 @@ class WorkoutRepository {
       }
 
       return getWorkouts(isPublic: isPublic, authorId: authorId);
-    } catch (_) {
+    } catch (e) {
+      // Offline-first: refresh failures fall back to the local cache.
+      AppLog.warn('repo', 'Workout refresh failed, serving cache', e);
       return null;
     }
   }

@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
 import '../../services/workout_repository.dart';
+import '../../utils/app_log.dart';
 import '../../utils/pace_utils.dart' show kDefaultFtpWatts;
 import '../../utils/workout_utils.dart';
 import '../auth/auth_provider.dart' show currentUserProvider;
@@ -49,7 +49,15 @@ const Map<int, String> kZoneTags = {
 };
 
 /// Increment to force a library refresh (e.g. pull-to-refresh).
-final workoutRefreshTriggerProvider = StateProvider<int>((ref) => 0);
+class WorkoutRefreshTrigger extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state++;
+}
+
+final workoutRefreshTriggerProvider =
+    NotifierProvider<WorkoutRefreshTrigger, int>(WorkoutRefreshTrigger.new);
 
 /// All workouts visible to the current user: public + user-owned (private
 /// included). Mirrors web's `is_public.eq.true,author_id.eq.<uid>` OR clause
@@ -137,7 +145,8 @@ final wodWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
       minInterval: const Duration(minutes: 5),
     );
     return fresh ?? await repo.getWorkouts(isPublic: true);
-  } catch (_) {
+  } catch (e) {
+    AppLog.warn('library', 'WOD pool load failed, degrading to empty', e);
     return const [];
   }
 });

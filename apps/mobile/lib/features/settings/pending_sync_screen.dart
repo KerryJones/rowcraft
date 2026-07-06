@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../app/theme.dart';
 import '../../models/workout_result.dart';
 import '../../services/local_db.dart';
+import '../../utils/app_log.dart';
 import '../../services/plexo_service.dart';
 import '../../services/sync_service.dart';
 import '../history/history_provider.dart';
@@ -168,7 +169,11 @@ class _PendingRowCard extends ConsumerWidget {
       title = result.displayName;
       subtitle =
           '${result.totalDistance.toInt()}m · ${result.totalTimeFormatted}';
-    } catch (_) {}
+    } catch (e) {
+      // A queued row that can't be parsed will also fail to sync. Warn only:
+      // this runs in build(), so an error report would fire on every rebuild.
+      AppLog.warn('sync', 'Corrupt queued result row ${row.id}', e);
+    }
 
     final queued = DateFormat('MMM d, h:mm a').format(row.queuedAt);
 

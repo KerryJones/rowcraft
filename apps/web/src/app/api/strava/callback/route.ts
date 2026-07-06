@@ -77,21 +77,33 @@ export async function GET(request: NextRequest) {
     appUserId = user.id;
   }
 
-  // Service role client to store tokens — mobile has no cookie session,
-  // so we need elevated access to update the profile row
+  // Service role client — tokens live in the service-role-only
+  // integration_tokens table, and mobile has no cookie session anyway.
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
+  const { error: tokenError } = await supabaseAdmin
+    .from('integration_tokens')
+    .upsert(
+      {
+        user_id: appUserId,
+        provider: 'strava',
+        access_token,
+        refresh_token: refresh_token ?? null,
+        expires_at: expires_at ?? null,
+      },
+      { onConflict: 'user_id,provider' },
+    );
+
+  if (tokenError) {
+    return errorRedirect('strava_save_failed');
+  }
+
   const { error: updateError } = await supabaseAdmin
     .from('profiles')
-    .update({
-      strava_athlete_id: String(athlete.id),
-      strava_access_token: access_token,
-      strava_refresh_token: refresh_token,
-      strava_token_expires_at: expires_at,
-    })
+    .update({ strava_athlete_id: String(athlete.id) })
     .eq('id', appUserId);
 
   if (updateError) {

@@ -1,9 +1,8 @@
-import 'dart:developer' as dev;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/achievement.dart';
 import '../models/workout_result.dart';
+import '../utils/app_log.dart';
 import 'supabase_service.dart';
 
 final achievementServiceProvider = Provider<AchievementService>((ref) {
@@ -33,7 +32,7 @@ class AchievementService {
         ..addAll(achievements);
       _loaded = true;
     } catch (e) {
-      dev.log('AchievementService.load failed: $e', name: 'rowcraft');
+      AppLog.warn('achievements', 'Load failed', e);
     }
   }
 
@@ -145,9 +144,10 @@ class AchievementService {
       final saved = await _supabaseService.insertAchievement(achievement);
       _all.add(saved);
       return saved;
-    } catch (e) {
-      dev.log('AchievementService._insert(${type.key}/$threshold) failed: $e',
-          name: 'rowcraft');
+    } catch (e, st) {
+      // A silently dropped achievement erodes trust in the stats.
+      AppLog.error(
+          'achievements', 'Insert ${type.key}/$threshold failed', e, st);
       return null;
     }
   }

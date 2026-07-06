@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/pm5_data.dart';
 import '../../services/local_db.dart';
+import '../../utils/app_log.dart';
 import 'ble_permissions.dart';
 import 'hr_service.dart';
 import 'pm5_service.dart';
@@ -183,6 +184,31 @@ class BleNotifier extends Notifier<BleState> {
   bool _autoConnectHrAttempted = false;
   bool _scanExtended = false;
 
+  // ── Drop-recovery reconnect state ─────────────────────────────────────
+
+  /// Reconnect loop tuning — shrunk in tests.
+  @visibleForTesting
+  static Duration reconnectAttemptWindow = const Duration(seconds: 12);
+  @visibleForTesting
+  static Duration reconnectPollInterval = const Duration(milliseconds: 250);
+  @visibleForTesting
+  static Duration reconnectInitialBackoff = const Duration(seconds: 2);
+  @visibleForTesting
+  static Duration reconnectMaxBackoff = const Duration(seconds: 30);
+  @visibleForTesting
+  static int maxReconnectAttempts = 5;
+
+  bool _reconnectInProgress = false;
+
+  /// PM5 device id from the most recent successful connection this session.
+  /// Used for the direct-reconnect fast path; cleared on intentional
+  /// disconnect.
+  String? _lastPm5DeviceId;
+
+  /// True once an HR monitor connected this session; cleared on intentional
+  /// disconnect. Gates whether a drop-recovery pass waits for HR.
+  bool _hrWasConnected = false;
+
   @override
   BleState build() {
     final pm5Service = ref.watch(pm5ServiceProvider);
@@ -197,6 +223,7 @@ class BleNotifier extends Notifier<BleState> {
       if (s == PM5ConnectionState.connected &&
           pm5Service.connectedDeviceId != null) {
         final deviceId = pm5Service.connectedDeviceId!;
+        _lastPm5DeviceId = deviceId;
         final alreadySaved =
             state.savedDevices.any((d) => d.deviceId == deviceId);
         if (alreadySaved) {
@@ -225,6 +252,9 @@ class BleNotifier extends Notifier<BleState> {
       final wasConnecting =
           state.hrConnectionState == HrConnectionState.connecting;
       state = state.copyWith(hrConnectionState: s);
+      if (s == HrConnectionState.connected) {
+        _hrWasConnected = true;
+      }
       if (s == HrConnectionState.error ||
           (s == HrConnectionState.disconnected && wasConnecting)) {
         _autoConnectHrAttempted = false;
@@ -485,6 +515,7 @@ class BleNotifier extends Notifier<BleState> {
 
   /// Disconnect from PM5.
   Future<void> disconnectPm5() async {
+    _lastPm5DeviceId = null;
     await ref.read(pm5ServiceProvider).disconnect();
     state = state.copyWith(
       pm5ConnectionState: PM5ConnectionState.disconnected,
@@ -494,6 +525,7 @@ class BleNotifier extends Notifier<BleState> {
 
   /// Disconnect from HR monitor.
   Future<void> disconnectHr() async {
+    _hrWasConnected = false;
     await ref.read(hrServiceProvider).disconnect();
     state = state.copyWith(
       hrConnectionState: HrConnectionState.disconnected,
@@ -521,13 +553,119 @@ class BleNotifier extends Notifier<BleState> {
     await _loadSavedDevices();
   }
 
-  /// Attempt to auto-reconnect to previously saved devices by scanning and
-  /// connecting on discovery — avoids blind connect to non-advertising devices.
-  Future<void> autoReconnect() async {
+  /// Kick off a scan that auto-connects saved devices on discovery.
+  /// Used for the initial connection (connection gate) — for recovering a
+  /// dropped connection mid-session use [autoReconnect].
+  Future<void> connectSavedDevices() async {
     final granted = await requestBlePermissions();
     if (!granted) return;
     await _loadSavedDevices();
     await startScan();
+  }
+
+  /// True when a device that was connected this session has dropped.
+  bool get _pm5NeedsReconnect =>
+      _lastPm5DeviceId != null &&
+      state.pm5ConnectionState != PM5ConnectionState.connected;
+
+  bool get _hrNeedsReconnect =>
+      _hrWasConnected && state.hrConnectionState != HrConnectionState.connected;
+
+  bool get _needsReconnect => _pm5NeedsReconnect || _hrNeedsReconnect;
+
+  /// True while a reconnect attempt is actively in flight (scanning or
+  /// connecting). Once every device has settled into a terminal state
+  /// (connected/error/disconnected), there is nothing left to wait for.
+  bool get _reconnectAttemptActive =>
+      state.pm5ConnectionState == PM5ConnectionState.scanning ||
+      state.pm5ConnectionState == PM5ConnectionState.connecting ||
+      state.hrConnectionState == HrConnectionState.scanning ||
+      state.hrConnectionState == HrConnectionState.connecting;
+
+  /// Recover from an unexpected mid-session drop.
+  ///
+  /// Bounded retry with exponential backoff. Each attempt first tries a
+  /// direct connection to the PM5 that was connected before (fastest when
+  /// the rower is still awake), then falls back to a scan — saved devices
+  /// auto-connect on discovery. Reentrant calls while a loop is running
+  /// are no-ops, so callers don't need their own cooldowns.
+  ///
+  /// When nothing was connected this session (e.g. tapping the BT icon
+  /// before ever pairing), falls back to a plain [connectSavedDevices] scan.
+  Future<void> autoReconnect() async {
+    if (_reconnectInProgress) return;
+
+    if (!_needsReconnect) {
+      await connectSavedDevices();
+      return;
+    }
+
+    _reconnectInProgress = true;
+    try {
+      final granted = await requestBlePermissions();
+      if (!granted) return;
+      await _loadSavedDevices();
+
+      var backoff = reconnectInitialBackoff;
+      for (var attempt = 1; attempt <= maxReconnectAttempts; attempt++) {
+        // Fast path: direct connect to the PM5 that just dropped.
+        if (_pm5NeedsReconnect && _lastPm5DeviceId != null) {
+          final deviceId = _lastPm5DeviceId!;
+          String? deviceName;
+          for (final d in state.savedDevices) {
+            if (d.deviceId == deviceId) {
+              deviceName = d.deviceName;
+              break;
+            }
+          }
+          await connectToPm5(deviceId,
+              deviceName: deviceName, stopScanning: false);
+          await _waitForReconnect(reconnectAttemptWindow);
+          if (!_needsReconnect) return;
+        }
+
+        // Slow path: scan — saved devices auto-connect on discovery, and
+        // this also covers the HR strap.
+        await startScan();
+        await _waitForReconnect(reconnectAttemptWindow);
+        if (!_needsReconnect) return;
+
+        AppLog.warn(
+          'ble',
+          'Reconnect attempt $attempt/$maxReconnectAttempts failed '
+          '(pm5: ${state.pm5ConnectionState}, hr: ${state.hrConnectionState})',
+        );
+
+        if (attempt < maxReconnectAttempts) {
+          await Future<void>.delayed(backoff);
+          backoff *= 2;
+          if (backoff > reconnectMaxBackoff) backoff = reconnectMaxBackoff;
+        }
+      }
+
+      if (_needsReconnect) {
+        state = state.copyWith(
+          error: 'Could not reconnect to your devices. '
+              'Check they are awake and in range, then tap the '
+              'Bluetooth icon to retry.',
+        );
+      }
+    } finally {
+      _reconnectInProgress = false;
+    }
+  }
+
+  /// Wait until reconnected or [window] elapses.
+  Future<void> _waitForReconnect(Duration window) async {
+    final deadline = DateTime.now().add(window);
+    while (DateTime.now().isBefore(deadline)) {
+      if (!_needsReconnect) return;
+      // Don't burn the whole window when the attempt has already settled
+      // into failure (e.g. an immediate BLE connect() rejection). Fall
+      // through to the next attempt / scan fallback right away.
+      if (!_reconnectAttemptActive) return;
+      await Future<void>.delayed(reconnectPollInterval);
+    }
   }
 }
 
