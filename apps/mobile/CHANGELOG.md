@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.15.0...rowcraft-mobile-v0.16.0) (2026-07-09)
+
+
+### Features
+
+* keep workouts alive in background with session recovery, BLE reconnect, and token security hardening ([#23](https://github.com/KerryJones/rowcraft/issues/23)) ([88e7374](https://github.com/KerryJones/rowcraft/commit/88e73742f059ad6095769517a5640967a8b3f8be))
+
+
+### Bug Fixes
+
+* first START tap no longer aborts the 3-2-1 countdown ([d628174](https://github.com/KerryJones/rowcraft/commit/d628174f60b10e5df05dac21cad0c567e3e3d625))
+* show 5 Y-axis labels on workout detail chart instead of 3 ([ed81279](https://github.com/KerryJones/rowcraft/commit/ed812791a204e472bdbdc6e76bdd1e3f9201ea90))
+* sync user's own private workouts into the mobile library ([6da9320](https://github.com/KerryJones/rowcraft/commit/6da9320d5edb10ca93b67e95cefc4ec9df4e3373))
+
 ## [0.15.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.14.1...rowcraft-mobile-v0.15.0) (2026-06-16)
 
 
