@@ -103,6 +103,14 @@ class FakeWorkoutService {
     return _workouts.firstWhere((w) => w.id == id);
   }
 
+  int getWorkoutsByIdsCallCount = 0;
+
+  Future<List<Workout>> getWorkoutsByIds(List<String> ids) async {
+    getWorkoutsByIdsCallCount++;
+    if (shouldThrow) throw Exception('Network error');
+    return _workouts.where((w) => ids.contains(w.id)).toList();
+  }
+
   Future<Workout> saveWorkout(Workout workout) async {
     saveCallCount++;
     if (shouldThrow) throw Exception('Network error');
@@ -202,7 +210,7 @@ class TestableWorkoutRepository {
       if (needsFullSync) {
         final remoteIds =
             (await service.getWorkoutIds(isPublic: isPublic, authorId: authorId)).toSet();
-        await _removeScopedDeleted(remoteIds: remoteIds, isPublic: isPublic, authorId: authorId);
+        await _reconcileScoped(remoteIds: remoteIds, isPublic: isPublic, authorId: authorId);
         await db.setSyncMeta(fullSyncKey_, DateTime.now().toIso8601String());
       }
 
@@ -212,13 +220,15 @@ class TestableWorkoutRepository {
     }
   }
 
-  Future<void> _removeScopedDeleted({
+  Future<void> _reconcileScoped({
     required Set<String> remoteIds,
     bool? isPublic,
     String? authorId,
   }) async {
     final allCached = await db.getAllCachedWorkouts();
+    final cachedIds = <String>{};
     for (final row in allCached) {
+      cachedIds.add(row.workoutId);
       if (remoteIds.contains(row.workoutId)) continue;
       final json = jsonDecode(row.workoutJson) as Map<String, dynamic>;
       final rowIsPublic = (json['is_public'] as bool?) ?? false;
@@ -229,6 +239,20 @@ class TestableWorkoutRepository {
         await db.removeCachedWorkout(row.workoutId);
       }
     }
+
+    final missing = remoteIds.where((id) => !cachedIds.contains(id)).toList();
+    if (missing.isNotEmpty) {
+      final fetched = await service.getWorkoutsByIds(missing);
+      await db.cacheWorkouts(fetched
+          .where((w) =>
+              (isPublic == null || w.isPublic == isPublic) &&
+              (authorId == null || w.authorId == authorId))
+          .toList());
+    }
+  }
+
+  Future<bool> hasEverSynced({bool? isPublic, String? authorId}) async {
+    return await db.getSyncMeta(_syncedKey(isPublic: isPublic, authorId: authorId)) != null;
   }
 
   Future<Workout> getWorkout(String id) async {
@@ -555,6 +579,130 @@ void main() {
 
       final after = DateTime.parse(db.getMeta('public_workouts_last_full_sync_at')!);
       expect(after.isAfter(before), isTrue);
+    });
+  });
+
+  group('refreshWorkouts — backfill (self-heal missing in-scope)', () {
+    test('full sync backfills an in-scope id present remotely but absent locally',
+        () async {
+      final db = FakeCacheDb();
+      // Own scope has synced before (incremental path), but a private workout
+      // dated before lastSynced was never cached — incremental can't recover it.
+      await db.setSyncMeta(
+          'my_workouts_alice_last_synced_at', '2025-06-01T00:00:00.000Z');
+      // No lastFullSync → needsFullSync = true.
+
+      final missed = _makeWorkout(
+        id: 'private-missed',
+        isPublic: false,
+        authorId: 'alice',
+        updatedAt: DateTime.utc(2025, 5, 24), // predates lastSynced
+      );
+      final service = FakeWorkoutService([missed]);
+      final repo = TestableWorkoutRepository(db: db, service: service);
+
+      await repo.refreshWorkouts(authorId: 'alice');
+
+      // Incremental fetch returned nothing (updatedAt < since), but reconcile
+      // backfilled it via getWorkoutsByIds.
+      expect(service.getWorkoutsUpdatedSinceCallCount, 1);
+      expect(service.getWorkoutsByIdsCallCount, 1);
+      expect(db.hasCached('private-missed'), isTrue,
+          reason: 'backfilled from remote id set');
+    });
+
+    test('does not fetch by ids when nothing is missing', () async {
+      final db = FakeCacheDb();
+      final wk = _makeWorkout(id: 'usr', isPublic: false, authorId: 'alice');
+      await db.cacheWorkouts([wk]);
+      await db.setSyncMeta(
+        'my_workouts_alice_last_full_sync_at',
+        DateTime.now().subtract(const Duration(hours: 25)).toIso8601String(),
+      );
+      await db.setSyncMeta(
+          'my_workouts_alice_last_synced_at', '2025-06-01T00:00:00.000Z');
+
+      final service = FakeWorkoutService([wk]);
+      final repo = TestableWorkoutRepository(db: db, service: service);
+
+      await repo.refreshWorkouts(authorId: 'alice');
+
+      expect(service.getWorkoutsByIdsCallCount, 0);
+    });
+
+    test('purge and backfill run together, out-of-scope rows untouched',
+        () async {
+      final db = FakeCacheDb();
+      await db.cacheWorkouts([
+        _makeWorkout(id: 'stale', isPublic: false, authorId: 'alice'), // deleted remotely
+        _makeWorkout(id: 'pub', isPublic: true, authorId: 'other'), // out of scope
+      ]);
+      await db.setSyncMeta(
+        'my_workouts_alice_last_full_sync_at',
+        DateTime.now().subtract(const Duration(hours: 25)).toIso8601String(),
+      );
+      await db.setSyncMeta(
+          'my_workouts_alice_last_synced_at', '2025-06-01T00:00:00.000Z');
+
+      // Remote for alice: only 'fresh' (updated before lastSynced so incremental
+      // misses it); 'stale' is gone.
+      final service = FakeWorkoutService([
+        _makeWorkout(
+          id: 'fresh',
+          isPublic: false,
+          authorId: 'alice',
+          updatedAt: DateTime.utc(2025, 5, 24),
+        ),
+      ]);
+      final repo = TestableWorkoutRepository(db: db, service: service);
+
+      await repo.refreshWorkouts(authorId: 'alice');
+
+      expect(db.hasCached('stale'), isFalse, reason: 'purged: absent remotely');
+      expect(db.hasCached('fresh'), isTrue, reason: 'backfilled from remote');
+      expect(db.hasCached('pub'), isTrue, reason: 'out of scope, untouched');
+    });
+  });
+
+  group('hasEverSynced', () {
+    test('is false before any sync, true after setSyncMeta', () async {
+      final db = FakeCacheDb();
+      final repo = _build(db: db);
+
+      expect(await repo.hasEverSynced(authorId: 'alice'), isFalse);
+
+      await db.setSyncMeta('my_workouts_alice_last_synced_at',
+          DateTime.now().toIso8601String());
+
+      expect(await repo.hasEverSynced(authorId: 'alice'), isTrue);
+    });
+
+    test('reflects the synced-at key written by refreshWorkouts', () async {
+      final db = FakeCacheDb();
+      final repo = _build(db: db, workouts: [
+        _makeWorkout(id: 'usr', isPublic: false, authorId: 'alice'),
+      ]);
+
+      expect(await repo.hasEverSynced(authorId: 'alice'), isFalse);
+
+      await repo.refreshWorkouts(authorId: 'alice');
+
+      expect(await repo.hasEverSynced(authorId: 'alice'), isTrue);
+      // Distinct scope untouched.
+      expect(await repo.hasEverSynced(isPublic: true), isFalse);
+    });
+
+    test('a populated cache with no synced-at key still reports false',
+        () async {
+      // The exact false-positive the fix targets: own rows in cache (because
+      // the user authored public workouts) but the own scope never synced.
+      final db = FakeCacheDb();
+      await db.cacheWorkouts([
+        _makeWorkout(id: 'pub', isPublic: true, authorId: 'alice'),
+      ]);
+      final repo = _build(db: db);
+
+      expect(await repo.hasEverSynced(authorId: 'alice'), isFalse);
     });
   });
 

@@ -48,6 +48,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   bool get _isBrowsing =>
       _hasAnyFilter || _searchController.text.isNotEmpty;
 
+  /// Label of the currently active category tile, or null when browsing via
+  /// search only. Drives the breadcrumb's current-level title.
+  String? get _activeCategoryLabel {
+    for (final tile in _kAllTiles) {
+      if (_isTileActive(tile)) return tile.label;
+    }
+    return null;
+  }
+
   void _clearAll() {
     setState(() {
       _duration = null;
@@ -309,7 +318,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
 
         Future<void> onRefresh() async {
           final repo = ref.read(workoutRepositoryProvider);
-          await repo.refreshWorkouts(isPublic: true);
+          final userId = ref.read(supabaseServiceProvider).currentUserId;
+          // Sync both scopes so a newly-created own workout (private included)
+          // appears without an app restart — the only manual recovery path.
+          await Future.wait([
+            repo.refreshWorkouts(isPublic: true),
+            if (userId != null) repo.refreshWorkouts(authorId: userId),
+          ]);
           ref.read(workoutRefreshTriggerProvider.notifier).bump();
         }
 
@@ -328,6 +343,25 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                   ),
+                  // Current-level title: chevron + active category. Flexes so a
+                  // long label truncates with "…" rather than overflowing.
+                  if (_activeCategoryLabel case final label?) ...[
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: RowCraftTheme.subtleGrey,
+                    ),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: RowCraftTheme.subtleGrey,
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   Text(
                     '${displayWorkouts.length} result${displayWorkouts.length == 1 ? '' : 's'}',

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../models/workout.dart';
 import '../utils/app_log.dart';
@@ -111,15 +112,7 @@ class WorkoutRepository {
         );
       }
 
-      await _db.cacheWorkouts(
-        fetched
-            .map((w) => CachedWorkoutsCompanion.insert(
-                  workoutId: w.id,
-                  workoutJson: jsonEncode(w.toJson()),
-                  cachedAt: Value(DateTime.now()),
-                ))
-            .toList(),
-      );
+      await _cacheWorkoutList(fetched);
       await _db.setSyncMeta(syncedKey, DateTime.now().toIso8601String());
 
       if (needsFullSync) {
@@ -128,7 +121,7 @@ class WorkoutRepository {
           authorId: authorId,
         ))
             .toSet();
-        await _removeScopedDeleted(
+        await _reconcileScoped(
           remoteIds: remoteIds,
           isPublic: isPublic,
           authorId: authorId,
@@ -137,22 +130,45 @@ class WorkoutRepository {
       }
 
       return getWorkouts(isPublic: isPublic, authorId: authorId);
-    } catch (e) {
-      // Offline-first: refresh failures fall back to the local cache.
+    } catch (e, stack) {
+      // Offline-first: refresh failures fall back to the local cache. Report
+      // to Sentry so silent own-scope sync failures are diagnosable.
       AppLog.warn('repo', 'Workout refresh failed, serving cache', e);
+      Sentry.captureException(
+        e,
+        stackTrace: stack,
+        withScope: (scope) {
+          scope.setTag('subsystem', 'workout_repository');
+          scope.setTag('repo.stage', 'refreshWorkouts');
+          // The current user's id is already on every event via the global
+          // SentryUser scope, so record only which scope failed, not the uid.
+          scope.setContexts('refresh', {
+            'is_public': ?isPublic,
+            'own_scope': authorId != null,
+          });
+        },
+      );
       return null;
     }
   }
 
-  /// Removes cached workouts that are in scope (public/author) but absent
-  /// from the remote ID set. Workouts outside the current scope are untouched.
-  Future<void> _removeScopedDeleted({
+  /// Reconciles the cache against the remote ID set for the current scope,
+  /// in both directions:
+  /// - **Purge**: cached in-scope workouts whose id is absent remotely (deleted).
+  /// - **Backfill**: ids present remotely but missing locally (a workout the
+  ///   incremental `updated_at` sync could never recover because it predates
+  ///   `lastSynced`). Fetches the full rows and caches them.
+  ///
+  /// Workouts outside the current scope are untouched.
+  Future<void> _reconcileScoped({
     required Set<String> remoteIds,
     bool? isPublic,
     String? authorId,
   }) async {
     final allCached = await _db.getAllCachedWorkouts();
+    final cachedIds = <String>{};
     for (final row in allCached) {
+      cachedIds.add(row.workoutId);
       if (remoteIds.contains(row.workoutId)) continue;
       final json = jsonDecode(row.workoutJson) as Map<String, dynamic>;
       final rowIsPublic = (json['is_public'] as bool?) ?? false;
@@ -163,6 +179,43 @@ class WorkoutRepository {
         await _db.removeCachedWorkout(row.workoutId);
       }
     }
+
+    // Backfill: ids present remotely but absent locally. Self-heals any device
+    // where an in-scope workout was missed by a prior incremental sync.
+    final missing =
+        remoteIds.where((id) => !cachedIds.contains(id)).toList();
+    if (missing.isNotEmpty) {
+      // Scope-filter the response for symmetry with the purge half above. The
+      // ids are already scoped (getWorkoutIds), so this only guards against a
+      // remote ever returning out-of-scope rows into the wrong cache slot.
+      final fetched = await _supabase.getWorkoutsByIds(missing);
+      await _cacheWorkoutList(fetched
+          .where((w) =>
+              (isPublic == null || w.isPublic == isPublic) &&
+              (authorId == null || w.authorId == authorId))
+          .toList());
+    }
+  }
+
+  /// Upserts [workouts] into the local cache as companion rows.
+  Future<void> _cacheWorkoutList(List<Workout> workouts) {
+    return _db.cacheWorkouts(
+      workouts
+          .map((w) => CachedWorkoutsCompanion.insert(
+                workoutId: w.id,
+                workoutJson: jsonEncode(w.toJson()),
+                cachedAt: Value(DateTime.now()),
+              ))
+          .toList(),
+    );
+  }
+
+  /// Whether the given scope has ever completed a sync (its synced-at metadata
+  /// key is present). Distinguishes "own scope never synced" from "own scope
+  /// synced but empty", which a cache-count check cannot.
+  Future<bool> hasEverSynced({bool? isPublic, String? authorId}) async {
+    final key = _syncedKey(isPublic: isPublic, authorId: authorId);
+    return (await _db.getSyncMeta(key)) != null;
   }
 
   /// Returns the workout from cache if available; falls back to Supabase.

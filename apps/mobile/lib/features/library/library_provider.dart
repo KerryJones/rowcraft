@@ -83,20 +83,26 @@ final workoutLibraryProvider = FutureProvider<List<Workout>>((ref) async {
     return out;
   }
 
-  final (cachedPublic, cachedOwn) = await (
+  // Read both caches and the own-scope sync flag in parallel. Gating on real
+  // sync state (not cache count) is the crux of the short-circuit below, so it
+  // rides along with the cache reads rather than adding a sequential round-trip.
+  final (cachedPublic, cachedOwn, ownSynced) = await (
     repo.getWorkouts(isPublic: true),
     userId == null
         ? Future.value(const <Workout>[])
         : repo.getWorkouts(authorId: userId),
+    userId == null
+        ? Future.value(true)
+        : repo.hasEverSynced(authorId: userId),
   ).wait;
 
-  // Cache short-circuit only when both halves the current user expects are
-  // present. For signed-in users that means BOTH public AND own caches must
-  // be populated — otherwise the user could see a half-populated library
-  // (e.g. just signed in: public cached, own empty → fetch own synchronously
-  // so private workouts appear in the first render, not after pull-to-refresh).
-  final ownReady = userId == null || cachedOwn.isNotEmpty;
-  if (cachedPublic.isNotEmpty && ownReady) {
+  // Cache short-circuit only when the current user's own scope has actually
+  // synced. A cache-count check is a false positive: a user who authored a
+  // *public* workout has own-scoped rows in cache without the own scope ever
+  // syncing, so their private workouts would never load. On the first
+  // post-upgrade session `ownSynced` is false, so we take the fresh path and
+  // fetch own workouts synchronously.
+  if (cachedPublic.isNotEmpty && ownSynced) {
     // Return cache immediately; refresh both lists in the background.
     // minInterval prevents a redundant network call when pull-to-refresh
     // has just run and re-triggered the provider.
