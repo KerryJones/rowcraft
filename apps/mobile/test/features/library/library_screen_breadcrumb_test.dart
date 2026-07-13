@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:rowcraft/features/ble/ble_provider.dart';
 import 'package:rowcraft/features/history/history_provider.dart'
     show pendingSyncCountProvider;
 import 'package:rowcraft/features/library/library_provider.dart';
@@ -19,6 +20,14 @@ import 'package:rowcraft/services/supabase_service.dart';
 class _FakeSupabaseService extends Fake implements SupabaseService {
   @override
   String? get currentUserId => 'alice';
+}
+
+/// Stubs the BLE state so the shared AppBar's [BleStatusButton] doesn't spin up
+/// the real reactive-ble stack, which throws UnimplementedError on platforms
+/// with no plugin implementation (e.g. Linux CI).
+class _FakeBleNotifier extends BleNotifier {
+  @override
+  BleState build() => const BleState();
 }
 
 /// Silences the version-notification build (SharedPreferences / asset loads)
@@ -66,6 +75,7 @@ Widget _harness(List<Workout> workouts) {
       trainingPlansProvider.overrideWith((_) async => const []),
       pendingSyncCountProvider.overrideWith((_) => Stream.value(0)),
       notificationProvider.overrideWith(_FakeNotificationNotifier.new),
+      bleProvider.overrideWith(_FakeBleNotifier.new),
     ],
     child: const MaterialApp(home: LibraryScreen()),
   );
