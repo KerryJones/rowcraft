@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.0...rowcraft-mobile-v0.16.1) (2026-07-13)
+
+
+### Miscellaneous Chores
+
+* release 0.16.1 ([b583e0a](https://github.com/KerryJones/rowcraft/commit/b583e0a5cc9d3bff0960502f0b850c943ccd6548))
+
 ## [0.16.0](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.15.0...rowcraft-mobile-v0.16.0) (2026-07-09)
 
 
