@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.2](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.1...rowcraft-mobile-v0.16.2) (2026-08-01)
+
+
+### Bug Fixes
+
+* target Android 16 (API 36) for Play Store compliance ([44c203a](https://github.com/KerryJones/rowcraft/commit/44c203abdeb773471bf5782b4e37c9c8eb63214f))
+
 ## [0.16.1](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.0...rowcraft-mobile-v0.16.1) (2026-07-13)
 
 
