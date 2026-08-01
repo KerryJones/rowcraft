@@ -1,93 +1,93 @@
 # RowCraft
 
-Monorepo: Flutter mobile + Next.js web + Supabase backend for structured rowing workouts on Concept2 PM5.
+Flutter (Android) + Next.js + Supabase monorepo for structured Concept2 PM5 rowing workouts. Mobile executes workouts over BLE; web builds and browses them; the workout library is generated from YAML into SQL seeds.
 
-## Rules
+Background when you need it: `docs/architecture.md` (data flows), `docs/database.md` (schema, RLS), `docs/key-files.md` (file map). Authoring workout or plan YAML is covered by the `rowing-coach` skill, scoped to `packages/shared/**/*.yaml`.
 
-### Before Presenting Work as Done
-1. Run checks: `flutter analyze` (mobile), `npm run check` (web).
-2. If dependencies, Android config, or native code changed: `flutter build apk --debug`.
-3. Run code review agent in a loop until clean.
-4. If generated files changed, tell the user what commands to run locally.
+## Units — the top source of bugs here
 
-### Ownership & Quality
-- You own this entire codebase. A failing test is always your bug — never dismiss as pre-existing.
-- **Write tests before or alongside features** — happy path, error paths, and edge cases. If fixing a bug, write a reproducing test first.
-- Planning sessions use a separate git worktree (`isolation: "worktree"`).
-- **Sync worktree with main before starting work** — run `git log --oneline HEAD..main` at session start. If behind, merge main before reading or editing files.
-- **Resolve TODOs during planning** — scan for existing TODOs in files you touch. If achievable in scope, do it. Don't leave TODOs in new code.
+Three time units coexist; confusing them yields plausible numbers off by 10x.
 
-### Generated Files
-- **YAML is the source of truth** — for workouts and training plans. Never edit any `.sql` file in `supabase/seeds/` directly. Edit YAML in `packages/shared/`, then run `make build-seeds`.
-- **Never edit any generated file directly** — find the source and edit that instead. If no YAML source exists yet, create one and extend the build script.
+- **PM5 wire format is centiseconds and decimetres** — time in 0.01 s, distance in 0.1 m, pace in 0.01 s/500 m (byte maps at `apps/mobile/lib/features/ble/pm5_parser.dart:18-19`, `:111-117`). The parser converts distance to metres at `:41`, pace to tenths/500 m at `:75-77`.
+- **Stored results are tenths of a second** — `workout_results.total_time` and `avg_split`, formatted by `formatPace`/`formatTimeTenths` at `apps/web/src/lib/utils/format.ts:8`, `:42`. Pace drops the decimal (`2:00`), elapsed time keeps it (`20:00.0`).
+- **Segment durations are whole seconds** — `duration_value` is seconds, metres, or calories depending on `duration_type` (`apps/web/src/lib/utils/format.ts:92-103`). Never feed one to a tenths formatter.
 
-### Pre-launch App
-- **No legacy/backward-compat code** — this app has not shipped. Never write migration shims, legacy expansion, or backward-compat wrappers without asking first. If you think old data needs handling, ask.
-- **Debug builds (`make install`) and Play Store builds use different signing certificates.** Android refuses to update across the boundary — testers must uninstall the debug-signed app before installing from the Play Store. The in-app debug banner reminds them.
+## PM5 / BLE
 
-### Research Before Guessing
-- **Never fabricate or guess external information** — if a task references external products, APIs, UI patterns, or industry standards, research them first (WebSearch, WebFetch, docs). Guessing and presenting it as informed analysis is a critical failure, not a minor shortcut.
+- **Notifications only — never `readCharacteristic`.** Reads return junk. The app uses `subscribeToCharacteristic` (`apps/mobile/lib/features/ble/pm5_service.dart:227`) and, for CSAFE, `writeCharacteristicWithoutResponse` (`:251`). No read exists anywhere under `apps/mobile/lib`; keep it that way.
+- **Rest segments must be ≤ 3:00.** The PM5 blanks its screen and stops notifying after 4:00 idle. Longer recovery becomes a separate workout or a low-intensity active-rest segment. Rationale in `.claude/skills/rowing-coach/SKILL.md`.
+- **Scanning is deliberately unfiltered — don't "fix" it with a scan filter.** The PM5 advertises `CE060000` only in its scan-response packet, which some Android stacks won't match, so the app scans wide and filters client-side (`pm5_service.dart:95-97`). Polar straps rotate BLE privacy addresses and appear as several `device.id`s, so results are deduped by case-folded name while connect logic still keys off `device.id` (`apps/mobile/lib/features/ble/ble_provider.dart:19-22`).
+- **0 and 255 are sentinels, not data.** HR byte `255`/`0` means "no strap" → `null` (`pm5_parser.dart:72-73`); drag factor `0` means "no reading" and is passed as `null` to `copyWith`, which *keeps the previous value* (`:48`). Separately, `resolveSegmentTargetPace() == 0` means "no target" and doubles as the pace-fail enable flag (`apps/mobile/lib/utils/pace_utils.dart:86` → `workout_engine.dart:1098`).
 
-### Consistency is #1
-**Consistency is the highest-priority principle across everything** — code patterns, UI design, interactions, naming, spacing, button styles, error handling, dialog layouts. When adding or changing anything, find the existing pattern and match it exactly. Inconsistency is a bug. If you build a new dialog, find the most recent dialog and match its structure. If you style a button, find the established button style and use it. This applies universally, not just to code.
+## HR zones — one source of truth, five copies
 
-### Coding Principles
-**CONSISTENT > CANONICAL > SIMPLE**
-1. **Consistent** — match existing patterns in the codebase first
-2. **Canonical** — use the standard/documented approach for the library/framework
-3. **Simple** — prefer the simplest solution that works
-- **Always prefer the best action over the low-effort action** — don't take shortcuts or propose easier alternatives when the right solution requires more work.
+`packages/shared/hr-zones.json` holds `[55, 75, 85, 92, 97]`. Changing it means changing every mirror, and only two are guarded:
 
-### Dependencies
-- **Always upgrade, never downgrade** — when a dependency conflict or version mismatch occurs, upgrade to the latest stable version. Never downgrade a package or pin to an older version unless there is no other option, and then only with explicit user permission.
-- **Prefer stable libraries over rolling your own** — for solved problems (string truncation, date formatting, deep equality, debouncing, URL parsing, etc.), use a well-maintained library rather than writing it inline. Hand-rolled utilities accumulate bugs and edge cases that battle-tested libraries have already fixed.
+| Copy | Guarded? |
+|---|---|
+| `apps/web/src/lib/utils/ftp.ts:38` | yes — `apps/web/src/lib/utils/__tests__/hr-zone-boundaries.test.ts` |
+| `apps/mobile/lib/utils/hr_zones.dart:46-122` (zone lists) | yes — `apps/mobile/test/utils/hr_zones_boundaries_test.dart` |
+| `apps/mobile/lib/utils/hr_zones.dart:185-189` (`estimateHrZone` literals) | **no** |
+| `apps/mobile/lib/features/workout/hr_zone_gauge.dart:40` (`_zoneFractions`, expressed 0–1 not 0–100) | **no** |
+| `supabase/seed.sql:5-14` (comment block) | **no** — has already drifted once |
 
-### Code Style
-- **Dart**: Dart 3.3+, type hints, immutable models with `copyWith`, Riverpod for state
-- **TypeScript**: Strict mode, Next.js App Router (Server Components default, `'use client'` for interactive)
-- **SQL**: Lowercase keywords, snake_case columns, always add indexes on foreign keys
-- **Web UI**: Use shadcn components (`npx shadcn@latest add <component>`) before building custom controls. The web app uses shadcn v4 with base-nova style and Base UI primitives.
+`scripts/build-seeds.ts` reads the JSON directly, so seed data and the unguarded copies can disagree silently.
 
-### Communication
-- **No sycophancy** — don't soften, hedge, or flatter. State what you think directly.
-- **Push back when appropriate** — disagree when you have good reason. Don't treat every user statement as a directive.
-- **Take words at face value** — respond to what the user actually said, not what you think they meant. Don't "read between the lines" or reinterpret requests. If the user asks you to do X, do X — don't do Y because you think that's what they really wanted.
-- **Never double down on claims you can't verify** — if corrected, accept it. Don't defend a position by fabricating supporting claims (e.g. "X works like Y" when you don't actually know how Y works). One wrong claim is a mistake; stacking more unverified claims to defend it is a pattern failure.
+Zone *names* are offset from the obvious reading: in `apps/web/src/lib/utils/ftp.ts:45-91` the `HrZoneName` `'tempo'` is **Z2**, `'threshold'` is Z3, `'vo2max'` is Z4, `'max'` is Z5. The comments at `segment-color.ts:4-8` use the shifted labels ("3: tempo") and are the outlier — go by `ftp.ts`.
 
-### Design Rules
-- **Dark theme only** — both platforms. Rowers are in gyms/garages.
-- **Split times in tenths of seconds** — 2:00/500m = 1200. Storage is tenths; display is `M:SS` (no decimal).
-- **PM5 data via BLE notifications only** — never use BLE reads (returns junk).
-- Segment colors from stored `target_hr_zone` (derived from intensity at build/save time). No zone = gray (#6b7280). Z1=green, Z2=blue, Z3=amber, Z4=orange, Z5=red.
-- **UX self-review before presenting UI work** — for every visual container, ask: "What mental model does this layout create? Would a first-time user interpret this the same way the code intends it?" Check Gestalt grouping: elements in the same container are perceived as one entity.
+## Segments have no type field
 
-### Tool Usage
-- Prefer Claude Code tools (Read, Edit, Write, Glob, Grep) over Bash equivalents.
-- **In worktree sessions, never use absolute paths that point at the main repo root.** The main repo root (`/Users/kerryjones/code/rowcraft/apps/...`) still exists alongside the worktree (`/Users/kerryjones/code/rowcraft/.claude/worktrees/<name>/apps/...`) and contains an identical tree, so an absolute path written from memory will silently edit the wrong copy — tests and analyze keep passing in the worktree because the worktree files are untouched. Use paths relative to the worktree cwd, or absolute paths anchored at the worktree root.
-- Allowlisted Bash: `make`, `git`, `flutter`, `npm`, `dart`, `npx`, `supabase`.
-- **No compound Bash commands** (pipes, `cd && ...`, chained commands) — they always prompt. Use `-C` flags (`git -C path`), `--prefix` (`npm --prefix path`), or separate Bash calls instead.
-- **Never `git push`.** The user always pushes. Even when a plan says "push", do not run it.
-- **No git commits without explicit user permission.** Read-only git (`diff`, `status`, `log`) is fine.
-- **No Claude attribution in commit messages.** Never add `Co-Authored-By` or similar AI credit lines.
-- **Commit messages as plain text** — no quotes, backticks, or code fences when presenting a commit message.
-- **Conventional Commits** — all commit messages must use the format `type: description`. Types: `feat:` (new feature), `fix:` (bug fix), `refactor:`, `chore:`, `docs:`, `test:`. Use `feat!:` or `fix!:` for breaking changes. release-please uses these prefixes to auto-generate changelogs and version bumps.
-- **Pick the commit type carefully — it drives the version bump.** `feat:` → minor (0.8.0 → 0.9.0), `fix:` → patch (0.8.0 → 0.8.1), `refactor:` / `chore:` → no bump. Reserve `feat:` for genuinely new functionality. UX corrections, repositioning, restyling, or refinements of an existing feature are `fix:` (if user-reported) or `refactor:` (if internal). When in doubt, the smaller bump is the safer default.
-- **Propose commit type and title in chat before running `git commit`.** Even when the user has said "please commit", state the chosen type + title and a one-line rationale for the type (especially the feat/fix call), then wait for explicit approval before invoking the commit. "Please commit" approves the act of committing — not the type.
+Behaviour is derived from content. Rest = no `target_intensity` **and** no `target_stroke_rate`. `target_hr_zone` is precomputed at build/save time and display code reads the stored value rather than recomputing (`apps/web/src/lib/utils/segment-color.ts:14-19`, `apps/mobile/lib/utils/segment_color.dart:9-13`). Migration `013_remove_segment_type.sql` dropped the old column; don't reintroduce it.
 
-### Memory Discipline
-- Do NOT save architecture, file paths, code patterns, or project structure to MEMORY.md.
-- MEMORY.md is only for user preferences and feedback.
-- Architecture and reference docs belong in `docs/` if they need to be persisted.
-- Keep CLAUDE.md under 100 lines — behavioral rules only, not reference content.
+Zone `0` and zone `null` are different and coloured differently: a segment with no zone is gray `#6b7280` (`segment-color.ts:11`), but a *live* HR below 55% returns zone `0`, which `zoneColor(0)` deliberately paints green — Z1's colour (`apps/mobile/lib/utils/hr_zones.dart:195-196`). `time_in_zone.dart:42` drops zone 0 from distribution charts entirely.
 
-## Reference Docs
+## Mobile state — traps that look like nothing
 
-Read the relevant doc before starting a task. Don't pre-load all of them.
+- **`copyWith` cannot clear a nullable field on most models.** `BleState` (`apps/mobile/lib/features/ble/ble_provider.dart:139-169`) and `WorkoutSessionState` (`apps/mobile/lib/features/workout/workout_provider.dart:148-215`) use an `Object _sentinel` to distinguish "not passed" from "explicitly null". Every other model — `PM5Data` (`apps/mobile/lib/models/pm5_data.dart:50-76`), `WorkoutEngineState` (`workout_engine.dart:93-135`), `WorkoutSegment`, `WorkoutResult` — uses plain `??`, so `heartRate`, `finishReason`, and `targetHrZone` can never be nulled back out. Check which pattern a model uses before relying on a clear.
+- **The engine runs on `package:clock`; the rest of the app runs on `DateTime.now()`.** Only `workout_engine.dart` is testable under `fake_async`. Its timed segments use wall-clock timers rather than PM5 elapsed time on purpose — the PM5 hardware timer keeps counting while the app is paused (`workout_engine.dart:889-892`).
+- **`WorkoutSessionNotifier.build()` must use `ref.read`, never `ref.watch`,** for its service singletons (`workout_provider.dart:266-268`). Watching re-runs `build()` after `_cleanup()` has closed `_pm5Controller`, so fresh subscriptions push into a closed `StreamController`.
 
-| File | Contents |
-|------|----------|
-| `docs/architecture.md` | System overview, data flows, tech stack |
-| `docs/database.md` | Schema, migrations, tables, RLS policies |
-| `docs/key-files.md` | File map with descriptions |
+## Persistence
 
-After changing a subsystem, update the relevant `docs/` file. After changing a behavioral rule, update CLAUDE.md.
+- **Drift `schemaVersion` is 5** (`apps/mobile/lib/services/local_db.dart:77`). Adding a table or column requires bumping it *and* appending an `if (from < N)` branch to `onUpgrade` (`:82-103`), or existing installs crash on open. Note the pattern at `:89-102`: new sync-status columns are backfilled to "already synced" so results queued before an integration existed aren't replayed into it.
+- **Adding a sync target means editing two queries with opposite logic.** `getPendingResults`/`getPendingCount` OR the flags (`:118-122`, `:131-134`); `cleanupSynced` ANDs them (`:205-209`) because a row is only deletable once every target succeeded. Miss the second and rows queue forever.
+- **Plan progress writes are not atomic.** `completePlanSession` (`apps/mobile/lib/services/supabase_service.dart:585`) read-modify-writes the whole `user_plan_progress.completed_sessions` JSONB array, so a concurrent write from a second device loses entries — known and accepted for v1 (`:581-584`). Prefer a Postgres RPC doing an atomic `jsonb || jsonb` append over adding a second client-side read-modify-write.
+- **Plexo sync is allowlisted to one account.** `apps/mobile/lib/services/plexo_service.dart:58-63` returns `false` unless `display_name` is `kerryjones21`, logging rather than failing. Plexo doing nothing is expected, not a bug to chase.
+
+## Generated code and seeds
+
+- **`*.g.dart` is gitignored, so a fresh checkout does not compile.** Run `dart run build_runner build --delete-conflicting-outputs` before `flutter analyze` or `flutter test`; every CI job does (`.github/workflows/mobile-build.yml:34-42`).
+- **Seed SQL is generated and CI fails on drift.** Edit YAML under `packages/shared/`, then `make build-seeds`; `.github/workflows/seeds-check.yml:44` rebuilds and runs `git diff --exit-code` over `supabase/seeds` and `supabase/seed.sql`.
+- **Not everything under `supabase/seeds/` is generated** — `00_functions.sql` is hand-written with no YAML source. Only `gen_*.sql` are outputs, and `build-seeds.ts:504-508` deletes *every* file starting with `gen_` before writing, so a hand-written file with that prefix is destroyed on the next build.
+- **Only two generated files are ever loaded.** `supabase/seed.sql:17-23` and `make db-seed` (`Makefile:151-154`) pull `00_functions.sql`, `gen_all_workouts.sql`, and `gen_training_plans.sql`. The per-category `gen_<category>.sql` files are written but never sourced, so editing one has no effect on a seeded database.
+- **Reseeding severs every historical result from its workout.** `gen_all_workouts.sql` opens with `delete from public.workouts where author_id is null` (`build-seeds.ts:513-514`) and `workout_results.workout_id` is `on delete set null` (`supabase/migrations/003_results.sql:4`). The re-insert reuses the same UUIDs but nothing re-links, so `make db-seed`/`db-reseed` permanently orphans past results — despite `Makefile:36` advertising db-reseed as "preserve results + FTP history".
+- **`packages/shared/workouts/_spec.md` is stale — don't write YAML from it.** It shows `type: warmup` and `hr_zone:` on flat segments (`:16`, `:20`, `:27`, `:34`), but the schema sets `additionalProperties: false` and defines neither. `type: interval` is the only surviving `type`. Trust `packages/shared/schemas/workout-definition.schema.json` and the `rowing-coach` skill.
+
+## This app has shipped
+
+Releases through 0.16.x are live on the Play Store alpha track (`apps/mobile/CHANGELOG.md`, `.github/workflows/release-please.yml:125-133`). On-device data and existing rows are real; the Drift `onUpgrade` branches are load-bearing, not scaffolding.
+
+Commit type drives that deploy: release-please turns a Conventional Commit on `main` into a version bump, and the resulting release builds an AAB and uploads it automatically (`release-please.yml:125-133`). `feat:` → minor, `fix:` → patch, `refactor:`/`chore:` → no release. Restyling or repositioning an existing feature is `fix:` or `refactor:`, not `feat:`.
+
+## Android build
+
+- **A release build silently falls back to debug signing.** `apps/mobile/android/app/build.gradle.kts:52-56` selects `signingConfigs.getByName("debug")` whenever `apps/mobile/android/key.properties` is absent, so `make apk` / `make release` emit an artifact that looks fine and the Play Store rejects. Confirm `key.properties` exists before trusting a release build.
+- **Debug and Play Store installs can't update across each other** (different certificates). Testers must uninstall the debug build first; `apps/mobile/lib/widgets/debug_build_banner.dart` is the in-app reminder.
+- **`make install` / `apk` / `release` read secrets from `apps/mobile/.env`** via `-include` at `Makefile:4`. A missing file is not an error — make substitutes empty strings into every `--dart-define`, producing an app that builds cleanly and points at nothing.
+- Android only; no tracked `ios/` directory.
+
+## Web app
+
+- **shadcn here is `base-nova` style on Base UI, not Radix** (`apps/web/components.json:3`, plus `@base-ui/react` imports across `apps/web/src/components/ui/`). Snippets from the usual shadcn/Radix docs won't drop in; add components with `npx shadcn@latest add <component>` so the registry resolves the right primitives.
+- **`apps/web/.git` is a stale nested repository.** The outer repo tracks `apps/web/**` itself, so any `git` command run from inside `apps/web` talks to the wrong repo — anchor with `git -C <repo-root>`.
+- **`cn` is defined twice.** `apps/web/src/lib/utils.ts:4-6` (a file) and `apps/web/src/lib/utils/cn.ts:4-6` (inside the directory of the same name) are byte-equivalent. A bare `@/lib/utils` resolves to the *file*, and `components.json:17` points shadcn's `utils` alias there, so `npx shadcn add` keeps writing to it while most app code imports `@/lib/utils/cn`. Don't add a third.
+- **Middleware refreshes the session; it does not guard routes.** `apps/web/src/middleware.ts:36-38` calls `getUser()` and returns unconditionally — there is no redirect. Every protected route calls `requireAuth()` itself (`app/profile/page.tsx:7`, `app/history/page.tsx:12`, `app/admin/layout.tsx:6`). A new route that assumes middleware protects it ships an auth hole.
+- **The empty `catch` around cookie writes in `apps/web/src/lib/supabase/server.ts:30-33` is deliberate** — Server Components cannot set cookies, and middleware is what actually persists the refresh. Removing it breaks every Server Component read. To *set* auth state you need a Route Handler or Server Action (`app/auth/callback/route.ts` is the pattern).
+- **`expandSegments` in `apps/web/src/lib/utils/workout.ts:52-54` is an identity function** kept for API compatibility — segments are already flat in the DB. The real expander is `expandSegments` in `scripts/build-seeds.ts`, which runs at build time only. Same name, entirely different behaviour.
+- **The anon key is named "publishable" everywhere** — `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` on web (`apps/web/src/middleware.ts:9`), `SUPABASE_PUBLISHABLE_KEY` as a dart-define on mobile (`Makefile:105`). There is no `ANON_KEY` variable; reaching for that name gets you `undefined`.
+- **`createSupabaseAdmin()` is server-only** (`apps/web/src/lib/supabase/admin.ts:3-10`) — it reads `SUPABASE_SERVICE_ROLE_KEY`, which has no `NEXT_PUBLIC_` prefix and therefore does not exist in the browser bundle. Import it from route handlers and server components only. Admin identity is an env allowlist, not a DB role (`:12-19`).
+- Tailwind 4, CSS-first: no `tailwind.config.js`, and `components.json:7` leaves the config path empty on purpose. `npm run check` is `tsc --noEmit`.
+
+## Style
+
+Dark theme on both platforms — rowers train in gyms and garages, and no light variant exists to fall back on. Otherwise write code that reads like the code around it: match the surrounding file's naming, comment density, and idioms rather than importing conventions from elsewhere. Mobile is on Riverpod 3 and go_router 17 (`apps/mobile/pubspec.yaml`), both far enough ahead of most published examples that copied snippets usually need adapting.

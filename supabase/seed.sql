@@ -2,12 +2,16 @@
 -- Generated workout SQL lives in seeds/gen_*.sql (built from YAML definitions)
 -- To regenerate: make build-seeds (or: cd scripts && npx tsx build-seeds.ts)
 --
--- FTP Power Zones Reference (% of FTP watts):
---   Z1 Recovery:   45-60%  | 16-20 spm
---   Z2 Aerobic:    60-75%  | 18-24 spm
---   Z3 Tempo:      75-85%  | 22-28 spm
---   Z4 Threshold:  85-100% | 26-32 spm
---   Z5 VO2max:    100-130% | 28-36 spm
+-- Zone reference (% of FTP watts). Boundaries come from
+-- packages/shared/hr-zones.json — the single source of truth that
+-- scripts/build-seeds.ts reads when deriving target_hr_zone from a
+-- workout's intensity. Keep this comment in sync with that file.
+--   (below 55%)          no zone  | recovery / warmup
+--   Z1 Base Aerobic UT2:  55-75%  | 16-20 spm
+--   Z2 Aerobic Power UT1: 75-85%  | 18-24 spm
+--   Z3 Threshold AT:      85-92%  | 22-28 spm
+--   Z4 VO2max TR:         92-97%  | 26-32 spm
+--   Z5 Anaerobic AN:     97-100%  | 28-36 spm
 
 -- Functions
 \ir seeds/00_functions.sql
