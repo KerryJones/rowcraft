@@ -116,6 +116,12 @@ jobs:
             --dart-define=PLEXO_API_URL=${{ secrets.PLEXO_API_URL }} \
             --dart-define=PLEXO_API_KEY=${{ secrets.PLEXO_API_KEY }} \
             --dart-define=PLEXO_USER_ID=${{ secrets.PLEXO_USER_ID }}
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ needs.release-please.outputs.mobile-tag-name }}-aab
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
       - name: Upload to Play Store
         uses: r0adkll/upload-google-play@935ef9c68bb393a8e6116b1575626a7f5be3a7fb # v1
         with:
