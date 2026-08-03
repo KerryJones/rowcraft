@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.3](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.2...rowcraft-mobile-v0.16.3) (2026-08-03)
+
+
+### Bug Fixes
+
+* match live graph axis labels to detail chart and keep HR trace alive during pause ([f73175b](https://github.com/KerryJones/rowcraft/commit/f73175b5981e621cc7d27d8e1a6fce64cd3bc9bb))
+
 ## [0.16.2](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.1...rowcraft-mobile-v0.16.2) (2026-08-01)
 
 
