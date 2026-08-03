@@ -239,6 +239,11 @@ class WorkoutEngine {
   // Time-series data collection (running log across whole workout)
   final List<WorkoutTimeSample> _timeSamples = [];
   Duration? _lastSampleTime;
+  // Frozen X anchor for HR-recovery samples taken while paused. The chart's
+  // X-axis is time-progress based and freezes on pause, so paused samples are
+  // pinned to the last real sample's timestamp — they stack at the playhead
+  // and trace HR recovery vertically instead of drifting rightward.
+  Duration? _pauseFreezeTimestamp;
 
   // Pace fail tracking
   DateTime? _outOfRangeSince;
@@ -438,6 +443,9 @@ class WorkoutEngine {
     }
     _prePausePhase = _state.phase;
     _pausedAt = clock.now();
+    // Freeze the HR-trace X anchor at the last real sample so recovery samples
+    // taken while paused land on the playhead.
+    _pauseFreezeTimestamp = _lastSampleTime ?? _state.latestData.elapsedTime;
     if (_autoSplitEnabled) _splitPauseStart = clock.now();
     // Cancel timers so they don't fire while paused
     _restTimer?.cancel();
@@ -462,6 +470,7 @@ class WorkoutEngine {
     if (_state.phase != WorkoutPhase.paused) return;
     _cancelAutoPauseFinishTimer();
     _accumulatePausedDuration();
+    _pauseFreezeTimestamp = null;
     final restoredPhase = _prePausePhase ?? WorkoutPhase.rowing;
     _state = _state.copyWith(
       phase: restoredPhase,
@@ -525,6 +534,9 @@ class WorkoutEngine {
     _cancelCountdownBeeps();
     _prePausePhase = _state.phase;
     _pausedAt = clock.now();
+    // Freeze the HR-trace X anchor at the last real sample so recovery samples
+    // taken while paused land on the playhead.
+    _pauseFreezeTimestamp = _lastSampleTime ?? _state.latestData.elapsedTime;
     if (_autoSplitEnabled) _splitPauseStart = clock.now();
     _state = _state.copyWith(
       phase: WorkoutPhase.paused,
@@ -586,6 +598,7 @@ class WorkoutEngine {
     if (_state.phase != WorkoutPhase.paused) return;
     _cancelAutoPauseFinishTimer();
     _accumulatePausedDuration();
+    _pauseFreezeTimestamp = null;
     _lastActivityAt = clock.now();
     _state = _state.copyWith(
       phase: _prePausePhase ?? WorkoutPhase.rowing,
@@ -906,6 +919,31 @@ class WorkoutEngine {
     _scheduleCountdownBeeps(segment);
   }
 
+  /// Append a time-series sample if ~1s has elapsed since the last one.
+  /// The rate gate keys off the PM5's monotonic elapsedTime (which keeps
+  /// ticking even while paused), so callers pass the chart X-axis [timestamp]
+  /// explicitly: live elapsedTime while rowing/resting, or the frozen playhead
+  /// while paused. Reads distance/HR/segment from the just-updated latestData.
+  void _recordTimeSample({
+    required Duration timestamp,
+    required int pace,
+    required int strokeRate,
+  }) {
+    final data = _state.latestData;
+    final shouldSample = _lastSampleTime == null ||
+        (data.elapsedTime - _lastSampleTime!).inMilliseconds >= 1000;
+    if (!shouldSample) return;
+    _timeSamples.add(WorkoutTimeSample(
+      timestamp: timestamp,
+      distance: data.distance,
+      pace: pace,
+      strokeRate: strokeRate,
+      heartRate: data.heartRate,
+      segmentIndex: _state.currentSegmentIndex,
+    ));
+    _lastSampleTime = data.elapsedTime;
+  }
+
   void _onPM5Data(PM5Data data) {
     // ── Ready phase: wait for first stroke to start ──
     if (_state.phase == WorkoutPhase.ready) {
@@ -933,6 +971,18 @@ class WorkoutEngine {
     // ── Branch 1: Paused — update latestData, check for auto-resume ──
     if (_state.phase == WorkoutPhase.paused) {
       _state = _state.copyWith(latestData: data);
+      // Keep the HR trace alive during pause. Pin the sample's X to the frozen
+      // playhead (_pauseFreezeTimestamp) so recovery traces vertically in place
+      // instead of drifting rightward. pace/strokeRate 0 makes the white pace
+      // polyline skip it (it requires pace > 0). Stats accumulators live in
+      // Branch 3 and are untouched.
+      if (data.heartRate != null && _pauseFreezeTimestamp != null) {
+        _recordTimeSample(
+          timestamp: _pauseFreezeTimestamp!,
+          pace: 0,
+          strokeRate: 0,
+        );
+      }
       if (data.strokeCount != _lastStrokeCount && _state.isAutoPaused) {
         _lastStrokeCount = data.strokeCount;
         _autoResume();
@@ -1016,20 +1066,11 @@ class WorkoutEngine {
     // Collect time-series sample (~1/second, during rowing and resting)
     if (_state.phase == WorkoutPhase.rowing ||
         _state.phase == WorkoutPhase.resting) {
-      final elapsed = data.elapsedTime;
-      final shouldSample = _lastSampleTime == null ||
-          (elapsed - _lastSampleTime!).inMilliseconds >= 1000;
-      if (shouldSample) {
-        _timeSamples.add(WorkoutTimeSample(
-          timestamp: elapsed,
-          distance: data.distance,
-          pace: data.pace,
-          strokeRate: data.strokeRate,
-          heartRate: data.heartRate,
-          segmentIndex: _state.currentSegmentIndex,
-        ));
-        _lastSampleTime = elapsed;
-      }
+      _recordTimeSample(
+        timestamp: data.elapsedTime,
+        pace: data.pace,
+        strokeRate: data.strokeRate,
+      );
     }
 
     // Calculate segment progress (clamp to >= 0 in case PM5 resets mid-segment)

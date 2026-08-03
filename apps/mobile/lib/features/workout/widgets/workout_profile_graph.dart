@@ -183,9 +183,9 @@ class _WorkoutProfilePainter extends CustomPainter {
         color: RowCraftTheme.subtleGrey,
       );
       if (paceRange > 0) {
-        // Draw 3 evenly spaced labels (matching summary chart)
-        for (var i = 0; i < 3; i++) {
-          final frac = i / 2.0;
+        // Draw 5 evenly spaced labels (matching summary chart)
+        for (var i = 0; i < 5; i++) {
+          final frac = i / 4.0;
           final pace = paceMin + frac * paceRange;
           final normalized = 1 - (pace - paceMin) / paceRange;
           final heightFrac = minHeightFraction + normalized * (1 - minHeightFraction);
@@ -215,8 +215,8 @@ class _WorkoutProfilePainter extends CustomPainter {
           fontWeight: landscapePhone ? FontWeight.w700 : FontWeight.w400,
           color: RowCraftTheme.errorRose.withValues(alpha: 0.7),
         );
-        for (var i = 0; i < 3; i++) {
-          final frac = i / 2.0;
+        for (var i = 0; i < 5; i++) {
+          final frac = i / 4.0;
           final bpm = hrMax - frac * (hrMax - hrMin);
           // Map to same coordinate space as pace bars (minHeightFraction → 1.0)
           final hrNorm = (bpm - hrMin) / (hrMax - hrMin); // 1.0 at hrMax, 0.0 at hrMin
