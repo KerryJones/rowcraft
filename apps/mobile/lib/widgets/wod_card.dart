@@ -12,6 +12,7 @@ class WodCard extends StatelessWidget {
   final Workout workout;
   final VoidCallback onTap;
   final VoidCallback onShuffle;
+  final VoidCallback onDismiss;
   final bool canShuffle;
   final int ftpWatts;
   final bool compact;
@@ -21,6 +22,7 @@ class WodCard extends StatelessWidget {
     required this.workout,
     required this.onTap,
     required this.onShuffle,
+    required this.onDismiss,
     this.canShuffle = true,
     this.ftpWatts = kDefaultFtpWatts,
     this.compact = false,
@@ -110,6 +112,16 @@ class WodCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  color: RowCraftTheme.subtleGrey,
+                  tooltip: 'Hide until tomorrow',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    onDismiss();
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -192,6 +204,9 @@ class _StatItem extends StatelessWidget {
 /// through the list so every tap guarantees a new one.
 int getWodIndex(int workoutCount, {int shuffleOffset = 0}) {
   if (workoutCount <= 0) return 0;
-  final day = DateTime.now().toUtc().difference(DateTime.utc(2025)).inDays;
-  return (day + shuffleOffset) % workoutCount;
+  return (wodDay() + shuffleOffset) % workoutCount;
 }
+
+/// Day number the WOD rotates on (UTC days since 2025-01-01). Dismissal is
+/// keyed to this so a hidden WOD comes back exactly when the next one does.
+int wodDay() => DateTime.now().toUtc().difference(DateTime.utc(2025)).inDays;
