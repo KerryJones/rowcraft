@@ -69,15 +69,20 @@ class WodCard extends StatelessWidget {
                 const Icon(Icons.local_fire_department,
                     size: 18, color: RowCraftTheme.warningAmber),
                 const SizedBox(width: 6),
-                Text(
-                  'WORKOUT OF THE DAY',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: RowCraftTheme.warningAmber,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+                // Expanded so the title truncates on narrow phones rather
+                // than pushing Shuffle and the close button off the card.
+                Expanded(
+                  child: Text(
+                    'WORKOUT OF THE DAY',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: RowCraftTheme.warningAmber,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 ),
-                const Spacer(),
                 if (canShuffle) Material(
                   color: Colors.transparent,
                   child: InkWell(

@@ -90,6 +90,50 @@ void main() {
       expect(prefs.getInt('wod_dismissed_day'), isNull);
     });
 
+    testWidgets('header fits a 360dp phone with Shuffle and close visible',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final pool = [
+        _wod,
+        Workout(
+          id: 'wod-2',
+          authorId: 'coach',
+          title: 'Second',
+          workoutType: WorkoutType.intervals,
+          segments: _wod.segments,
+          isPublic: true,
+          createdAt: _wod.createdAt,
+          updatedAt: _wod.updatedAt,
+        ),
+      ];
+      // 360dp, not 320: the test font (Ahem) is far wider than Inter, so at
+      // 320 the stats row overflows in tests though it fits on a device.
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          supabaseServiceProvider.overrideWithValue(_FakeSupabaseService()),
+          workoutLibraryProvider.overrideWith((_) async => pool),
+          wodWorkoutsProvider.overrideWith((_) async => pool),
+          trainingPlansProvider.overrideWith((_) async => const []),
+          pendingSyncCountProvider.overrideWith((_) => Stream.value(0)),
+          notificationProvider.overrideWith(_FakeNotificationNotifier.new),
+          bleProvider.overrideWith(_FakeBleNotifier.new),
+        ],
+        child: const MaterialApp(home: LibraryScreen()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final card = tester.getRect(find.byType(WodCard));
+      expect(card.contains(tester.getRect(find.text('Shuffle')).centerRight),
+          isTrue);
+      expect(card.right,
+          greaterThanOrEqualTo(
+              tester.getRect(find.byTooltip('Hide until tomorrow')).right));
+    });
+
     testWidgets('stays hidden when dismissed earlier today', (tester) async {
       SharedPreferences.setMockInitialValues({'wod_dismissed_day': wodDay()});
       await _pump(tester);
