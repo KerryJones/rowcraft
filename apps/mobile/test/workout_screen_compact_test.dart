@@ -4,6 +4,7 @@
 // - effectiveDisplayMode picks compact for phones, classic for tablets
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,6 +12,7 @@ import 'package:rowcraft/features/ble/ble_provider.dart';
 import 'package:rowcraft/features/workout/workout_engine.dart';
 import 'package:rowcraft/features/workout/workout_provider.dart';
 import 'package:rowcraft/features/workout/workout_screen_compact.dart';
+import 'package:rowcraft/features/workout/widgets/workout_controls.dart';
 import 'package:rowcraft/models/pm5_data.dart';
 import 'package:rowcraft/models/workout_segment.dart';
 
@@ -281,5 +283,60 @@ void main() {
       );
       expect(resolved, WorkoutDisplayMode.classic);
     });
+  });
+  group('WorkoutScreenCompactBody on a landscape phone', () {
+    // Body sizes after the status bar and 40dp app bar: a 915x412 phone and
+    // a short 740x360 one.
+    for (final size in const [Size(915, 348), Size(740, 296)]) {
+      for (final phase in const [
+        WorkoutPhase.ready,
+        WorkoutPhase.rowing,
+        WorkoutPhase.paused,
+      ]) {
+        testWidgets('${size.width.toInt()}x${size.height.toInt()} '
+            '${phase.name}: controls in side rail, no overflow',
+            (tester) async {
+          // view size, not setSurfaceSize — isLandscapePhone reads
+          // MediaQuery, which only follows the view.
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+          final base = _stubSession();
+          await tester.pumpWidget(_harness(WorkoutScreenCompactBody(
+            session: base.copyWith(
+              engineState: base.engineState.copyWith(phase: phase),
+            ),
+            isLocked: false,
+            onStart: () {},
+            onPause: () {},
+            onResume: () {},
+            onStop: () {},
+          )));
+
+          expect(tester.takeException(), isNull);
+          // Rail hugs the right edge and spans the height rather than
+          // sitting as a full-width bar along the bottom.
+          final rail = tester.getRect(find.byType(WorkoutControls));
+          expect(rail.right, size.width);
+          expect(rail.width, lessThan(120));
+          expect(rail.height, size.height);
+
+          // Cycle glyph and page dots are dropped on landscape phones so the
+          // labels fit untruncated. Only checked at the typical width: the
+          // test font (Ahem) is far wider than Inter, so the short phone
+          // would truncate here even though it doesn't on a device.
+          if (size.width >= 900 && phase == WorkoutPhase.rowing) {
+            for (final label in const [
+              'SEGMENT', 'TOTAL TIME', 'TARGET PACE', 'TARGET S/M', 'HR',
+              'DISTANCE',
+            ]) {
+              final paragraph =
+                  tester.renderObject<RenderParagraph>(find.text(label));
+              expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+            }
+          }
+        });
+      }
+    }
   });
 }

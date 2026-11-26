@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/workout.dart';
 import '../../services/supabase_service.dart';
@@ -156,6 +157,34 @@ final wodWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {
     return const [];
   }
 });
+
+const _wodDismissedDayKey = 'wod_dismissed_day';
+
+/// The [wodDay] on which the user last hid the WOD, or null if never. The
+/// WOD is hidden while this equals today's [wodDay].
+class WodDismissedDayNotifier extends AsyncNotifier<int?> {
+  @override
+  Future<int?> build() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_wodDismissedDayKey);
+  }
+
+  Future<void> dismiss(int day) async {
+    state = AsyncData(day);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_wodDismissedDayKey, day);
+  }
+
+  Future<void> restore() async {
+    state = const AsyncData(null);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_wodDismissedDayKey);
+  }
+}
+
+final wodDismissedDayProvider =
+    AsyncNotifierProvider<WodDismissedDayNotifier, int?>(
+        WodDismissedDayNotifier.new);
 
 /// Workouts authored by the current user.
 final myWorkoutsProvider = FutureProvider<List<Workout>>((ref) async {

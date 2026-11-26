@@ -159,8 +159,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         wodWorkout = wodPool[wodIdx];
       }
     }
-    final wod = wodWorkout;
-    final wodLoading = wodAsync.isLoading && wod == null;
+    // Hidden while prefs load so a dismissed WOD doesn't flash on launch.
+    final wodDismissedAsync = ref.watch(wodDismissedDayProvider);
+    final wodHidden = _mine ||
+        !wodDismissedAsync.hasValue ||
+        wodDismissedAsync.value == wodDay();
+    final wod = wodHidden ? null : wodWorkout;
+    final wodLoading = !wodHidden && wodAsync.isLoading && wod == null;
+
+    // WOD slot — first item in the scroll area so it scrolls away instead of
+    // eating a fixed share of the screen (over half of it on a landscape
+    // phone). Suppressed when browsing "My Workouts" (a public WOD above a
+    // private list is confusing) or after the user hides it for the day.
+    final Widget? wodSlot = wod != null
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: WodCard(
+              workout: wod,
+              canShuffle: wodPoolLength > 1,
+              ftpWatts: userFtp,
+              compact: isLandscapePhone(context),
+              onTap: () => context.push('/workout/${wod.id}'),
+              onShuffle: () {
+                setState(() => _wodShuffleOffset++);
+              },
+              onDismiss: _dismissWod,
+            ),
+          )
+        : wodLoading
+            ? const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 4),
+                child: _WodLoadingPlaceholder(),
+              )
+            : null;
 
     // Inject sort button into shared AppBar when browsing or sort order changes
     if (_isBrowsing != _lastIsBrowsing ||
@@ -189,31 +220,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         child: Column(
           children: [
           const PendingSyncBanner(),
-          // WOD slot — pinned at top, but suppressed when browsing "My
-          // Workouts" (a public WOD above a private list is confusing).
-          if (wod != null && !_mine)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: WodCard(
-                workout: wod,
-                canShuffle: wodPoolLength > 1,
-                ftpWatts: userFtp,
-                compact: isLandscapeCompact,
-                onTap: () => context.push('/workout/${wod.id}'),
-                onShuffle: () {
-                  setState(() => _wodShuffleOffset++);
-                },
-              ),
-            )
-          else if (wodLoading && !_mine)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: _WodLoadingPlaceholder(),
-            ),
 
           // Search bar — always visible.
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -240,10 +250,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     context,
                     theme,
                     workoutsAsync,
-                    _mine ? null : wod,
+                    wod,
+                    wodSlot,
                     userFtp,
                   )
-                : _buildTilesGrid(context, userId, zoneSystem,
+                : _buildTilesGrid(context, userId, zoneSystem, wodSlot,
                     isLandscapeCompact: isLandscapeCompact),
           ),
         ],
@@ -252,12 +263,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+  void _dismissWod() {
+    final notifier = ref.read(wodDismissedDayProvider.notifier);
+    notifier.dismiss(wodDay());
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: const Text('Workout of the Day hidden until tomorrow'),
+        action: SnackBarAction(label: 'Undo', onPressed: notifier.restore),
+      ));
+  }
+
   // ── Landing: tile grid ────────────────────────────────────────
 
   Widget _buildTilesGrid(
     BuildContext context,
     String? userId,
-    ZoneSystem zoneSystem, {
+    ZoneSystem zoneSystem,
+    Widget? wodSlot, {
     required bool isLandscapeCompact,
   }) {
     final tiles = _visibleTiles(userId: userId);
@@ -272,28 +295,36 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             WindowSizeClass.expanded => 4,
           };
     final aspectRatio = isLandscapeCompact ? 1.3 : 1.0;
-    return GridView.builder(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, isLandscapeCompact ? 16 : 80),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: aspectRatio,
-      ),
-      itemCount: tiles.length,
-      itemBuilder: (context, index) {
-        final tile = tiles[index];
-        String? subtitleOverride;
-        if (tile.type == _TileType.zone && tile.zone != null) {
-          subtitleOverride = zoneDisplayInfo(tile.zone!, zoneSystem).name;
-        }
-        return _CategoryTile(
-          tile: tile,
-          active: _isTileActive(tile),
-          onTap: () => _selectTile(tile),
-          subtitleOverride: subtitleOverride,
-        );
-      },
+    return CustomScrollView(
+      slivers: [
+        if (wodSlot != null) SliverToBoxAdapter(child: wodSlot),
+        SliverPadding(
+          padding:
+              EdgeInsets.fromLTRB(16, 8, 16, isLandscapeCompact ? 16 : 80),
+          sliver: SliverGrid.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: aspectRatio,
+            ),
+            itemCount: tiles.length,
+            itemBuilder: (context, index) {
+              final tile = tiles[index];
+              String? subtitleOverride;
+              if (tile.type == _TileType.zone && tile.zone != null) {
+                subtitleOverride = zoneDisplayInfo(tile.zone!, zoneSystem).name;
+              }
+              return _CategoryTile(
+                tile: tile,
+                active: _isTileActive(tile),
+                onTap: () => _selectTile(tile),
+                subtitleOverride: subtitleOverride,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -304,6 +335,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     ThemeData theme,
     AsyncValue<List<Workout>> workoutsAsync,
     Workout? wod,
+    Widget? wodSlot,
     int ftpWatts,
   ) {
     return workoutsAsync.when(
@@ -379,6 +411,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ? ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         children: [
+                          ?wodSlot,
                           SizedBox(
                             height: MediaQuery.of(context).size.height * 0.5,
                             child: Center(
@@ -405,9 +438,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.only(bottom: 80),
-                        itemCount: displayWorkouts.length,
-                        itemBuilder: (context, index) =>
-                            _WorkoutCard(workout: displayWorkouts[index], ftpWatts: ftpWatts),
+                        itemCount:
+                            displayWorkouts.length + (wodSlot != null ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (wodSlot != null) {
+                            if (index == 0) return wodSlot;
+                            index--;
+                          }
+                          return _WorkoutCard(
+                              workout: displayWorkouts[index],
+                              ftpWatts: ftpWatts);
+                        },
                       ),
               ),
             ),

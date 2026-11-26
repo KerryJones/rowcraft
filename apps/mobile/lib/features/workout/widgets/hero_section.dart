@@ -84,9 +84,9 @@ class HeroSection extends StatelessWidget {
         final isTiny = constraints.maxHeight < 170;
         final isSmall = constraints.maxHeight < 260;
         final isWide = constraints.maxWidth > 600;
-        final paceFontSize = isTiny ? 52.0 : isSmall ? 60.0 : isWide ? 100.0 : 80.0;
-        final srFontSize = isTiny ? 30.0 : isSmall ? 36.0 : isWide ? 56.0 : 44.0;
-        final animHeight = isTiny ? 40.0 : isSmall ? 50.0 : 70.0;
+        var paceFontSize = isTiny ? 52.0 : isSmall ? 60.0 : isWide ? 100.0 : 80.0;
+        var srFontSize = isTiny ? 30.0 : isSmall ? 36.0 : isWide ? 56.0 : 44.0;
+        var animHeight = isTiny ? 40.0 : isSmall ? 50.0 : 70.0;
 
         // In the stacked phone branch the invisible "/500m" counterweight
         // mirrors the visible suffix so the pace digits stay optically centered.
@@ -214,7 +214,7 @@ class HeroSection extends StatelessWidget {
         }
 
         final guide = guideBar();
-        final anim = rowingAnim();
+        var anim = rowingAnim();
 
         if (isWide) {
           // Tablet: pace and stroke rate side-by-side. During the START
@@ -251,31 +251,71 @@ class HeroSection extends StatelessWidget {
         // Narrow container (phone portrait + landscape compact, where the
         // hero column only gets ~60% width): stack so SM can't get pushed
         // into the chart area below.
+        //
+        // The height tiers above can still overflow a short landscape phone,
+        // where the stack must fit in ~170dp. Step down through the tiers
+        // until it roughly fits, and drop the optional rowing animation
+        // before shrinking further.
+        double stackHeight(double pace, double sr, double animH, bool withAnim) =>
+            (isCountingDown ? pace * 1.6 : pace + 8 + sr) +
+            (guide != null ? 10 + _PaceGuideBar.height : 0) +
+            (withAnim && anim != null ? 8 + animH : 0);
+        const narrowTiers = [(80.0, 44.0, 70.0), (60.0, 36.0, 50.0), (52.0, 30.0, 40.0)];
+        final startTier = isTiny ? 2 : isSmall ? 1 : 0;
+        var fitted = false;
+        for (final withAnim in const [true, false]) {
+          for (final (pace, sr, animH) in narrowTiers.skip(startTier)) {
+            if (stackHeight(pace, sr, animH, withAnim) <= constraints.maxHeight) {
+              paceFontSize = pace;
+              srFontSize = sr;
+              animHeight = animH;
+              if (!withAnim) anim = null;
+              fitted = true;
+              break;
+            }
+          }
+          if (fitted) break;
+        }
+        if (!fitted) {
+          (paceFontSize, srFontSize, animHeight) = narrowTiers.last;
+          anim = null;
+        } else if (anim != null) {
+          anim = rowingAnim(); // rebuild at the chosen tier's height
+        }
+
         final isEnd = verticalAlign == HeroAlign.end;
+        // The tier estimate above is only approximate (real text lines run
+        // taller than fontSize), so FittedBox guarantees the fit: it scales
+        // the whole stack down when it would overflow, and is a no-op
+        // otherwise. The SizedBox gives the guide bar a bounded width.
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            mainAxisAlignment:
-                isEnd ? MainAxisAlignment.end : MainAxisAlignment.center,
-            // MainAxisSize.min in the center case keeps the legacy phone
-            // portrait shrink-to-fit behaviour; for end alignment the column
-            // must fill its slot so the children can sit against the bottom.
-            mainAxisSize: isEnd ? MainAxisSize.max : MainAxisSize.min,
-            children: [
-              paceDisplay(),
-              if (!isCountingDown) ...[
-                const SizedBox(height: 8),
-                strokeRateDisplay(),
-              ],
-              if (guide != null) ...[
-                const SizedBox(height: 10),
-                guide,
-              ],
-              if (anim != null) ...[
-                const SizedBox(height: 8),
-                anim,
-              ],
-            ],
+          child: Align(
+            alignment: isEnd ? Alignment.bottomCenter : Alignment.center,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: (constraints.maxWidth - 32).clamp(0.0, double.infinity),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    paceDisplay(),
+                    if (!isCountingDown) ...[
+                      const SizedBox(height: 8),
+                      strokeRateDisplay(),
+                    ],
+                    if (guide != null) ...[
+                      const SizedBox(height: 10),
+                      guide,
+                    ],
+                    if (anim != null) ...[
+                      const SizedBox(height: 8),
+                      anim,
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },
@@ -288,6 +328,9 @@ class HeroSection extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PaceGuideBar extends StatelessWidget {
+  /// 18dp warning label + 40dp bar.
+  static const double height = 58;
+
   final double targetPace;
   final double currentPace;
 

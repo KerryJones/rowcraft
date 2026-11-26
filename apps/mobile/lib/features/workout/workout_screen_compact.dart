@@ -241,32 +241,29 @@ class _WorkoutScreenCompactBodyState
           onPause: widget.onPause,
           onResume: widget.onResume,
           onStop: widget.onStop,
+          vertical: landscapePhone,
         ),
       ),
     );
 
     if (landscapePhone) {
-      return Column(
+      // Controls sit in a right-edge rail so the stats and hero get the full
+      // height — a bottom bar cost ~a quarter of a landscape phone's height.
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 40,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 5, 12),
-                    child: _statGrid(session),
-                  ),
-                ),
-                Expanded(
-                  flex: 60,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(5, 10, 10, 12),
-                    child: _heroAndGraph(session, landscapePhone: true),
-                  ),
-                ),
-              ],
+            flex: 45,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 5, 12),
+              child: _statGrid(session),
+            ),
+          ),
+          Expanded(
+            flex: 55,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(5, 10, 10, 12),
+              child: _heroAndGraph(session, landscapePhone: true),
             ),
           ),
           controls,
@@ -450,7 +447,17 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final showDots = pageCount != null && pageCount! > 1 && pageIndex != null;
-    final content = Container(
+    final landscapePhone = isLandscapePhone(context);
+    final content = LayoutBuilder(builder: (context, constraints) {
+    // Landscape phones give the tiles extra height (controls live in a side
+    // rail), so the value grows into it — rowers read these mid-stroke,
+    // often without glasses. ~32dp covers padding and the label row; the
+    // FittedBox still shrinks long values to the tile width.
+    final valueSize = landscapePhone && constraints.hasBoundedHeight
+        ? (constraints.maxHeight - 32).clamp(40.0, 64.0)
+        : 40.0;
+    final scale = valueSize / 40;
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: RowCraftTheme.surfaceContainer,
@@ -469,16 +476,19 @@ class _StatTile extends StatelessWidget {
                 Icon(icon, size: 11, color: iconColor ?? RowCraftTheme.subtleGrey),
                 const SizedBox(width: 3),
               ],
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: RowCraftTheme.subtleGrey,
-                  letterSpacing: 0.8,
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: RowCraftTheme.subtleGrey,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ),
-              const Spacer(),
               _TileHeaderTrailing(
                 trailing: trailing,
                 isAuto: isAuto,
@@ -488,7 +498,10 @@ class _StatTile extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 2),
-          Row(
+          // Flexible bounds the height so the FittedBox below also shrinks
+          // the value vertically when the tile is shorter than estimated.
+          Flexible(
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
@@ -496,7 +509,7 @@ class _StatTile extends StatelessWidget {
                 Text(
                   chevron!,
                   style: GoogleFonts.jetBrainsMono(
-                    fontSize: 18,
+                    fontSize: 18 * scale,
                     color: valueColor ?? RowCraftTheme.metricWhite,
                     height: 1.2,
                   ),
@@ -515,7 +528,7 @@ class _StatTile extends StatelessWidget {
                       Text(
                         value,
                         style: GoogleFonts.jetBrainsMono(
-                          fontSize: 40,
+                          fontSize: valueSize,
                           fontWeight: FontWeight.w700,
                           color: valueColor ?? RowCraftTheme.metricWhite,
                           height: 1.0,
@@ -526,7 +539,7 @@ class _StatTile extends StatelessWidget {
                         Text(
                           unitSuffix!,
                           style: GoogleFonts.jetBrainsMono(
-                            fontSize: 22,
+                            fontSize: 22 * scale,
                             fontWeight: FontWeight.w500,
                             color: RowCraftTheme.metricWhite,
                           ),
@@ -538,9 +551,11 @@ class _StatTile extends StatelessWidget {
               ),
             ],
           ),
+          ),
         ],
       ),
     );
+    });
     if (onTap == null) return content;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -570,9 +585,13 @@ class _TileHeaderTrailing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showDots =
+    // Landscape-phone tiles are too narrow for the label plus the cycle
+    // glyph and dots, so drop those there to keep the full label readable.
+    // The tiles still respond to taps.
+    final landscapePhone = isLandscapePhone(context);
+    final showDots = !landscapePhone &&
         pageCount != null && pageCount! > 1 && pageIndex != null;
-    final auto = isAuto;
+    final auto = landscapePhone ? null : isAuto;
     final ornaments = <Widget>[
       ?trailing,
       if (auto != null) _AutoCycleIndicator(isAuto: auto),
