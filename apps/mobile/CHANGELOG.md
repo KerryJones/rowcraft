@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.4](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.3...rowcraft-mobile-v0.16.4) (2026-11-26)
+
+
+### Bug Fixes
+
+* landscape phone layout for workout screen and dismissable WOD ([#27](https://github.com/KerryJones/rowcraft/issues/27)) ([bff8158](https://github.com/KerryJones/rowcraft/commit/bff815833fe4223f0b5dd3d9283e889158008f92))
+
 ## [0.16.3](https://github.com/KerryJones/rowcraft/compare/rowcraft-mobile-v0.16.2...rowcraft-mobile-v0.16.3) (2026-08-03)
 
 
